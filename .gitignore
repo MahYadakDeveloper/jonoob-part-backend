@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+
+# pnpm
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDEs
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test reports
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+
+# NestJS
+uploads/
+
+# TurboRepo (if used)
+.turbo/
+
+# Nx (if used)
+.nx/cache/
+.nx/workspace-data/
+
+# Generated files
+*.pid
+*.seed
+*.pid.lock

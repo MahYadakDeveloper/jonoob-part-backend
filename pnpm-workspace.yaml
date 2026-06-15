@@ -1,0 +1,6 @@
+packages:
+  - app/*
+  - feature/*
+  - infrastructure/*
+allowBuilds:
+  unrs-resolver: true
