@@ -1,0 +1,4 @@
+model Good {
+  id    Int @id @default(autoincrement())
+  stock Int @default(1)
+}

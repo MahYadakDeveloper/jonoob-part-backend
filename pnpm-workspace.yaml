@@ -1,6 +1,8 @@
 packages:
   - app/*
   - feature/*
-  - infrastructure/*
+  - infrastructure/*/**
 allowBuilds:
+  "@prisma/engines": true
+  prisma: true
   unrs-resolver: true

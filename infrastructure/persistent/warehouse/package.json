@@ -1,0 +1,12 @@
+{
+  "name": "warehouse-repo",
+  "private": true,
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.26",
+    "database": "workspace:*",
+    "warehouse": "workspace:*"
+  }
+}
