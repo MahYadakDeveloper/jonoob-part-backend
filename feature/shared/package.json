@@ -1,9 +1,13 @@
 {
-  "name": "shared",
+  "name": "@feature/shared",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.js",
+  "scripts": {
+    "dev": "pnpm exec tsc --watch",
+    "build": "pnpm exec tsc"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",

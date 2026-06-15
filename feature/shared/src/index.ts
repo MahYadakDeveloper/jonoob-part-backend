@@ -1,2 +1,2 @@
-export * from './domain/value-object/quantity'
-export * from './domain/value-object/identity'
+export * from "./domain/value-object/quantity";
+export * from "./domain/value-object/identity";

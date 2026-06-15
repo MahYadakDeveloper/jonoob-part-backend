@@ -1,4 +1,4 @@
-import { Quantity } from "shared";
+import { Quantity } from "@feature/shared";
 import { GoodId } from "../value-object/good-id";
 
 export class Item {

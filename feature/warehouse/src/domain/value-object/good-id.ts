@@ -1,4 +1,4 @@
-import { EntityId } from "shared";
+import { EntityId } from "@feature/shared";
 
 export class GoodId extends EntityId {
   static create(id: string) {

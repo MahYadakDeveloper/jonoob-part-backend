@@ -6,7 +6,7 @@ import { GoodId } from "../domain/value-object/good-id";
 import { AdjustWarehouseInputDTO } from "./dto/adjust-warehouse.dto";
 import { CheckStockAvailabilityInputDTO } from "./dto/check-stock-availability.dto";
 import { RecordGoodsIssueInputDTO } from "./dto/record-goods-issue.dto";
-import { Quantity } from "shared";
+import { Quantity } from "@feature/shared";
 
 @Injectable()
 export class WarehouseService {

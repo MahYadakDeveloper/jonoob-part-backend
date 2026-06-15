@@ -1,5 +1,12 @@
 {
-	"devDependencies": {
-		"@types/node": "^24.13.2"
-	}
+  "scripts": {
+    "start:dev": "concurrently \" pnpm --filter @app/api exec nest start --watch\"  \"pnpm --parallel -r --filter @app/api^... dev \" ",
+    "start:dev:api": "pnpm --filter @app/api exec nest start --watch",
+    "start:dev:deps": "pnpm --parallel -r --filter @app/api^... dev",
+    "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "concurrently": "^10.0.3"
+  }
 }

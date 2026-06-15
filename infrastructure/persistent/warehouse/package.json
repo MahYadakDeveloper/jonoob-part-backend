@@ -1,12 +1,26 @@
 {
-  "name": "warehouse-repo",
+  "name": "@infra/warehouse-repo",
   "private": true,
+  "scripts": {
+    "dev": "pnpm exec tsc --watch",
+    "build": "pnpm exec tsc"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.js",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
   "devDependencies": {
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@nestjs/common": "^11.1.26",
-    "database": "workspace:*",
-    "warehouse": "workspace:*"
+    "@feature/shared": "workspace:*",
+    "@feature/warehouse": "workspace:*",
+    "@infra/database": "workspace:*",
+    "@nestjs/common": "^11.1.26"
   }
 }

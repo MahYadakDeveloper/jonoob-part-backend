@@ -1,4 +1,4 @@
-import { Quantity } from "shared";
+import { Quantity } from "@feature/shared";
 import { InsufficientStockError } from "../errors/InsufficientStockError";
 import { InvalidStockAdjustmentException } from "../errors/invalid-stock-adjustment.error";
 import { WarehouseStockRecordNotFoundError } from "../errors/WarehouseStockRecordNotFound";
