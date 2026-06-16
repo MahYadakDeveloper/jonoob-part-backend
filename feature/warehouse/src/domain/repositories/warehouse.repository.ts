@@ -1,7 +1,7 @@
 import { Item } from "../entities/item";
 import { GoodId } from "../value-object/good-id";
 
-export const TOKEN_WAREHOUSE_REPO = Symbol('IWarehouseRepository')
+export const IWarehouseRepositoryToken = Symbol("IWarehouseRepository");
 
 export interface IWarehouseRepository {
   /**

@@ -3,14 +3,14 @@
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
-  "types": "./dist/index.d.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "pnpm exec tsc --watch",
     "build": "pnpm exec tsc"
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.js",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }

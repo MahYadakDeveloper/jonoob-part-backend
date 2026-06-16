@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start:dev": "concurrently \" pnpm --filter @app/api exec nest start --watch\"  \"pnpm --parallel -r --filter @app/api^... dev \" ",
+    "start:dev": "concurrently -k \" pnpm --filter @app/api exec nest start --watch\"  \"pnpm --parallel -r --filter @app/api^... dev \" ",
     "start:dev:api": "pnpm --filter @app/api exec nest start --watch",
     "start:dev:deps": "pnpm --parallel -r --filter @app/api^... dev",
     "build": "pnpm -r build"
