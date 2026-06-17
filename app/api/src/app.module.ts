@@ -4,13 +4,11 @@ import { PrismaWarehouseRepository } from '@infra/warehouse-repo';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
-import { AppService } from './app.service'
+import { AppService } from './app.service';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      envFilePath: '.env.development',
-    }),
+    ConfigModule.forRoot({}),
     DatabaseModule,
     WarehouseModule.register([
       {

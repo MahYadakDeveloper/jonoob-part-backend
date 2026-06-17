@@ -1,0 +1,47 @@
+# dependencies
+node_modules
+**/node_modules
+
+# build output
+dist
+**/dist
+coverage
+**/coverage
+
+# vcs
+.git
+.gitignore
+
+# env
+.env
+.env.*
+!.env.development
+
+# logs
+*.log
+pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editor
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# cache
+.pnpm-store
+**/.pnpm-store
+.cache
+.turbo
+tmp
+temp
+
+# test
+**/*.spec.ts
+**/*.test.ts
+
+# optional docs
+README.md
+docs

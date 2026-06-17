@@ -1,5 +1,7 @@
 {
   "scripts": {
+    "prisma:gen": "pnpm --filter @infra/database exec prisma generate",
+    "prisma:mig:dev": "pnpm --filter @infra/database exec prisma migrate dev",
     "start:dev": "concurrently -k \" pnpm --filter @app/api exec nest start --watch\"  \"pnpm --parallel -r --filter @app/api^... dev \" ",
     "dev": "concurrently -n \"packages,api\" -c \"cyan,green\" \"pnpm -r --parallel --filter=!./apps/api run dev\" \"pnpm --filter ./apps/api exec nest start --watch\"",
     "start:dev:api": "pnpm --filter @app/api exec nest start --watch",
