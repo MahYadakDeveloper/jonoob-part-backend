@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Logger, Param, Post } from "@nestjs/common";
-import { type RecordGoodsReceiptInputDTO } from "src/application/dto/record-goods-receipt-dto";
+import { type RecordGoodsReceiptInputDto } from "src/application/dto/record-goods-receipt-dto";
 import { WarehouseService } from "../application/warehouse.service";
 
 @Controller()
@@ -19,7 +19,7 @@ export class WarehouseController {
   }
 
   @Post()
-  async receiptGood(@Body() itemDto: RecordGoodsReceiptInputDTO["items"][0]) {
+  async receiptGood(@Body() itemDto: RecordGoodsReceiptInputDto["items"][0]) {
     this.logger.log("The body post:", itemDto);
     return this.warehouseService.recordGoodsReceipt({ items: [itemDto] });
   }

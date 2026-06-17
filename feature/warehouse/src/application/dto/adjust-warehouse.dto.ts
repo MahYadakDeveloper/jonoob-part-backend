@@ -1,4 +1,4 @@
-export interface AdjustWarehouseInputDTO {
+export interface AdjustWarehouseInputDto {
   goodsId: string,
   stock: number
 }

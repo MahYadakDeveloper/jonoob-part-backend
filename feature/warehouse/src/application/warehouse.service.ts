@@ -3,17 +3,23 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { Inventory } from "../domain/entities/inventory";
 import { Item } from "../domain/entities/item";
 import {
-  WAREHOUSE_REPOSITORY,
-  type IWarehouseRepository,
+    WAREHOUSE_REPOSITORY,
+    type IWarehouseRepository,
 } from "../domain/repositories/warehouse.repository";
 import { GoodId } from "../domain/value-object/good-id";
-import { AdjustWarehouseInputDTO } from "./dto/adjust-warehouse.dto";
 import {
-  GetStockAvailabilityInputDTO,
-  GetStockAvailabilityOutputDTO,
+    AdjustWarehouseInputDto
+} from "./dto/adjust-warehouse.dto";
+import {
+    GetStockAvailabilityInputDto,
+    GetStockAvailabilityOutputDto
 } from "./dto/get-stock-availability.dto";
-import { RecordGoodsIssueInputDTO } from "./dto/record-goods-issue.dto";
-import { RecordGoodsReceiptInputDTO } from "./dto/record-goods-receipt-dto";
+import {
+    RecordGoodsIssueInputDto
+} from "./dto/record-goods-issue.dto";
+import {
+    RecordGoodsReceiptInputDto
+} from "./dto/record-goods-receipt-dto";
 
 @Injectable()
 export class WarehouseService {
@@ -34,13 +40,11 @@ export class WarehouseService {
    * @throws {InvalidStockAdjustmentException} If `newQty` is zero or negative.
    * @throws {WarehouseStockRecordNotFoundError} If no item with the given `id` exists.
    */
-  async adjustWarehouseStock(inputDto: AdjustWarehouseInputDTO) {
+  async adjustWarehouseStock(inputDto: AdjustWarehouseInputDto) {
     const reqItem = Item.create(
       GoodId.create(inputDto.goodsId),
       Quantity.create(inputDto.stock),
     );
-
-    this.logger.verbose("logging from adjust warehouse use case...");
 
     // fetch the item
     const inventory = new Inventory(
@@ -60,8 +64,8 @@ export class WarehouseService {
   }
 
   async getGoodStock(
-    inputDto: GetStockAvailabilityInputDTO,
-  ): Promise<GetStockAvailabilityOutputDTO> {
+    inputDto: GetStockAvailabilityInputDto,
+  ): Promise<GetStockAvailabilityOutputDto> {
     const goodId = GoodId.create(inputDto.goodsId);
 
     const [item] = await this.warehouseRepository.getStocksByGoodId([goodId]);
@@ -69,7 +73,7 @@ export class WarehouseService {
     return { quantity: item.qty.getValue() };
   }
 
-  async recordGoodsIssue(inputDto: RecordGoodsIssueInputDTO) {
+  async recordGoodsIssue(inputDto: RecordGoodsIssueInputDto) {
     const requestedGoods = inputDto.items.map((item) =>
       Item.create(GoodId.create(item.goodsId), Quantity.create(item.qty)),
     );
@@ -92,7 +96,7 @@ export class WarehouseService {
     // TODO: Register the record of this issue
   }
 
-  async recordGoodsReceipt(inputDto: RecordGoodsReceiptInputDTO) {
+  async recordGoodsReceipt(inputDto: RecordGoodsReceiptInputDto) {
     // dto conversion
     const items = inputDto.items.map((item) =>
       Item.create(GoodId.create(item.goodsId), Quantity.create(item.qty || 1)),
