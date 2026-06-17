@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.js",
   "scripts": {
-    "dev": "pnpm exec tsc --watch",
+    "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc"
   },
   "exports": {

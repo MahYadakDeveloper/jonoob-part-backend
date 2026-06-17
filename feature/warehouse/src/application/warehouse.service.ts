@@ -3,7 +3,7 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { Inventory } from "../domain/entities/inventory";
 import { Item } from "../domain/entities/item";
 import {
-  IWarehouseRepositoryToken,
+  WAREHOUSE_REPOSITORY,
   type IWarehouseRepository,
 } from "../domain/repositories/warehouse.repository";
 import { GoodId } from "../domain/value-object/good-id";
@@ -19,7 +19,7 @@ import { RecordGoodsReceiptInputDTO } from "./dto/record-goods-receipt-dto";
 export class WarehouseService {
   private readonly logger: Logger;
   constructor(
-    @Inject(IWarehouseRepositoryToken)
+    @Inject(WAREHOUSE_REPOSITORY)
     private readonly warehouseRepository: IWarehouseRepository,
   ) {
     this.logger = new Logger(WarehouseService.name);

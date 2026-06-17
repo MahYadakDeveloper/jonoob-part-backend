@@ -1,11 +1,14 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService, Prisma } from "@infra/database";
-import { IWarehouseRepository, GoodId, Item } from "@feature/warehouse";
 import { Quantity } from "@feature/shared";
+import { GoodId, Item, IWarehouseRepository } from "@feature/warehouse";
+import { PrismaService } from "@infra/database";
+import { Injectable, Logger } from "@nestjs/common";
 
 @Injectable()
 export class PrismaWarehouseRepository implements IWarehouseRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger: Logger;
+  constructor(private readonly prisma: PrismaService) {
+    this.logger = new Logger(PrismaWarehouseRepository.name);
+  }
 
   async adjustGoodsStock() {}
 
@@ -16,6 +19,8 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
       },
     });
 
+    this.logger.debug("The fetched good from db is", good);
+
     if (!good) return [];
 
     return [
@@ -25,13 +30,20 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
       ),
     ];
   }
+
   /**
    * NOTE: Use redisService [client]
    */
   async issueGoodsAtomically() {
     throw new Error("Not implemented yet!");
   }
-  async receiptGoods() {
 
+  async receiptGoods(items: Item[]) {
+    this.logger.debug("receipting good", items);
+    await this.prisma.good.create({
+      data: {
+        goodId: items[0].id.getValue(),
+      },
+    });
   }
 }

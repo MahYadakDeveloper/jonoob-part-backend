@@ -2,7 +2,7 @@
   "name": "@feature/warehouse",
   "type": "commonjs",
   "scripts": {
-    "dev": "pnpm exec tsc --watch",
+    "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc"
   },
   "main": "./dist/index.js",

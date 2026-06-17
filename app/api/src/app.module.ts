@@ -1,10 +1,10 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { IWarehouseRepositoryToken, WarehouseModule } from '@feature/warehouse';
-import { PrismaWarehouseRepository } from '@infra/warehouse-repo';
+import { WAREHOUSE_REPOSITORY, WarehouseModule } from '@feature/warehouse';
 import { DatabaseModule } from '@infra/database';
+import { PrismaWarehouseRepository } from '@infra/warehouse-repo';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller';
+import { AppService } from './app.service'
 
 @Module({
   imports: [
@@ -14,7 +14,7 @@ import { ConfigModule } from '@nestjs/config';
     DatabaseModule,
     WarehouseModule.register([
       {
-        provide: IWarehouseRepositoryToken,
+        provide: WAREHOUSE_REPOSITORY,
         useClass: PrismaWarehouseRepository,
       },
     ]),

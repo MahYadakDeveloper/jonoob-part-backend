@@ -1,10 +1,13 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Logger, Param, Post } from "@nestjs/common";
 import { type RecordGoodsReceiptInputDTO } from "src/application/dto/record-goods-receipt-dto";
 import { WarehouseService } from "../application/warehouse.service";
 
 @Controller()
 export class WarehouseController {
-  constructor(private readonly warehouseService: WarehouseService) {}
+  private readonly logger: Logger;
+  constructor(private readonly warehouseService: WarehouseService) {
+    this.logger = new Logger(WarehouseController.name);
+  }
 
   /**
    *  NOTE: Using parameters directly is wrong and validation required and usually
@@ -16,7 +19,8 @@ export class WarehouseController {
   }
 
   @Post()
-  async receiptGood(@Body() item: RecordGoodsReceiptInputDTO["items"][0]) {
-    return this.warehouseService.recordGoodsReceipt({ items: [item] });
+  async receiptGood(@Body() itemDto: RecordGoodsReceiptInputDTO["items"][0]) {
+    this.logger.log("The body post:", itemDto);
+    return this.warehouseService.recordGoodsReceipt({ items: [itemDto] });
   }
 }

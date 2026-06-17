@@ -2,7 +2,7 @@
   "name": "@infra/warehouse-repo",
   "private": true,
   "scripts": {
-    "dev": "pnpm exec tsc --watch",
+    "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc"
   },
   "type": "commonjs",
