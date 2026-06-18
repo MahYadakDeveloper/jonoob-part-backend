@@ -10,6 +10,7 @@
     "build": "pnpm -r build"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.13.2",
     "concurrently": "^10.0.3"
   }

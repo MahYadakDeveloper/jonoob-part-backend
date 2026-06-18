@@ -3,25 +3,18 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { Inventory } from "../domain/entities/inventory";
 import { Item } from "../domain/entities/item";
 import {
-    WAREHOUSE_REPOSITORY,
-    type IWarehouseRepository,
+  WAREHOUSE_REPOSITORY,
+  type IWarehouseRepository,
 } from "../domain/repositories/warehouse.repository";
 import { GoodId } from "../domain/value-object/good-id";
+import { AdjustWarehouseInputDto } from "./dto/adjust-warehouse.dto";
 import {
-    AdjustWarehouseInputDto
-} from "./dto/adjust-warehouse.dto";
-import {
-    GetStockAvailabilityInputDto,
-    GetStockAvailabilityOutputDto
+  GetStockAvailabilityInputDto,
+  GetStockAvailabilityOutputDto,
 } from "./dto/get-stock-availability.dto";
-import {
-    RecordGoodsIssueInputDto
-} from "./dto/record-goods-issue.dto";
-import {
-    RecordGoodsReceiptInputDto
-} from "./dto/record-goods-receipt-dto";
+import { RecordGoodsIssueInputDto } from "./dto/record-goods-issue.dto";
+import { RecordGoodsReceiptInputDto } from "./dto/record-goods-receipt-dto";
 
-// FUCKKkkkkkk
 @Injectable()
 export class WarehouseService {
   private readonly logger: Logger;
