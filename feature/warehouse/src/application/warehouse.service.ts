@@ -21,6 +21,7 @@ import {
     RecordGoodsReceiptInputDto
 } from "./dto/record-goods-receipt-dto";
 
+// FUCKKkkkkkk
 @Injectable()
 export class WarehouseService {
   private readonly logger: Logger;
