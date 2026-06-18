@@ -1,0 +1,28 @@
+{
+  "name": "@infra/synchronizer",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@feature/warehouse": "workspace:*",
+    "@nestjs/common": "^11.1.27",
+    "@nestjs/config": "^4.0.4",
+    "ioredis": "^5.11.1",
+    "redlock": "5.0.0-beta.2"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
