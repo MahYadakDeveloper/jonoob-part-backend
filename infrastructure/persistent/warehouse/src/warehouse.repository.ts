@@ -1,7 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaWarehouseRepository } from "./prisma-warehouse.repository";
 import { RedisWarehouseRepository } from "./redis-warehouse.repository";
-import { GoodId, Item, IWarehouseRepository } from "@feature/warehouse";
+import {
+  GoodId,
+  Inventory,
+  Item,
+  IWarehouseRepository,
+} from "@feature/warehouse";
 
 @Injectable()
 export class WarehouseRepository implements IWarehouseRepository {
@@ -9,6 +14,13 @@ export class WarehouseRepository implements IWarehouseRepository {
     private readonly prismaWarehouseRepository: PrismaWarehouseRepository,
     private readonly redisWarehouseRepository: RedisWarehouseRepository,
   ) {}
+
+  loadInventory(items: Item[]): Promise<Inventory> {
+    throw new Error("Method not implemented.");
+  }
+  saveInventory(inventory: Inventory): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
 
   getStocksByGoodId(ids: GoodId[]): Promise<Item[]> {
     throw new Error("Method not implemented.");

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Logger, Param, Post } from "@nestjs/common";
-import { type RecordGoodsReceiptInputDto } from "src/application/dto/record-goods-receipt-dto";
 import { WarehouseService } from "../application/warehouse.service";
+import { RecordGoodsReceiptInputDto } from "../application/dto/record-goods-receipt-dto";
 
 @Controller()
 export class WarehouseController {

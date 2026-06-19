@@ -3,7 +3,8 @@
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
+    "build": "pnpm exec tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,6 +21,9 @@
     "@nestjs/common": "^11.1.26"
   },
   "devDependencies": {
+    "@infra/database": "workspace:*",
+    "@infra/warehouse-repo": "workspace:*",
+    "@nestjs/config": "^4.0.4",
     "@nestjs/testing": "^11.1.26",
     "@types/jest": "^30.0.0",
     "jest": "^30.4.2",

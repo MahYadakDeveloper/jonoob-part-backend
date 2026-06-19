@@ -22,7 +22,7 @@ export interface IWarehouseRepository {
    * To issue a set of goods and decrease stock from warehouse and submitting the record issue.
    * if anything cause failure in process the whole process would be canceled
    */
-  issueGoodsAtomically(items: Item[]): Promise<void>;
+  issueGoods(items: Item[]): Promise<void>;
 
   /**
    *
@@ -30,12 +30,12 @@ export interface IWarehouseRepository {
   adjustGoodsStock(item: Item): Promise<void>;
 
   /**
-   * 
+   *
    */
-  loadInventory(items: Item[]): Promise<Inventory>
+  loadInventory(items: Item[]): Promise<Inventory>;
 
   /**
-   * 
+   *
    */
-  saveInventory(inventory: Inventory): Promise<void>
+  saveInventory(inventory: Inventory): Promise<void>;
 }

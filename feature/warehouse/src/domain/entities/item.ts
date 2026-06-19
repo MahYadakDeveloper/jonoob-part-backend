@@ -7,7 +7,8 @@ export class Item {
     public qty: Quantity,
   ) {}
 
-  static create = (id: GoodId, qty: Quantity) => new Item(id, qty);
+  static create = (id: GoodId, qty?: Quantity) =>
+    new Item(id, qty || Quantity.create(1));
 
   decreaseQty(qty: Quantity) {
     this.qty = this.qty.decrease(qty);

@@ -42,10 +42,9 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
   }
 
   /**
-   * NOTE: Use redisService [client]
    */
-  async issueGoodsAtomically() {
-    throw new Error("Not implemented yet!");
+  async issueGoods() {
+
   }
 
   async receiptGoods(items: Item[]) {

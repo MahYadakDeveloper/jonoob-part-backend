@@ -1,6 +1,5 @@
 import { Quantity } from "@feature/shared";
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { Inventory } from "../domain/entities/inventory";
 import { Item } from "../domain/entities/item";
 import {
   WAREHOUSE_REPOSITORY,
@@ -14,7 +13,7 @@ import {
 } from "./dto/get-stock-availability.dto";
 import { RecordGoodsIssueInputDto } from "./dto/record-goods-issue.dto";
 import { RecordGoodsReceiptInputDto } from "./dto/record-goods-receipt-dto";
-import { InvalidStockAdjustmentException } from "src/domain/errors/invalid-stock-adjustment.error";
+import { WarehouseStockRecordNotFoundError } from "../domain/errors/WarehouseStockRecordNotFound";
 
 @Injectable()
 export class WarehouseService {
@@ -61,6 +60,8 @@ export class WarehouseService {
 
     const [item] = await this.warehouseRepository.getStocksByGoodId([goodId]);
 
+    if (!item) throw new WarehouseStockRecordNotFoundError(goodId.getValue());
+
     return { quantity: item.qty.getValue() };
   }
 
@@ -80,7 +81,7 @@ export class WarehouseService {
 
     // Atomic process by repo safe and simple for this use case and
     // any error thrown by this method its handled by provider
-    this.warehouseRepository.issueGoodsAtomically(requestedGoods);
+    this.warehouseRepository.issueGoods(requestedGoods);
 
     // TODO: Replenishment List |‌ Replenishment List Generation Based on Reorder Point
 
