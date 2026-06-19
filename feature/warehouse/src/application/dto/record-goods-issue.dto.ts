@@ -1,6 +1,6 @@
 export interface RecordGoodsIssueInputDto {
   items: {
-    goodsId: string;
+    goodId: string;
     qty: number;
   }[];
 }

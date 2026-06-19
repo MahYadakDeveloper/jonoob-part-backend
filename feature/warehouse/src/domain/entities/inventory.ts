@@ -30,6 +30,10 @@ export class Inventory {
     return this.goods.find((good) => good.id.equals(id));
   }
 
+  filterById(ids: GoodId[]) {
+    return this.goods.filter((item) => ids.some((id) => id.equals(item.id)));
+  }
+
   /**
    * Adjusts the stock quantity of an inventory item by its ID.
    *

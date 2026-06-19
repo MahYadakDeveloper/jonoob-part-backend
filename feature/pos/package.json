@@ -3,7 +3,7 @@
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
+    "_build": "pnpm exec tsc"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

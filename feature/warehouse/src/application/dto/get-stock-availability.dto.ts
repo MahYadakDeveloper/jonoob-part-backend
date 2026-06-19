@@ -1,5 +1,5 @@
 export interface GetStockAvailabilityInputDto {
-  goodsId: string;
+  goodId: string;
 }
 
 export interface GetStockAvailabilityOutputDto {

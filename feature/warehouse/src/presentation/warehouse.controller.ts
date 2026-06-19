@@ -15,7 +15,7 @@ export class WarehouseController {
    */
   @Get(":id")
   async getGoodStock(@Param("id") id: string) {
-    return await this.warehouseService.getGoodStock({ goodsId: id });
+    return await this.warehouseService.getGoodStock({ goodId: id });
   }
 
   @Post()

@@ -1,3 +1,4 @@
+import { Inventory } from "../entities/inventory";
 import { Item } from "../entities/item";
 import { GoodId } from "../value-object/good-id";
 
@@ -27,4 +28,14 @@ export interface IWarehouseRepository {
    *
    */
   adjustGoodsStock(item: Item): Promise<void>;
+
+  /**
+   * 
+   */
+  loadInventory(items: Item[]): Promise<Inventory>
+
+  /**
+   * 
+   */
+  saveInventory(inventory: Inventory): Promise<void>
 }

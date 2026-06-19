@@ -1,5 +1,10 @@
 import { Quantity } from "@feature/shared";
-import { GoodId, Item, IWarehouseRepository } from "@feature/warehouse";
+import {
+  GoodId,
+  Inventory,
+  Item,
+  IWarehouseRepository,
+} from "@feature/warehouse";
 import { PrismaService } from "@infra/database";
 import { Injectable, Logger } from "@nestjs/common";
 
@@ -8,6 +13,11 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
   private readonly logger: Logger;
   constructor(private readonly prisma: PrismaService) {
     this.logger = new Logger(PrismaWarehouseRepository.name);
+  }
+  async saveInventory(inventory: Inventory): Promise<void> {}
+
+  async loadInventory(items: Item[]): Promise<Inventory> {
+    throw new Error('')
   }
 
   async adjustGoodsStock() {}

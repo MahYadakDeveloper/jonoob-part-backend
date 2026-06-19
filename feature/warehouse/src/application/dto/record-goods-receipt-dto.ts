@@ -1,3 +1,3 @@
 export interface RecordGoodsReceiptInputDto {
-  items: { goodsId: string; qty?: number }[];
+  items: { goodId: string; qty?: number }[];
 }

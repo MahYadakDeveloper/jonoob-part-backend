@@ -14,6 +14,7 @@ import {
 } from "./dto/get-stock-availability.dto";
 import { RecordGoodsIssueInputDto } from "./dto/record-goods-issue.dto";
 import { RecordGoodsReceiptInputDto } from "./dto/record-goods-receipt-dto";
+import { InvalidStockAdjustmentException } from "src/domain/errors/invalid-stock-adjustment.error";
 
 @Injectable()
 export class WarehouseService {
@@ -35,32 +36,28 @@ export class WarehouseService {
    * @throws {WarehouseStockRecordNotFoundError} If no item with the given `id` exists.
    */
   async adjustWarehouseStock(inputDto: AdjustWarehouseInputDto) {
-    const reqItem = Item.create(
-      GoodId.create(inputDto.goodsId),
+    const input = Item.create(
+      GoodId.create(inputDto.goodId),
       Quantity.create(inputDto.stock),
     );
 
     // fetch the item
-    const inventory = new Inventory(
-      await this.warehouseRepository.getStocksByGoodId([reqItem.id]),
-    );
+    const inventory = await this.warehouseRepository.loadInventory([input]);
 
     // ensure existence
-    inventory.ensureItemExists(reqItem.id);
+    inventory.ensureItemExists(input.id);
 
     // update the state
-    inventory.adjustStock(reqItem.id, reqItem.qty);
+    inventory.adjustStock(input.id, input.qty);
 
     // save the state
-    await this.warehouseRepository.adjustGoodsStock(
-      inventory.findById(reqItem.id)!,
-    );
+    await this.warehouseRepository.saveInventory(inventory);
   }
 
   async getGoodStock(
     inputDto: GetStockAvailabilityInputDto,
   ): Promise<GetStockAvailabilityOutputDto> {
-    const goodId = GoodId.create(inputDto.goodsId);
+    const goodId = GoodId.create(inputDto.goodId);
 
     const [item] = await this.warehouseRepository.getStocksByGoodId([goodId]);
 
@@ -69,7 +66,7 @@ export class WarehouseService {
 
   async recordGoodsIssue(inputDto: RecordGoodsIssueInputDto) {
     const requestedGoods = inputDto.items.map((item) =>
-      Item.create(GoodId.create(item.goodsId), Quantity.create(item.qty)),
+      Item.create(GoodId.create(item.goodId), Quantity.create(item.qty)),
     );
 
     // load -> check -> change state -> save
@@ -93,7 +90,7 @@ export class WarehouseService {
   async recordGoodsReceipt(inputDto: RecordGoodsReceiptInputDto) {
     // dto conversion
     const items = inputDto.items.map((item) =>
-      Item.create(GoodId.create(item.goodsId), Quantity.create(item.qty || 1)),
+      Item.create(GoodId.create(item.goodId), Quantity.create(item.qty || 1)),
     );
 
     this.warehouseRepository.receiptGoods(items);
