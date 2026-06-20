@@ -66,22 +66,21 @@ export class WarehouseService {
   }
 
   async recordGoodsIssue(inputDto: RecordGoodsIssueInputDto) {
-    const requestedGoods = inputDto.items.map((item) =>
+    const input = {items: inputDto.items.map((item) =>
       Item.create(GoodId.create(item.goodId), Quantity.create(item.qty)),
-    );
+    )}
 
     // load -> check -> change state -> save
-    // const inventory = new Inventory(await this.warehouseRepository.loadInventory(requestedGoods.map(req => req.id)))
+    const inventory = await this.warehouseRepository.loadInventory(input.items)
 
-    // inventory.ensureSufficientStock(requestedGoods)
+    inventory.ensureSufficientStock(input.items)
 
-    // inventory.issueGoods(requestedGoods)
+    inventory.issueGoods(input.items)
 
-    // this.warehouse.saveInventory(inventory)
+    this.warehouseRepository.saveInventory(inventory)
 
     // Atomic process by repo safe and simple for this use case and
     // any error thrown by this method its handled by provider
-    this.warehouseRepository.issueGoods(requestedGoods);
 
     // TODO: Replenishment List |‌ Replenishment List Generation Based on Reorder Point
 

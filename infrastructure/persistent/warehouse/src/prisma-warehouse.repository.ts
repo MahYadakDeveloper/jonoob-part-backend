@@ -5,7 +5,7 @@ import {
   Item,
   IWarehouseRepository,
 } from "@feature/warehouse";
-import { PrismaService } from "@infra/database";
+import { Prisma, PrismaService } from "@infra/database";
 import { Injectable, Logger } from "@nestjs/common";
 
 @Injectable()
@@ -14,10 +14,45 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
   constructor(private readonly prisma: PrismaService) {
     this.logger = new Logger(PrismaWarehouseRepository.name);
   }
-  async saveInventory(inventory: Inventory): Promise<void> {}
+  async saveInventory(inventory: Inventory): Promise<void> {
+    await this.prisma.$transaction(
+      inventory.items.map((item) =>
+        this.prisma.good.update({
+          where: {
+            goodId: item.id.getValue(),
+          },
+          data: {
+            stock: item.qty.getValue(),
+          },
+        }),
+      ),
+    );
+
+    if (inventory.outOfStockIds.length > 0) {
+      await this.prisma.good.deleteMany({
+        where: {
+          goodId: {
+            in: inventory.outOfStockIds.map((goodId) => goodId.getValue()),
+          },
+        },
+      });
+    }
+  }
 
   async loadInventory(items: Item[]): Promise<Inventory> {
-    throw new Error("");
+    const _items = await this.prisma.good.findMany({
+      where: {
+        goodId: {
+          in: items.map((item) => item.id.getValue()),
+        },
+      },
+    });
+
+    const _inventory = _items.map((item) =>
+      Item.create(GoodId.create(item.goodId), Quantity.create(item.stock)),
+    );
+
+    return new Inventory(_inventory);
   }
 
   async adjustGoodsStock() {}
@@ -37,14 +72,19 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
 
   /**
    */
-  async issueGoods() {}
+  async issueGoods() {
+    throw new Error("Not implemented yet!");
+  }
 
   async receiptGoods(items: Item[]) {
-    this.logger.debug("receipting good", items);
-    await this.prisma.good.create({
-      data: {
-        goodId: items[0].id.getValue(),
-      },
+    await this.prisma.good.createMany({
+      data: items.map(
+        (item) =>
+          ({
+            goodId: item.id.getValue(),
+            stock: item.qty.getValue(),
+          }) satisfies Prisma.GoodCreateManyInput,
+      ),
     });
   }
 }

@@ -5,6 +5,7 @@ import { DatabaseModule } from "@infra/database";
 import { PrismaWarehouseRepository } from "@infra/warehouse-repo";
 import { WAREHOUSE_REPOSITORY } from "../domain/repositories/warehouse.repository";
 import { ConfigModule } from "@nestjs/config";
+import { GetStockAvailabilityOutputDto } from "./dto/get-stock-availability.dto";
 
 describe("WarehouseService", () => {
   let service: WarehouseService;
@@ -35,13 +36,39 @@ describe("WarehouseService", () => {
 
   it("expecting the good to be not found after issuing all stock", async () => {
     // Assign
-    const goodId = "3";
-    // await service.recordGoodsReceipt({ items: [{ goodId }] });
+    let goodId = "x99";
+
+    try {
+      const { quantity: stock } = await service.getGoodStock({ goodId });
+      console.log("X99 stock before issuing: ", stock);
+
+      await service.recordGoodsIssue({ items: [{ goodId, qty: stock }] });
+
+      const { quantity: stockAfterIssue } = await service.getGoodStock({
+        goodId,
+      });
+
+      console.log("X99 stock after issuing: ", stockAfterIssue);
+    } catch {}
+
+    // Assert_1
+    await expect(service.getGoodStock({ goodId })).rejects.toThrow(
+      WarehouseStockRecordNotFoundError,
+    );
+
+    console.log("X2");
+    await service.recordGoodsReceipt({ items: [{ goodId }] });
+
+    console.log("X3");
+    // Assert_2
+    await expect(service.getGoodStock({ goodId })).resolves.toMatchObject({
+      quantity: 1,
+    } satisfies GetStockAvailabilityOutputDto);
 
     // Act
     await service.recordGoodsIssue({ items: [{ goodId, qty: 2 }] });
 
-    // Assert
+    // Assert_3
     await expect(service.getGoodStock({ goodId })).rejects.toThrow(
       WarehouseStockRecordNotFoundError,
     );

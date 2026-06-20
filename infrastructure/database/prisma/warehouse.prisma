@@ -1,5 +1,5 @@
 model Good {
   id     Int    @id @default(autoincrement())
-  goodId String
+  goodId String @unique
   stock  Int    @default(1)
 }
