@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch"
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

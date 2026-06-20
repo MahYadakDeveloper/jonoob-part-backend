@@ -17,35 +17,27 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
   async saveInventory(inventory: Inventory): Promise<void> {}
 
   async loadInventory(items: Item[]): Promise<Inventory> {
-    throw new Error('')
+    throw new Error("");
   }
 
   async adjustGoodsStock() {}
 
   async getStocksByGoodId(ids: GoodId[]): Promise<Item[]> {
-    const good = await this.prisma.good.findFirst({
+    const items = await this.prisma.good.findMany({
       where: {
-        id: Number(ids[0].getValue()),
+        id: undefined,
+        goodId: { in: ids.map((id) => id.getValue()) },
       },
     });
 
-    this.logger.debug("The fetched good from db is", good);
-
-    if (!good) return [];
-
-    return [
-      Item.create(
-        GoodId.create(good.id.toString()),
-        Quantity.create(good.stock),
-      ),
-    ];
+    return items.map((item) =>
+      Item.create(GoodId.create(item.goodId), Quantity.create(item.stock)),
+    );
   }
 
   /**
    */
-  async issueGoods() {
-
-  }
+  async issueGoods() {}
 
   async receiptGoods(items: Item[]) {
     this.logger.debug("receipting good", items);

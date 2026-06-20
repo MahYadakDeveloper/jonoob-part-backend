@@ -14,6 +14,9 @@ export class WarehouseRepository implements IWarehouseRepository {
     private readonly prismaWarehouseRepository: PrismaWarehouseRepository,
     private readonly redisWarehouseRepository: RedisWarehouseRepository,
   ) {}
+  issueGoods(items: Item[]): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
 
   loadInventory(items: Item[]): Promise<Inventory> {
     throw new Error("Method not implemented.");
@@ -26,9 +29,6 @@ export class WarehouseRepository implements IWarehouseRepository {
     throw new Error("Method not implemented.");
   }
   receiptGoods(items: Item[]): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  issueGoodsAtomically(items: Item[]): Promise<void> {
     throw new Error("Method not implemented.");
   }
   adjustGoodsStock(item: Item): Promise<void> {
