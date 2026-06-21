@@ -53,16 +53,20 @@ export class WarehouseService {
     await this.warehouseRepository.saveInventory(inventory);
   }
 
+  /**
+   * 
+   * @throws {WarehouseStockRecordNotFoundError} If no item with the given `id` exists.
+   */
   async getGoodStock(
     inputDto: GetStockAvailabilityInputDto,
   ): Promise<GetStockAvailabilityOutputDto> {
     const goodId = GoodId.create(inputDto.goodId);
 
-    const [item] = await this.warehouseRepository.getStocksByGoodId([goodId]);
+    const [item] = await this.warehouseRepository.getStocksByGoodIds([goodId]);
 
     if (!item) throw new WarehouseStockRecordNotFoundError(goodId.getValue());
 
-    return { quantity: item.qty.getValue() };
+    return { stock: item.qty.getValue() };
   }
 
   async recordGoodsIssue(inputDto: RecordGoodsIssueInputDto) {
@@ -77,7 +81,7 @@ export class WarehouseService {
 
     inventory.issueGoods(input.items)
 
-    this.warehouseRepository.saveInventory(inventory)
+    await this.warehouseRepository.saveInventory(inventory)
 
     // Atomic process by repo safe and simple for this use case and
     // any error thrown by this method its handled by provider
@@ -89,10 +93,10 @@ export class WarehouseService {
 
   async recordGoodsReceipt(inputDto: RecordGoodsReceiptInputDto) {
     // dto conversion
-    const items = inputDto.items.map((item) =>
+    const input = inputDto.items.map((item) =>
       Item.create(GoodId.create(item.goodId), Quantity.create(item.qty || 1)),
     );
 
-    this.warehouseRepository.receiptGoods(items);
+    await this.warehouseRepository.receiptGoods(input);
   }
 }

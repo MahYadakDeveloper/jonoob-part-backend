@@ -15,20 +15,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
     this.logger = new Logger(PrismaWarehouseRepository.name);
   }
   async saveInventory(inventory: Inventory): Promise<void> {
-    await this.prisma.$transaction(
-      inventory.items.map((item) =>
-        this.prisma.good.update({
-          where: {
-            goodId: item.id.getValue(),
-          },
-          data: {
-            stock: item.qty.getValue(),
-          },
-        }),
-      ),
-    );
-
-    if (inventory.outOfStockIds.length > 0) {
+    await this.prisma.$transaction(async (tx) => {
       await this.prisma.good.deleteMany({
         where: {
           goodId: {
@@ -36,7 +23,20 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
           },
         },
       });
-    }
+
+      tx.$transaction(
+        inventory.items.map((item) =>
+          this.prisma.good.update({
+            where: {
+              goodId: item.id.getValue(),
+            },
+            data: {
+              stock: item.qty.getValue(),
+            },
+          }),
+        ),
+      );
+    });
   }
 
   async loadInventory(items: Item[]): Promise<Inventory> {
@@ -57,7 +57,7 @@ export class PrismaWarehouseRepository implements IWarehouseRepository {
 
   async adjustGoodsStock() {}
 
-  async getStocksByGoodId(ids: GoodId[]): Promise<Item[]> {
+  async getStocksByGoodIds(ids: GoodId[]): Promise<Item[]> {
     const items = await this.prisma.good.findMany({
       where: {
         id: undefined,

@@ -3,5 +3,5 @@ export interface GetStockAvailabilityInputDto {
 }
 
 export interface GetStockAvailabilityOutputDto {
-  quantity: number;
+  stock: number;
 }

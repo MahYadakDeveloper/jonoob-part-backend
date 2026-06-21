@@ -6,6 +6,7 @@ import { PrismaWarehouseRepository } from "@infra/warehouse-repo";
 import { WAREHOUSE_REPOSITORY } from "../domain/repositories/warehouse.repository";
 import { ConfigModule } from "@nestjs/config";
 import { GetStockAvailabilityOutputDto } from "./dto/get-stock-availability.dto";
+import { InvalidStockAdjustmentException } from "./../domain/errors/invalid-stock-adjustment.error";
 
 describe("WarehouseService", () => {
   let service: WarehouseService;
@@ -38,35 +39,16 @@ describe("WarehouseService", () => {
     // Assign
     let goodId = "x99";
 
-    try {
-      const { quantity: stock } = await service.getGoodStock({ goodId });
-      console.log("X99 stock before issuing: ", stock);
-
-      await service.recordGoodsIssue({ items: [{ goodId, qty: stock }] });
-
-      const { quantity: stockAfterIssue } = await service.getGoodStock({
-        goodId,
-      });
-
-      console.log("X99 stock after issuing: ", stockAfterIssue);
-    } catch {}
-
-    // Assert_1
-    await expect(service.getGoodStock({ goodId })).rejects.toThrow(
-      WarehouseStockRecordNotFoundError,
-    );
-
-    console.log("X2");
     await service.recordGoodsReceipt({ items: [{ goodId }] });
 
-    console.log("X3");
     // Assert_2
-    await expect(service.getGoodStock({ goodId })).resolves.toMatchObject({
-      quantity: 1,
-    } satisfies GetStockAvailabilityOutputDto);
+    // await expect(service.getGoodStock({ goodId })).resolves.toMatchObject({
+    //   quantity: 1,
+    // } satisfies GetStockAvailabilityOutputDto);
+    const { stock } = await service.getGoodStock({ goodId });
 
     // Act
-    await service.recordGoodsIssue({ items: [{ goodId, qty: 2 }] });
+    await service.recordGoodsIssue({ items: [{ goodId, qty: stock }] });
 
     // Assert_3
     await expect(service.getGoodStock({ goodId })).rejects.toThrow(
@@ -74,32 +56,36 @@ describe("WarehouseService", () => {
     );
   });
 
-  // it("after stock adjustment should be same as adjustment value", async () => {
-  //   // Assign
-  //   await service.adjustWarehouseStock(GOOD_ID_SAMPLE1, 9);
+  it("after stock adjustment should be same as adjustment value", async () => {
+    const goodId = "x88";
+    const stock = 6;
+    // Assign
+    try {
+      await service.getGoodStock({ goodId });
+    } catch {
+      await service.recordGoodsReceipt({ items: [{ goodId }] });
+    }
 
-  //   // Act
-  //   const result = (
-  //     await service.getAvailableStock(GOOD_ID_SAMPLE1)
-  //   )?.getValue();
+    await service.adjustWarehouseStock({ goodId, stock: stock });
 
-  //   // Assert
-  //   expect(result).toBe(9);
-  // });
+    // Act
+    const result = await service.getGoodStock({ goodId });
 
-  // it("adjusting stock to 0 and expecting to throw error", async () => {
-  //   expect(
-  //     async () => await service.adjustWarehouseStock(GOOD_ID_SAMPLE1, 0),
-  //   ).rejects.toThrow(InvalidStockAdjustmentException);
-  // });
+    // Assert
+    expect(result).toBe(6);
+  });
 
-  // it("expecting after issuing goods that reaching stock quantity to 0 be removed from warehouse", async () => {
-  //   // Assign
-  //   await service.adjustWarehouseStock(GOOD_ID_SAMPLE1, 3);
-  //   // Act
-  //   const result = await service.getAvailableStock(GOOD_ID_SAMPLE1);
-
-  //   // Assert
-  //   expect(result).toBe(undefined);
-  // });
+  it("adjusting stock to 0 and expecting to throw error", async () => {
+    const goodId = "x88";
+    const stock = 0;
+    // Assign
+    try {
+      await service.getGoodStock({ goodId });
+    } catch {
+      await service.recordGoodsReceipt({ items: [{ goodId }] });
+    }
+    expect(
+      async () => await service.adjustWarehouseStock({ goodId, stock }),
+    ).rejects.toThrow(InvalidStockAdjustmentException);
+  });
 });

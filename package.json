@@ -10,8 +10,13 @@
     "build": "pnpm -r build"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.13.2",
-    "concurrently": "^10.0.3"
+    "concurrently": "^10.0.3",
+    "eslint": "^9.39.4",
+    "globals": "^17.6.0",
+    "jiti": "^2.7.0",
+    "typescript-eslint": "^8.61.1"
   }
 }

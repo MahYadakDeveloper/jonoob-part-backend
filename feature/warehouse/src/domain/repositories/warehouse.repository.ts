@@ -8,7 +8,7 @@ export interface IWarehouseRepository {
   /**
    * @returns {Promise<Item[]>} Only return goods stock existed in warehouse
    */
-  getStocksByGoodId(ids: GoodId[]): Promise<Item[]>;
+  getStocksByGoodIds(ids: GoodId[]): Promise<Item[]>;
 
   /**
    * Add the goods in warehouse without asking to create new or increasing stock
