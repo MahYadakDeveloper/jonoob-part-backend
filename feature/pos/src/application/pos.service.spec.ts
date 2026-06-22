@@ -15,8 +15,43 @@ describe("PosService", () => {
   });
 
   describe("PosService.recordSale()", () => {
-    it(`should roll back the inventory state and throw ProductHasNoPrice when the transaction fails 
-      in the middle of the sale`, async () => {});
+    it(`should roll back the inventory state and throw ProductNotFoundError when the transaction fails 
+      in the middle of the sale for product not found`, async () => {
+      const productsIds = ["x1", "x2", "x3", "x4"];
+      const items = productsIds.map((productId) => ({
+        productId,
+        quantity: 2,
+      }));
+      const cashierId = "2";
+
+      const productsDetailsSnapShotBeforeSaleRecord = await Promise.all(
+        productsIds.map((productId) => service.getProductDetails(productId)),
+      );
+
+      await service.recordSale({
+        cashierId,
+        items,
+      });
+
+      const productsDetailsSnapShotAfterSaleRecord = await Promise.all(
+        productsIds.map((productId) => service.getProductDetails(productId)),
+      );
+
+      expect(productsDetailsSnapShotAfterSaleRecord).toMatchObject(
+        productsDetailsSnapShotAfterSaleRecord,
+      );
+    });
+
+    it(
+      "should warns about online ordered product amount is insufficient when cashier sells grater amount of product would be left for ordered to be processed",
+    );
+
+    it("should apply different prices for technician or merchant", () => {});
+
+    it(`should roll back the inventory state and throw ProductHasNoPriceError when the transaction fails 
+      in the middle of the sale for no price found`, async () => {
+      const productsIds = ["x1", "x2", "x3", "x4"];
+    });
 
     it(`should update the inventory state correctly after a successful sale transaction`, async () => {});
 
@@ -27,9 +62,7 @@ describe("PosService", () => {
        and consume the credit after a successful transaction`, async () => {});
   });
 
-  describe("PosService.getProductPrice()", () => {});
+  describe("PosService.getProductDetails(ProductId)", () => {});
 
-  describe("PosService.getProductsDiscounts()", () => {})
-
-  
+  describe("PosService.getProductsDiscounts(ProductId[])", () => {});
 });
