@@ -15,6 +15,8 @@ import { RecordGoodsIssueInputDto } from "./dto/record-goods-issue.dto";
 import { RecordGoodsReceiptInputDto } from "./dto/record-goods-receipt-dto";
 import { WarehouseStockRecordNotFoundError } from "../domain/errors/WarehouseStockRecordNotFound";
 
+// TODO: Add UnitOfMeasure and Packaging in warehouse documentation
+
 @Injectable()
 export class WarehouseService {
   private readonly logger: Logger;
@@ -54,7 +56,7 @@ export class WarehouseService {
   }
 
   /**
-   * 
+   *
    * @throws {WarehouseStockRecordNotFoundError} If no item with the given `id` exists.
    */
   async getGoodStock(
@@ -70,18 +72,20 @@ export class WarehouseService {
   }
 
   async recordGoodsIssue(inputDto: RecordGoodsIssueInputDto) {
-    const input = {items: inputDto.items.map((item) =>
-      Item.create(GoodId.create(item.goodId), Quantity.create(item.qty)),
-    )}
+    const input = {
+      items: inputDto.items.map((item) =>
+        Item.create(GoodId.create(item.goodId), Quantity.create(item.qty)),
+      ),
+    };
 
     // load -> check -> change state -> save
-    const inventory = await this.warehouseRepository.loadInventory(input.items)
+    const inventory = await this.warehouseRepository.loadInventory(input.items);
 
-    inventory.ensureSufficientStock(input.items)
+    inventory.ensureSufficientStock(input.items);
 
-    inventory.issueGoods(input.items)
+    inventory.issueGoods(input.items);
 
-    await this.warehouseRepository.saveInventory(inventory)
+    await this.warehouseRepository.saveInventory(inventory);
 
     // Atomic process by repo safe and simple for this use case and
     // any error thrown by this method its handled by provider

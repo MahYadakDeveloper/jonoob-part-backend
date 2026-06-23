@@ -1,1 +1,3 @@
-export type UnitOfMeasure = "piece" | "pair" | "set" | "pack" | "carton";
+import { Quantity } from "./quantity";
+
+export type UnitOfMeasure = "piece" | "pair" | "set";
