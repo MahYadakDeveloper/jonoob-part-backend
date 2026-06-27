@@ -9,6 +9,5 @@ export interface RecordSaleInputDto {
   items: {
     productId: string;
     quantity: number;
-    unit: Packaging;
   }[];
 }

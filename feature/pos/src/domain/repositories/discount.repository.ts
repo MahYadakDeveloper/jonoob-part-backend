@@ -1,6 +1,8 @@
-import { Money } from "domain/value-object/money";
+import { ProductDiscount } from "domain/value-object/discount";
 import { ProductId } from "domain/value-object/product-id";
 
 export interface IDiscountRepository {
-  getProductsDiscounts(productsIds: ProductId[]): Promise<Record<string, Money>>;
+  getProductsDiscounts(
+    productsIds: ProductId[],
+  ): Promise<Record<string, ProductDiscount | undefined>>;
 }

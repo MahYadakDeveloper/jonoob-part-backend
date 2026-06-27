@@ -92,7 +92,7 @@ export class WarehouseService {
 
     // TODO: Replenishment List |‌ Replenishment List Generation Based on Reorder Point
 
-    // TODO: Register the record of this issue
+    // TODO: Register the record of this issue with related to type document (sale | return[Provider])
   }
 
   async recordGoodsReceipt(inputDto: RecordGoodsReceiptInputDto) {
@@ -101,6 +101,7 @@ export class WarehouseService {
       Item.create(GoodId.create(item.goodId), Quantity.create(item.qty || 1)),
     );
 
+    // TODO Record with relation to type document (provide | sale_return)
     await this.warehouseRepository.receiptGoods(input);
   }
 }

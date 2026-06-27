@@ -15,6 +15,10 @@ export class Money {
     return new Money(other.value + this._value);
   }
 
+  subtract(other: Money) {
+    return new Money(this.value - other.value);
+  }
+
   multiply(quantity: number) {
     return new Money(quantity * this._value);
   }

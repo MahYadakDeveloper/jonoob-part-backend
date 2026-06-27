@@ -1,0 +1,31 @@
+import { Money } from "domain/value-object/money";
+import { PricingService } from "./pricing.service";
+import { ProductDiscount } from "domain/value-object/discount";
+import { Quantity } from "@feature/shared";
+
+export class RetailPricingService extends PricingService {
+  calculateGrandTotal(lineTotals: Money[]): Money {
+    throw new Error("Method not implemented.");
+  }
+  calculateLineTotal(
+    unitPrice: Money,
+    qty: Quantity,
+    discount: ProductDiscount,
+  ): Money {
+    throw new Error("Method not implemented.");
+  }
+  calculateSubtotal(
+    lineTotalWithOutDiscounts: {
+      unitPrice: Money;
+      qty: Quantity;
+    }[],
+  ): Money {
+    throw new Error("Method not implemented.");
+  }
+  calculateDiscount(discounts: ProductDiscount[]) {
+    throw new Error("Method not implemented.");
+  }
+  calculateUnit(purchasePrice: Money): Money {
+    throw new Error("Method not implemented.");
+  }
+}
