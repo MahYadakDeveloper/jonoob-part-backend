@@ -17,8 +17,8 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@nestjs/common": "^11.1.26"
+    "@nestjs/common": "^11.1.26",
+    "redis": "^6.0.1"
   },
   "devDependencies": {
     "@infra/database": "workspace:*",

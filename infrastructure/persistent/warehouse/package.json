@@ -19,7 +19,6 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@feature/shared": "workspace:*",
     "@feature/warehouse": "workspace:*",
     "@infra/database": "workspace:*",
     "@nestjs/common": "^11.1.26"

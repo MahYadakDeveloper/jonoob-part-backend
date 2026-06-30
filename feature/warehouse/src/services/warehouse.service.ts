@@ -1,3 +1,4 @@
+import { type RedisClientType } from "redis";
 import { Quantity } from "@feature/shared";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { Item } from "../domain/entities/item";
@@ -22,7 +23,8 @@ export class WarehouseService {
   private readonly logger: Logger;
   constructor(
     @Inject(WAREHOUSE_REPOSITORY)
-    private readonly warehouseRepository: IWarehouseRepository,
+    private readonly warehouseDatasource: WarehouseDatasource,
+    private readonly redis: RedisClientType, // for performance we using it in this layer instead of infrastructure layer
   ) {
     this.logger = new Logger(WarehouseService.name);
   }

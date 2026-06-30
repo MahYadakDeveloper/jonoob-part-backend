@@ -14,9 +14,9 @@ import { Item } from "domain/value-object/item";
 import { Money } from "domain/value-object/money";
 import { SaleInvoice } from "domain/value-object/sale-invoice";
 import { ProductId } from "../domain/value-object/product-id";
-import { RecordSaleInputDto } from "./dto/record-sale.dto";
-import { type IMarkupPolicyProvider } from "./ports/markup-policy.provider";
-import { type ISynchronizer } from "./ports/synchronizer";
+import { RecordSaleInputDto } from "../application/dto/record-sale.dto";
+import { type IMarkupPolicyProvider } from "../application/ports/markup-policy.provider";
+import { type ISynchronizer } from "../application/ports/synchronizer";
 // services
 @Injectable()
 export class PosService {
