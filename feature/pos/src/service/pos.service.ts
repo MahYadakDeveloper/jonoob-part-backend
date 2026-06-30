@@ -17,7 +17,7 @@ import { ProductId } from "../domain/value-object/product-id";
 import { RecordSaleInputDto } from "./dto/record-sale.dto";
 import { type IMarkupPolicyProvider } from "./ports/markup-policy.provider";
 import { type ISynchronizer } from "./ports/synchronizer";
-
+// services
 @Injectable()
 export class PosService {
   constructor(
