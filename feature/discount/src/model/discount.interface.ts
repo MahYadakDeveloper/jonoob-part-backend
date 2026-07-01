@@ -1,8 +1,7 @@
-import { DiscountValue } from "../types/discount-value.type";
 import { DiscountUsagePolicy } from "./discount-usage-policy.interface";
+import { Money } from "@feature/common";
 
-export interface Discount  {
+export interface Discount {
   usagePolicy: DiscountUsagePolicy;
-  value: DiscountValue;
-};
-
+  amount: Money;
+}

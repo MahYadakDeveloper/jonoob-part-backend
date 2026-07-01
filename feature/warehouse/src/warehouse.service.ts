@@ -1,25 +1,26 @@
 import { type RedisClientType } from "redis";
 import { Quantity } from "@feature/shared";
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { Item } from "../domain/entities/item";
+import { Item } from "./domain/entities/item";
 import {
   WAREHOUSE_REPOSITORY,
   type IWarehouseRepository,
-} from "../domain/repositories/warehouse.repository";
-import { GoodId } from "../domain/value-object/good-id";
-import { AdjustWarehouseInputDto } from "./dto/adjust-warehouse.dto";
+} from "./domain/repositories/warehouse.repository";
+import { GoodId } from "./domain/value-object/good-id";
+import { AdjustWarehouseInputDto } from "./services/dto/adjust-warehouse.dto";
 import {
   GetStockAvailabilityInputDto,
   GetStockAvailabilityOutputDto,
-} from "./dto/get-stock-availability.dto";
-import { RecordGoodsIssueInputDto } from "./dto/record-goods-issue.dto";
-import { RecordGoodsReceiptInputDto } from "./dto/record-goods-receipt-dto";
-import { WarehouseStockRecordNotFoundError } from "../domain/errors/WarehouseStockRecordNotFound";
+} from "./services/dto/get-stock-availability.dto";
+import { RecordGoodsIssueInputDto } from "./services/dto/record-goods-issue.dto";
+import { RecordGoodsReceiptInputDto } from "./services/dto/record-goods-receipt-dto";
+import { WarehouseStockRecordNotFoundError } from "./domain/errors/WarehouseStockRecordNotFound";
+import {IssueGoodsRequest, WarehouseService} from '@feature/warehouse-api'
 
 // TODO: Add UnitOfMeasure and Packaging in warehouse documentation
 
 @Injectable()
-export class WarehouseService {
+export class WarehouseServiceImpl implements WarehouseService {
   private readonly logger: Logger;
   constructor(
     @Inject(WAREHOUSE_REPOSITORY)
@@ -28,6 +29,9 @@ export class WarehouseService {
   ) {
     this.logger = new Logger(WarehouseService.name);
   }
+    issueGoods(req: IssueGoodsRequest): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
 
   /**
    * Adjusts the stock quantity of an inventory item by its ID.

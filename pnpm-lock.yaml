@@ -139,16 +139,32 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
-  feature/discount: {}
+  feature/discount:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../common
+
+  feature/discount/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
 
   feature/pos:
     dependencies:
       '@feature/common':
         specifier: workspace:*
         version: link:../common
+      '@feature/discount-api':
+        specifier: workspace:*
+        version: link:../discount/api
       '@feature/pricing-api':
         specifier: workspace:*
         version: link:../pricing/api
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../warehouse/api
       '@nestjs/common':
         specifier: ^11.1.27
         version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -174,6 +190,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../common
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   feature/pricing/api:
     dependencies:
@@ -183,6 +202,9 @@ importers:
 
   feature/warehouse:
     dependencies:
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:api
       '@nestjs/common':
         specifier: ^11.1.26
         version: 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -208,6 +230,8 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+
+  feature/warehouse/api: {}
 
   infrastructure/database:
     dependencies:

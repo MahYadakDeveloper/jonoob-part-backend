@@ -1,6 +1,6 @@
 import { CustomerType } from "@feature/common";
 
-export interface UnitPricingRequest {
-  item: { productId: string; quantity?: number };
+export interface ManyUnitPricingRequest {
+  items: { productId: string; quantity?: number }[];
   customerType: CustomerType | { customerId: string };
 }

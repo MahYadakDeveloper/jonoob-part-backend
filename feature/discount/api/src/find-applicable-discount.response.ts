@@ -1,4 +1,8 @@
+import { Money } from "@feature/common";
 
 export interface FindApplicableDiscountResponse {
-  discount: Discount;
+  discountUsagePolicy: {
+    maxPerCustomerUsage: number
+  },
+  discountAmount: Money
 }

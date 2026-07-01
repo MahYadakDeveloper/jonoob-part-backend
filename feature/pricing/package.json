@@ -17,6 +17,7 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*"
+    "@feature/common": "workspace:*",
+    "zod": "^4.4.3"
   }
 }

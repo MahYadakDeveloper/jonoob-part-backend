@@ -1,5 +1,4 @@
 export interface FindApplicableDiscountRequest {
-  productId: string;
-  purchasedQty: number;
+  item: { productId: string; quantity: number };
   customerId?: string;
 }

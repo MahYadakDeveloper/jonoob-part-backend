@@ -1,17 +1,18 @@
 import { Injectable } from "@nestjs/common";
 import { RecordSaleInput } from "./dto/record-sale.dto";
-import {type PricingService} from '@feature/pricing-api'
+import { type PricingService } from "@feature/pricing-api";
+import { type DiscountService } from "@feature/discount-api";
+import { type WarehouseService } from "@feature/warehouse-api";
 
 @Injectable()
 export class PosService {
   constructor(
-    private readonly purchaseDocumentsRepository: PurchaseDocumentsRepository,
     private readonly saleDocumentsRepository: SaleDocumentsRepository,
-    private readonly warehouseRepository: WarehouseRepository,
-    private readonly markupPolicyProvider: MarkupPolicyProvider,
     private readonly customersRepository: CustomersRepository,
-    private readonly synchronizer: Synchronizer,
+    // private readonly synchronizer: Synchronizer,
+    private readonly warehouseService: WarehouseService,
     private readonly pricingService: PricingService,
+    private readonly discountService: DiscountService,
   ) {}
 
   /**
@@ -21,12 +22,21 @@ export class PosService {
   async recordSale(input: RecordSaleInput) {
     const ids = input.items.map((item) => item.productId);
 
-    // getting latest purchase prices of products for pricing for sale
-    const purchasePrices =
-      await this.purchaseDocumentsRepository.getLatestPurchasePricesOf(ids);
-
     // getting discounts of product those has
-    const discounted = await this.discountRepository.getProductsDiscounts(ids);
+    const { discounts } = await this.discountService.findApplicableDiscounts({
+      items: input.items,
+    });
+
+    const customerType =
+      (input.customer?.id &&
+        this.customersRepository.getCustomerTypeById(input.customer.id)) ||
+      "consumer";
+
+    const { prices } = await this.pricingService.priceManyUnit({
+      items: input.items,
+      customerType,
+    });
+
 
     const quantities = input.items.reduce<Record<string, number>>(
       (prev, curr) => {
@@ -37,14 +47,7 @@ export class PosService {
     );
 
     const unitOfMeasures =
-      await this.warehouseRepository.getUnitOfMeasuresByIds(ids);
-
-    const customerType =
-      (input.customer?.id &&
-        this.customersRepository.getCustomerTypeById(input.customer.id)) ||
-      "consumer";
-
-    const markup = await this.markupPolicyProvider.resolve(customerType);
+      await this.warehouseService.getUnitOfMeasuresByIds(ids);
 
     // const pricingService: PricingService =
     //   customerType === "merchant"
@@ -55,10 +58,9 @@ export class PosService {
     const items = ids.map((id) => {
       const unitOfMeasure = unitOfMeasures[id.getValue()];
       const quantity = quantities[id.getValue()];
-      const unitPrice = pricingService.calculateUnit(
-        purchasePrices[id.getValue()],
+      const unitPrice = prices[id.getValue()],
       );
-      const discount = discounted[id.getValue()];
+      const discount = discounts[id.getValue()];
       const lineTotal = pricingService.calculateLineTotal(
         unitPrice,
         quantity,
