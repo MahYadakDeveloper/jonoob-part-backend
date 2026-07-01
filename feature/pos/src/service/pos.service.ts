@@ -1,50 +1,25 @@
-import { Quantity } from "@feature/shared";
 import { Injectable } from "@nestjs/common";
-import { type ICustomerRepository } from "domain/repositories/customer.repository";
-import { type IDiscountRepository } from "domain/repositories/discount.repository";
-import { type IPurchaseDocumentRepository } from "domain/repositories/purchase-documents.repository";
-import { type ISaleDocumentsRepository } from "domain/repositories/sale-documents.repository";
-import { type IWarehouseRepository } from "domain/repositories/warehouse.repository";
-import { PricingService } from "domain/services/pricing.service";
-import { RetailPricingService } from "domain/services/retail-pricing.service";
-import { WholesalePricingService } from "domain/services/wholesale-pricing.service";
-import { CashierId } from "domain/value-object/cashier-id";
-import { CustomerId } from "domain/value-object/customer-id";
-import { Item } from "domain/value-object/item";
-import { Money } from "domain/value-object/money";
-import { SaleInvoice } from "domain/value-object/sale-invoice";
-import { ProductId } from "../domain/value-object/product-id";
-import { RecordSaleInputDto } from "../application/dto/record-sale.dto";
-import { type IMarkupPolicyProvider } from "../application/ports/markup-policy.provider";
-import { type ISynchronizer } from "../application/ports/synchronizer";
-// services
+import { RecordSaleInput } from "./dto/record-sale.dto";
+import { Money } from "model/money";
+
 @Injectable()
 export class PosService {
   constructor(
-    private readonly purchaseDocumentsRepository: IPurchaseDocumentRepository,
-    private readonly saleDocumentsRepository: ISaleDocumentsRepository,
-    private readonly discountRepository: IDiscountRepository,
-    private readonly warehouseRepository: IWarehouseRepository,
-    private readonly markupPolicyProvider: IMarkupPolicyProvider,
-    private readonly customerRepository: ICustomerRepository,
-    private readonly synchronizer: ISynchronizer,
+    private readonly purchaseDocumentsRepository: PurchaseDocumentsRepository,
+    private readonly saleDocumentsRepository: SaleDocumentsRepository,
+    private readonly discountRepository: DiscountRepository,
+    private readonly warehouseRepository: WarehouseRepository,
+    private readonly markupPolicyProvider: MarkupPolicyProvider,
+    private readonly customersRepository: CustomersRepository,
+    private readonly synchronizer: Synchronizer,
+    private readonly pricingService: PricingService
   ) {}
 
   /**
    *
    * @throws {ProductWithNoPriceFound} this error thrown when an item in the list has no price.
    */
-  async recordSale(inputDto: RecordSaleInputDto) {
-    const input = {
-      customerId:
-        inputDto.customerInfo && CustomerId.create(inputDto.customerInfo?.id),
-      cashierId: CashierId.create(inputDto.cashierId),
-      items: inputDto.items.map((item) => ({
-        productId: ProductId.create(item.productId),
-        qty: Quantity.create(item.quantity),
-      })),
-    };
-
+  async recordSale(input: RecordSaleInput) {
     const ids = input.items.map((item) => item.productId);
 
     // getting latest purchase prices of products for pricing for sale
@@ -54,9 +29,9 @@ export class PosService {
     // getting discounts of product those has
     const discounted = await this.discountRepository.getProductsDiscounts(ids);
 
-    const quantities = input.items.reduce<Record<string, Quantity>>(
+    const quantities = input.items.reduce<Record<string, number>>(
       (prev, curr) => {
-        prev[curr.productId.getValue()] = curr.qty;
+        prev[curr.productId] = curr.quantity;
         return prev;
       },
       {},
@@ -66,17 +41,19 @@ export class PosService {
       await this.warehouseRepository.getUnitOfMeasuresByIds(ids);
 
     const customerType =
-      (input.customerId &&
-        this.customerRepository.getCustomerTypeById(input.customerId)) ||
+      (input.customer?.id &&
+        this.customersRepository.getCustomerTypeById(input.customer.id)) ||
       "consumer";
+
     const markup = await this.markupPolicyProvider.resolve(customerType);
-    const pricingService: PricingService =
-      customerType === "merchant"
-        ? new WholesalePricingService(markup)
-        : new RetailPricingService(markup);
+
+    // const pricingService: PricingService =
+    //   customerType === "merchant"
+    //     ? new WholesalePricingService(markup)
+    //     : new RetailPricingService(markup);
 
     // calculate invoice items
-    const items = ids.map<Item>((id) => {
+    const items = ids.map((id) => {
       const unitOfMeasure = unitOfMeasures[id.getValue()];
       const quantity = quantities[id.getValue()];
       const unitPrice = pricingService.calculateUnit(
@@ -119,11 +96,12 @@ export class PosService {
         discount: subtotal.subtract(grandTotal),
       },
       {
-        paidWithWalletBalance: Money.create(3), //TODO Complete this section
+        paidWithWalletBalance: new Money(3), //TODO Complete this section
         amountDue: Money.create(0),
       },
     );
     // Update inventory state
+    new Money(3).sum(new Money(5))
 
     // Adding items into invoice
     // See which has discount [DiscountService]

@@ -1,8 +1,8 @@
-import { IssueGoodsApi } from "../issue-goods.api";
 import { IssueGoodsRequest } from "../issue-goods.request";
+import { WarehouseApi } from "../warehouse.api";
 
-export class IssueGoodsApiImpl implements IssueGoodsApi {
-  issue(req: IssueGoodsRequest): Promise<void> {
+export class WarehouseApiImpl implements WarehouseApi {
+  issueGoods(req: IssueGoodsRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
 }

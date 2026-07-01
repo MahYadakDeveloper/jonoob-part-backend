@@ -1,8 +1,6 @@
-import { Packaging } from "@feature/shared";
-
-export interface RecordSaleInputDto {
+export interface RecordSaleInput {
   cashierId: string;
-  customerInfo?: {
+  customer?: {
     id: string;
     useCredit?: true;
   };
