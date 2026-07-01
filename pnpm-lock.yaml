@@ -133,8 +133,22 @@ importers:
         specifier: ^8.20.0
         version: 8.61.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
 
+  feature/common:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  feature/discount: {}
+
   feature/pos:
     dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../common
+      '@feature/pricing-api':
+        specifier: workspace:*
+        version: link:../pricing/api
       '@nestjs/common':
         specifier: ^11.1.27
         version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -155,11 +169,17 @@ importers:
         specifier: ^8.61.0
         version: 8.61.0(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
 
-  feature/shared:
-    devDependencies:
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+  feature/pricing:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../common
+
+  feature/pricing/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
 
   feature/warehouse:
     dependencies:
@@ -170,12 +190,6 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
     devDependencies:
-      '@infra/database':
-        specifier: workspace:*
-        version: link:../../infrastructure/database
-      '@infra/warehouse-repo':
-        specifier: workspace:*
-        version: link:../../infrastructure/persistent/warehouse
       '@nestjs/config':
         specifier: ^4.0.4
         version: 4.0.4(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)

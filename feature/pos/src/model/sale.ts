@@ -1,27 +1,29 @@
-import { Money } from "./money";
+import { UnitOfMeasure, Money } from "@feature/common";
+export interface Invoice {
+  readonly header: {
+    readonly cashierId: string;
+    readonly issuedAt: Date;
+    readonly customerId?: string;
+  };
 
-export class Invoice {
-  constructor(
-    private readonly header: {
-      readonly cashierId: string;
-      readonly issuedAt: Date;
-      readonly customerId?: string;
-    },
+  readonly items: {
+    readonly productId: string;
+    readonly quantity: number;
+    readonly unitOfMeasure: UnitOfMeasure;
+    readonly unitPrice: Money;
+    readonly lineTotal: Money;
+    readonly discount?: Money;
+  }[];
 
-    private readonly items: Item[],
+  readonly summary: {
+    readonly reward?: Money;
+    readonly subtotal: Money;
+    readonly grandTotal: Money;
+    readonly discount?: Money;
+  };
 
-    private readonly summary: {
-      readonly reward?: Money;
-      readonly subtotal: Money;
-      readonly grandTotal: Money;
-      readonly discount?: Money;
-    },
-
-    private readonly payment: {
-      readonly paidWithWalletBalance: Money;
-      readonly amountDue: Money;
-    },
-  ) {
-    new Money(3).sum()
-  }
+  readonly payment: {
+    readonly paidWithWalletBalance: Money;
+    readonly amountDue: Money;
+  };
 }

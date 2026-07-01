@@ -1,10 +1,10 @@
 {
-  "name": "@feature/common",
+  "name": "@feature/discount-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,6 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "zod": "^4.4.3"
+    "@feature/common": "workspace:*"
   }
 }

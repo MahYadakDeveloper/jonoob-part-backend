@@ -1,3 +1,25 @@
+import * as z from "zod";
 export class Money {
-  constructor(public readonly value: number) {}
+  private constructor(private readonly _value: number) {}
+
+  public static create(value: number) {
+    z.number().gte(0).parse(value);
+    return new Money(value);
+  }
+
+  public get value() {
+    return this.value;
+  }
+
+  add(other: Money) {
+    return new Money(other.value + this._value);
+  }
+
+  subtract(other: Money) {
+    return new Money(this.value - other.value);
+  }
+
+  multiply(quantity: number) {
+    return new Money(quantity * this._value);
+  }
 }

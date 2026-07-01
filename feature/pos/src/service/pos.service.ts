@@ -1,14 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { RecordSaleInput } from "./dto/record-sale.dto";
-import { Money } from "model/money";
-import "extensions/money.extensions";
+import {type PricingService} from '@feature/pricing-api'
 
 @Injectable()
 export class PosService {
   constructor(
     private readonly purchaseDocumentsRepository: PurchaseDocumentsRepository,
     private readonly saleDocumentsRepository: SaleDocumentsRepository,
-    private readonly discountRepository: DiscountRepository,
     private readonly warehouseRepository: WarehouseRepository,
     private readonly markupPolicyProvider: MarkupPolicyProvider,
     private readonly customersRepository: CustomersRepository,

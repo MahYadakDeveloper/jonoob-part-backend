@@ -1,5 +1,5 @@
 import { Money } from "domain/value-object/money";
-import { PricingService } from "./pricing.service";
+import { PricingService } from "./pricing.service._ts";
 import { ProductDiscount } from "domain/value-object/discount";
 import { Quantity } from "@feature/shared";
 

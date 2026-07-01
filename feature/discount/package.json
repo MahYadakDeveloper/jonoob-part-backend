@@ -1,5 +1,5 @@
 {
-  "name": "@feature/pos",
+  "name": "@feature/discount",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -15,17 +15,5 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
-  "dependencies": {
-    "@feature/common": "workspace:*",
-    "@feature/pricing-api": "workspace:*",
-    "@nestjs/common": "^11.1.27",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@nestjs/testing": "^11.1.27",
-    "globals": "^17.6.0",
-    "typescript-eslint": "^8.61.0"
-  }
+  "private": true
 }

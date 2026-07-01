@@ -1,6 +1,6 @@
 packages:
   - app/*
-  - feature/*
+  - feature/*/**
   - infrastructure/*/**
 allowBuilds:
   "@prisma/engines": true
@@ -8,3 +8,10 @@ allowBuilds:
   unrs-resolver: true
 
 # httpsProxy: https://test
+
+fetchTimeout: 90000
+
+# registries:
+#   default: https://package-mirror.liara.ir/repository/npm/
+
+# strictSsl: false

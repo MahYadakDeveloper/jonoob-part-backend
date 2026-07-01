@@ -21,8 +21,6 @@
     "redis": "^6.0.1"
   },
   "devDependencies": {
-    "@infra/database": "workspace:*",
-    "@infra/warehouse-repo": "workspace:*",
     "@nestjs/config": "^4.0.4",
     "@nestjs/testing": "^11.1.26",
     "@types/jest": "^30.0.0",

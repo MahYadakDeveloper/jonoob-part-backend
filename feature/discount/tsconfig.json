@@ -5,6 +5,6 @@
     "outDir": "./dist",
     "sourceRoot": "./src",
   },
-  "include": ["src/**/*.ts", "src/_/wholesale-pricing.service.xts", "src/_/retail-pricing.service._ts", "src/_/pricing.service._ts"],
+  "include": ["src/**/*.ts", "api/src/discount.api.ts", "api/src/find-applicable-discount.request.ts", "api/src/find-applicable-discount.response.ts"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }
