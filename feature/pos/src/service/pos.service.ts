@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { RecordSaleInput } from "./dto/record-sale.dto";
 import { Money } from "model/money";
+import "extensions/money.extensions";
 
 @Injectable()
 export class PosService {
@@ -12,7 +13,7 @@ export class PosService {
     private readonly markupPolicyProvider: MarkupPolicyProvider,
     private readonly customersRepository: CustomersRepository,
     private readonly synchronizer: Synchronizer,
-    private readonly pricingService: PricingService
+    private readonly pricingService: PricingService,
   ) {}
 
   /**
@@ -101,7 +102,7 @@ export class PosService {
       },
     );
     // Update inventory state
-    new Money(3).sum(new Money(5))
+    new Money(3).sum(new Money(5));
 
     // Adding items into invoice
     // See which has discount [DiscountService]

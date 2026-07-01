@@ -9,3 +9,5 @@ declare module "model/money" {
 Money.prototype.sum = function (other: Money): Money {
   return new Money(this.value);
 };
+
+export {};
