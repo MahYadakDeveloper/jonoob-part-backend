@@ -237,7 +237,11 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  feature/warehouse/api: {}
+  feature/warehouse/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
 
   infrastructure/database:
     dependencies:

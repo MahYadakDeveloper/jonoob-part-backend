@@ -1,7 +1,8 @@
+import { Invoice } from "@feature/common";
+import { PricingPolicy, type IPricingService } from "@feature/pricing-api";
+import { type WarehouseService } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
 import { RecordSaleInput } from "./dto/record-sale.dto";
-import { type IPricingService } from "@feature/pricing-api";
-import { type WarehouseService } from "@feature/warehouse-api";
 
 @Injectable()
 export class PosService {
@@ -19,17 +20,12 @@ export class PosService {
    */
   async recordSale(input: RecordSaleInput) {
     const ids = input.items.map((item) => item.productId);
+    const { cashierId } = input;
 
     const customerType =
       (input.customer?.id &&
         this.customersRepository.getCustomerTypeById(input.customer.id)) ||
       "consumer";
-
-    const { prices } = await this.pricingService.priceManyUnit({
-      items: input.items,
-      customerType,
-    });
-
 
     const quantities = input.items.reduce<Record<string, number>>(
       (prev, curr) => {
@@ -39,63 +35,37 @@ export class PosService {
       {},
     );
 
-    const unitOfMeasures =
-      await this.warehouseService.getUnitOfMeasuresByIds(ids);
-
-    // const pricingService: PricingService =
-    //   customerType === "merchant"
-    //     ? new WholesalePricingService(markup)
-    //     : new RetailPricingService(markup);
-
-    // calculate invoice items
-    const items = ids.map((id) => {
-      const unitOfMeasure = unitOfMeasures[id.getValue()];
-      const quantity = quantities[id.getValue()];
-      const unitPrice = prices[id.getValue()],
-      );
-      const discount = discounts[id.getValue()];
-      const lineTotal = pricingService.calculateLineTotal(
-        unitPrice,
-        quantity,
-        discount,
-      );
-
-      return Item.create({
-        productId: id,
-        quantity,
-        unitOfMeasure,
-        unitPrice,
-        discount,
-        lineTotal,
+    const { unitOfMeasures } =
+      await this.warehouseService.getUnitOfMeasuresOfProducts({
+        productIds: ids,
       });
+
+    const pricingPolicy: PricingPolicy =
+      customerType === "merchant" ? "wholesale" : "retail";
+
+    const { invoice: pricedInvoiced } = await this.pricingService.priceInvoice({
+      items: ids.map((id) => ({
+        productId: id,
+        quantity: quantities[id],
+        unitOfMeasure: unitOfMeasures[id],
+      })),
+      policy: pricingPolicy,
     });
 
-    const grandTotal = pricingService.calculateGrandTotal(
-      items.map((item) => item.lineTotal),
-    );
-    const subtotal = pricingService.calculateSubtotal(
-      items.map((item) => ({ unitPrice: item.unitPrice, qty: item.quantity })),
-    );
-
-    const invoice = SaleInvoice.create(
-      {
-        cashierId: input.cashierId,
+    const invoice: Invoice = {
+      ...pricedInvoiced,
+      header: {
+        cashierId,
         issuedAt: new Date(Date.now()),
-        customerId: input.customerId,
       },
-      items,
-      {
-        grandTotal,
-        subtotal,
-        discount: subtotal.subtract(grandTotal),
+      summary: {
+        ...pricedInvoiced.summary,
+        // reward
+        // discount
       },
-      {
-        paidWithWalletBalance: new Money(3), //TODO Complete this section
-        amountDue: Money.create(0),
-      },
-    );
+    };
+
     // Update inventory state
-    new Money(3).sum(new Money(5));
 
     // Adding items into invoice
     // See which has discount [DiscountService]

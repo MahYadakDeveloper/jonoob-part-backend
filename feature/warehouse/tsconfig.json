@@ -3,8 +3,8 @@
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-    "sourceRoot": "./src",
+    "sourceRoot": "./src"
   },
-  "include": ["src/**/*.ts", "api/src/issue-goods.request.ts", "api/src/warehouse.api.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }

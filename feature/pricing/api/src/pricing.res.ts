@@ -1,4 +1,4 @@
-import { Money } from "@feature/common";
+import { Invoice, Money } from "@feature/common";
 
 export interface LineTotalPricingResponse {
   lineTotal: Money;
@@ -11,4 +11,8 @@ export interface ManyUnitPricingResponse {
 
 export interface UnitPricingResponse {
   price: Money;
+}
+
+export interface InvoicePricingResponse {
+  invoice: Pick<Invoice, "items" | "summary">;
 }

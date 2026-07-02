@@ -15,5 +15,8 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@feature/common": "workspace:*"
+  }
 }

@@ -1,11 +1,14 @@
-import { CustomerType } from "@feature/common";
+import { Money } from "@feature/common";
 import { type IDiscountService } from "@feature/discount-api";
 import {
+  InvoicePricingRequest,
+  InvoicePricingResponse,
   IPricingService,
   LineTotalPricingRequest,
   LineTotalPricingResponse,
   ManyUnitPricingRequest,
   ManyUnitPricingResponse,
+  PricingPolicy,
   UnitPricingRequest,
   UnitPricingResponse,
 } from "@feature/pricing-api";
@@ -13,10 +16,6 @@ import { Injectable } from "@nestjs/common";
 import { type IMarkupPolicyProvider } from "./port/markup-policy.provider";
 import { type ICustomerRepository } from "./repository/customer.repository";
 import { type IPurchaseDocumentRepository } from "./repository/purchase-documents.repository";
-import { WholesalePricingCalculator } from "./services/wholesale-pricing-calculator";
-import { RetailPricingCalculator } from "./services/retail-pricing-calculator";
-
-interface IPricingCalculator {}
 
 @Injectable()
 export class PricingService implements IPricingService {
@@ -26,33 +25,65 @@ export class PricingService implements IPricingService {
     private readonly customerRepository: ICustomerRepository,
     private readonly purchaseDocumentRepository: IPurchaseDocumentRepository,
   ) {}
+
   async priceUnit(req: UnitPricingRequest): Promise<UnitPricingResponse> {
-    const markup = await this.markupPolicyProvider.resolve(req.customerType);
+    const markup = await this.markupPolicyProvider.resolve(req.policy);
 
     const purchasePrice =
-      this.purchaseDocumentRepository.getLatestPurchasePricesOf([
+      await this.purchaseDocumentRepository.getLatestPurchasePricesOf([
         req.item.productId,
-      ]);
+      ])[req.item.productId];
 
-    // NOTE: if customer type is merchant theres no discounts
-    // NOTE: if customer type is consumer or technician the markup is same but reward is different
+    const price = this.calculateUnitPrice(purchasePrice, markup, req.policy);
 
-    const calculator: IPricingCalculator =
-      req.customerType === "merchant"
-        ? new WholesalePricingCalculator()
-        : new RetailPricingCalculator();
-
-    const price = calculator.calculateUnitPrice(purchasePrice, markup);
-
-    // NOTE: Rewarding Service should be used inside pos and etc
-    return price;
+    return { price };
   }
-  priceManyUnit(req: ManyUnitPricingRequest): Promise<ManyUnitPricingResponse> {
-    throw new Error("Method not implemented.");
+
+  async priceManyUnit(
+    req: ManyUnitPricingRequest,
+  ): Promise<ManyUnitPricingResponse> {
+    const markup = await this.markupPolicyProvider.resolve(req.policy);
+
+    const productIds = req.items.map((item) => item.productId);
+    const purchasePrices =
+      await this.purchaseDocumentRepository.getLatestPurchasePricesOf(
+        productIds,
+      );
+
+    const prices = productIds.reduce<Record<string, Money>>((prev, curr) => {
+      prev[curr] = this.calculateUnitPrice(
+        purchasePrices[curr],
+        markup,
+        req.policy,
+      );
+      return prev;
+    }, {});
+
+    return { prices };
   }
+
+  /**
+   * Note: when there is no customer id no discount applied
+   */
   priceLineTotal(
     req: LineTotalPricingRequest,
   ): Promise<LineTotalPricingResponse> {
-    throw new Error("Method not implemented.");
+    throw new Error("Method not implemented yet!");
+  }
+
+  priceInvoice(req: InvoicePricingRequest): Promise<InvoicePricingResponse> {
+    throw new Error("Method not implemented yet!");
+  }
+
+  private calculateUnitPrice(
+    purchasePrice: Money,
+    markup: number,
+    policy: PricingPolicy,
+  ): Money {
+    switch (policy) {
+      case "retail":
+      case "wholesale":
+        return purchasePrice.multiply(1 + markup);
+    }
   }
 }
