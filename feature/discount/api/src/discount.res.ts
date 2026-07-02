@@ -1,6 +1,13 @@
 import { Money } from "@feature/common";
 
-export interface FindApplicableDiscountsResponse {
+export interface FindApplicableDiscountResponse {
+  discountUsagePolicy: {
+    maxPerCustomerUsage: number;
+  };
+  discountAmount: Money;
+}
+
+export interface FindManyApplicableDiscountResponse {
   discounts: Record<
     string,
     {

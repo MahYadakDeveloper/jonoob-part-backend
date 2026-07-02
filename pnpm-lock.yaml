@@ -156,9 +156,6 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../common
-      '@feature/discount-api':
-        specifier: workspace:*
-        version: link:../discount/api
       '@feature/pricing-api':
         specifier: workspace:*
         version: link:../pricing/api
@@ -190,6 +187,15 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../common
+      '@feature/discount-api':
+        specifier: workspace:*
+        version: link:../discount/api
+      '@feature/pricing-api':
+        specifier: workspace:*
+        version: link:api
+      '@nestjs/common':
+        specifier: ^11.1.27
+        version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
       zod:
         specifier: ^4.4.3
         version: 4.4.3

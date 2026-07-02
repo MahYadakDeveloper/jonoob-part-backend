@@ -1,13 +1,19 @@
-import { LineTotalPricingRequest } from "./line-total-pricing.request";
-import { LineTotalPricingResponse } from "./line-total-pricing.response";
-import { ManyUnitPricingRequest } from "./many-unit-pricing.request";
-import { ManyUnitPricingResponse } from "./many-unit-pricing.response";
-import { UnitPricingRequest } from "./unit-pricing.request";
-import { UnitPricingResponse } from "./unit-pricing.response";
+import {
+  LineTotalPricingRequest,
+  ManyUnitPricingRequest,
+  UnitPricingRequest,
+} from "./pricing.req";
+import {
+  LineTotalPricingResponse,
+  ManyUnitPricingResponse,
+  UnitPricingResponse,
+} from "./pricing.res";
 
-export interface PricingService {
+export interface IPricingService {
   priceUnit(req: UnitPricingRequest): Promise<UnitPricingResponse>;
   priceManyUnit(req: ManyUnitPricingRequest): Promise<ManyUnitPricingResponse>;
-  priceLineTotal(req: LineTotalPricingRequest): Promise<LineTotalPricingResponse>;
+  priceLineTotal(
+    req: LineTotalPricingRequest,
+  ): Promise<LineTotalPricingResponse>;
   // priceSubtotal(req: SubtotalPricingRequest): SubtotalPricingResponse;
 }

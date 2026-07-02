@@ -18,6 +18,9 @@
   "private": true,
   "dependencies": {
     "@feature/common": "workspace:*",
+    "@feature/discount-api": "workspace:*",
+    "@feature/pricing-api": "workspace:*",
+    "@nestjs/common": "^11.1.27",
     "zod": "^4.4.3"
   }
 }

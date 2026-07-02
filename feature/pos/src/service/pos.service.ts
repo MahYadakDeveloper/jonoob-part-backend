@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { RecordSaleInput } from "./dto/record-sale.dto";
-import { type PricingService } from "@feature/pricing-api";
-import { type DiscountService } from "@feature/discount-api";
+import { type IPricingService } from "@feature/pricing-api";
 import { type WarehouseService } from "@feature/warehouse-api";
 
 @Injectable()
@@ -11,8 +10,7 @@ export class PosService {
     private readonly customersRepository: CustomersRepository,
     // private readonly synchronizer: Synchronizer,
     private readonly warehouseService: WarehouseService,
-    private readonly pricingService: PricingService,
-    private readonly discountService: DiscountService,
+    private readonly pricingService: IPricingService,
   ) {}
 
   /**
@@ -21,11 +19,6 @@ export class PosService {
    */
   async recordSale(input: RecordSaleInput) {
     const ids = input.items.map((item) => item.productId);
-
-    // getting discounts of product those has
-    const { discounts } = await this.discountService.findApplicableDiscounts({
-      items: input.items,
-    });
 
     const customerType =
       (input.customer?.id &&

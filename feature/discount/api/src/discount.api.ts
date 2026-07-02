@@ -1,16 +1,20 @@
-import { FindApplicableDiscountRequest } from "./find-applicable-discount.request";
-import { FindApplicableDiscountResponse } from "./find-applicable-discount.response";
-import { FindApplicableDiscountsRequest } from "./find-applicable-discounts.request";
-import { FindApplicableDiscountsResponse } from "./find-applicable-discounts.response";
+import {
+  FindApplicableDiscountRequest,
+  FindManyApplicableDiscountRequest,
+} from "./discount.req";
+import {
+  FindApplicableDiscountResponse,
+  FindManyApplicableDiscountResponse,
+} from "./discount.res";
 
-export interface DiscountService {
+export interface IDiscountService {
   findApplicableDiscount(
     req: FindApplicableDiscountRequest,
   ): Promise<FindApplicableDiscountResponse>;
 
-  findApplicableDiscounts(
-    req: FindApplicableDiscountsRequest,
-  ): Promise<FindApplicableDiscountsResponse>;
+  findManyApplicableDiscount(
+    req: FindManyApplicableDiscountRequest,
+  ): Promise<FindManyApplicableDiscountResponse>;
 
   // findProductDiscountPolicy(req: FindProductDiscountPolicyRequest): Promise<FindProductDiscountPolicyResponse>
 }
