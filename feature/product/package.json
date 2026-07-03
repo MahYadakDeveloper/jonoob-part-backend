@@ -1,10 +1,10 @@
 {
-  "name": "@feature/cashback",
+  "name": "@feature/product",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
+    "_build": "pnpm exec tsc",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,8 +16,6 @@
     }
   },
   "private": true,
-  "dependencies": {
-    "@feature/cashback-api": "workspace:*",
-    "@nestjs/common": "^11.1.27"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }

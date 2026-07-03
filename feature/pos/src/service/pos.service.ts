@@ -7,6 +7,9 @@ import { Injectable } from "@nestjs/common";
 import { type ISaleDocumentsRepository } from "repository/sale-documents.repository";
 import { RecordSaleInput } from "./dto/record-sale.dto";
 
+/**
+ * 
+ */
 @Injectable()
 export class PosService {
   constructor(
@@ -20,8 +23,15 @@ export class PosService {
   ) {}
 
   /**
-   *
-   * @throws {ProductWithNoPriceFound} this error thrown when an item in the list has no price.
+   * 
+   */
+  async recordReturn() {
+
+  }
+
+  /**
+   * 
+   * @param input 
    */
   async recordSale(input: RecordSaleInput) {
     const ids = input.items.map((item) => item.productId);
