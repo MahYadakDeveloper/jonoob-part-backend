@@ -1,11 +1,15 @@
-import { type RedisClientType } from "redis";
 import { Quantity } from "@feature/shared";
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { Item } from "./domain/entities/item";
 import {
-  WAREHOUSE_REPOSITORY,
-  type IWarehouseRepository,
-} from "./domain/repositories/warehouse.repository";
+  IssueGoodsRequest,
+  IWarehouseService,
+  UnitOfMeasuresOfProductsReq,
+  UnitOfMeasuresOfProductsRes,
+} from "@feature/warehouse-api";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { type RedisClientType } from "redis";
+import { Item } from "./domain/entities/item";
+import { WarehouseStockRecordNotFoundError } from "./domain/errors/WarehouseStockRecordNotFound";
+import { WAREHOUSE_REPOSITORY } from "./domain/repositories/warehouse.repository";
 import { GoodId } from "./domain/value-object/good-id";
 import { AdjustWarehouseInputDto } from "./services/dto/adjust-warehouse.dto";
 import {
@@ -14,13 +18,11 @@ import {
 } from "./services/dto/get-stock-availability.dto";
 import { RecordGoodsIssueInputDto } from "./services/dto/record-goods-issue.dto";
 import { RecordGoodsReceiptInputDto } from "./services/dto/record-goods-receipt-dto";
-import { WarehouseStockRecordNotFoundError } from "./domain/errors/WarehouseStockRecordNotFound";
-import {IssueGoodsRequest, WarehouseService} from '@feature/warehouse-api'
 
 // TODO: Add UnitOfMeasure and Packaging in warehouse documentation
 
 @Injectable()
-export class WarehouseServiceImpl implements WarehouseService {
+export class WarehouseService implements IWarehouseService {
   private readonly logger: Logger;
   constructor(
     @Inject(WAREHOUSE_REPOSITORY)
@@ -29,9 +31,14 @@ export class WarehouseServiceImpl implements WarehouseService {
   ) {
     this.logger = new Logger(WarehouseService.name);
   }
-    issueGoods(req: IssueGoodsRequest): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
+  recordGoodsIssue(req: IssueGoodsRequest): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+  getUnitOfMeasuresOfProducts(
+    req: UnitOfMeasuresOfProductsReq,
+  ): Promise<UnitOfMeasuresOfProductsRes> {
+    throw new Error("Method not implemented.");
+  }
 
   /**
    * Adjusts the stock quantity of an inventory item by its ID.
@@ -77,7 +84,7 @@ export class WarehouseServiceImpl implements WarehouseService {
     return { stock: item.qty.getValue() };
   }
 
-  async recordGoodsIssue(inputDto: RecordGoodsIssueInputDto) {
+  async recordGoodsIssue2(inputDto: RecordGoodsIssueInputDto) {
     const input = {
       items: inputDto.items.map((item) =>
         Item.create(GoodId.create(item.goodId), Quantity.create(item.qty)),

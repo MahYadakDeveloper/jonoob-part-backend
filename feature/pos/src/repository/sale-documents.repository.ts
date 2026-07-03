@@ -1,5 +1,6 @@
-import { SaleInvoice } from "domain/value-object/sale-invoice";
+import { Invoice } from "@feature/common";
 
 export interface ISaleDocumentsRepository {
-  save(invoice: SaleInvoice): Promise<void>
+  recordInvoice(invoice: Invoice): Promise<void>
+  recordReturn()
 }

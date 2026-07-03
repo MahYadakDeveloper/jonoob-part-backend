@@ -1,13 +1,13 @@
 import {
-  IssueGoodsReq,
-  UnitOfMeasuresOfProductsReq,
+  IssueGoodsRequest,
+  UnitOfMeasuresOfProductsRequest,
 } from "./warehouse.requests";
-import { UnitOfMeasuresOfProductsRes } from "./warehouse.responses";
+import { UnitOfMeasuresOfProductsResponse } from "./warehouse.responses";
 
-export interface WarehouseService {
-  issueGoods(req: IssueGoodsReq): Promise<void>;
+export interface IWarehouseService {
+  recordGoodsIssue(req: IssueGoodsRequest): Promise<void>;
 
   getUnitOfMeasuresOfProducts(
-    req: UnitOfMeasuresOfProductsReq,
-  ): Promise<UnitOfMeasuresOfProductsRes>;
+    req: UnitOfMeasuresOfProductsRequest,
+  ): Promise<UnitOfMeasuresOfProductsResponse>;
 }

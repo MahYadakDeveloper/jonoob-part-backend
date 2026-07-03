@@ -1,21 +1,22 @@
-import { Invoice, Money, Payment } from "@feature/common";
-import { PricingPolicy, type IPricingService } from "@feature/pricing-api";
-import { type WarehouseService } from "@feature/warehouse-api";
-import { type IWalletService } from "@feature/wallet-api";
-import { Injectable } from "@nestjs/common";
-import { RecordSaleInput } from "./dto/record-sale.dto";
+import { type ICashbackService } from "@feature/cashback-api";
+import { Invoice, Payment } from "@feature/common";
 import { type IPaymentService } from "@feature/payment-api";
+import { type IPricingService } from "@feature/pricing-api";
+import { type IWarehouseService } from "@feature/warehouse-api";
+import { Injectable } from "@nestjs/common";
+import { type ISaleDocumentsRepository } from "repository/sale-documents.repository";
+import { RecordSaleInput } from "./dto/record-sale.dto";
 
 @Injectable()
 export class PosService {
   constructor(
-    private readonly saleDocumentsRepository: SaleDocumentsRepository,
+    private readonly saleDocumentsRepository: ISaleDocumentsRepository,
     private readonly customersRepository: CustomersRepository,
     // private readonly synchronizer: Synchronizer,
-    private readonly warehouseService: WarehouseService,
+    private readonly warehouseService: IWarehouseService,
     private readonly pricingService: IPricingService,
-    private readonly walletService: IWalletService,
     private readonly paymentService: IPaymentService,
+    private readonly cashbackService: ICashbackService,
   ) {}
 
   /**
@@ -42,6 +43,7 @@ export class PosService {
         productIds: ids,
       });
 
+    // Pricing items and other invoices props
     const { policy } = this.pricingService.getPricingPolicy({
       customerType,
     });
@@ -55,12 +57,40 @@ export class PosService {
       policy,
     });
 
-    const { payment } = await this.paymentService.planPayment({
-      amountDue: pricedInvoiced.summary.grandTotal,
-      customerId,
-      wallet,
-      externalPaymentMethod: "posTerminal",
+    // Processing payment
+    const { payment }: { payment: Payment } = customerId
+      ? await this.paymentService.planPayment({
+          amountDue: pricedInvoiced.summary.grandTotal,
+          customerId,
+          wallet,
+          externalPaymentMethod: "posTerminal",
+        })
+      : {
+          payment: {
+            externalPayment: {
+              amount: pricedInvoiced.summary.subtotal,
+              paymentMethod: "posTerminal",
+            },
+          },
+        };
+
+    // Issuing goods
+    await this.warehouseService.recordGoodsIssue({
+      items: pricedInvoiced.items.map((item) => ({
+        goodsId: item.productId,
+        quantity: item.quantity,
+      })),
     });
+
+    // Granting cashback
+    const { cashback } = (customerId &&
+      (await this.cashbackService.grantCashback({
+        customerId,
+        purchasedItems: pricedInvoiced.items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      }))) || { cashback: undefined };
 
     const invoice: Invoice = {
       ...pricedInvoiced,
@@ -71,15 +101,11 @@ export class PosService {
       },
       summary: {
         ...pricedInvoiced.summary,
-        // reward
-        // discount
+        cashback,
       },
       payment,
     };
 
-    // Update inventory state
-
-    // Adding items into invoice
-    // See which has discount [DiscountService]
+    await this.saleDocumentsRepository.recordInvoice(invoice);
   }
 }

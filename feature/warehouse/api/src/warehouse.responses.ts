@@ -1,5 +1,5 @@
 import { UnitOfMeasure } from "@feature/common";
 
-export interface UnitOfMeasuresOfProductsRes {
+export interface UnitOfMeasuresOfProductsResponse {
   unitOfMeasures: Record<string, UnitOfMeasure>;
 }

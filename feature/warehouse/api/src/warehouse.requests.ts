@@ -1,8 +1,10 @@
-export interface IssueGoodsReq {
-  goodsId: string;
-  quantity: number;
+export interface IssueGoodsRequest {
+  items: {
+    goodsId: string;
+    quantity: number;
+  }[];
 }
 
-export interface UnitOfMeasuresOfProductsReq {
+export interface UnitOfMeasuresOfProductsRequest {
   productIds: string[];
 }

@@ -38,7 +38,7 @@ export type Invoice = {
   readonly items: InvoiceItem[];
 
   readonly summary: {
-    readonly rewards?: Money;
+    readonly cashback?: Money;
     readonly subtotal: Money;
     readonly grandTotal: Money;
     readonly discount?: Money;

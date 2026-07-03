@@ -1,2 +1,3 @@
-export * from './warehouse.api'
-export * from './issue-goods.request'
+export * from "./warehouse.api";
+export * from "./warehouse.requests";
+export * from "./warehouse.responses";

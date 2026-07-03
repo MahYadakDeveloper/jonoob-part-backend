@@ -17,10 +17,10 @@
   },
   "private": true,
   "dependencies": {
+    "@feature/cashback-api": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/payment-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
-    "@feature/wallet-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.1.27",
     "zod": "^4.4.3"
