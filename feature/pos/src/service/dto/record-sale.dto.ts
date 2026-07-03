@@ -1,9 +1,9 @@
+import { Money } from "@feature/common";
+
 export interface RecordSaleInput {
   cashierId: string;
-  customer?: {
-    id: string;
-    useCredit?: true;
-  };
+  customerId: string;
+  wallet: false | true | Money;
   items: {
     productId: string;
     quantity: number;

@@ -1,8 +1,10 @@
-import { Invoice } from "@feature/common";
+import { Invoice, Money, Payment } from "@feature/common";
 import { PricingPolicy, type IPricingService } from "@feature/pricing-api";
 import { type WarehouseService } from "@feature/warehouse-api";
+import { type IWalletService } from "@feature/wallet-api";
 import { Injectable } from "@nestjs/common";
 import { RecordSaleInput } from "./dto/record-sale.dto";
+import { type IPaymentService } from "@feature/payment-api";
 
 @Injectable()
 export class PosService {
@@ -12,6 +14,8 @@ export class PosService {
     // private readonly synchronizer: Synchronizer,
     private readonly warehouseService: WarehouseService,
     private readonly pricingService: IPricingService,
+    private readonly walletService: IWalletService,
+    private readonly paymentService: IPaymentService,
   ) {}
 
   /**
@@ -20,12 +24,10 @@ export class PosService {
    */
   async recordSale(input: RecordSaleInput) {
     const ids = input.items.map((item) => item.productId);
-    const { cashierId } = input;
+    const { cashierId, customerId, wallet } = input;
 
     const customerType =
-      (input.customer?.id &&
-        this.customersRepository.getCustomerTypeById(input.customer.id)) ||
-      "consumer";
+      this.customersRepository.getCustomerTypeById(customerId);
 
     const quantities = input.items.reduce<Record<string, number>>(
       (prev, curr) => {
@@ -40,8 +42,9 @@ export class PosService {
         productIds: ids,
       });
 
-    const pricingPolicy: PricingPolicy =
-      customerType === "merchant" ? "wholesale" : "retail";
+    const { policy } = this.pricingService.getPricingPolicy({
+      customerType,
+    });
 
     const { invoice: pricedInvoiced } = await this.pricingService.priceInvoice({
       items: ids.map((id) => ({
@@ -49,7 +52,14 @@ export class PosService {
         quantity: quantities[id],
         unitOfMeasure: unitOfMeasures[id],
       })),
-      policy: pricingPolicy,
+      policy,
+    });
+
+    const { payment } = await this.paymentService.planPayment({
+      amountDue: pricedInvoiced.summary.grandTotal,
+      customerId,
+      wallet,
+      externalPaymentMethod: "posTerminal",
     });
 
     const invoice: Invoice = {
@@ -57,12 +67,14 @@ export class PosService {
       header: {
         cashierId,
         issuedAt: new Date(Date.now()),
+        customerId,
       },
       summary: {
         ...pricedInvoiced.summary,
         // reward
         // discount
       },
+      payment,
     };
 
     // Update inventory state

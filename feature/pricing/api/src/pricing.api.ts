@@ -2,12 +2,14 @@ import {
   InvoicePricingRequest,
   LineTotalPricingRequest,
   ManyUnitPricingRequest,
+  PricingPolicyReq,
   UnitPricingRequest,
 } from "./pricing.req";
 import {
   InvoicePricingResponse,
   LineTotalPricingResponse,
   ManyUnitPricingResponse,
+  PricingPolicyRes,
   UnitPricingResponse,
 } from "./pricing.res";
 
@@ -18,5 +20,5 @@ export interface IPricingService {
     req: LineTotalPricingRequest,
   ): Promise<LineTotalPricingResponse>;
   priceInvoice(req: InvoicePricingRequest): Promise<InvoicePricingResponse>;
-  // priceSubtotal(req: SubtotalPricingRequest): SubtotalPricingResponse;
+  getPricingPolicy(req: PricingPolicyReq): PricingPolicyRes;
 }

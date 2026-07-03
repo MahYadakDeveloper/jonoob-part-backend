@@ -151,14 +151,41 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
+  feature/payment:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../common
+      '@feature/payment-api':
+        specifier: workspace:*
+        version: link:api
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:../wallet/api
+      '@nestjs/common':
+        specifier: ^11.1.27
+        version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/payment/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
+
   feature/pos:
     dependencies:
       '@feature/common':
         specifier: workspace:*
         version: link:../common
+      '@feature/payment-api':
+        specifier: workspace:*
+        version: link:../payment/api
       '@feature/pricing-api':
         specifier: workspace:*
         version: link:../pricing/api
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:../wallet/api
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../warehouse/api
@@ -201,6 +228,14 @@ importers:
         version: 4.4.3
 
   feature/pricing/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
+
+  feature/wallet: {}
+
+  feature/wallet/api:
     dependencies:
       '@feature/common':
         specifier: workspace:*

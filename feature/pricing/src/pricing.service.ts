@@ -9,6 +9,8 @@ import {
   ManyUnitPricingRequest,
   ManyUnitPricingResponse,
   PricingPolicy,
+  PricingPolicyReq,
+  PricingPolicyRes,
   UnitPricingRequest,
   UnitPricingResponse,
 } from "@feature/pricing-api";
@@ -25,6 +27,9 @@ export class PricingService implements IPricingService {
     private readonly customerRepository: ICustomerRepository,
     private readonly purchaseDocumentRepository: IPurchaseDocumentRepository,
   ) {}
+  getPricingPolicy(req: PricingPolicyReq): PricingPolicyRes {
+    return { policy: req.customerType === "merchant" ? "wholesale" : "retail" };
+  }
 
   async priceUnit(req: UnitPricingRequest): Promise<UnitPricingResponse> {
     const markup = await this.markupPolicyProvider.resolve(req.policy);

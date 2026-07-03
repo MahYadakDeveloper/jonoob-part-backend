@@ -4,6 +4,21 @@ export type UnitOfMeasure = "piece" | "pair" | "set";
 
 export type CustomerType = "merchant" | "consumer" | "technician";
 
+export type Payment =
+  | {
+      paidAmountByBalance: Money;
+      externalPayment?: {
+        paymentMethod: "onlinePaymentGateway" | "posTerminal";
+        amount: Money;
+      };
+    }
+  | {
+      externalPayment: {
+        paymentMethod: "onlinePaymentGateway" | "posTerminal";
+        amount: Money;
+      };
+    };
+
 export type InvoiceItem = {
   readonly productId: string;
   readonly quantity: number;
@@ -28,4 +43,6 @@ export type Invoice = {
     readonly grandTotal: Money;
     readonly discount?: Money;
   };
+
+  readonly payment: Payment;
 };

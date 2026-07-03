@@ -1,10 +1,10 @@
 {
-  "name": "@feature/pos",
+  "name": "@feature/payment",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
-    "_build": "pnpm exec tsc",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "build": "pnpm exec tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,16 +19,7 @@
   "dependencies": {
     "@feature/common": "workspace:*",
     "@feature/payment-api": "workspace:*",
-    "@feature/pricing-api": "workspace:*",
     "@feature/wallet-api": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "^11.1.27",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@nestjs/testing": "^11.1.27",
-    "globals": "^17.6.0",
-    "typescript-eslint": "^8.61.0"
+    "@nestjs/common": "^11.1.27"
   }
 }

@@ -1,4 +1,5 @@
 import { Invoice, Money } from "@feature/common";
+import { PricingPolicy } from "./pricing.req";
 
 export interface LineTotalPricingResponse {
   lineTotal: Money;
@@ -15,4 +16,8 @@ export interface UnitPricingResponse {
 
 export interface InvoicePricingResponse {
   invoice: Pick<Invoice, "items" | "summary">;
+}
+
+export interface PricingPolicyRes {
+  policy: PricingPolicy;
 }
