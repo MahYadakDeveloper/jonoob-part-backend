@@ -133,7 +133,11 @@ importers:
         specifier: ^8.20.0
         version: 8.61.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
 
-  feature/cashback: {}
+  feature/cashback:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^11.1.27
+        version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/cashback/api:
     dependencies:

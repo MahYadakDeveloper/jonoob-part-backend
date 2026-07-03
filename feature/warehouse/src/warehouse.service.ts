@@ -84,6 +84,11 @@ export class WarehouseService implements IWarehouseService {
     return { stock: item.qty.getValue() };
   }
 
+  private async checkStockAvailability(goodIds: string[]): Promise<boolean> {
+
+    throw new Error('Method not implemented yet!')
+  }
+
   async recordGoodsIssue2(inputDto: RecordGoodsIssueInputDto) {
     const input = {
       items: inputDto.items.map((item) =>
