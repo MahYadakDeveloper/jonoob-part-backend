@@ -6,16 +6,17 @@ import { type IWarehouseService } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
 import { type ISaleDocumentsRepository } from "repository/sale-documents.repository";
 import { RecordSaleInput } from "./dto/record-sale.dto";
+import { RecordReturnInput } from "./dto/record-return.dto";
+import { type ICustomersRepository } from "repository/customer.repository";
 
 /**
- * 
+ *
  */
 @Injectable()
 export class PosService {
   constructor(
     private readonly saleDocumentsRepository: ISaleDocumentsRepository,
-    private readonly customersRepository: CustomersRepository,
-    // private readonly synchronizer: Synchronizer,
+    private readonly customersRepository: ICustomersRepository,
     private readonly warehouseService: IWarehouseService,
     private readonly pricingService: IPricingService,
     private readonly paymentService: IPaymentService,
@@ -23,22 +24,29 @@ export class PosService {
   ) {}
 
   /**
-   * 
+   * Considerations:
+   *  - if discardCashbackReversal is false | undefined then calculate the cashback and reduce from user wallet
+   *  if cashback is allocated.[if it the cashback fails throw an error and do not proceed].
+   *
+   * Workflow:
+   *  - cashback
+   *  - receipt goods in warehouse
+   *  - record the return document, (remember that cant be an invoice)
    */
-  async recordReturn() {
-
-  }
+  async recordReturn(input: RecordReturnInput) {}
 
   /**
-   * 
-   * @param input 
+   *
+   * @param input
    */
   async recordSale(input: RecordSaleInput) {
     const ids = input.items.map((item) => item.productId);
-    const { cashierId, customerId, wallet } = input;
+    const { cashierId, customerId, useWallet } = input;
 
     const customerType =
-      this.customersRepository.getCustomerTypeById(customerId);
+      (customerId &&
+        this.customersRepository.getCustomerTypeById(customerId)) ||
+      "consumer";
 
     const quantities = input.items.reduce<Record<string, number>>(
       (prev, curr) => {
@@ -72,7 +80,7 @@ export class PosService {
       ? await this.paymentService.planPayment({
           amountDue: pricedInvoiced.summary.grandTotal,
           customerId,
-          wallet,
+          useWallet,
           externalPaymentMethod: "posTerminal",
         })
       : {
@@ -116,6 +124,6 @@ export class PosService {
       payment,
     };
 
-    await this.saleDocumentsRepository.recordInvoice(invoice);
+    await this.saleDocumentsRepository.recordSale(invoice);
   }
 }

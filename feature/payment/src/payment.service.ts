@@ -10,20 +10,28 @@ export class PaymentService implements IPaymentService {
   constructor(private readonly walletService: IWalletService) {}
 
   async planPayment(req: PlanPaymentRequest): Promise<PlanPaymentResponse> {
-    const { wallet, amountDue, customerId } = req;
+    const { useWallet, amountDue, customerId } = req;
     const { balance } = await this.walletService.getWalletBalance({
       customerId,
     });
 
+    // TODO Complete this ...
+    // Verification
+    if (useWallet) {
+      // ...
+      // Throw an error if not verified
+    }
+
     let walletAmount = Money.zero();
 
-    if (wallet instanceof Money) {
+    if (!!useWallet && useWallet.wallet instanceof Money) {
+      const { wallet } = useWallet;
       if (balance.lt(wallet)) throw new Error("Insufficient balance!");
       if (wallet.gt(amountDue))
         throw new Error("The paying amount is more then expected!");
 
       walletAmount = wallet;
-    } else if (wallet) {
+    } else if (useWallet) {
       walletAmount = Money.min(balance, amountDue);
     }
 

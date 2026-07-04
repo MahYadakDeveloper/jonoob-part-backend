@@ -1,6 +1,5 @@
-import { EntityId } from "@feature/shared";
-import { CustomerType } from "domain/value-object/customer.type";
+import { CustomerType } from "@feature/common";
 
-export interface ICustomerRepository {
-  getCustomerTypeById(customerId: EntityId): CustomerType
+export interface ICustomersRepository {
+  getCustomerTypeById(customerId: string): CustomerType;
 }
