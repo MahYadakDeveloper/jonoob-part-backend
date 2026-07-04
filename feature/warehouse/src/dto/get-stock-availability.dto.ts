@@ -1,7 +1,7 @@
-export interface GetStockAvailabilityInputDto {
+export interface GetStockAvailabilityRequest {
   goodId: string;
 }
 
-export interface GetStockAvailabilityOutputDto {
+export interface GetStockAvailabilityResponse {
   stock: number;
 }

@@ -1,7 +1,7 @@
-import { ReturnDocument } from "model/return-document";
-import { SaleDocument } from "model/sale-document";
+import { Return } from "model/return";
+import { Sale } from "model/sale";
 
 export interface ISaleDocumentsRepository {
-  recordSale(document: SaleDocument): Promise<void>;
-  recordReturn(document: ReturnDocument): Promise<void>;
+  recordSale(document: Sale): Promise<void>;
+  recordReturn(document: Return): Promise<void>;
 }

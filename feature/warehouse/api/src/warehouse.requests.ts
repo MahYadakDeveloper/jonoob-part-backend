@@ -1,24 +1,21 @@
-export interface IssueGoodsRequest {
+export interface GoodsIssuingRequest {
   items: {
     goodsId: string;
     quantity: number;
   }[];
 }
 
-export interface ReserveStocksRequest {
+export interface StockReservingRequest {
   items: {
     goodsId: string;
     quantity: number;
   }[];
 }
 
-export interface ReleaseStocksRequest {
+export interface StockReleasingRequest {
   items: {
     goodsId: string;
     quantity: number;
   }[];
 }
 
-export interface UnitOfMeasuresOfProductsRequest {
-  productIds: string[];
-}

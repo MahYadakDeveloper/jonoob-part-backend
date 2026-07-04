@@ -18,12 +18,12 @@ export interface UnitPricingRequest {
   policy: PricingPolicy;
 }
 
-export interface InvoicePricingRequest {
+export interface SalePricingRequest {
   customerId?: string;
-  items: Pick<InvoiceItem, "productId" | "unitOfMeasure" | "quantity">[];
+  items: { productId: string; quantity: number }[];
   policy: PricingPolicy;
 }
 
 export interface PricingPolicyReq {
-  customerType: CustomerType
+  customerType: CustomerType;
 }

@@ -14,8 +14,21 @@ export interface UnitPricingResponse {
   price: Money;
 }
 
-export interface InvoicePricingResponse {
-  invoice: Pick<Invoice, "items" | "summary">;
+export interface SalePricingResponse {
+  sale: {
+    readonly items: {
+      readonly productId: string;
+      readonly quantity: number;
+      readonly unitPrice: Money;
+      readonly lineTotal: Money;
+      readonly discount?: Money;
+    }[];
+    readonly summary: {
+      readonly subtotal: Money;
+      readonly grandTotal: Money;
+      readonly discount?: Money;
+    };
+  };
 }
 
 export interface PricingPolicyRes {

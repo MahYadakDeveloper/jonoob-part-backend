@@ -56,21 +56,15 @@ export class PosService {
       {},
     );
 
-    const { unitOfMeasures } =
-      await this.warehouseService.getUnitOfMeasuresOfProducts({
-        productIds: ids,
-      });
-
     // Pricing items and other invoices props
     const { policy } = this.pricingService.getPricingPolicy({
       customerType,
     });
 
-    const { invoice: pricedInvoiced } = await this.pricingService.priceInvoice({
+    const { sale } = await this.pricingService.priceSale({
       items: ids.map((id) => ({
         productId: id,
         quantity: quantities[id],
-        unitOfMeasure: unitOfMeasures[id],
       })),
       policy,
     });
@@ -78,7 +72,7 @@ export class PosService {
     // Processing payment
     const { payment }: { payment: Payment } = customerId
       ? await this.paymentService.planPayment({
-          amountDue: pricedInvoiced.summary.grandTotal,
+          amountDue: sale.summary.grandTotal,
           customerId,
           useWallet,
           externalPaymentMethod: "posTerminal",
@@ -86,7 +80,7 @@ export class PosService {
       : {
           payment: {
             externalPayment: {
-              amount: pricedInvoiced.summary.subtotal,
+              amount: sale.summary.subtotal,
               paymentMethod: "posTerminal",
             },
           },
@@ -94,7 +88,7 @@ export class PosService {
 
     // Issuing goods
     await this.warehouseService.recordGoodsIssue({
-      items: pricedInvoiced.items.map((item) => ({
+      items: sale.items.map((item) => ({
         goodsId: item.productId,
         quantity: item.quantity,
       })),
@@ -104,26 +98,24 @@ export class PosService {
     const { cashback } = (customerId &&
       (await this.cashbackService.grantCashback({
         customerId,
-        purchasedItems: pricedInvoiced.items.map((item) => ({
+        purchasedItems: sale.items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
         })),
       }))) || { cashback: undefined };
 
-    const invoice: Invoice = {
-      ...pricedInvoiced,
+    await this.saleDocumentsRepository.recordSale({
+      ...sale,
       header: {
         cashierId,
         issuedAt: new Date(Date.now()),
         customerId,
       },
       summary: {
-        ...pricedInvoiced.summary,
+        ...sale.summary,
         cashback,
       },
       payment,
-    };
-
-    await this.saleDocumentsRepository.recordSale(invoice);
+    });
   }
 }

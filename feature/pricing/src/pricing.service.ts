@@ -1,8 +1,6 @@
 import { Money } from "@feature/common";
 import { type IDiscountService } from "@feature/discount-api";
 import {
-  InvoicePricingRequest,
-  InvoicePricingResponse,
   IPricingService,
   LineTotalPricingRequest,
   LineTotalPricingResponse,
@@ -11,6 +9,8 @@ import {
   PricingPolicy,
   PricingPolicyReq,
   PricingPolicyRes,
+  SalePricingRequest,
+  SalePricingResponse,
   UnitPricingRequest,
   UnitPricingResponse,
 } from "@feature/pricing-api";
@@ -27,6 +27,10 @@ export class PricingService implements IPricingService {
     private readonly customerRepository: ICustomerRepository,
     private readonly purchaseDocumentRepository: IPurchaseDocumentRepository,
   ) {}
+  priceSale(req: SalePricingRequest): Promise<SalePricingResponse> {
+    throw new Error("Method not implemented.");
+  }
+
   getPricingPolicy(req: PricingPolicyReq): PricingPolicyRes {
     return { policy: req.customerType === "merchant" ? "wholesale" : "retail" };
   }
@@ -73,10 +77,6 @@ export class PricingService implements IPricingService {
   priceLineTotal(
     req: LineTotalPricingRequest,
   ): Promise<LineTotalPricingResponse> {
-    throw new Error("Method not implemented yet!");
-  }
-
-  priceInvoice(req: InvoicePricingRequest): Promise<InvoicePricingResponse> {
     throw new Error("Method not implemented yet!");
   }
 
