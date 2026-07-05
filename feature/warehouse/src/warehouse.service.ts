@@ -1,18 +1,16 @@
 import {
+  GoodsIssuingRequest,
   IWarehouseService,
-  UnitOfMeasuresOfProductsRequest,
-  UnitOfMeasuresOfProductsResponse,
+  StockReleasingRequest,
+  StockReservingRequest,
 } from "@feature/warehouse-api";
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { type RedisClientType } from "redis";
 import {
   GetStockAvailabilityRequest,
   GetStockAvailabilityResponse,
 } from "./dto/get-stock-availability.dto";
-import { RecordGoodsIssueRequest } from "./dto/record-goods-issue.dto";
 import { RecordGoodsReceiptRequest } from "./dto/record-goods-receipt-dto";
 import { type IWarehouseRepository } from "./repository/warehouse.repository";
-import { AdjustWarehouseRequest } from "./dto/adjust-warehouse.dto";
 
 @Injectable()
 export class WarehouseService implements IWarehouseService {
@@ -23,22 +21,18 @@ export class WarehouseService implements IWarehouseService {
   ) {
     this.logger = new Logger(WarehouseService.name);
   }
-  recordGoodsIssue(req: IssueGoodsRequest): Promise<void> {
+  async recordGoodsIssue(req: GoodsIssuingRequest): Promise<void> {
+    this.warehouseRepository.issueGoods(req.items);
+    // Dispatch the event of goods been issued.
+    // TODO Create event listener for GoodsIssuedEvent to check the reorderPoint for creating reorder list
+    // TODO rethink about the terms and names about the reorder
+  }
+  reserveStock(req: StockReservingRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  reserveStock(req: ReserveStocksRequest): Promise<void> {
+  releaseStock(req: StockReleasingRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
-  releaseStock(req: ReleaseStocksRequest): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-
-  getUnitOfMeasuresOfProducts(
-    req: UnitOfMeasuresOfProductsRequest,
-  ): Promise<UnitOfMeasuresOfProductsResponse> {
-    throw new Error("Method not implemented.");
-  }
-
   /**
    * Adjusts the stock quantity of an inventory item by its ID.
    *

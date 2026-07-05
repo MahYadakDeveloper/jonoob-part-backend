@@ -1,4 +1,3 @@
-import { Quantity } from "@feature/shared";
 import {
   GoodId,
   Inventory,
