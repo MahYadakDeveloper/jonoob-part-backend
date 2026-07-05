@@ -1,4 +1,5 @@
 import {
+  GoodsIssuedEvent,
   GoodsIssuingRequest,
   IWarehouseService,
   StockReleasingRequest,
@@ -11,6 +12,7 @@ import {
 } from "./dto/get-stock-availability.dto";
 import { RecordGoodsReceiptRequest } from "./dto/record-goods-receipt-dto";
 import { type IWarehouseRepository } from "./repository/warehouse.repository";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 @Injectable()
 export class WarehouseService implements IWarehouseService {
@@ -18,14 +20,17 @@ export class WarehouseService implements IWarehouseService {
   constructor(
     @Inject(WAREHOUSE_DATASOURCE)
     private readonly warehouseRepository: IWarehouseRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger = new Logger(WarehouseService.name);
   }
   async recordGoodsIssue(req: GoodsIssuingRequest): Promise<void> {
     this.warehouseRepository.issueGoods(req.items);
     // Dispatch the event of goods been issued.
-    // TODO Create event listener for GoodsIssuedEvent to check the reorderPoint for creating reorder list
-    // TODO rethink about the terms and names about the reorder
+    this.eventEmitter.emit(
+      "warehouse.goods-issued",
+      new GoodsIssuedEvent(req.items.map((item) => item.goodId)),
+    );
   }
   reserveStock(req: StockReservingRequest): Promise<void> {
     throw new Error("Method not implemented.");
