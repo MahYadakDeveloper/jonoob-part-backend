@@ -48,13 +48,10 @@ export class PosService {
         this.customersRepository.getCustomerTypeById(customerId)) ||
       "consumer";
 
-    const quantities = input.items.reduce<Record<string, number>>(
-      (prev, curr) => {
-        prev[curr.productId] = curr.quantity;
-        return prev;
-      },
-      {},
-    );
+    const quantities = input.items.reduce<Map<string, number>>((prev, curr) => {
+      prev[curr.productId] = curr.quantity;
+      return prev;
+    }, new Map());
 
     // Pricing items and other invoices props
     const { policy } = this.pricingService.getPricingPolicy({
@@ -89,7 +86,7 @@ export class PosService {
     // Issuing goods
     await this.warehouseService.recordGoodsIssue({
       items: sale.items.map((item) => ({
-        goodsId: item.productId,
+        goodId: item.productId,
         quantity: item.quantity,
       })),
     });

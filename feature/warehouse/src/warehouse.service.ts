@@ -1,40 +1,53 @@
 import {
   GoodsIssuedEvent,
   GoodsIssuingRequest,
+  GoodsReceiptedEvent,
   IWarehouseService,
   StockReleasingRequest,
   StockReservingRequest,
 } from "@feature/warehouse-api";
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import {
-  GetStockAvailabilityRequest,
-  GetStockAvailabilityResponse,
-} from "./dto/get-stock-availability.dto";
-import { RecordGoodsReceiptRequest } from "./dto/record-goods-receipt-dto";
-import { type IWarehouseRepository } from "./repository/warehouse.repository";
 import { EventEmitter2 } from "@nestjs/event-emitter";
+import {
+  WAREHOUSE_REPOSITORY,
+  type IWarehouseRepository,
+} from "./repository/warehouse.repository";
+import {
+  AvailableStockRequest,
+  AvailableStocksRequest,
+  GoodsReceptionRequest,
+} from "./warehouse.requests";
+import {
+  AvailableStockResponse,
+  AvailableStocksResponse,
+} from "./warehouse.responses";
+
+// Note: use pipelines? for value validation for input requests
 
 @Injectable()
 export class WarehouseService implements IWarehouseService {
   private readonly logger: Logger;
   constructor(
-    @Inject(WAREHOUSE_DATASOURCE)
+    @Inject(WAREHOUSE_REPOSITORY)
     private readonly warehouseRepository: IWarehouseRepository,
     private readonly eventEmitter: EventEmitter2,
   ) {
     this.logger = new Logger(WarehouseService.name);
   }
+
   async recordGoodsIssue(req: GoodsIssuingRequest): Promise<void> {
-    this.warehouseRepository.issueGoods(req.items);
-    // Dispatch the event of goods been issued.
+    await this.warehouseRepository.issueGoods(req.items);
+
     this.eventEmitter.emit(
       "warehouse.goods-issued",
       new GoodsIssuedEvent(req.items.map((item) => item.goodId)),
     );
   }
+
   reserveStock(req: StockReservingRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
   releaseStock(req: StockReleasingRequest): Promise<void> {
     throw new Error("Method not implemented.");
   }
@@ -55,29 +68,48 @@ export class WarehouseService implements IWarehouseService {
    *
    * @throws {WarehouseStockRecordNotFoundError} If no item with the given `id` exists.
    */
-  async getGoodStock(
-    req: GetStockAvailabilityRequest,
-  ): Promise<GetStockAvailabilityResponse> {
-    const goodId = GoodId.create(req.goodId);
-
-    const [item] = await this.warehouseRepository.getStocksByGoodIds([goodId]);
-
-    if (!item) throw new WarehouseStockRecordNotFoundError(goodId.getValue());
-
-    return { stock: item.qty.getValue() };
+  getAvailableStocks(
+    req: AvailableStocksRequest,
+  ): Promise<AvailableStocksResponse> {
+    return this.warehouseRepository
+      .getAvailableStocksByIds(req.goodIds)
+      .then((stocks) => ({ stocks }));
   }
 
-  private async checkStockAvailability(goodIds: string[]): Promise<boolean> {
-    throw new Error("Method not implemented yet!");
+  getAvailableStock(
+    req: AvailableStockRequest,
+  ): Promise<AvailableStockResponse> {
+    return this.warehouseRepository
+      .getAvailableStocksByIds([req.goodId])
+      .then((stocks) => ({ stock: stocks[req.goodId] }));
   }
 
-  async recordGoodsReceipt(req: RecordGoodsReceiptRequest) {
-    // dto conversion
-    const input = inputDto.items.map((item) =>
-      Item.create(GoodId.create(item.goodId), Quantity.create(item.qty || 1)),
+  /**
+   * Records the receipt of goods into the warehouse and updates stock levels.
+   *
+   * After the stock has been successfully updated, a `warehouse.goods-receipted`
+   * event is published so other modules can react to the completed inventory
+   * change.
+   *
+   * The Procurement module listens for this event to re-evaluate reorder points.
+   * An event is used instead of a direct service call to keep Warehouse
+   * decoupled from Procurement, since inventory changes may originate from
+   * different modules (e.g. purchase receipts, sales returns, inventory
+   * adjustments, or other warehouse operations).
+   *
+   * The `warehouse.goods-receipted` is emitted as an event because stock changes can originate from
+   * multiple modules (e.g. POS sales, sales returns, manual warehouse operations).
+   * Procurement should react only to the completed stock movement, without
+   * depending on which module initiated it.
+   *
+   * @param req The goods receipt request containing the items to receive.
+   */
+  async recordGoodsReceipt(req: GoodsReceptionRequest) {
+    await this.warehouseRepository.receiptGoods(req.items);
+
+    this.eventEmitter.emit(
+      "warehouse.goods-receipted",
+      new GoodsReceiptedEvent(req.items.map((item) => item.goodId)),
     );
-
-    // TODO Record with relation to type document (provide | sale_return)
-    await this.warehouseRepository.receiptGoods(input);
   }
 }
