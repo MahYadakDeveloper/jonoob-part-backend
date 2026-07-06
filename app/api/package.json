@@ -18,8 +18,7 @@
   },
   "dependencies": {
     "@feature/warehouse": "workspace:*",
-    "@infra/database": "workspace:*",
-    "@infra/warehouse-repo": "workspace:*",
+    "@infra/warehouse-persistent": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",

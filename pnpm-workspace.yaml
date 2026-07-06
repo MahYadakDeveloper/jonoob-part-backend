@@ -7,8 +7,8 @@ allowBuilds:
   prisma: true
   unrs-resolver: true
 
-# httpsProxy: "http://22.76.28.210:8080"
-# httpProxy: "http://22.76.28.210:8080"
+httpsProxy: "http://192.168.1.117:18888"
+httpProxy: "http://192.168.1.117:18888"
 
 fetchTimeout: 90000
 

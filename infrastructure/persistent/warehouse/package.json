@@ -1,5 +1,5 @@
 {
-  "name": "@infra/warehouse-repo",
+  "name": "@infra/warehouse-persistent",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@feature/warehouse": "workspace:*",
-    "@infra/database": "workspace:*",
-    "@nestjs/common": "^11.1.26"
+    "@nestjs/common": "^11.1.26",
+    "redis": "^6.0.1"
   }
 }
