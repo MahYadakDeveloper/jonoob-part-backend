@@ -1,41 +1,49 @@
-import { IWarehouseRepository } from "@feature/warehouse";
+import { type IWarehouseRepository } from "@feature/warehouse";
 import { Injectable } from "@nestjs/common";
+import { planStockChanges } from "./stock-planner";
+import { type WarehouseCache } from "./warehouse.cache";
 
 @Injectable()
 export class WarehouseRepository implements IWarehouseRepository {
-  constructor(private readonly datasource: IWarehouseDatasource) {}
+  constructor(
+    private readonly datasource: IWarehouseDatasource,
+    private readonly cache: WarehouseCache,
+  ) {}
+
   async issueGoods(
     items: { goodId: string; quantity: number }[],
   ): Promise<void> {
-    const stocks = await this.getAvailableStocksByIds(
-      items.map((item) => item.goodId),
+    // IMPORTANT:
+    // Compute stock changes only once and apply the same change set to every
+    // persistence layer (database, cache, search index, etc.). This prevents
+    // inconsistencies caused by duplicated business logic.
+    //
+    // TODO:
+    // Introduce a Synchronizer to guarantee eventual consistency and retry
+    // failed updates when a secondary store (e.g. Redis) is temporarily unavailable.
+    const goodIds = items.map((item) => item.goodId);
+
+    const stocks = await this.datasource.findStocks(goodIds);
+
+    const issueQuantities = items.toMap(
+      (item) => item.goodId,
+      (item) => item.quantity,
     );
 
-    const updatedStocks: { goodId: string; quantity: number }[] = [];
+    const { updates, deletions } = planStockChanges(stocks, issueQuantities);
 
-    for (const item of items) {
-      const stock = stocks[item.goodId];
+    // Apply the same computed changes to every persistence layer.
+    // This prevents duplicated business logic and inconsistent states.
 
-      if (stock === undefined || stock < item.quantity)
-        throw new Error("Insufficient stock.");
-
-      if (stock === item.quantity) {
-        await this.datasource.delete(item.goodId);
-        delete stocks[item.goodId];
-      } else {
-        const remaining = stock - item.quantity;
-
-        stocks[item.goodId] = remaining;
-
-        updatedStocks.push({
-          goodId: item.goodId,
-          quantity: remaining,
-        });
-      }
+    // TODO consider exception they may occur like db fail or cache service fails
+    if (updates.size > 0) {
+      await this.datasource.updateMany(updates);
+      await this.cache.setMany(updates);
     }
 
-    if (updatedStocks.length > 0) {
-      await this.datasource.updateMany(updatedStocks);
+    if (deletions.length > 0) {
+      await this.datasource.deleteMany(deletions);
+      await this.cache.deleteMany(deletions);
     }
   }
   receiptGoods(items: { goodId: string; quantity: number }[]): Promise<void> {

@@ -307,34 +307,6 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
-  infrastructure/database:
-    dependencies:
-      '@nestjs/common':
-        specifier: ^11.1.26
-        version: 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/config':
-        specifier: ^4.0.4
-        version: 4.0.4(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@prisma/adapter-pg':
-        specifier: ^7.8.0
-        version: 7.8.0
-      '@prisma/client':
-        specifier: ^7.8.0
-        version: 7.8.0(prisma@7.8.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3))(typescript@6.0.3)
-      pg:
-        specifier: ^8.21.0
-        version: 8.21.0
-    devDependencies:
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
-      prisma:
-        specifier: ^7.8.0
-        version: 7.8.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-
   infrastructure/database/elasticsearch: {}
 
   infrastructure/database/prisma:
@@ -365,11 +337,16 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  infrastructure/persistent/common: {}
+
   infrastructure/persistent/warehouse:
     dependencies:
       '@feature/warehouse':
         specifier: workspace:*
         version: link:../../../feature/warehouse
+      '@infra/common-persistent':
+        specifier: workspace:*
+        version: link:../common
       '@nestjs/common':
         specifier: ^11.1.26
         version: 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2)

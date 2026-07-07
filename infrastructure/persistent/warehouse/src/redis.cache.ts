@@ -1,5 +1,5 @@
 import { type RedisClientType } from "redis";
-import { ICache } from "./cache.interface";
+import { ICache } from "./warehouse.cache";
 import { Injectable } from "@nestjs/common";
 
 @Injectable()
@@ -11,7 +11,7 @@ export class RedisCache implements ICache {
 
     if (!value) return undefined;
 
-    return JSON.parse(value) as T;
+    // return JSON.parse(value) as T;
   }
 
   async set<T>(
@@ -19,7 +19,7 @@ export class RedisCache implements ICache {
     value: T,
     options?: { ttl?: number },
   ): Promise<void> {
-    const data = JSON.stringify(value);
+    // const data = JSON.stringify(value);
 
     if (options?.ttl) {
       await this.client.set(key, data, {

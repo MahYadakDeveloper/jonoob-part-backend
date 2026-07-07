@@ -1,5 +1,5 @@
 {
-  "name": "@infra/warehouse-persistent",
+  "name": "@infra/common-persistent",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -14,14 +14,5 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
-  },
-  "devDependencies": {
-    "typescript": "^6.0.3"
-  },
-  "dependencies": {
-    "@feature/warehouse": "workspace:*",
-    "@infra/common-persistent": "workspace:*",
-    "@nestjs/common": "^11.1.26",
-    "redis": "^6.0.1"
   }
 }
