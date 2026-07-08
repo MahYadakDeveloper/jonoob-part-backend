@@ -1,5 +1,6 @@
 export class InsufficientStockError extends Error {
-  constructor(id: string) {
-    super(`Insufficient stock of good #${id}`);
+  constructor(goodId: string) {
+    super(`Insufficient stock for good ${goodId}`);
+    this.name = "InsufficientStockError";
   }
 }
