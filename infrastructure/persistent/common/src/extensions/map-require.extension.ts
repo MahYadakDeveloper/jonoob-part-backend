@@ -1,15 +1,16 @@
 declare global {
   interface Map<K, V> {
-    require(): Map<K, NonNullable<V>>;
+    require(onMissing: (key: K, value: V) => Error): Map<K, NonNullable<V>>;
   }
 }
 
 Map.prototype.require = function <K, V>(
   this: Map<K, V>,
+  onMissing: (key: K, value: V) => Error,
 ): Map<K, NonNullable<V>> {
   for (const [key, value] of this) {
     if (value == null) {
-      throw new Error(`Value for key "${String(key)}" is null.`);
+      throw onMissing(key, value);
     }
   }
 

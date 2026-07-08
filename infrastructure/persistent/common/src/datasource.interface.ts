@@ -1,7 +1,7 @@
 export interface Datasource<TEntity, TId> {
   find(id: TId): Promise<TEntity | undefined>;
-
   findMany(ids: readonly TId[]): Promise<TEntity[]>;
+  findManyForUpdate(ids: readonly TId[]): Promise<TEntity[]>;
 
   create(entity: TEntity): Promise<void>;
 

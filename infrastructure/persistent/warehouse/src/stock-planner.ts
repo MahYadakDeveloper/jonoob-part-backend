@@ -15,16 +15,14 @@ export function planStockChanges(
   for (const [id, quantity] of requested) {
     const stock = stocks.get(id);
 
-    if (!stock) throw new StockNotFoundError(id);
+    if (stock === undefined) throw new StockNotFoundError(id);
 
     checkSufficientStock(stock, quantity);
 
     if (stock === quantity) {
       deletions.push(id);
     } else {
-      const remaining = stock - quantity;
-
-      updates.set(id, remaining);
+      updates.set(id, stock - quantity);
     }
   }
 
@@ -44,7 +42,4 @@ export function checkSufficientStocks(
   }
 }
 
-function checkSufficientStock(stock: number, requested: number) {
-  if (stock < requested)
-    throw new InsufficientStockError("Insufficient stock.");
-}
+function checkSufficientStock(stock: number, requested: number) {}

@@ -1,17 +1,19 @@
 import {
+  DuplicateGoodError,
+  InsufficientStockError,
   StockNotFoundError,
   type IWarehouseRepository,
 } from "@feature/warehouse";
 import { Injectable } from "@nestjs/common";
-import { checkSufficientStocks, planStockChanges } from "./stock-planner";
-import { type WarehouseCache } from "./warehouse.cache";
-import { type WarehouseDatasource } from "./warehouse.datasource";
+import { planStockChanges } from "./stock-planner";
+import { type StockCache } from "./stock.cache";
+import { type StockDatasource } from "./stock.datasource";
 
 @Injectable()
 export class WarehouseRepository implements IWarehouseRepository {
   constructor(
-    private readonly datasource: WarehouseDatasource,
-    private readonly cache: WarehouseCache,
+    private readonly datasource: StockDatasource,
+    private readonly cache: StockCache,
   ) {}
 
   /**
@@ -36,52 +38,28 @@ export class WarehouseRepository implements IWarehouseRepository {
   ): Promise<void> {
     const goodIds = items.map((item) => item.goodId);
 
-    const cachedStocks = await this.cache.getMany(goodIds);
-    const uncachedStockKeys: string[] = [];
-    for (const [key, value] of cachedStocks) {
-      if (value === null) {
-        uncachedStockKeys.push(key);
-      }
-    }
-
-    if (uncachedStockKeys.length > 0) {
-      let _uncachedStockKeys = uncachedStockKeys;
-
-      // Checking if there's stocks reserved that cause to became to unavailable stock(reaching 0).
-      const reservedStocks =
-        await this.cache.getReservedMany(uncachedStockKeys);
-      for (const [key, value] of reservedStocks) {
-        cachedStocks.set(key, value);
-        _uncachedStockKeys = _uncachedStockKeys.filter(
-          (uncachedKey) => key === uncachedKey,
-        );
-      }
-
-      // Caching from main db
-      const uncachedStocks = (
-        await this.datasource.findMany(_uncachedStockKeys)
-      ).toMap(
-        (x) => x.goodId,
-        (x) => x.quantity,
-      );
-      for (const key of _uncachedStockKeys) {
-        const uncachedStock = uncachedStocks.get(key);
-        if (!uncachedStock) throw new StockNotFoundError(key);
-
-        cachedStocks.set(key, uncachedStock);
-      }
-
-      await this.cache.setMany(uncachedStocks);
-    }
-
-    const issueQuantities = items.toMap(
-      (item) => item.goodId,
-      (item) => item.quantity,
-    );
-
+    // Plan and commit changes
     const changes = await this.datasource.transaction(async (tx) => {
-      const stocks = cachedStocks.require();
+      // Ensuring theres no duplications
+      items.assertUniqueBy(
+        (item) => item.goodId,
+        (goodId) => new DuplicateGoodError(goodId),
+      );
+
+      const issueQuantities = items.toMap(
+        (item) => item.goodId,
+        (item) => item.quantity,
+      );
+
+      const stocks = (await tx.findManyForUpdate(goodIds)).toMap(
+        (stock) => stock.goodId,
+        (stock) => stock.quantity,
+      );
+
+      // Ensuring all stocks exist and have sufficient quantity available
       const { updates, deletions } = planStockChanges(stocks, issueQuantities);
+
+      // Committing
       if (updates.size > 0) {
         await tx.updateMany(
           Array.from(updates, ([goodId, quantity]) => ({
@@ -98,72 +76,34 @@ export class WarehouseRepository implements IWarehouseRepository {
       return { updates, deletions };
     });
 
-    try {
-      await this.cache.applyChanges(changes);
-    } catch {
-      await this.cache.deleteMany(items.map((item) => item.goodId));
-    }
+    // Synchronize cache
+    await this.cache.synchronize(changes);
   }
 
   /**
    * TODO Comment this later
-   * @param items 
+   * @param items
    */
   receiptGoods(items: { goodId: string; quantity: number }[]): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
+  /**
+   *
+   * @param items
+   */
   async reserveStock(
     items: { goodId: string; quantity: number }[],
   ): Promise<void> {
-    const goodIds = items.map((item) => item.goodId);
-
-    const cachedStocks = await this.cache.getMany(goodIds);
-    const uncachedStockKeys: string[] = [];
-    for (const [key, value] of cachedStocks) {
-      if (value === null) {
-        uncachedStockKeys.push(key);
-      }
-    }
-
-    // Caching
-    if (uncachedStockKeys.length > 0) {
-      // Caching from main db
-      const uncachedStocks = (
-        await this.datasource.findMany(uncachedStockKeys)
-      ).toMap(
-        (x) => x.goodId,
-        (x) => x.quantity,
-      );
-      for (const key of uncachedStockKeys) {
-        const uncachedStock = uncachedStocks.get(key);
-        if (!uncachedStock) throw new StockNotFoundError(key);
-
-        cachedStocks.set(key, uncachedStock);
-      }
-
-      await this.cache.setMany(uncachedStocks);
-    }
-
-    const stock = cachedStocks.require();
-
-    // Til there we are sure that the stocks available if is not error would been thrown.
-    // but one thing we are not sure is that sufficient stocks for reserve are here
-    const req = items.toMap(
-      (item) => item.goodId,
-      (item) => item.quantity,
-    );
-    checkSufficientStocks(stock, req);
-
-    // We now sure is there sufficient stock, so we reserve then
-    await this.cache.reserveMany(req);
+    // Note: use db to store reserved stocks from stocks in warehouse
   }
 
   /**
-   * 
-   * @param items 
+   *
+   * @param items
    */
   releaseStock(items: { goodId: string; quantity: number }[]): Promise<void> {
-    // this would be done only with caching no database
+    // Note: use db to store reserved stocks from stocks in warehouse
     throw new Error("Method not implemented.");
   }
   getAvailableStocksByIds(goodIds: string[]): Promise<Record<string, number>> {
