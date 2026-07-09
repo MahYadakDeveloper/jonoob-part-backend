@@ -1,6 +1,5 @@
-import { GrantCashbackRequest } from "./cashback.requests";
-import { GrantCashbackResponse } from "./cashback.responses";
+import { ReversalCashbackRequest } from "./cashback.requests";
 
 export interface ICashbackService {
-  grantCashback(req: GrantCashbackRequest): Promise<GrantCashbackResponse>
+  reverseCashback(request: ReversalCashbackRequest): Promise<void>
 }

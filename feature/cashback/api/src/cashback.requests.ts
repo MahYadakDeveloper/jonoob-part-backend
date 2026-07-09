@@ -1,4 +1,5 @@
-export interface GrantCashbackRequest {
-  customerId: string;
-  purchasedItems: { productId: string; quantity: number }[];
+import { Money } from "@feature/common";
+
+export interface ReversalCashbackRequest{
+  // saleId: 
 }

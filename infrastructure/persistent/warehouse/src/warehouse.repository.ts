@@ -85,7 +85,7 @@ export class WarehouseRepository implements IWarehouseRepository {
    * @param items
    */
   receiptGoods(items: { goodId: string; quantity: number }[]): Promise<void> {
-    throw new Error("Method not implemented.");
+    
   }
 
   /**

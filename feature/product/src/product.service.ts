@@ -13,10 +13,10 @@ type Product =
             unit: "toman" | "rial";
           };
           stock: number;
+          unitOfMeasure: UnitOfMeasure;
           // ...
         };
         populated?: {
-          unitOfMeasure: UnitofMeasure;
           description: string;
           // ...
         };

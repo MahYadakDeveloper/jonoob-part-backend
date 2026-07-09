@@ -1,5 +1,5 @@
-import { Invoice, Money } from "@feature/common";
-import { PricingPolicy } from "./pricing.req";
+import { Money } from "@feature/common";
+import { PricingPolicy } from "./pricing.requests";
 
 export interface LineTotalPricingResponse {
   lineTotal: Money;

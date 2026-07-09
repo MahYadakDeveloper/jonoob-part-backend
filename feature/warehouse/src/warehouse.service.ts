@@ -15,11 +15,14 @@ import {
 import {
   AvailableStockRequest,
   AvailableStocksRequest,
+  FindGoodByBarcodeRequest,
   GoodsReceptionRequest,
+  GoodUpdateRequest,
 } from "./warehouse.requests";
 import {
   AvailableStockResponse,
   AvailableStocksResponse,
+  FindGoodByBarcodeResponse,
 } from "./warehouse.responses";
 
 // Note: use pipelines? for value validation for input requests
@@ -111,5 +114,16 @@ export class WarehouseService implements IWarehouseService {
       "warehouse.goods-receipted",
       new GoodsReceiptedEvent(req.items.map((item) => item.goodId)),
     );
+  }
+
+  async findGoodByBarcode(
+    req: FindGoodByBarcodeRequest,
+  ): Promise<FindGoodByBarcodeResponse> {
+    const good = await this.warehouseRepository.findGoodByBarcode(req.barcode);
+    return { good };
+  }
+
+  async updateGoodData(req: GoodUpdateRequest) {
+    return this.warehouseRepository.updateGoodDetails(req.goodId, req.details);
   }
 }

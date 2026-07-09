@@ -4,14 +4,14 @@ import {
   PricingPolicyReq,
   SalePricingRequest,
   UnitPricingRequest,
-} from "./pricing.req";
+} from "./pricing.requests";
 import {
   LineTotalPricingResponse,
   ManyUnitPricingResponse,
   PricingPolicyRes,
   SalePricingResponse,
   UnitPricingResponse,
-} from "./pricing.res";
+} from "./pricing.responses";
 
 export interface IPricingService {
   priceUnit(req: UnitPricingRequest): Promise<UnitPricingResponse>;

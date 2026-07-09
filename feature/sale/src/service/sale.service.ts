@@ -1,57 +1,68 @@
 import { type ICashbackService } from "@feature/cashback-api";
-import { Invoice, Payment } from "@feature/common";
+import { Payment } from "@feature/common";
+import { type ICustomersService } from "@feature/customer-api";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
 import { type IWarehouseService } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
 import { type ISaleDocumentsRepository } from "repository/sale-documents.repository";
-import { RecordSaleInput } from "./dto/record-sale.dto";
-import { RecordReturnInput } from "./dto/record-return.dto";
-import { type ICustomersRepository } from "repository/customer.repository";
+import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 
 /**
  *
  */
 @Injectable()
-export class PosService {
+export class SaleService {
   constructor(
     private readonly saleDocumentsRepository: ISaleDocumentsRepository,
-    private readonly customersRepository: ICustomersRepository,
     private readonly warehouseService: IWarehouseService,
     private readonly pricingService: IPricingService,
     private readonly paymentService: IPaymentService,
     private readonly cashbackService: ICashbackService,
+    private readonly customersService: ICustomersService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
    * Considerations:
-   *  - if discardCashbackReversal is false | undefined then calculate the cashback and reduce from user wallet
-   *  if cashback is allocated.[if it the cashback fails throw an error and do not proceed].
-   *
-   * Workflow:
-   *  - cashback
-   *  - receipt goods in warehouse
-   *  - record the return document, (remember that cant be an invoice)
-   */
-  async recordReturn(input: RecordReturnInput) {}
+   *     */
+  async recordReturn({
+    saleId,
+    discardCashbackReversal,
+    items,
+  }: RecordReturnRequest) {
+    const sale = await this.saleDocumentsRepository.findSaleById(saleId);
+
+    // Reverse Cashback
+    if (!discardCashbackReversal) {
+      const grandTotal = this.cashbackService.reverseCashback(sale);
+    }
+    // Receipt goods in warehouse
+    // Record the return document, (remember that cant be an invoice)
+  }
 
   /**
    *
    * @param input
    */
-  async recordSale(input: RecordSaleInput) {
-    const ids = input.items.map((item) => item.productId);
-    const { cashierId, customerId, useWallet } = input;
+  async recordSale(request: RecordSaleRequest) {
+    const ids = request.items.map((item) => item.productId);
+    const { cashierId, customerId, useWallet } = request;
 
-    const customerType =
-      (customerId &&
-        this.customersRepository.getCustomerTypeById(customerId)) ||
-      "consumer";
+    const quantities = request.items.reduce<Map<string, number>>(
+      (prev, curr) => {
+        prev[curr.productId] = curr.quantity;
+        return prev;
+      },
+      new Map(),
+    );
 
-    const quantities = input.items.reduce<Map<string, number>>((prev, curr) => {
-      prev[curr.productId] = curr.quantity;
-      return prev;
-    }, new Map());
+    // Resolving customer type
+    const { customerType } = (customerId &&
+      (await this.customersService.resolveCustomerType({
+        customerId: customerId,
+      }))) || { customerType: "consumer" };
 
     // Pricing items and other invoices props
     const { policy } = this.pricingService.getPricingPolicy({
@@ -91,17 +102,7 @@ export class PosService {
       })),
     });
 
-    // Granting cashback
-    const { cashback } = (customerId &&
-      (await this.cashbackService.grantCashback({
-        customerId,
-        purchasedItems: sale.items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      }))) || { cashback: undefined };
-
-    await this.saleDocumentsRepository.recordSale({
+    const { saleId } = await this.saleDocumentsRepository.recordSale({
       ...sale,
       header: {
         cashierId,
@@ -110,9 +111,10 @@ export class PosService {
       },
       summary: {
         ...sale.summary,
-        cashback,
       },
       payment,
     });
+
+    this.eventEmitter.emit("pos.sale-recorded", new SaleRecordedEvent(saleId));
   }
 }

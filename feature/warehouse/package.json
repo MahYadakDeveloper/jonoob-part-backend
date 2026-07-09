@@ -17,6 +17,7 @@
   },
   "private": true,
   "dependencies": {
+    "@feature/common": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.1.26",
     "@nestjs/event-emitter": "^3.1.0",

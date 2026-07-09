@@ -1,3 +1,3 @@
 export * from "./pricing.api";
-export * from "./pricing.req";
-export * from "./pricing.res";
+export * from "./pricing.requests";
+export * from "./pricing.responses";

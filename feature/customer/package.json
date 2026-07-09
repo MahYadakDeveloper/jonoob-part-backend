@@ -1,5 +1,5 @@
 {
-  "name": "@feature/cashback",
+  "name": "@feature/customer",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,11 +17,7 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/cashback-api": "workspace:*",
     "@feature/common": "workspace:*",
-    "@feature/customer-api": "workspace:*",
-    "@feature/sale-api": "workspace:*",
-    "@nestjs/common": "^11.1.27",
-    "@nestjs/event-emitter": "^3.1.0"
+    "@nestjs/common": "^11.1.27"
   }
 }
