@@ -55,9 +55,6 @@ export class SaleService {
     let payableRefund = this.computeRefund(items, sale);
 
     // Reverse cashback
-
-    let reversedCashback: Money | undefined;
-
     if (sale.header.customerId) {
       if (discardCashbackReversal) {
         const { customerType } =
@@ -70,12 +67,10 @@ export class SaleService {
         });
         payableRefund = payableRefund.subtract(cashback);
       } else {
-        const { reversedCashback: _reversedCashback } =
-          await this.cashbackService.reverseCashback({
-            customerId: sale.header.customerId,
-            refund: payableRefund,
-          });
-        reversedCashback = _reversedCashback;
+        await this.cashbackService.reverseCashback({
+          customerId: sale.header.customerId,
+          refund: payableRefund,
+        });
       }
     }
 
