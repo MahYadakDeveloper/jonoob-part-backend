@@ -13,11 +13,9 @@ export interface RecordSaleRequest {
 
 export interface RecordReturnRequest {
   saleId: string;
-  items:
-    | "whole"
-    | {
-        productId: string;
-        quantity: number;
-      }[];
+  items: {
+    productId: string;
+    quantity: number;
+  }[];
   discardCashbackReversal?: true | false;
 }

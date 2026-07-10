@@ -9,6 +9,7 @@ export type SaleItem = {
 };
 
 export type Sale = {
+  id: string,
   readonly header: {
     readonly cashierId: string;
     readonly issuedAt: Date;

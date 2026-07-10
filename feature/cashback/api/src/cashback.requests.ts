@@ -1,5 +1,11 @@
-import { Money } from "@feature/common";
+import { CustomerType, Money } from "@feature/common";
 
-export interface ReversalCashbackRequest{
-  // saleId: 
+export interface ReversalCashbackRequest {
+  customerId: string,
+  refund: Money,
+}
+
+export interface CalculationCashbackRequest {
+  customerType: CustomerType
+  total: Money
 }
