@@ -1,8 +1,9 @@
+import { InvoiceSnapshot } from "@feature/common";
 import { Return } from "model/return";
 import { Sale } from "model/sale";
 
 export interface ISaleDocumentsRepository {
-  recordSale(document: Omit<Sale, "id">): Promise<{saleId: string}>;
+  recordSale(invoice: Required<InvoiceSnapshot>): Promise<{ saleId: string }>;
   recordReturn(document: Return): Promise<void>;
   findSaleById(saleId: string): Promise<Sale>;
 }

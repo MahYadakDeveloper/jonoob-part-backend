@@ -2,5 +2,7 @@
   "cSpell.words": [
     "CODEBAR",
     "exprimentalpnpm"
-  ]
+  ],
+  "todo-tree.ripgrep.ripgrep": "/usr/bin/rg",
+  "todo-tree.tree.showBadges": true
 }

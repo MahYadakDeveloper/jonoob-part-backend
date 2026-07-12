@@ -1,41 +1,4 @@
 // TODO some props may change later, this is not complete version
-type Product =
-  | {
-      _id: string;
-      kind: "product";
-
-      definition: {
-        productId: string;
-
-        enriched?: {
-          price: {
-            value: number;
-            unit: "toman" | "rial";
-          };
-          stock: number;
-          unitOfMeasure: UnitOfMeasure;
-          // ...
-        };
-        populated?: {
-          description: string;
-          // ...
-        };
-      };
-    }
-  | {
-      _id: string;
-      kind: "bundle";
-
-      definition: {
-        name: string;
-        category: string;
-        // ... bundle specifications
-        items: {
-          productId: string;
-          quantity: number;
-        }[];
-      };
-    };
 
 export class ProductService {
   /**

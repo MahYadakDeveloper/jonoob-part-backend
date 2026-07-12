@@ -1,13 +1,14 @@
 import { Money } from "@feature/common";
+import { CashbackReversalPolicy } from "@feature/cashback-api";
 
 export interface RecordSaleRequest {
   cashierId: string;
   customerId?: string;
   useWallet: false | { wallet: true | Money; verifyCode: string };
-
+  manualDiscount?: Money;
   items: {
     productId: string;
-    quantity: number;
+    qty: number;
   }[];
 }
 
@@ -17,5 +18,5 @@ export interface RecordReturnRequest {
     productId: string;
     quantity: number;
   }[];
-  discardCashbackReversal?: true | false;
+  cashbackReversalPolicy?: CashbackReversalPolicy;
 }

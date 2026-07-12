@@ -3,7 +3,13 @@ import {
   InsufficientCashbackBalanceError,
   CashbackError,
 } from "@feature/cashback-api";
-import { Money, Payment } from "@feature/common";
+import {
+  InvoiceItem,
+  InvoiceSnapshot,
+  LineItems,
+  Money,
+  Payment,
+} from "@feature/common";
 import { type ICustomersService } from "@feature/customer-api";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
@@ -14,9 +20,11 @@ import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { SaleRecordedEvent } from "@feature/sale-api";
 import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.error";
-import { Sale } from "model/sale";
+import { Sale, SaleInvoice, SaleItem } from "model/sale";
 import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match-sale.error";
 import { RecordReturnResponse } from "./sale.responses";
+import { DuplicateItemsInSaleError } from "errors/duplicate-items-in-sale.error";
+import { ProductLineItem } from "types/prodcut-line-item.type";
 
 /**
  *
@@ -41,91 +49,83 @@ export class SaleService {
    */
   async recordReturn({
     saleId,
-    discardCashbackReversal,
+    cashbackReversalPolicy,
     items,
   }: RecordReturnRequest): Promise<RecordReturnResponse> {
     const sale = await this.saleDocumentsRepository.findSaleById(saleId);
 
+    // Prevent duplications
     items.assertUniqueBy(
       (item) => item.productId,
       (productId) => new DuplicateItemsInReturnError(productId),
     );
 
-    // Calculate refund
-    let payableRefund = this.computeRefund(items, sale);
+    // Calculate payable refund
+
+    const returnItems = items.toLineItems((item) => item.productId);
+    const soldItems = sale.snapshot.items;
+
+    const refund = this.computeRefund(returnItems, soldItems);
 
     // Reverse cashback
-    if (sale.header.customerId) {
-      if (discardCashbackReversal) {
-        const { customerType } =
-          await this.customersService.resolveCustomerType({
-            customerId: sale.header.customerId,
-          });
-        const { cashback } = await this.cashbackService.calculateCashback({
-          customerType,
-          total: payableRefund,
-        });
-        payableRefund = payableRefund.subtract(cashback);
-      } else {
-        await this.cashbackService.reverseCashback({
-          customerId: sale.header.customerId,
-          refund: payableRefund,
-        });
-      }
-    }
+    const { customerId } = sale.snapshot.header;
+    const payableRefund = customerId
+      ? (
+          await this.cashbackService.processCashbackReversal({
+            customerId,
+            refund,
+            policy: cashbackReversalPolicy!,
+          })
+        ).payableRefund
+      : refund;
 
     // TODO Receipt goods in warehouse
+    await this.warehouseService.recordGoodsReceipt({
+      items: items,
+    });
     // TODO Record the return document, (remember that cant be an invoice)
     return { payableRefund };
   }
 
   /**
    *
+   *
    * @param input
    */
-  async recordSale(request: RecordSaleRequest) {
-    const ids = request.items.map((item) => item.productId);
-    const { cashierId, customerId, useWallet } = request;
-
-    const quantities = request.items.reduce<Map<string, number>>(
-      (prev, curr) => {
-        prev[curr.productId] = curr.quantity;
-        return prev;
-      },
-      new Map(),
+  async recordSale(req: RecordSaleRequest) {
+    // Uniqueness validation
+    req.items.assertUniqueBy(
+      (x) => x.productId,
+      (key) => new DuplicateItemsInSaleError(key),
     );
 
     // Resolving customer type
-    const { customerType } = (customerId &&
+    const { customerType } = (req.customerId &&
       (await this.customersService.resolveCustomerType({
-        customerId: customerId,
+        customerId: req.customerId,
       }))) || { customerType: "consumer" };
 
-    // Pricing items and other invoices props
-    const { policy } = this.pricingService.getPricingPolicy({
-      customerType,
-    });
-
-    const { sale } = await this.pricingService.priceSale({
-      items: ids.map((id) => ({
-        productId: id,
-        quantity: quantities[id],
-      })),
+    // Pricing invoice
+    const { policy } = this.pricingService.getPricingPolicy({ customerType });
+    const {
+      pricedInvoice: { items, summary },
+    } = await this.pricingService.priceInvoice({
+      items: req.items.toLineItems((item) => item.productId),
       policy,
     });
 
     // Processing payment
-    const { payment }: { payment: Payment } = customerId
+    const { payment } = req.customerId
       ? await this.paymentService.planPayment({
-          amountDue: sale.summary.grandTotal,
-          customerId,
-          useWallet,
+          amountDue: summary.grandTotal,
+          customerId: req.customerId,
+          useWallet: req.useWallet,
           externalPaymentMethod: "posTerminal",
         })
       : {
           payment: {
             externalPayment: {
-              amount: sale.summary.subtotal,
+              amount: summary.subtotal,
               paymentMethod: "posTerminal",
             },
           },
@@ -133,22 +133,23 @@ export class SaleService {
 
     // Issuing goods
     await this.warehouseService.recordGoodsIssue({
-      items: sale.items.map((item) => ({
-        goodId: item.productId,
-        quantity: item.quantity,
-      })),
+      items: items.transform(
+        (item) => ({
+          goodId: item.productId,
+          qty: item.quantity,
+        }),
+        (item) => item.goodId,
+      ),
     });
 
     const { saleId } = await this.saleDocumentsRepository.recordSale({
-      ...sale,
       header: {
-        cashierId,
+        cashierId: req.cashierId,
+        customerId: req.customerId,
         issuedAt: new Date(Date.now()),
-        customerId,
       },
-      summary: {
-        ...sale.summary,
-      },
+      items,
+      summary,
       payment,
     });
 
@@ -156,18 +157,17 @@ export class SaleService {
   }
 
   private computeRefund(
-    items: { productId: string; quantity: number }[],
-    sale: Sale,
+    returnItems: LineItems<ProductLineItem>,
+    soldItems: LineItems<InvoiceItem>,
   ) {
-    return items.reduce((refund, returnItem) => {
-      // Validate items matching
-      const saleItem = sale.items.find(
-        (saleItem) =>
-          returnItem.productId === saleItem.productId &&
-          returnItem.quantity <= saleItem.quantity,
-      );
+    let refund = Money.zero();
+    for (const returnItem of returnItems) {
+      const saleItem = soldItems.get(returnItem.productId);
 
+      // Validate items matching
       if (!saleItem) throw new ReturnItemsDoNotMatchSaleError();
+      if (returnItem.quantity > saleItem.quantity)
+        throw new ReturnItemsDoNotMatchSaleError();
 
       const lineTotalWithoutDiscount = saleItem.unitPrice.multiply(
         returnItem.quantity,
@@ -176,7 +176,10 @@ export class SaleService {
         saleItem.discount === undefined
           ? lineTotalWithoutDiscount
           : lineTotalWithoutDiscount.subtract(saleItem.discount);
-      return refund.add(lineTotal);
-    }, Money.zero());
+
+      refund = refund.add(lineTotal);
+    }
+
+    return refund;
   }
 }

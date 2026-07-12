@@ -7,12 +7,7 @@ export interface StockAdjustmentRequest {
   stock: number;
 }
 
-export interface GoodsReceptionRequest {
-  items: {
-    goodId: string;
-    quantity: number;
-  }[];
-}
+
 
 export interface AvailableStocksRequest {
   goodIds: string[];

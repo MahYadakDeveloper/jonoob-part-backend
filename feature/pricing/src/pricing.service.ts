@@ -35,6 +35,7 @@ export class PricingService implements IPricingService {
     return { policy: req.customerType === "merchant" ? "wholesale" : "retail" };
   }
 
+  // FIXME Fix and apply new calculation for `bundle` products and product `leaf`
   async priceUnit(req: UnitPricingRequest): Promise<UnitPricingResponse> {
     const markup = await this.markupPolicyProvider.resolve(req.policy);
 

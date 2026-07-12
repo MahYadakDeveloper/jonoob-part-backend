@@ -1,29 +1,42 @@
-import { Money, Payment } from "@feature/common";
+import {
+  InvoiceHeader,
+  InvoiceItem,
+  InvoicePayment,
+  InvoiceSnapshot,
+  InvoiceSummary,
+} from "@feature/common";
 
-export type SaleItem = {
-  readonly productId: string;
-  readonly quantity: number;
-  readonly unitPrice: Money;
-  readonly lineTotal: Money;
-  readonly discount?: Money;
-};
+export type SaleStatus = "draft" | "completed" | "cancelled" | "refunded";
 
-export type Sale = {
-  id: string,
-  readonly header: {
-    readonly cashierId: string;
-    readonly issuedAt: Date;
-    readonly customerId?: string;
-  };
+export class Sale {
+  private constructor(
+    readonly id: string,
 
-  readonly items: SaleItem[];
+    private _header: InvoiceHeader,
+    private _items: readonly InvoiceItem[],
+    private _summary: InvoiceSummary,
+    private _payment: InvoicePayment,
 
-  readonly summary: {
-    readonly cashback?: Money;
-    readonly subtotal: Money;
-    readonly grandTotal: Money;
-    readonly discount?: Money;
-  };
+    readonly status: SaleStatus,
+  ) {}
 
-  readonly payment: Payment;
-};
+  static create(id: string, snapshot: Required<InvoiceSnapshot>): Sale {
+    return new Sale(
+      id,
+      snapshot.header,
+      snapshot.items,
+      snapshot.summary,
+      snapshot.payment,
+      "completed",
+    );
+  }
+
+  get snapshot(): InvoiceSnapshot {
+    return {
+      header: this._header,
+      items: this._items,
+      summary: this._summary,
+      payment: this._payment,
+    };
+  }
+}

@@ -2,6 +2,7 @@ import {
   GoodsIssuedEvent,
   GoodsIssuingRequest,
   GoodsReceiptedEvent,
+  GoodsReceptionRequest,
   IWarehouseService,
   StockReleasingRequest,
   StockReservingRequest,
@@ -16,7 +17,6 @@ import {
   AvailableStockRequest,
   AvailableStocksRequest,
   FindGoodByBarcodeRequest,
-  GoodsReceptionRequest,
   GoodUpdateRequest,
 } from "./warehouse.requests";
 import {

@@ -1,6 +1,7 @@
-import { CustomerType } from "@feature/common";
+import { CustomerType, LineItems } from "@feature/common";
 
 export type PricingPolicy = "wholesale" | "retail";
+
 
 export interface LineTotalPricingRequest {
   items: { productId: string; purchaseQty: number }[];
@@ -8,20 +9,17 @@ export interface LineTotalPricingRequest {
 }
 
 export interface ManyUnitPricingRequest {
-  items: { productId: string; quantity?: number }[];
-  customerId?: string;
+  items: Map<string, { qty: number }>;
   policy: PricingPolicy;
 }
 
 export interface UnitPricingRequest {
-  item: { productId: string; quantity?: number };
-  customerId?: string;
+  item: { productId: string }[];
   policy: PricingPolicy;
 }
 
-export interface SalePricingRequest {
-  customerId?: string;
-  items: { productId: string; quantity: number }[];
+export interface InvoicePricingRequest {
+  items: LineItems<{productId: string, qty: number}>;
   policy: PricingPolicy;
 }
 

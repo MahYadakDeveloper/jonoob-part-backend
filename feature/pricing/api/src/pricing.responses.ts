@@ -1,4 +1,9 @@
-import { Money } from "@feature/common";
+import {
+    InvoiceItem,
+    InvoiceSummary,
+    LineItems,
+    Money
+} from "@feature/common";
 import { PricingPolicy } from "./pricing.requests";
 
 export interface LineTotalPricingResponse {
@@ -14,20 +19,10 @@ export interface UnitPricingResponse {
   price: Money;
 }
 
-export interface SalePricingResponse {
-  sale: {
-    readonly items: {
-      readonly productId: string;
-      readonly quantity: number;
-      readonly unitPrice: Money;
-      readonly lineTotal: Money;
-      readonly discount?: Money;
-    }[];
-    readonly summary: {
-      readonly subtotal: Money;
-      readonly grandTotal: Money;
-      readonly discount?: Money;
-    };
+export interface InvoicePricingResponse {
+  pricedInvoice: {
+    items: LineItems<InvoiceItem>;
+    summary: InvoiceSummary;
   };
 }
 

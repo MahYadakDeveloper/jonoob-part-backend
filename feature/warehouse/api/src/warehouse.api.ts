@@ -1,11 +1,20 @@
 import {
   GoodsIssuingRequest,
+  GoodsReceptionRequest,
   StockReleasingRequest,
   StockReservingRequest,
 } from "./warehouse.requests";
 
 export interface IWarehouseService {
+  /**
+   *
+   */
   recordGoodsIssue(req: GoodsIssuingRequest): Promise<void>;
+
+  /**
+   *
+   */
+  recordGoodsReceipt(req: GoodsReceptionRequest): Promise<void>;
 
   /**
    * Reserves stock for an operation (e.g. order creation or checkout) to

@@ -1,8 +1,14 @@
+import { LineItems } from "@feature/common";
+
 export interface GoodsIssuingRequest {
-  items: {
+  items: LineItems<{ goodId: string; qty: number }>;
+}
+
+export interface GoodsReceptionRequest {
+  items: LineItems<{
     goodId: string;
-    quantity: number;
-  }[];
+    qty: number;
+  }>;
 }
 
 export interface StockReservingRequest {
