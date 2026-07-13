@@ -21,7 +21,7 @@ export type ProductInvoiceItem = InvoiceItemBase & ProductLeafKind;
 
 export type BundleInvoiceItem = InvoiceItemBase &
   ProductBundleKind & {
-    readonly items: LineItems<InvoiceItem>;
+    readonly items: Omit<InvoiceItemBase, "discount">[];
   };
 
 export type InvoiceItem = ProductInvoiceItem | BundleInvoiceItem;

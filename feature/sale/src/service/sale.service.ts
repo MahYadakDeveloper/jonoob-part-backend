@@ -3,7 +3,13 @@ import {
   type ICashbackService,
   InsufficientCashbackBalanceError,
 } from "@feature/cashback-api";
-import { InvoiceItem, LineItems, Money } from "@feature/common";
+import {
+  InvoiceItem,
+  LineItems,
+  Money,
+  PartialBy,
+  RequiredBy,
+} from "@feature/common";
 import { type ICustomersService } from "@feature/customer-api";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
@@ -19,6 +25,7 @@ import { ProductLineItem } from "types/prodcut-line-item.type";
 import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
 import { RecordReturnResponse } from "./sale.responses";
 import { type IProductQuery } from "port/product-query.port";
+import { mapProductToUnpricedInvoiceItem } from "utils/product-to-unpriced-invoice-item.mapper";
 
 /**
  *
@@ -94,6 +101,21 @@ export class SaleService {
       (key) => new DuplicateItemsInSaleError(key),
     );
 
+    const requestedItems = req.items.toLineItems((item) => item.productId);
+
+    const products = await this.productQuery.findMany(
+      req.items.map((item) => item.productId),
+    );
+
+    const unpricedInvoiceItems = products.transform(
+      (product) =>
+        mapProductToUnpricedInvoiceItem(
+          product,
+          requestedItems.getOrThrow(product.id).qty,
+        ),
+      (product) => product.productId,
+    );
+
     // Resolving customer type
     const { customerType } = (req.customerId &&
       (await this.customersService.resolveCustomerType({
@@ -102,17 +124,16 @@ export class SaleService {
 
     // Pricing invoice
     const { policy } = this.pricingService.getPricingPolicy({ customerType });
-    const {
-      pricedInvoice: { items, summary },
-    } = await this.pricingService.priceInvoice({
-      items: req.items.toLineItems((item) => item.productId),
-      policy,
-    });
+    const { pricedInvoice: draftInvoice } =
+      await this.pricingService.priceInvoice({
+        items: unpricedInvoiceItems,
+        policy,
+      });
 
     // Processing payment
     const { payment } = req.customerId
       ? await this.paymentService.planPayment({
-          amountDue: summary.grandTotal,
+          amountDue: draftInvoice.summary.grandTotal,
           customerId: req.customerId,
           useWallet: req.useWallet,
           externalPaymentMethod: "posTerminal",
@@ -120,19 +141,17 @@ export class SaleService {
       : {
           payment: {
             externalPayment: {
-              amount: summary.subtotal,
+              amount: draftInvoice.summary.subtotal,
               paymentMethod: "posTerminal",
             },
           },
         };
 
-    
-
     // Flatten items for issuing
 
     // Issuing goods
     await this.warehouseService.recordGoodsIssue({
-      items: items.transform(
+      items: draftInvoice.items.transform(
         (item) => ({
           goodId: item.productId,
           qty: item.quantity,
@@ -147,8 +166,8 @@ export class SaleService {
         customerId: req.customerId,
         issuedAt: new Date(Date.now()),
       },
-      items,
-      summary,
+      items: draftInvoice.items,
+      summary: draftInvoice.summary,
       payment,
     });
 
