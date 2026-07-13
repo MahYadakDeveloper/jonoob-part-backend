@@ -1,12 +1,7 @@
-import { UnitOfMeasure } from "./types";
+export type Product = ProductLeaf | ProductBundle;
 
-export type ProductKind = "product" | "bundle";
-
-type Product = ProductLeaf | ProductBundle;
-
-type ProductLeaf = {
+export type ProductLeaf = ProductLeafKind & {
   id: string;
-  kind: Extract<ProductKind, "product">;
   definition: {
     enriched?: {
       price: {
@@ -23,13 +18,13 @@ type ProductLeaf = {
   };
 };
 
-type ProductBundle = {
+export type ProductBundle = ProductBundleKind & {
   id: string;
   kind: "bundle";
   items: BundleItem[];
 };
 
-type BundleItem = {
+export type BundleItem = {
   product: Product;
-  qty: number;
+  quantity: number;
 };

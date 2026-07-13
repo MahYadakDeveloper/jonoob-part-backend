@@ -1,30 +1,24 @@
 import {
+  CashbackError,
   type ICashbackService,
   InsufficientCashbackBalanceError,
-  CashbackError,
 } from "@feature/cashback-api";
-import {
-  InvoiceItem,
-  InvoiceSnapshot,
-  LineItems,
-  Money,
-  Payment,
-} from "@feature/common";
+import { InvoiceItem, LineItems, Money } from "@feature/common";
 import { type ICustomersService } from "@feature/customer-api";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
+import { SaleRecordedEvent } from "@feature/sale-api";
 import { type IWarehouseService } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
-import { type ISaleDocumentsRepository } from "repository/sale-documents.repository";
-import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { SaleRecordedEvent } from "@feature/sale-api";
 import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.error";
-import { Sale, SaleInvoice, SaleItem } from "model/sale";
-import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match-sale.error";
-import { RecordReturnResponse } from "./sale.responses";
 import { DuplicateItemsInSaleError } from "errors/duplicate-items-in-sale.error";
+import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match-sale.error";
+import { type ISaleDocumentsRepository } from "repository/sale-documents.repository";
 import { ProductLineItem } from "types/prodcut-line-item.type";
+import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
+import { RecordReturnResponse } from "./sale.responses";
+import { type IProductQuery } from "port/product-query.port";
 
 /**
  *
@@ -33,6 +27,7 @@ import { ProductLineItem } from "types/prodcut-line-item.type";
 export class SaleService {
   constructor(
     private readonly saleDocumentsRepository: ISaleDocumentsRepository,
+    private readonly productQuery: IProductQuery,
     private readonly warehouseService: IWarehouseService,
     private readonly pricingService: IPricingService,
     private readonly paymentService: IPaymentService,
@@ -130,6 +125,10 @@ export class SaleService {
             },
           },
         };
+
+    
+
+    // Flatten items for issuing
 
     // Issuing goods
     await this.warehouseService.recordGoodsIssue({

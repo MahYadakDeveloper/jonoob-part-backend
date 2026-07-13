@@ -1,4 +1,4 @@
-import { CustomerType, LineItems } from "@feature/common";
+import { CustomerType, InvoiceItem, LineItems, PartialBy, RequiredBy } from "@feature/common";
 
 export type PricingPolicy = "wholesale" | "retail";
 
@@ -19,7 +19,7 @@ export interface UnitPricingRequest {
 }
 
 export interface InvoicePricingRequest {
-  items: LineItems<{productId: string, qty: number}>;
+  items: LineItems<RequiredBy<InvoiceItem, "productId" | "quantity">>;
   policy: PricingPolicy;
 }
 

@@ -1,6 +1,6 @@
 import { Money } from "./money";
-import { ProductKind } from "../product.type";
 import { LineItems } from "./line-items";
+import { ProductBundleKind, ProductLeafKind } from "../types";
 
 export type InvoiceHeader = {
   readonly cashierId: string;
@@ -17,14 +17,12 @@ export type InvoiceItemBase = {
   readonly discount?: Money;
 };
 
-export type ProductInvoiceItem = InvoiceItemBase & {
-  readonly kind: Extract<ProductKind, "product">;
-};
+export type ProductInvoiceItem = InvoiceItemBase & ProductLeafKind;
 
-export type BundleInvoiceItem = InvoiceItemBase & {
-  readonly kind: Extract<ProductKind, "bundle">;
-  readonly items: LineItems<InvoiceItem>;
-};
+export type BundleInvoiceItem = InvoiceItemBase &
+  ProductBundleKind & {
+    readonly items: LineItems<InvoiceItem>;
+  };
 
 export type InvoiceItem = ProductInvoiceItem | BundleInvoiceItem;
 
