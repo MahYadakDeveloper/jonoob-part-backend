@@ -1,7 +1,7 @@
 import { LineItems } from "@feature/common";
 
 export interface GoodsIssuingRequest {
-  items: LineItems<{ goodId: string; qty: number }>;
+  items: LineItems<{ goodId: string; quantity: number }>;
 }
 
 export interface GoodsReceptionRequest {

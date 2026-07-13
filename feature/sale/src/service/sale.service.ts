@@ -26,6 +26,10 @@ import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
 import { RecordReturnResponse } from "./sale.responses";
 import { type IProductQuery } from "port/product-query.port";
 import { mapProductToUnpricedInvoiceItem } from "utils/product-to-unpriced-invoice-item.mapper";
+import {
+  flattenInvoiceItem,
+  flattenInvoiceItems,
+} from "utils/flatten-invoice-item";
 
 /**
  *
@@ -103,9 +107,9 @@ export class SaleService {
 
     const requestedItems = req.items.toLineItems((item) => item.productId);
 
-    const products = await this.productQuery.findMany(
-      req.items.map((item) => item.productId),
-    );
+    const products = await this.productQuery.findMany([
+      ...requestedItems.keys(),
+    ]);
 
     const unpricedInvoiceItems = products.transform(
       (product) =>
@@ -124,16 +128,15 @@ export class SaleService {
 
     // Pricing invoice
     const { policy } = this.pricingService.getPricingPolicy({ customerType });
-    const { pricedInvoice: draftInvoice } =
-      await this.pricingService.priceInvoice({
-        items: unpricedInvoiceItems,
-        policy,
-      });
+    const { pricedInvoice: invoice } = await this.pricingService.priceInvoice({
+      items: unpricedInvoiceItems,
+      policy,
+    });
 
     // Processing payment
     const { payment } = req.customerId
       ? await this.paymentService.planPayment({
-          amountDue: draftInvoice.summary.grandTotal,
+          amountDue: invoice.summary.grandTotal,
           customerId: req.customerId,
           useWallet: req.useWallet,
           externalPaymentMethod: "posTerminal",
@@ -141,21 +144,17 @@ export class SaleService {
       : {
           payment: {
             externalPayment: {
-              amount: draftInvoice.summary.subtotal,
+              amount: invoice.summary.subtotal,
               paymentMethod: "posTerminal",
             },
           },
         };
 
-    // Flatten items for issuing
-
     // Issuing goods
+    const flattenedItems = flattenInvoiceItems(invoice.items);
     await this.warehouseService.recordGoodsIssue({
-      items: draftInvoice.items.transform(
-        (item) => ({
-          goodId: item.productId,
-          qty: item.quantity,
-        }),
+      items: flattenedItems.transform(
+        (item) => ({ goodId: item.productId, quantity: item.quantity }),
         (item) => item.goodId,
       ),
     });
@@ -166,8 +165,8 @@ export class SaleService {
         customerId: req.customerId,
         issuedAt: new Date(Date.now()),
       },
-      items: draftInvoice.items,
-      summary: draftInvoice.summary,
+      items: invoice.items,
+      summary: invoice.summary,
       payment,
     });
 
