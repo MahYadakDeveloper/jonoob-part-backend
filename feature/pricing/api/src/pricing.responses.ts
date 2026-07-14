@@ -1,22 +1,17 @@
-import {
-    InvoiceItem,
-    InvoiceSummary,
-    LineItems,
-    Money
-} from "@feature/common";
-import { PricingPolicy } from "./pricing.requests";
-
-export interface LineTotalPricingResponse {
-  lineTotal: Money;
-  discount: Money;
-}
+import { InvoiceItem, InvoiceSummary, LineItems, Money } from "@feature/common";
+import { PricingPolicy } from "./types";
 
 export interface ManyUnitPricingResponse {
-  prices: Record<string, Money>;
+  prices: LineItems<{
+    productId: string;
+    price: Money;
+    discount?: Money;
+  }>;
 }
 
 export interface UnitPricingResponse {
   price: Money;
+  discount?: Money;
 }
 
 export interface InvoicePricingResponse {

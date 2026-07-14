@@ -1,20 +1,17 @@
 import { CustomerType, LineItems } from "@feature/common";
-import { UnpricedInvoiceItem } from "./types";
+import { PricingPolicy, UnpricedInvoiceItem } from "./types";
 
-export type PricingPolicy = "wholesale" | "retail";
-
-export interface LineTotalPricingRequest {
-  items: { productId: string; purchaseQty: number }[];
-  policy: PricingPolicy;
-}
+type Item = { productId: string };
 
 export interface ManyUnitPricingRequest {
-  items: Map<string, { qty: number }>;
+  items: LineItems<Item>;
+  customerId?: string;
   policy: PricingPolicy;
 }
 
 export interface UnitPricingRequest {
-  item: { productId: string }[];
+  item: Item;
+  customerId?: string;
   policy: PricingPolicy;
 }
 

@@ -1,84 +1,171 @@
-import { Money } from "@feature/common";
+import { LineItems, Money } from "@feature/common";
 import { type IDiscountService } from "@feature/discount-api";
 import {
+  InvoicePricingRequest,
+  InvoicePricingResponse,
   IPricingService,
-  LineTotalPricingRequest,
-  LineTotalPricingResponse,
   ManyUnitPricingRequest,
   ManyUnitPricingResponse,
   PricingPolicy,
   PricingPolicyReq,
   PricingPolicyRes,
-  SalePricingRequest,
-  SalePricingResponse,
   UnitPricingRequest,
   UnitPricingResponse,
 } from "@feature/pricing-api";
 import { Injectable } from "@nestjs/common";
 import { type IMarkupPolicyProvider } from "./port/markup-policy.provider";
+import { type IProductQuerier } from "./port/product.querier";
 import { type ICustomerRepository } from "./repository/customer.repository";
-import { type IPurchaseDocumentRepository } from "./repository/purchase-documents.repository";
+import { type IPurchaseQuerier } from "./port/purchase.querier";
+import { PurchasePriceNotFoundError } from "./errors/purchase-price-not-found.error";
 
 @Injectable()
 export class PricingService implements IPricingService {
   constructor(
     private readonly markupPolicyProvider: IMarkupPolicyProvider,
     private readonly discountService: IDiscountService,
+    private readonly productQuerier: IProductQuerier,
     private readonly customerRepository: ICustomerRepository,
-    private readonly purchaseDocumentRepository: IPurchaseDocumentRepository,
+    private readonly purchaseQuerier: IPurchaseQuerier,
   ) {}
-  priceSale(req: SalePricingRequest): Promise<SalePricingResponse> {
-    throw new Error("Method not implemented.");
-  }
 
   getPricingPolicy(req: PricingPolicyReq): PricingPolicyRes {
     return { policy: req.customerType === "merchant" ? "wholesale" : "retail" };
   }
 
-  // FIXME Fix and apply new calculation for `bundle` products and product `leaf`
-  async priceUnit(req: UnitPricingRequest): Promise<UnitPricingResponse> {
-    const markup = await this.markupPolicyProvider.resolve(req.policy);
+  async priceUnit({
+    item,
+    customerId,
+    policy,
+  }: UnitPricingRequest): Promise<UnitPricingResponse> {
+    const markup = await this.markupPolicyProvider.resolve(policy);
 
-    const purchasePrice =
-      await this.purchaseDocumentRepository.getLatestPurchasePricesOf([
-        req.item.productId,
-      ])[req.item.productId];
+    // Resolving product
+    const product = await this.productQuerier.find(item.productId);
+    if (!product) throw new Error("General error.");
 
-    const price = this.calculateUnitPrice(purchasePrice, markup, req.policy);
+    const discount = customerId
+      ? (
+          await this.discountService.findApplicableDiscount({
+            customerId,
+            item: {
+              productId: product.id,
+              quantity: 1,
+            },
+          })
+        ).discount
+      : undefined;
+
+    if (product.kind === "product") {
+      const purchasePrice = await this.purchaseQuerier.find(item.productId);
+
+      if (!purchasePrice) throw new PurchasePriceNotFoundError(product.id);
+
+      const price = this.calculateUnitPrice(
+        purchasePrice.price,
+        markup,
+        policy,
+      );
+
+      return { price, discount };
+    }
+
+    const purchasePrices = await this.purchaseQuerier.findMany([
+      ...product.items.transform(
+        (item) => item.id,
+        (item) => item,
+      ),
+    ]);
+
+    const price = product.items.reduce((total, item) => {
+      const purchasePrice = purchasePrices.getOrThrow(
+        item.id,
+        (id) => new PurchasePriceNotFoundError(id),
+      ).price;
+
+      return total.add(
+        this.calculateUnitPrice(purchasePrice, markup, policy).multiply(
+          item.qty,
+        ),
+      );
+    }, Money.zero());
 
     return { price };
   }
 
-  async priceManyUnit(
-    req: ManyUnitPricingRequest,
-  ): Promise<ManyUnitPricingResponse> {
-    const markup = await this.markupPolicyProvider.resolve(req.policy);
+  // TODO Add discount for this many unit price and unit price above
+  async priceManyUnit({
+    items,
+    customerId,
+    policy,
+  }: ManyUnitPricingRequest): Promise<ManyUnitPricingResponse> {
+    const markup = await this.markupPolicyProvider.resolve(policy);
 
-    const productIds = req.items.map((item) => item.productId);
-    const purchasePrices =
-      await this.purchaseDocumentRepository.getLatestPurchasePricesOf(
-        productIds,
-      );
+    // Resolving product
+    const products = await this.productQuerier.findMany([
+      ...items
+        .transform(
+          (item) => item.productId,
+          (id) => id,
+        )
+        .values(),
+    ]);
 
-    const prices = productIds.reduce<Record<string, Money>>((prev, curr) => {
-      prev[curr] = this.calculateUnitPrice(
-        purchasePrices[curr],
-        markup,
-        req.policy,
-      );
-      return prev;
-    }, {});
+    const prices = new LineItems<{ productId: string; price: Money }>(
+      (item) => item.productId,
+    );
+    for (const product of products) {
+      if (product.kind === "product") {
+        const purchasePrice = await this.purchaseQuerier.find(product.id);
+
+        if (!purchasePrice) throw new PurchasePriceNotFoundError(product.id);
+
+        const price = this.calculateUnitPrice(
+          purchasePrice.price,
+          markup,
+          policy,
+        );
+
+        prices.set({ productId: product.id, price });
+
+        continue;
+      }
+
+      const purchasePrices = await this.purchaseQuerier.findMany([
+        ...product.items.transform(
+          (item) => item.id,
+          (item) => item,
+        ),
+      ]);
+
+      const price = product.items.reduce((total, item) => {
+        const purchasePrice = purchasePrices.getOrThrow(
+          item.id,
+          (id) => new PurchasePriceNotFoundError(id),
+        ).price;
+
+        return total.add(
+          this.calculateUnitPrice(purchasePrice, markup, policy).multiply(
+            item.qty,
+          ),
+        );
+      }, Money.zero());
+
+      prices.set({ productId: product.id, price });
+    }
+
+    if (customerId) {
+      this.discountService.findManyApplicableDiscount({
+        customerId,
+        
+      })
+    }
 
     return { prices };
   }
 
-  /**
-   * Note: when there is no customer id no discount applied
-   */
-  priceLineTotal(
-    req: LineTotalPricingRequest,
-  ): Promise<LineTotalPricingResponse> {
-    throw new Error("Method not implemented yet!");
+  priceInvoice(req: InvoicePricingRequest): Promise<InvoicePricingResponse> {
+    throw new Error("Method not implemented.");
   }
 
   private calculateUnitPrice(

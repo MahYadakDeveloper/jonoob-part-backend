@@ -12,7 +12,7 @@ import {
 import { type ICustomersService } from "@feature/customer-api";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
-import { SaleRecordedEvent } from "@feature/sale-api";
+import { SaleRecordedEvent, SaleReturnRecordedEvent } from "@feature/sale-api";
 import { type IWarehouseService } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
@@ -118,7 +118,9 @@ export class SaleService {
       },
     };
 
-    await this.saleDocumentsRepository.recordReturn(returnDocument);
+    const {saleReturnId} =await this.saleDocumentsRepository.recordReturn(returnDocument);
+
+    this.eventEmitter.emit("sale.sale-return-recorded", new SaleReturnRecordedEvent(saleReturnId));
 
     return {
       payableRefund,
@@ -201,7 +203,7 @@ export class SaleService {
       payment,
     });
 
-    this.eventEmitter.emit("pos.sale-recorded", new SaleRecordedEvent(saleId));
+    this.eventEmitter.emit("sale.sale-recorded", new SaleRecordedEvent(saleId));
   }
 
   private computeRefund(
