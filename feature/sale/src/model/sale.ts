@@ -8,18 +8,14 @@ import {
 } from "@feature/common";
 import { InvoiceNumber } from "./invoice-number";
 
-export type SaleStatus = "draft" | "completed" | "cancelled" | "refunded";
-
 export class Sale {
   private constructor(
     readonly id: string,
-    readonly invoiceNumber: InvoiceNumber,
+    readonly returnNumber: InvoiceNumber,
     private _header: InvoiceHeader,
     private _items: LineItems<InvoiceItem>,
     private _summary: InvoiceSummary,
     private _payment: InvoicePayment,
-
-    readonly status: SaleStatus,
   ) {}
 
   static create(
@@ -34,7 +30,6 @@ export class Sale {
       snapshot.items,
       snapshot.summary,
       snapshot.payment,
-      "completed",
     );
   }
 

@@ -7,7 +7,7 @@ export interface GoodsIssuingRequest {
 export interface GoodsReceptionRequest {
   items: LineItems<{
     goodId: string;
-    qty: number;
+    quantity: number;
   }>;
 }
 

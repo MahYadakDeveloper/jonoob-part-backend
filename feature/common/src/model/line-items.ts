@@ -28,11 +28,11 @@ export class LineItems<T> implements Iterable<T> {
     return this.items.get(key);
   }
 
-  getOrThrow(key: string): T {
+  getOrThrow(key: string, onNotFound?: (key: string) => Error): T {
     const item = this.items.get(key);
 
     if (!item) {
-      throw new LineItemNotFoundError(key);
+      throw onNotFound ? onNotFound(key) : new LineItemNotFoundError(key);
     }
 
     return item;
@@ -42,7 +42,10 @@ export class LineItems<T> implements Iterable<T> {
     return this.items.has(key);
   }
 
-  transform<U>(fn: (item: T) => U, keySelector: (item: U) => string): LineItems<U> {
+  transform<U>(
+    fn: (item: T) => U,
+    keySelector: (item: U) => string,
+  ): LineItems<U> {
     const result = new LineItems<U>(keySelector);
 
     for (const item of this) {

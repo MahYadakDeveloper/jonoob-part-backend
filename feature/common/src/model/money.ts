@@ -31,8 +31,12 @@ export class Money {
     return new Money(this.value - other.value);
   }
 
-  multiply(quantity: number) {
-    return new Money(quantity * this._value);
+  multiply(value: number) {
+    return new Money(this._value * value);
+  }
+
+  divide(value: number) {
+    return new Money(this._value / value);
   }
 
   gte(other: Money): boolean {

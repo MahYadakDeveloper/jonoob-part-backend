@@ -3,13 +3,7 @@ import {
   type ICashbackService,
   InsufficientCashbackBalanceError,
 } from "@feature/cashback-api";
-import {
-  InvoiceItem,
-  LineItems,
-  Money,
-  PartialBy,
-  RequiredBy,
-} from "@feature/common";
+import { InvoiceItem, LineItems, Money } from "@feature/common";
 import { type ICustomersService } from "@feature/customer-api";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
@@ -20,16 +14,15 @@ import { EventEmitter2 } from "@nestjs/event-emitter";
 import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.error";
 import { DuplicateItemsInSaleError } from "errors/duplicate-items-in-sale.error";
 import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match-sale.error";
+import { ReturnSnapshot } from "model/sale-return";
+import { type IProductQuery } from "port/product-query.port";
 import { type ISaleDocumentsRepository } from "repository/sale-documents.repository";
-import { ProductLineItem } from "types/prodcut-line-item.type";
+import { ProductLineItem } from "types/product-line-item.type";
+import { flattenInvoiceItems } from "utils/flatten-invoice-item";
+import { flattenRefundableItems } from "utils/flatten-refundable-items";
+import { mapProductToUnpricedInvoiceItem } from "utils/product-to-unpriced-invoice-item.mapper";
 import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
 import { RecordReturnResponse } from "./sale.responses";
-import { type IProductQuery } from "port/product-query.port";
-import { mapProductToUnpricedInvoiceItem } from "utils/product-to-unpriced-invoice-item.mapper";
-import {
-  flattenInvoiceItem,
-  flattenInvoiceItems,
-} from "utils/flatten-invoice-item";
 
 /**
  *
@@ -66,15 +59,16 @@ export class SaleService {
       (productId) => new DuplicateItemsInReturnError(productId),
     );
 
-    // Calculate payable refund
-
     const returnItems = items.toLineItems((item) => item.productId);
+
     const soldItems = sale.snapshot.items;
 
+    // Calculate refund amount
     const refund = this.computeRefund(returnItems, soldItems);
 
     // Reverse cashback
     const { customerId } = sale.snapshot.header;
+
     const payableRefund = customerId
       ? (
           await this.cashbackService.processCashbackReversal({
@@ -85,14 +79,53 @@ export class SaleService {
         ).payableRefund
       : refund;
 
-    // TODO Receipt goods in warehouse
+    // Restore stock
     await this.warehouseService.recordGoodsReceipt({
-      items: items,
+      items: returnItems.transform(
+        (item) => ({
+          goodId: item.productId,
+          quantity: item.quantity,
+        }),
+        (item) => item.goodId,
+      ),
     });
-    // TODO Record the return document, (remember that cant be an invoice)
-    return { payableRefund };
-  }
 
+    // Create return document
+    const returnDocument: ReturnSnapshot = {
+      header: sale.snapshot.header,
+
+      items: returnItems.transform(
+        (item) => {
+          const soldItem = soldItems.getOrThrow(item.productId);
+
+          return {
+            productId: item.productId,
+            quantity: item.quantity,
+            description: soldItem.description,
+            unitPrice: soldItem.unitPrice,
+            lineTotal: soldItem.unitPrice.multiply(item.quantity),
+          };
+        },
+        (item) => item.productId,
+      ),
+
+      summary: {
+        refund,
+        payableRefund,
+      },
+
+      refund: {
+        amount: payableRefund,
+        cashbackReversed: refund.subtract(payableRefund),
+      },
+    };
+
+    await this.saleDocumentsRepository.recordReturn(returnDocument);
+
+    return {
+      payableRefund,
+    };
+  }
   /**
    *
    *
@@ -176,27 +209,27 @@ export class SaleService {
   private computeRefund(
     returnItems: LineItems<ProductLineItem>,
     soldItems: LineItems<InvoiceItem>,
-  ) {
-    let refund = Money.zero();
-    for (const returnItem of returnItems) {
-      const saleItem = soldItems.get(returnItem.productId);
+  ): Money {
+    const refundableItems = flattenRefundableItems(soldItems);
 
-      // Validate items matching
-      if (!saleItem) throw new ReturnItemsDoNotMatchSaleError();
-      if (returnItem.quantity > saleItem.quantity)
+    let refund = Money.zero();
+
+    for (const returnItem of returnItems) {
+      const refundableItem = refundableItems.getOrThrow(
+        returnItem.productId,
+        () => new ReturnItemsDoNotMatchSaleError(),
+      );
+
+      if (returnItem.quantity > refundableItem.quantity)
         throw new ReturnItemsDoNotMatchSaleError();
 
-      const lineTotalWithoutDiscount = saleItem.unitPrice.multiply(
-        returnItem.quantity,
+      // Discount given is considered
+      refund = refund.add(
+        refundableItem.lineTotal
+          .divide(refundableItem.quantity)
+          .multiply(returnItem.quantity),
       );
-      const lineTotal =
-        saleItem.discount === undefined
-          ? lineTotalWithoutDiscount
-          : lineTotalWithoutDiscount.subtract(saleItem.discount);
-
-      refund = refund.add(lineTotal);
     }
-
     return refund;
   }
 }
