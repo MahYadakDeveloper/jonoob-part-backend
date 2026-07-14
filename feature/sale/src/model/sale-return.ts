@@ -1,4 +1,9 @@
-import { InvoiceHeader, InvoiceItem, LineItems, Money } from "@feature/common";
+import {
+  InvoiceHeader,
+  InvoiceItemBase,
+  LineItems,
+  Money,
+} from "@feature/common";
 import { InvoiceNumber } from "./invoice-number";
 
 export class SaleReturn {
@@ -8,7 +13,7 @@ export class SaleReturn {
     readonly returnNumber: InvoiceNumber,
 
     private _header: InvoiceHeader,
-    private _items: LineItems<InvoiceItem>,
+    private _items: LineItems<InvoiceItemBase>,
     private _summary: ReturnSummary,
     private _refund: ReturnRefund,
   ) {}
@@ -42,14 +47,13 @@ export class SaleReturn {
 
 export type ReturnSnapshot = {
   header: InvoiceHeader;
-  items: LineItems<InvoiceItem>;
+  items: LineItems<InvoiceItemBase>;
   summary: ReturnSummary;
   refund: ReturnRefund;
 };
 
 export type ReturnSummary = {
-  readonly subtotal: Money;
-  readonly discount: Money;
+  readonly refund: Money;
   readonly payableRefund: Money;
 };
 

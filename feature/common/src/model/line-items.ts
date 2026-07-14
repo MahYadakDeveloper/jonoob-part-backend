@@ -85,6 +85,16 @@ export class LineItems<T> implements Iterable<T> {
     });
   }
 
+  reduce<R>(callback: (acc: R, item: T) => R, initial: R): R {
+    let result = initial;
+
+    for (const item of this) {
+      result = callback(result, item);
+    }
+
+    return result;
+  }
+
   toArray(): readonly T[] {
     return [...this.items.values()];
   }

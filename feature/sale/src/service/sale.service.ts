@@ -3,7 +3,12 @@ import {
   type ICashbackService,
   InsufficientCashbackBalanceError,
 } from "@feature/cashback-api";
-import { InvoiceItem, LineItems, Money } from "@feature/common";
+import {
+  InvoiceItem,
+  InvoiceItemBase,
+  LineItems,
+  Money,
+} from "@feature/common";
 import { type ICustomersService } from "@feature/customer-api";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
@@ -51,9 +56,11 @@ export class SaleService {
     cashbackReversalPolicy,
     items,
   }: RecordReturnRequest): Promise<RecordReturnResponse> {
+    // TODO: Add transactional handling for the return workflow.
+    // Currently, a failure while recording the return document after stock restoration
+    // can leave the system in an inconsistent state (stock updated but return not recorded).
     const sale = await this.saleDocumentsRepository.findSaleById(saleId);
 
-    // Prevent duplications
     items.assertUniqueBy(
       (item) => item.productId,
       (productId) => new DuplicateItemsInReturnError(productId),
@@ -63,10 +70,16 @@ export class SaleService {
 
     const soldItems = sale.snapshot.items;
 
-    // Calculate refund amount
-    const refund = this.computeRefund(returnItems, soldItems);
+    const returnDocumentItems = returnItems.transform(
+      (item) => this.computeRefundableLine(soldItems, item),
+      (item) => item.productId,
+    );
 
-    // Reverse cashback
+    const refund = returnDocumentItems.reduce(
+      (total, item) => total.add(item.lineTotal),
+      Money.zero(),
+    );
+
     const { customerId } = sale.snapshot.header;
 
     const payableRefund = customerId
@@ -79,9 +92,8 @@ export class SaleService {
         ).payableRefund
       : refund;
 
-    // Restore stock
     await this.warehouseService.recordGoodsReceipt({
-      items: returnItems.transform(
+      items: returnDocumentItems.transform(
         (item) => ({
           goodId: item.productId,
           quantity: item.quantity,
@@ -90,24 +102,10 @@ export class SaleService {
       ),
     });
 
-    // Create return document
     const returnDocument: ReturnSnapshot = {
       header: sale.snapshot.header,
 
-      items: returnItems.transform(
-        (item) => {
-          const soldItem = soldItems.getOrThrow(item.productId);
-
-          return {
-            productId: item.productId,
-            quantity: item.quantity,
-            description: soldItem.description,
-            unitPrice: soldItem.unitPrice,
-            lineTotal: soldItem.unitPrice.multiply(item.quantity),
-          };
-        },
-        (item) => item.productId,
-      ),
+      items: returnDocumentItems,
 
       summary: {
         refund,
@@ -231,5 +229,28 @@ export class SaleService {
       );
     }
     return refund;
+  }
+
+  private computeRefundableLine(
+    soldItems: LineItems<InvoiceItem>,
+    item: ProductLineItem,
+  ): InvoiceItemBase {
+    const refundableItem = flattenRefundableItems(soldItems).getOrThrow(
+      item.productId,
+      () => new ReturnItemsDoNotMatchSaleError(),
+    );
+
+    if (item.quantity > refundableItem.quantity) {
+      throw new ReturnItemsDoNotMatchSaleError();
+    }
+
+    return {
+      ...item,
+      description: refundableItem.description,
+      unitPrice: refundableItem.unitPrice,
+      lineTotal: refundableItem.lineTotal
+        .divide(refundableItem.quantity)
+        .multiply(item.quantity),
+    };
   }
 }
