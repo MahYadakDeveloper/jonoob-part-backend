@@ -4,20 +4,21 @@ import {
   InvoicePricingRequest,
   InvoicePricingResponse,
   IPricingService,
-  ManyUnitPricingRequest,
-  ManyUnitPricingResponse,
+  ManyProductPricingRequest,
+  ManyProductPricingResponse,
   PricingPolicy,
   PricingPolicyReq,
   PricingPolicyRes,
-  UnitPricingRequest,
-  UnitPricingResponse,
+  ProductPricingRequest,
+  ProductPricingResponse,
 } from "@feature/pricing-api";
 import { Injectable } from "@nestjs/common";
+import { PurchasePriceNotFoundError } from "./errors/purchase-price-not-found.error";
 import { type IMarkupPolicyProvider } from "./port/markup-policy.provider";
 import { type IProductQuerier } from "./port/product.querier";
-import { type ICustomerRepository } from "./repository/customer.repository";
 import { type IPurchaseQuerier } from "./port/purchase.querier";
-import { PurchasePriceNotFoundError } from "./errors/purchase-price-not-found.error";
+import { type ICustomerRepository } from "./repository/customer.repository";
+import { ProductNotFoundError } from "./errors/product-not-found-error";
 
 @Injectable()
 export class PricingService implements IPricingService {
@@ -33,138 +34,145 @@ export class PricingService implements IPricingService {
     return { policy: req.customerType === "merchant" ? "wholesale" : "retail" };
   }
 
-  async priceUnit({
+  // async _priceProduct({
+  //   item,
+  //   policy,
+  // }: ProductPricingRequest): Promise<ProductPricingResponse> {
+  //   const markup = await this.markupPolicyProvider.resolve(policy);
+
+  //   // Resolving product
+  //   const product = await this.productQuerier.find(item.productId);
+
+  //   if (product.kind === "product") {
+  //     const purchasePrice = await this.purchaseQuerier.find(product.id);
+
+  //     if (!purchasePrice) throw new PurchasePriceNotFoundError(product.id);
+
+  //     const price = this.calculateUnitPrice(
+  //       purchasePrice.price,
+  //       markup,
+  //       policy,
+  //     );
+
+  //     return { price };
+  //   }
+
+  //   const purchasePrices = await this.purchaseQuerier.findMany([
+  //     ...product.items.keys(),
+  //   ]);
+
+  //   const price = product.items.reduce((total, item) => {
+  //     const purchasePrice = purchasePrices.getOrThrow(
+  //       item.id,
+  //       (id) => new PurchasePriceNotFoundError(id),
+  //     ).price;
+
+  //     return total.add(
+  //       this.calculateUnitPrice(purchasePrice, markup, policy).multiply(
+  //         item.qty,
+  //       ),
+  //     );
+  //   }, Money.zero());
+
+  //   return { price };
+  // }
+
+  async priceProduct({
     item,
-    customerId,
     policy,
-  }: UnitPricingRequest): Promise<UnitPricingResponse> {
-    const markup = await this.markupPolicyProvider.resolve(policy);
+  }: ProductPricingRequest): Promise<ProductPricingResponse> {
+    const { prices } = await this.priceManyProduct({
+      items: [item].toLineItems((x) => x.productId),
+      policy,
+    });
 
-    // Resolving product
-    const product = await this.productQuerier.find(item.productId);
-    if (!product) throw new Error("General error.");
-
-    const discount = customerId
-      ? (
-          await this.discountService.findApplicableDiscount({
-            customerId,
-            item: {
-              productId: product.id,
-              quantity: 1,
-            },
-          })
-        ).discount
-      : undefined;
-
-    if (product.kind === "product") {
-      const purchasePrice = await this.purchaseQuerier.find(item.productId);
-
-      if (!purchasePrice) throw new PurchasePriceNotFoundError(product.id);
-
-      const price = this.calculateUnitPrice(
-        purchasePrice.price,
-        markup,
-        policy,
-      );
-
-      return { price, discount };
-    }
-
-    const purchasePrices = await this.purchaseQuerier.findMany([
-      ...product.items.transform(
-        (item) => item.id,
-        (item) => item,
-      ),
-    ]);
-
-    const price = product.items.reduce((total, item) => {
-      const purchasePrice = purchasePrices.getOrThrow(
-        item.id,
-        (id) => new PurchasePriceNotFoundError(id),
-      ).price;
-
-      return total.add(
-        this.calculateUnitPrice(purchasePrice, markup, policy).multiply(
-          item.qty,
-        ),
-      );
-    }, Money.zero());
-
-    return { price };
+    return {
+      price: prices.getOrThrow(item.productId).price,
+    };
   }
 
-  // TODO Add discount for this many unit price and unit price above
-  async priceManyUnit({
+  async priceManyProduct({
     items,
-    customerId,
     policy,
-  }: ManyUnitPricingRequest): Promise<ManyUnitPricingResponse> {
+  }: ManyProductPricingRequest): Promise<ManyProductPricingResponse> {
     const markup = await this.markupPolicyProvider.resolve(policy);
 
     // Resolving product
-    const products = await this.productQuerier.findMany([
-      ...items
-        .transform(
-          (item) => item.productId,
-          (id) => id,
-        )
-        .values(),
-    ]);
+    const products = await this.productQuerier.findMany([...items.keys()]);
 
-    const prices = new LineItems<{ productId: string; price: Money }>(
-      (item) => item.productId,
-    );
-    for (const product of products) {
-      if (product.kind === "product") {
-        const purchasePrice = await this.purchaseQuerier.find(product.id);
+    // for (const item of items) {
+    //   if (!products.has(item.productId))
+    //     throw new ProductNotFoundError(item.productId);
+    // }
 
-        if (!purchasePrice) throw new PurchasePriceNotFoundError(product.id);
-
-        const price = this.calculateUnitPrice(
-          purchasePrice.price,
-          markup,
-          policy,
-        );
-
-        prices.set({ productId: product.id, price });
-
-        continue;
+    const leafProductIds = products.reduce<string[]>((ids, product) => {
+      if (product.kind === "bundle") {
+        for (const item of product.items) {
+          ids.push(item.id);
+        }
+      } else {
+        ids.push(product.id);
       }
 
-      const purchasePrices = await this.purchaseQuerier.findMany([
-        ...product.items.transform(
-          (item) => item.id,
-          (item) => item,
-        ),
-      ]);
+      return ids;
+    }, []);
 
-      const price = product.items.reduce((total, item) => {
-        const purchasePrice = purchasePrices.getOrThrow(
-          item.id,
-          (id) => new PurchasePriceNotFoundError(id),
-        ).price;
+    const leafPurchasePrices =
+      await this.purchaseQuerier.findMany(leafProductIds);
 
-        return total.add(
-          this.calculateUnitPrice(purchasePrice, markup, policy).multiply(
-            item.qty,
-          ),
-        );
-      }, Money.zero());
+    const prices = new LineItems<{
+      productId: string;
+      price: Money;
+    }>((item) => item.productId);
+
+    for (const product of products) {
+      const price =
+        product.kind === "product"
+          ? this.calculateUnitPrice(
+              leafPurchasePrices.getOrThrow(
+                product.id,
+                (id) => new PurchasePriceNotFoundError(id),
+              ).price,
+              markup,
+              policy,
+            )
+          : product.items.reduce((total, item) => {
+              const purchasePrice = leafPurchasePrices.getOrThrow(
+                item.id,
+                (id) => new PurchasePriceNotFoundError(id),
+              ).price;
+
+              return total.add(
+                this.calculateUnitPrice(purchasePrice, markup, policy).multiply(
+                  item.qty,
+                ),
+              );
+            }, Money.zero());
 
       prices.set({ productId: product.id, price });
-    }
-
-    if (customerId) {
-      this.discountService.findManyApplicableDiscount({
-        customerId,
-        
-      })
     }
 
     return { prices };
   }
 
   priceInvoice(req: InvoicePricingRequest): Promise<InvoicePricingResponse> {
+    // if (customerId) {
+    //       const { discounts } =
+    //         await this.discountService.findManyApplicableDiscount({
+    //           customerId,
+    //           items: [...prices.keys()].map((productId) => ({
+    //             productId,
+    //             quantity: 1,
+    //           })),
+    //         });
+    //       prices = prices.transform(
+    //         (item) => ({
+    //           ...item,
+    //           discount: discounts.get(item.productId)?.discount,
+    //         }),
+    //         (item) => item.productId,
+    //       );
+    //     }
     throw new Error("Method not implemented.");
   }
 

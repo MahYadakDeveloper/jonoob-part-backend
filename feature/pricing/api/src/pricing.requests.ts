@@ -3,19 +3,18 @@ import { PricingPolicy, UnpricedInvoiceItem } from "./types";
 
 type Item = { productId: string };
 
-export interface ManyUnitPricingRequest {
+export interface ManyProductPricingRequest {
   items: LineItems<Item>;
-  customerId?: string;
   policy: PricingPolicy;
 }
 
-export interface UnitPricingRequest {
+export interface ProductPricingRequest {
   item: Item;
-  customerId?: string;
   policy: PricingPolicy;
 }
 
 export interface InvoicePricingRequest {
+  customerId?: string;
   items: LineItems<UnpricedInvoiceItem>;
   policy: PricingPolicy;
 }

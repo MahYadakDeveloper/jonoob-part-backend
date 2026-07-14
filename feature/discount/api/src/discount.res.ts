@@ -1,23 +1,18 @@
 import { LineItems, Money } from "@feature/common";
 
+type ApplicableDiscount = {
+  discountPerUnit: Money;
+  applicableQuantity: number;
+  totalDiscount: Money;
+};
+
 export interface FindApplicableDiscountResponse {
-  // discountUsagePolicy: {
-  //   maxPerCustomerUsage: number;
-  // };
-  // discountAmount: Money;
-  discount?: Money;
+  applicableDiscount: ApplicableDiscount;
 }
 
 export interface FindManyApplicableDiscountResponse {
-  // discounts: Record<
-  //   string,
-  //   {
-  //     discountUsagePolicy: {
-  //       maxPerCustomerUsage: number;
-  //     };
-  //     discountAmount: Money;
-  //   }[]
-  // >;
-
-  discounts: LineItems<{ productId: string; discount?: Money }>;
+  discounts: LineItems<{
+    productId: string;
+    applicableDiscount: ApplicableDiscount;
+  }>;
 }
