@@ -1,6 +1,6 @@
 import { LineItems, Money } from "@feature/common";
 
-type ApplicableDiscount = {
+export type ApplicableDiscount = {
   discountPerUnit: Money;
   applicableQuantity: number;
   totalDiscount: Money;

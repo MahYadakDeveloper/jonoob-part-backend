@@ -1,5 +1,10 @@
 import { LineItems, Money } from "@feature/common";
 
+export type PurchasePrice = {
+  id: string;
+  price: Money;
+};
+
 export interface IPurchaseQuerier {
   /**
    *
@@ -9,5 +14,5 @@ export interface IPurchaseQuerier {
   /**
    *
    */
-  findMany(ids: string[]): Promise<LineItems<{ id: string; price: Money }>>;
+  findMany(ids: string[]): Promise<LineItems<PurchasePrice>>;
 }

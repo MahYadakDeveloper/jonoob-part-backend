@@ -21,4 +21,5 @@ export type UnpricedInvoiceItem =
   | UnpricedProductInvoiceItem
   | UnpricedBundleInvoiceItem;
 
+
 export type PricingPolicy = "wholesale" | "retail";

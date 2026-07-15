@@ -1,5 +1,15 @@
-import { LineItems, Money } from "@feature/common";
-import { type IDiscountService } from "@feature/discount-api";
+import {
+  BundleInvoiceItem,
+  InvoiceItem,
+  InvoiceSummary,
+  LineItems,
+  Money,
+  ProductInvoiceItem,
+} from "@feature/common";
+import {
+  ApplicableDiscount,
+  type IDiscountService,
+} from "@feature/discount-api";
 import {
   InvoicePricingRequest,
   InvoicePricingResponse,
@@ -11,14 +21,17 @@ import {
   PricingPolicyRes,
   ProductPricingRequest,
   ProductPricingResponse,
+  UnpricedBundleInvoiceItem,
+  UnpricedProductInvoiceItem,
 } from "@feature/pricing-api";
 import { Injectable } from "@nestjs/common";
 import { PurchasePriceNotFoundError } from "./errors/purchase-price-not-found.error";
 import { type IMarkupPolicyProvider } from "./port/markup-policy.provider";
-import { type IProductQuerier } from "./port/product.querier";
-import { type IPurchaseQuerier } from "./port/purchase.querier";
+import { Product, type IProductQuerier } from "./port/product.querier";
+import { PurchasePrice, type IPurchaseQuerier } from "./port/purchase.querier";
 import { type ICustomerRepository } from "./repository/customer.repository";
 import { ProductNotFoundError } from "./errors/product-not-found-error";
+import { BundleComponentInvoiceItem } from "./model/bundle-component-invoice-item";
 
 @Injectable()
 export class PricingService implements IPricingService {
@@ -105,17 +118,7 @@ export class PricingService implements IPricingService {
     //     throw new ProductNotFoundError(item.productId);
     // }
 
-    const leafProductIds = products.reduce<string[]>((ids, product) => {
-      if (product.kind === "bundle") {
-        for (const item of product.items) {
-          ids.push(item.id);
-        }
-      } else {
-        ids.push(product.id);
-      }
-
-      return ids;
-    }, []);
+    const leafProductIds = this.collectLeafProductIds(products);
 
     const leafPurchasePrices =
       await this.purchaseQuerier.findMany(leafProductIds);
@@ -155,25 +158,144 @@ export class PricingService implements IPricingService {
     return { prices };
   }
 
-  priceInvoice(req: InvoicePricingRequest): Promise<InvoicePricingResponse> {
-    // if (customerId) {
-    //       const { discounts } =
-    //         await this.discountService.findManyApplicableDiscount({
-    //           customerId,
-    //           items: [...prices.keys()].map((productId) => ({
-    //             productId,
-    //             quantity: 1,
-    //           })),
-    //         });
-    //       prices = prices.transform(
-    //         (item) => ({
-    //           ...item,
-    //           discount: discounts.get(item.productId)?.discount,
-    //         }),
-    //         (item) => item.productId,
-    //       );
-    //     }
-    throw new Error("Method not implemented.");
+  async priceInvoice({
+    items,
+    policy,
+    customerId,
+  }: InvoicePricingRequest): Promise<InvoicePricingResponse> {
+    const discounts = customerId
+      ? (
+          await this.discountService.findManyApplicableDiscount({
+            customerId,
+            items: [...items.toArray()],
+          })
+        ).discounts
+      : new LineItems<{
+          productId: string;
+          applicableDiscount: ApplicableDiscount;
+        }>((x) => x.productId);
+
+    // Getting products
+    const products = await this.productQuerier.findMany([...items.keys()]);
+
+    // Resolving purchase prices
+    const leafProductIds = this.collectLeafProductIds(products);
+    const purchasePrices = await this.purchaseQuerier.findMany(leafProductIds);
+
+    // Resolving markup
+    const markup = await this.markupPolicyProvider.resolve(policy);
+
+    // Pricing items
+    const pricedInvoiceItems = new LineItems<InvoiceItem>((x) => x.productId);
+    for (const item of items) {
+      const discount = discounts.get(item.productId);
+
+      pricedInvoiceItems.set(
+        item.kind === "bundle"
+          ? this.priceBundleInvoiceItem(
+              item,
+              purchasePrices,
+              markup,
+              policy,
+              discount?.applicableDiscount,
+            )
+          : this.priceProductInvoiceItem(
+              item,
+              purchasePrices,
+              markup,
+              policy,
+              discount?.applicableDiscount,
+            ),
+      );
+    }
+
+    const pricedSummary: InvoiceSummary = {
+      grandTotal: pricedInvoiceItems.reduce((grandTotal, item) => {
+        return grandTotal.add(item.lineTotal);
+      }, Money.zero()),
+      subtotal: pricedInvoiceItems.reduce((subtotal, item) => {
+        return subtotal.add(item.unitPrice.multiply(item.quantity));
+      }, Money.zero()),
+      discount: pricedInvoiceItems.reduce<Money | undefined>(
+        (totalDiscount, item) => {
+          if (!item.discount) return undefined;
+          if (!totalDiscount) return Money.zero().add(item.discount);
+          return totalDiscount.add(item.discount);
+        },
+        undefined,
+      ),
+    };
+
+    return {
+      pricedInvoice: { items: pricedInvoiceItems, summary: pricedSummary },
+    };
+  }
+
+  private priceProductInvoiceItem(
+    item: UnpricedProductInvoiceItem,
+    purchasePrices: LineItems<PurchasePrice>,
+    markup: number,
+    policy: PricingPolicy,
+    applicableDiscount?: ApplicableDiscount,
+  ): InvoiceItem {
+    const purchasePrice = purchasePrices.getOrThrow(
+      item.productId,
+      (id) => new PurchasePriceNotFoundError(id),
+    ).price;
+
+    const unitPrice = this.calculateUnitPrice(purchasePrice, markup, policy);
+    const lineTotal = unitPrice
+      .multiply(item.quantity)
+      .subtract(applicableDiscount?.totalDiscount || Money.zero());
+    return {
+      ...item,
+      unitPrice,
+      discount: applicableDiscount?.totalDiscount,
+      lineTotal,
+    };
+  }
+
+  private priceBundleInvoiceItem(
+    item: UnpricedBundleInvoiceItem,
+    purchasePrices: LineItems<PurchasePrice>,
+    markup: number,
+    policy: PricingPolicy,
+    applicableDiscount?: ApplicableDiscount,
+  ): InvoiceItem {
+    const pricedBundleItems = new LineItems<BundleComponentInvoiceItem>(
+      (x) => x.productId,
+    );
+
+    for (const bundleItem of item.items) {
+      const purchasePrice = purchasePrices.getOrThrow(
+        bundleItem.productId,
+        (id) => new PurchasePriceNotFoundError(id),
+      ).price;
+
+      const unitPrice = this.calculateUnitPrice(purchasePrice, markup, policy);
+      const lineTotal = unitPrice.multiply(bundleItem.quantity);
+      pricedBundleItems.set({
+        ...bundleItem,
+        unitPrice,
+        lineTotal,
+      });
+    }
+
+    // Calculate bundle invoice item
+    const unitPrice = pricedBundleItems.reduce((total, bundleItem) => {
+      return total.add(bundleItem.lineTotal);
+    }, Money.zero());
+    const lineTotal = unitPrice
+      .multiply(item.quantity)
+      .subtract(applicableDiscount?.totalDiscount || Money.zero());
+
+    return {
+      ...item,
+      items: [...pricedBundleItems.toArray()],
+      unitPrice,
+      discount: applicableDiscount?.totalDiscount,
+      lineTotal,
+    };
   }
 
   private calculateUnitPrice(
@@ -186,5 +308,21 @@ export class PricingService implements IPricingService {
       case "wholesale":
         return purchasePrice.multiply(1 + markup);
     }
+  }
+
+  private collectLeafProductIds(products: Iterable<Product>): string[] {
+    const ids: string[] = [];
+
+    for (const product of products) {
+      if (product.kind === "bundle") {
+        for (const item of product.items) {
+          ids.push(item.id);
+        }
+      } else {
+        ids.push(product.id);
+      }
+    }
+
+    return ids;
   }
 }
