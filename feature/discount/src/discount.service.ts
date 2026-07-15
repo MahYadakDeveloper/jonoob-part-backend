@@ -8,6 +8,7 @@ import {
   FindManyApplicableDiscountResponse,
   IDiscountService,
 } from "@feature/discount-api";
+import { DiscountRepository } from "./repository/discount.repository";
 
 // Model for defining a collection
 type DiscountCollection = {
@@ -23,7 +24,11 @@ type Discount = {
 
 @Injectable()
 export class DiscountService implements IDiscountService {
-  constructor() {}
+  constructor(
+    private readonly discountUsageRepository: DiscountUsageRepository,
+    private readonly discountCampaignRepository: DiscountCampaignRepository,
+    private readonly discountRepository: DiscountRepository
+  ) {}
   /**
    * Handles the `sale.sale-recorded` domain event.
    *
@@ -37,6 +42,13 @@ export class DiscountService implements IDiscountService {
     // in the event payload to avoid fetching the sale by its ID.
     // TODO: Process only line items with an applied discount and record the customer's
     // discount usage for each eligible product.
+
+    const {snapshot} = event
+    if (!snapshot.header.customerId || !snapshot.summary.discount)
+      return;
+
+    const discounted = snapshot.items.transform()
+    
   }
 
   findApplicableDiscount(

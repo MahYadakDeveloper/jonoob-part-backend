@@ -6,10 +6,10 @@ import {
 import {
   InvoiceItem,
   InvoiceItemBase,
+  InvoiceSnapshot,
   LineItems,
   Money,
 } from "@feature/common";
-import { type ICustomersService } from "@feature/customer-api";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
 import { SaleRecordedEvent, SaleReturnRecordedEvent } from "@feature/sale-api";
@@ -41,7 +41,6 @@ export class SaleService {
     private readonly pricingService: IPricingService,
     private readonly paymentService: IPaymentService,
     private readonly cashbackService: ICashbackService,
-    private readonly customersService: ICustomersService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -118,9 +117,13 @@ export class SaleService {
       },
     };
 
-    const {saleReturnId} =await this.saleDocumentsRepository.recordReturn(returnDocument);
+    const { saleReturnId } =
+      await this.saleDocumentsRepository.recordReturn(returnDocument);
 
-    this.eventEmitter.emit("sale.sale-return-recorded", new SaleReturnRecordedEvent(saleReturnId));
+    this.eventEmitter.emit(
+      "sale.sale-return-recorded",
+      new SaleReturnRecordedEvent(saleReturnId),
+    );
 
     return {
       payableRefund,
@@ -153,17 +156,10 @@ export class SaleService {
       (product) => product.productId,
     );
 
-    // Resolving customer type
-    const { customerType } = (req.customerId &&
-      (await this.customersService.resolveCustomerType({
-        customerId: req.customerId,
-      }))) || { customerType: "consumer" };
-
     // Pricing invoice
-    const { policy } = this.pricingService.getPricingPolicy({ customerType });
     const { pricedInvoice: invoice } = await this.pricingService.priceInvoice({
+      customerId: req.cashierId,
       items: unpricedInvoiceItems,
-      policy,
     });
 
     // Processing payment
@@ -192,7 +188,7 @@ export class SaleService {
       ),
     });
 
-    const { saleId } = await this.saleDocumentsRepository.recordSale({
+    const snapshot: InvoiceSnapshot = {
       header: {
         cashierId: req.cashierId,
         customerId: req.customerId,
@@ -201,9 +197,14 @@ export class SaleService {
       items: invoice.items,
       summary: invoice.summary,
       payment,
-    });
+    };
 
-    this.eventEmitter.emit("sale.sale-recorded", new SaleRecordedEvent(saleId));
+    await this.saleDocumentsRepository.recordSale(snapshot);
+
+    this.eventEmitter.emit(
+      "sale.sale-recorded",
+      new SaleRecordedEvent(snapshot),
+    );
   }
 
   private computeRefund(

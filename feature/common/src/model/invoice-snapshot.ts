@@ -8,13 +8,19 @@ export type InvoiceHeader = {
   readonly customerId?: string;
 };
 
+export interface AppliedDiscount {
+  discountPerUnit: Money;
+  discountedQuantity: number;
+  totalDiscount: Money
+}
+
 export type InvoiceItemBase = {
   readonly productId: string;
   readonly description: string;
   readonly quantity: number;
   readonly unitPrice: Money;
   readonly lineTotal: Money;
-  readonly discount?: Money;
+  readonly discount?: AppliedDiscount;
 };
 
 export type ProductInvoiceItem = InvoiceItemBase & ProductLeafKind;

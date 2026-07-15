@@ -16,9 +16,8 @@ export interface ProductPricingRequest {
 export interface InvoicePricingRequest {
   customerId?: string;
   items: LineItems<UnpricedInvoiceItem>;
-  policy: PricingPolicy;
 }
 
 export interface PricingPolicyReq {
-  customerType: CustomerType;
+  customerId: string;
 }

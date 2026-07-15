@@ -1,5 +1,10 @@
+import { InvoiceSnapshot } from "@feature/common";
+
 export class SaleRecordedEvent {
-  constructor(readonly saleId: string) {}
+  constructor(
+    readonly snapshot: InvoiceSnapshot,
+    readonly customerId?: string,
+  ) {}
 }
 
 export class SaleReturnRecordedEvent {

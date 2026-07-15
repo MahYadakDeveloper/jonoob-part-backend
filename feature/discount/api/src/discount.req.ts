@@ -1,11 +1,8 @@
 export interface FindApplicableDiscountRequest {
-  item: { productId: string; quantity: number };
+  productId: string;
   customerId: string;
 }
 export interface FindManyApplicableDiscountRequest {
-  items: {
-    productId: string;
-    quantity: number;
-  }[];
+  productIds: string[];
   customerId: string;
 }

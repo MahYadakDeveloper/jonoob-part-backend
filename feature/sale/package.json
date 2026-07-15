@@ -19,10 +19,9 @@
   "dependencies": {
     "@feature/cashback-api": "workspace:*",
     "@feature/common": "workspace:*",
-    "@feature/customer-api": "workspace:*",
     "@feature/payment-api": "workspace:*",
-    "@feature/sale-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
+    "@feature/sale-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.1.27",
     "@nestjs/event-emitter": "^3.1.0",

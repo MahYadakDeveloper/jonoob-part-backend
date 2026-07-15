@@ -17,5 +17,5 @@ export interface IPricingService {
     req: ManyProductPricingRequest,
   ): Promise<ManyProductPricingResponse>;
   priceInvoice(req: InvoicePricingRequest): Promise<InvoicePricingResponse>;
-  getPricingPolicy(req: PricingPolicyReq): PricingPolicyRes;
+  resolvePricingPolicy(req: PricingPolicyReq): Promise<PricingPolicyRes>;
 }

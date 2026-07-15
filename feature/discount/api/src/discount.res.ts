@@ -1,18 +1,13 @@
 import { LineItems, Money } from "@feature/common";
-
-export type ApplicableDiscount = {
-  discountPerUnit: Money;
-  applicableQuantity: number;
-  totalDiscount: Money;
-};
+import { SpecificDiscount, CampaignDiscount } from "./discount.types";
 
 export interface FindApplicableDiscountResponse {
-  applicableDiscount: ApplicableDiscount;
+  discount?: CampaignDiscount | SpecificDiscount;
 }
 
 export interface FindManyApplicableDiscountResponse {
   discounts: LineItems<{
     productId: string;
-    applicableDiscount: ApplicableDiscount;
+    discount: CampaignDiscount | SpecificDiscount;
   }>;
 }

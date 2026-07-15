@@ -231,6 +231,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../common
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../customer/api
       '@feature/discount-api':
         specifier: workspace:*
         version: link:../discount/api
@@ -272,9 +275,6 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../common
-      '@feature/customer-api':
-        specifier: workspace:*
-        version: link:../customer/api
       '@feature/payment-api':
         specifier: workspace:*
         version: link:../payment/api
