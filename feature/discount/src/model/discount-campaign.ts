@@ -6,6 +6,11 @@ export type DiscountCampaign = {
   expiresAt: Date;
 
   defaultDiscountRate: number;
+  // fake & real
 
-  products: { id: string; discountRate?: number }[];
+  products: {
+    id: string;
+    // display(fake) & real
+    discountRate?: number;
+  }[];
 };

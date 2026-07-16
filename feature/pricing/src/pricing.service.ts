@@ -33,7 +33,6 @@ import { BundleComponentInvoiceItem } from "./model/bundle-component-invoice-ite
 import { type IMarkupPolicyProvider } from "./port/markup-policy.provider";
 import { Product, type IProductQuerier } from "./port/product.querier";
 import { PurchasePrice, type IPurchaseQuerier } from "./port/purchase.querier";
-import { type ICustomerRepository } from "./repository/customer.repository";
 
 @Injectable()
 export class PricingService implements IPricingService {
@@ -42,8 +41,6 @@ export class PricingService implements IPricingService {
     private readonly discountService: IDiscountService,
     private readonly customersService: ICustomersService,
     private readonly productQuerier: IProductQuerier,
-    private readonly customerRepository: ICustomerRepository,
-
     private readonly purchaseQuerier: IPurchaseQuerier,
   ) {}
 
@@ -150,15 +147,14 @@ export class PricingService implements IPricingService {
     const policy = customerType === "merchant" ? "wholesale" : "retail";
     const markup = await this.markupPolicyProvider.resolve(policy);
 
-    const discounts =
-      !!customerId && policy !== "wholesale"
-        ? (
-            await this.discountService.findManyApplicableDiscount({
-              customerId,
-              productIds: [...items.keys()],
-            })
-          ).discounts
-        : undefined;
+    const discounts = !!customerId
+      ? (
+          await this.discountService.findManyApplicableDiscount({
+            customerId,
+            productIds: [...items.keys()],
+          })
+        ).discounts
+      : undefined;
 
     // Pricing items
     const pricedInvoiceItems = new LineItems<InvoiceItem>((x) => x.productId);
@@ -213,18 +209,23 @@ export class PricingService implements IPricingService {
       (id) => new PurchasePriceNotFoundError(id),
     ).price;
 
-    const unitPrice = this.calculateUnitPrice(purchasePrice, markup);
+    // This may unit price may consist of real price plus fake discount
+    const realUnitPrice = this.calculateUnitPrice(purchasePrice, markup);
+    const displayUnitPrice = this.calculateDisplayPrice(
+      realUnitPrice,
+      discount,
+    );
     const appliedDiscount = this.applyDiscount(
-      unitPrice,
+      displayUnitPrice,
       item.quantity,
       discount,
     );
-    const lineTotal = unitPrice
+    const lineTotal = displayUnitPrice
       .multiply(item.quantity)
       .subtract(appliedDiscount?.totalDiscount ?? Money.zero());
     return {
       ...item,
-      unitPrice,
+      unitPrice: displayUnitPrice,
       discount: appliedDiscount,
       lineTotal,
     };
@@ -246,32 +247,42 @@ export class PricingService implements IPricingService {
         (id) => new PurchasePriceNotFoundError(id),
       ).price;
 
-      const unitPrice = this.calculateUnitPrice(purchasePrice, markup);
-      const lineTotal = unitPrice.multiply(bundleItem.quantity);
+      const realUnitPrice = this.calculateUnitPrice(purchasePrice, markup);
+      const lineTotal = realUnitPrice.multiply(bundleItem.quantity);
       pricedBundleItems.set({
         ...bundleItem,
-        unitPrice,
+        unitPrice: realUnitPrice,
         lineTotal,
       });
     }
 
-    // Calculate bundle invoice item
-    const unitPrice = pricedBundleItems.reduce((total, bundleItem) => {
-      return total.add(bundleItem.lineTotal);
-    }, Money.zero());
+    // Calculate displayed component prices while preserving bundle displayed price
+    const displayPricedBundleItems = !!discount
+      ? this.calculateBundleDisplayItems(pricedBundleItems, discount)
+      : pricedBundleItems;
+
+    const displayUnitPrice = displayPricedBundleItems.reduce(
+      (total, bundleItem) => {
+        return total.add(bundleItem.lineTotal);
+      },
+      Money.zero(),
+    );
+
+    // Applying discount
     const appliedDiscount = this.applyDiscount(
-      unitPrice,
+      displayUnitPrice,
       item.quantity,
       discount,
     );
-    const lineTotal = unitPrice
+
+    const lineTotal = displayUnitPrice
       .multiply(item.quantity)
       .subtract(appliedDiscount?.totalDiscount ?? Money.zero());
 
     return {
       ...item,
-      items: [...pricedBundleItems.toArray()],
-      unitPrice,
+      items: [...displayPricedBundleItems.toArray()],
+      unitPrice: displayUnitPrice,
       discount: appliedDiscount,
       lineTotal,
     };
@@ -298,26 +309,93 @@ export class PricingService implements IPricingService {
         ? quantity
         : Math.min(discount.applicableQuantity, quantity);
     return {
-      discountPerUnit: discount.discountPerUnit,
+      discountPerUnit: discount.displayDiscountPerUnit,
       discountedQuantity,
-      totalDiscount: discount.discountPerUnit.multiply(discountedQuantity),
+      totalDiscount:
+        discount.displayDiscountPerUnit.multiply(discountedQuantity),
     };
   }
+
   private applyCampaignDiscount(
     price: Money,
     discount: CampaignDiscount,
     quantity: number,
   ): AppliedDiscount {
-    const discountPerUnit = price.multiply(discount.discountRate);
+    const discountPerUnit = price.multiply(discount.displayDiscountRate);
+    const discountedQuantity =
+      discount.applicableQuantity === "unlimited"
+        ? quantity
+        : Math.min(discount.applicableQuantity, quantity);
+
     return {
       discountPerUnit,
-      discountedQuantity: quantity,
-      totalDiscount: discountPerUnit.multiply(quantity),
+      discountedQuantity,
+      totalDiscount: discountPerUnit.multiply(discountedQuantity),
     };
   }
 
   private calculateUnitPrice(purchasePrice: Money, markup: number): Money {
     return purchasePrice.multiply(1 + markup);
+  }
+
+  private calculateDisplayPrice(
+    realPrice: Money,
+    discount?: ProductDiscount,
+  ): Money {
+    if (!discount) return realPrice;
+
+    switch (discount.kind) {
+      case "campaign": {
+        const priceFactor =
+          (1 - discount.realDiscountRate) / (1 - discount.displayDiscountRate);
+
+        return realPrice.multiply(priceFactor);
+      }
+
+      case "specific": {
+        const fakeDiscount = discount.displayDiscountPerUnit.subtract(
+          discount.realDiscountPreUnit,
+        );
+
+        return realPrice.add(fakeDiscount);
+      }
+    }
+  }
+
+  private calculateBundleDisplayItems(
+    items: LineItems<BundleComponentInvoiceItem>,
+    discount: ProductDiscount,
+  ): LineItems<BundleComponentInvoiceItem> {
+    const realBundlePrice = items.reduce(
+      (total, item) => total.add(item.lineTotal),
+      Money.zero(),
+    );
+
+    const displayBundlePrice = this.calculateDisplayPrice(
+      realBundlePrice,
+      discount,
+    );
+
+    const adjustment = displayBundlePrice.subtract(realBundlePrice);
+
+    return items.transform(
+      (item) => {
+        const ratio = item.lineTotal.divide(realBundlePrice.value).value;
+
+        const displayAdjustment = adjustment.multiply(ratio);
+
+        const displayUnitPrice = item.unitPrice.add(
+          displayAdjustment.divide(item.quantity),
+        );
+
+        return {
+          ...item,
+          unitPrice: displayUnitPrice,
+          lineTotal: displayUnitPrice.multiply(item.quantity),
+        };
+      },
+      (item) => item.productId,
+    );
   }
 
   private collectLeafProductIds(products: Iterable<Product>): string[] {

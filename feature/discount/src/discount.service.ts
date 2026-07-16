@@ -9,6 +9,7 @@ import {
   IDiscountService,
 } from "@feature/discount-api";
 import { DiscountRepository } from "./repository/discount.repository";
+import { AppliedDiscount, LineItems } from "@feature/common";
 
 // Model for defining a collection
 type DiscountCollection = {
@@ -27,7 +28,7 @@ export class DiscountService implements IDiscountService {
   constructor(
     private readonly discountUsageRepository: DiscountUsageRepository,
     private readonly discountCampaignRepository: DiscountCampaignRepository,
-    private readonly discountRepository: DiscountRepository
+    private readonly discountRepository: DiscountRepository,
   ) {}
   /**
    * Handles the `sale.sale-recorded` domain event.
@@ -43,22 +44,35 @@ export class DiscountService implements IDiscountService {
     // TODO: Process only line items with an applied discount and record the customer's
     // discount usage for each eligible product.
 
-    const {snapshot} = event
-    if (!snapshot.header.customerId || !snapshot.summary.discount)
-      return;
+    const { snapshot } = event;
+    if (!snapshot.header.customerId || !snapshot.summary.discount) return;
 
-    const discounted = snapshot.items.transform()
-    
+    const discounted = snapshot.items.reduce(
+      (discounted, item) => {
+        if (!item.discount) return discounted;
+
+        return discounted.set({ ...item.discount, productId: item.productId });
+      },
+      new LineItems<AppliedDiscount & { productId: string }>(
+        (x) => x.productId,
+      ),
+    );
+
+    const campaignDiscounts = 
   }
 
   findApplicableDiscount(
     req: FindApplicableDiscountRequest,
   ): Promise<FindApplicableDiscountResponse> {
+    // TODO: Don't proceed if customer type is `merchant`
+    // Note: Discounts are only allowed for (`technician` | `consumer`)s
     throw new Error("Method not implemented.");
   }
   findManyApplicableDiscount(
     req: FindManyApplicableDiscountRequest,
   ): Promise<FindManyApplicableDiscountResponse> {
+    // TODO: Don't proceed if customer type is `merchant`
+    // Note: Discounts are only allowed for (`technician` | `consumer`)s
     throw new Error("Method not implemented.");
   }
 }

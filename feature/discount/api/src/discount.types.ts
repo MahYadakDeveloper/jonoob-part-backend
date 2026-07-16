@@ -2,13 +2,16 @@ import { Money } from "@feature/common";
 
 export type SpecificDiscount = {
   kind: "specific";
-  discountPerUnit: Money;
+  displayDiscountPerUnit: Money;
+  realDiscountPreUnit: Money;
   applicableQuantity: number | "unlimited";
 };
 
 export type CampaignDiscount = {
   kind: "campaign";
-  discountRate: number;
+  displayDiscountRate: number;
+  realDiscountRate: number;
+  applicableQuantity: number | "unlimited";
 };
 
 export type ProductDiscount = CampaignDiscount | SpecificDiscount;
