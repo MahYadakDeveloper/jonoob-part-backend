@@ -1,22 +1,19 @@
 import { Money } from "@feature/common";
+import { DiscountUsagePolicy } from "./discount-usage-policy";
 
-export interface DiscountUsagePolicy {
-  maxTotalUses: number;
-  maxUsesPerCustomer: number;
-  expiresAt?: Date;
-}
-
-export type Discount =
+export type DiscountSpecific =
   | {
       id: string;
       productId: string;
       kind: "unlimited";
-      discountPerUnit: Money;
+      displayDiscountPerUnit: Money;
+      realDiscountPerUnit: Money;
     }
   | {
       id: string;
       productId: string;
       kind: "limited";
-      discountPerUnit: Money;
+      displayDiscountPerUnit: Money;
+      realDiscountPerUnit: Money;
       usagePolicy: DiscountUsagePolicy;
     };
