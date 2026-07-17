@@ -9,9 +9,13 @@ export type InvoiceHeader = {
 };
 
 export interface AppliedDiscount {
+  source: {
+    id: string;
+    isLimited?: true | false
+  };
   discountPerUnit: Money;
   discountedQuantity: number;
-  totalDiscount: Money
+  totalDiscount: Money;
 }
 
 export type InvoiceItemBase = {

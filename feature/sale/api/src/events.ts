@@ -1,12 +1,10 @@
 import { InvoiceSnapshot } from "@feature/common";
 
-export class SaleRecordedEvent {
-  constructor(
-    readonly snapshot: InvoiceSnapshot,
-    readonly customerId?: string,
-  ) {}
+export const SaleRecordedEventType = "sale.sale-recorded";
+export const SaleReturnRecordedEventType = "sale.sale-recorded";
+
+export interface SaleRecordedEventPayload {
+  snapshot: InvoiceSnapshot;
 }
 
-export class SaleReturnRecordedEvent {
-  constructor(readonly saleReturnId: string) {}
-}
+export type SaleReturnRecordedEventPayload = { TODO: string };

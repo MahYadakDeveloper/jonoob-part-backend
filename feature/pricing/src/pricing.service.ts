@@ -309,6 +309,10 @@ export class PricingService implements IPricingService {
         ? quantity
         : Math.min(discount.applicableQuantity, quantity);
     return {
+      source: {
+        id: discount.id,
+        isLimited: discount.applicableQuantity !== "unlimited",
+      },
       discountPerUnit: discount.displayDiscountPerUnit,
       discountedQuantity,
       totalDiscount:
@@ -328,6 +332,10 @@ export class PricingService implements IPricingService {
         : Math.min(discount.applicableQuantity, quantity);
 
     return {
+      source: {
+        id: discount.id,
+        isLimited: discount.applicableQuantity !== "unlimited",
+      },
       discountPerUnit,
       discountedQuantity,
       totalDiscount: discountPerUnit.multiply(discountedQuantity),

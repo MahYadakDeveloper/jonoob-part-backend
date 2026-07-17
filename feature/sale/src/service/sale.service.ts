@@ -12,10 +12,8 @@ import {
 } from "@feature/common";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
-import { SaleRecordedEvent, SaleReturnRecordedEvent } from "@feature/sale-api";
 import { type IWarehouseService } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
-import { EventEmitter2 } from "@nestjs/event-emitter";
 import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.error";
 import { DuplicateItemsInSaleError } from "errors/duplicate-items-in-sale.error";
 import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match-sale.error";
@@ -28,6 +26,13 @@ import { flattenRefundableItems } from "utils/flatten-refundable-items";
 import { mapProductToUnpricedInvoiceItem } from "utils/product-to-unpriced-invoice-item.mapper";
 import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
 import { RecordReturnResponse } from "./sale.responses";
+import { type IOutboxRepository } from "@feature/common";
+import {
+  SaleRecordedEventPayload,
+  SaleRecordedEventType,
+  SaleReturnRecordedEventPayload,
+  SaleReturnRecordedEventType,
+} from "@feature/sale-api";
 
 /**
  *
@@ -41,7 +46,7 @@ export class SaleService {
     private readonly pricingService: IPricingService,
     private readonly paymentService: IPaymentService,
     private readonly cashbackService: ICashbackService,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly outboxRepository: IOutboxRepository,
   ) {}
 
   /**
@@ -120,10 +125,12 @@ export class SaleService {
     const { saleReturnId } =
       await this.saleDocumentsRepository.recordReturn(returnDocument);
 
-    this.eventEmitter.emit(
-      "sale.sale-return-recorded",
-      new SaleReturnRecordedEvent(saleReturnId),
-    );
+    await this.outboxRepository.save({
+      type: SaleReturnRecordedEventType,
+      payload: {
+        TODO: "Define the event payload type",
+      } satisfies SaleReturnRecordedEventPayload,
+    });
 
     return {
       payableRefund,
@@ -201,10 +208,12 @@ export class SaleService {
 
     await this.saleDocumentsRepository.recordSale(snapshot);
 
-    this.eventEmitter.emit(
-      "sale.sale-recorded",
-      new SaleRecordedEvent(snapshot),
-    );
+    await this.outboxRepository.save({
+      type: SaleRecordedEventType,
+      payload: {
+        snapshot,
+      } satisfies SaleRecordedEventPayload,
+    });
   }
 
   private computeRefund(

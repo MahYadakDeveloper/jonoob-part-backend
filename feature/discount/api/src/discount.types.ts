@@ -1,6 +1,7 @@
 import { Money } from "@feature/common";
 
 export type SpecificDiscount = {
+  id: string;
   kind: "specific";
   displayDiscountPerUnit: Money;
   realDiscountPreUnit: Money;
@@ -8,6 +9,7 @@ export type SpecificDiscount = {
 };
 
 export type CampaignDiscount = {
+  id: string;
   kind: "campaign";
   displayDiscountRate: number;
   realDiscountRate: number;
