@@ -1,5 +1,5 @@
 {
-  "name": "@infra/outbox-messaging",
+  "name": "@infra/queue-messaging",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -16,10 +16,7 @@
     }
   },
   "dependencies": {
-    "@feature/common": "workspace:*",
     "@nestjs/bullmq": "^11.0.4",
-    "@nestjs/common": "^11.1.28",
-    "@nestjs/schedule": "^6.1.3",
-    "bullmq": "^5.80.5"
+    "@nestjs/common": "^11.1.28"
   }
 }

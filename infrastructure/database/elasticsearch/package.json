@@ -1,5 +1,5 @@
 {
-  "name": "@infra/db-elasticsearch",
+  "name": "@infra/elasticsearch-db",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",

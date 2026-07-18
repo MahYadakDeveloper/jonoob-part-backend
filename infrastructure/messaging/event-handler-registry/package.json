@@ -1,11 +1,11 @@
 {
-  "name": "@feature/discount",
-  "type": "commonjs",
+  "name": "@infra/event-handler-registry-messaging",
+  "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "build": "pnpm exec tsc"
   },
+  "type": "commonjs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -15,12 +15,9 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@feature/discount-api": "workspace:*",
-    "@feature/sale-api": "workspace:*",
-    "@nestjs/common": "^11.1.28",
-    "@nestjs/event-emitter": "^3.1.0"
+    "@nestjs/bullmq": "^11.0.4",
+    "bullmq": "^5.80.5"
   }
 }

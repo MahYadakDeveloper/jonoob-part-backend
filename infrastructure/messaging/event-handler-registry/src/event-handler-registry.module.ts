@@ -1,0 +1,1 @@
+// TODO export provider of `EventHandlerRegistry` from the module here

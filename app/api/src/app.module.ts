@@ -1,21 +1,18 @@
-import { WAREHOUSE_REPOSITORY, WarehouseModule } from '@feature/warehouse';
-import { DatabaseModule } from '@infra/database';
-import { PrismaWarehouseRepository } from '@infra/warehouse-repo';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
     ConfigModule.forRoot({}),
-    DatabaseModule,
-    WarehouseModule.register([
-      {
-        provide: WAREHOUSE_REPOSITORY,
-        useClass: PrismaWarehouseRepository,
+    BullModule.forRoot({
+      connection: {
+        host: undefined,
+        port: undefined,
       },
-    ]),
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

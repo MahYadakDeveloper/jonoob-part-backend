@@ -1,2 +1,5 @@
 export * from './outbox-event'
 export * from './outbox.repository'
+export * from './event-handler-registry'
+export * from './event-handler'
+export * from './base-event-handler'

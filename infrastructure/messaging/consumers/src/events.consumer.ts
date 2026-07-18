@@ -1,0 +1,21 @@
+import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { Job } from "bullmq";
+import { UnknownEventHandlerError } from "./unknown-event-handler.error";
+import { type IEventHandlerRegistry } from "@feature/common";
+
+@Processor("events")
+export class EventsConsumer extends WorkerHost {
+  constructor(private readonly registry: IEventHandlerRegistry) {
+    super();
+  }
+
+  async process(job: Job) {
+    const handler = this.registry.get(job.name);
+
+    if (!handler) {
+      throw new UnknownEventHandlerError(job.name);
+    }
+
+    await handler.handle(job.data);
+  }
+}

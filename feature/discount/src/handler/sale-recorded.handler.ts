@@ -1,14 +1,25 @@
-import { AppliedDiscount, LineItems } from "@feature/common";
-import { SaleRecordedEventPayload } from "@feature/sale-api";
+import {
+  AppliedDiscount,
+  BaseEventHandler,
+  type IEventHandlerRegistry,
+  LineItems,
+} from "@feature/common";
+import {
+  SaleRecordedEventPayload,
+  SaleRecordedEventType,
+} from "@feature/sale-api";
 import { Injectable } from "@nestjs/common";
 import { DiscountUsage } from "../model/discount-usage";
 import { type DiscountUsageRepository } from "../repository/discount-usage.repository";
 
 @Injectable()
-export class SaleRecordedEventHandler {
+export class SaleRecordedEventHandler extends BaseEventHandler<SaleRecordedEventPayload> {
   constructor(
+    private readonly evenHandlerRegistry: IEventHandlerRegistry,
     private readonly discountUsageRepository: DiscountUsageRepository,
-  ) {}
+  ) {
+    super(evenHandlerRegistry, SaleRecordedEventType);
+  }
 
   /**
    * Handles the `sale.sale-recorded` domain event.

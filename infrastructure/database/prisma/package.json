@@ -1,5 +1,5 @@
 {
-  "name": "@infra/db-prisma",
+  "name": "@infra/prisma-db",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
