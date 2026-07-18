@@ -1,4 +1,4 @@
-export interface OutboxEvent {
+export type OutboxEvent = {
   id: string;
 
   type: string;
@@ -7,3 +7,5 @@ export interface OutboxEvent {
 
   occurredAt: Date;
 }
+
+export type NewOutboxEvent = Omit<OutboxEvent, "id" | "occurredAt">

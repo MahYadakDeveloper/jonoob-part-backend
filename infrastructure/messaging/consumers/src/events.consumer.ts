@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq";
+import { OnQueueEvent, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
 import { UnknownEventHandlerError } from "./unknown-event-handler.error";
 import { type IEventHandlerRegistry } from "@feature/common";
@@ -17,5 +17,10 @@ export class EventsConsumer extends WorkerHost {
     }
 
     await handler.handle(job.data);
+  }
+
+  @OnQueueEvent("failed")
+  onFailed() {
+    // TODO Handle the failure of jobs
   }
 }
