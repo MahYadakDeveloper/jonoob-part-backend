@@ -29,8 +29,14 @@ export class DiscountService implements IDiscountService {
     private readonly pricingService: IPricingService,
     private readonly synchronizer: ISynchronizer,
   ) {}
-  private static readonly SYNCHRONIZER_LOCK_KEY = "DiscountUsageConsumptionLock";
+  private static readonly SYNCHRONIZER_LOCK_KEY =
+    "DiscountUsageConsumptionLock";
 
+  /**
+   * Updates discount usage records after a sale is completed. If the sale contains
+   * discounted products, the customer's discount usage is recorded so future
+   * eligibility checks can enforce per-customer limits defined by the discount policy.
+   */
   async commitDiscountUsages({
     customerId,
     appliedDiscounts,
@@ -68,6 +74,7 @@ export class DiscountService implements IDiscountService {
           discounts,
         });
 
+        // The upsert method going to update if discountId existed otherwise going to create new row
         await this.discountUsageRepository.upsertMany(
           requestedUsages.transform(
             (x) => ({
@@ -344,7 +351,6 @@ export class DiscountService implements IDiscountService {
     );
 
     for (const item of appliedDiscounts) {
-
       const current = usages.get(item.source.id);
 
       if (current) {

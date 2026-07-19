@@ -56,6 +56,7 @@ export class PricingService implements IPricingService {
     return { policy: this.resolvePolicy(customerType) };
   }
 
+  // TODO Note this is not complete yet, complete it then
   async priceProduct({
     item,
     policy,
@@ -70,6 +71,7 @@ export class PricingService implements IPricingService {
     };
   }
 
+  // TODO Note this is not complete yet, complete it then
   async priceManyProduct({
     items,
     policy,

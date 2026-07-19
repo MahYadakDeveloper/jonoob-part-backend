@@ -4,14 +4,23 @@ import {
   InsufficientCashbackBalanceError,
 } from "@feature/cashback-api";
 import {
+  AppliedDiscount,
   InvoiceItem,
   InvoiceItemBase,
   InvoiceSnapshot,
+  type IOutboxRepository,
   LineItems,
   Money,
 } from "@feature/common";
+import { type IDiscountService } from "@feature/discount-api";
 import { type IPaymentService } from "@feature/payment-api";
 import { type IPricingService } from "@feature/pricing-api";
+import {
+  SaleRecordedEventPayload,
+  SaleRecordedEventType,
+  SaleReturnRecordedEventPayload,
+  SaleReturnRecordedEventType,
+} from "@feature/sale-api";
 import { type IWarehouseService } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
 import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.error";
@@ -26,13 +35,6 @@ import { flattenRefundableItems } from "utils/flatten-refundable-items";
 import { mapProductToUnpricedInvoiceItem } from "utils/product-to-unpriced-invoice-item.mapper";
 import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
 import { RecordReturnResponse } from "./sale.responses";
-import { type IOutboxRepository } from "@feature/common";
-import {
-  SaleRecordedEventPayload,
-  SaleRecordedEventType,
-  SaleReturnRecordedEventPayload,
-  SaleReturnRecordedEventType,
-} from "@feature/sale-api";
 
 /**
  *
@@ -45,6 +47,7 @@ export class SaleService {
     private readonly warehouseService: IWarehouseService,
     private readonly pricingService: IPricingService,
     private readonly paymentService: IPaymentService,
+    private readonly discountService: IDiscountService,
     private readonly cashbackService: ICashbackService,
     private readonly outboxRepository: IOutboxRepository,
   ) {}
@@ -125,12 +128,12 @@ export class SaleService {
     const { saleReturnId } =
       await this.saleDocumentsRepository.recordReturn(returnDocument);
 
-    await this.outboxRepository.save({
-      type: SaleReturnRecordedEventType,
-      payload: {
-        TODO: "Define the event payload type",
-      } satisfies SaleReturnRecordedEventPayload,
-    });
+    // await this.outboxRepository.save({
+    //   type: SaleReturnRecordedEventType,
+    //   payload: {
+    //     TODO: "Define the event payload type",
+    //   } satisfies SaleReturnRecordedEventPayload,
+    // });
 
     return {
       payableRefund,
@@ -216,6 +219,23 @@ export class SaleService {
 
     await this.saleDocumentsRepository.recordSale(snapshot);
 
+    // Commit discount usages
+    if (req.customerId) {
+      const appliedDiscounts = snapshot.items.reduce(
+        (discounted, item) => {
+          if (!item.discount) return discounted;
+
+          return discounted.set(item.discount);
+        },
+        new LineItems<AppliedDiscount>((x) => x.source.id),
+      );
+
+      await this.discountService.commitDiscountUsages({
+        customerId: req.customerId,
+        appliedDiscounts,
+      });
+    }
+
     await this.outboxRepository.save({
       type: SaleRecordedEventType,
       payload: {
@@ -224,7 +244,7 @@ export class SaleService {
     });
 
     // TODO: Make this flow steps as transactional and has ability to rollback any changes made to aggregate
-    // TODO: transaction:(warehouse issue + saving sale record + cashback + outbox)
+    // TODO: transaction:(warehouse issue + saving sale record + cashback + discount usage commit + outbox)
   }
 
   private computeRefund(

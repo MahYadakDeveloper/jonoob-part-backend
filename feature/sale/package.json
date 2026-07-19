@@ -19,6 +19,7 @@
   "dependencies": {
     "@feature/cashback-api": "workspace:*",
     "@feature/common": "workspace:*",
+    "@feature/discount-api": "workspace:*",
     "@feature/payment-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
     "@feature/sale-api": "workspace:*",
