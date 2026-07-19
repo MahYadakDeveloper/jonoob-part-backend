@@ -6,8 +6,8 @@ import {
 } from "@feature/warehouse";
 import { Injectable } from "@nestjs/common";
 import { planStockChanges } from "./stock-planner";
-import { type StockCache } from "./stock.cache";
-import { type StockDatasource } from "./stock.datasource";
+import { type StockCache } from "./cache/stock.cache";
+import { type StockDatasource } from "./datasource/stock.datasource";
 
 @Injectable()
 export class WarehouseRepository implements IWarehouseRepository {

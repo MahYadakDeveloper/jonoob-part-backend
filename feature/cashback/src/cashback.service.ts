@@ -10,7 +10,6 @@ import { Money } from "@feature/common";
 import { Injectable } from "@nestjs/common";
 import { CashbackReversalNotAllowedError } from "./errors/cashback-reversal-not-allowed.error";
 import { type ICustomerQuery } from "./ports/customer.query";
-import { type ICashbackBalanceRepository } from "./repository/cashback-balance.repository";
 import { type ICashbackSettingsRepository } from "./repository/cashback-settings.repository";
 
 @Injectable()
@@ -18,7 +17,7 @@ export class CashbackService implements ICashbackService {
   constructor(
     private readonly customerQuery: ICustomerQuery,
     private readonly cashbackSettingsRepository: ICashbackSettingsRepository,
-    private readonly cashbackBalanceRepository: ICashbackBalanceRepository,
+    private readonly walletService: IWalletService
   ) {}
 
   /**
@@ -27,18 +26,13 @@ export class CashbackService implements ICashbackService {
   async processCashbackReversal({
     customerId,
     refundAmount,
+    granted,
     policy,
   }: ReversalCashbackRequest): Promise<ReversalCashbackResponse> {
-    // Resolve the flatRate of cashback service
-    const customerType = await this.customerQuery.getType(customerId);
-    if (customerType === "merchant") {
-      throw new CashbackReversalNotAllowedError(customerId);
-    }
-    const variant = customerType;
-    const flatRate = await this.cashbackSettingsRepository.getFlatRate(variant);
-
-    if (flatRate.disabled) return { payableRefund: refundAmount };
-    const reversalCashback = this.calculateCashback(flatRate, refundAmount);
+    const reversalCashback = this.calculateCashback(
+      granted.appliedRate,
+      refundAmount,
+    );
 
     switch (policy) {
       case CashbackReversalPolicy.DeductFromRefund: {
@@ -62,10 +56,19 @@ export class CashbackService implements ICashbackService {
   /**
    *
    */
-  grantCashback(
-    request: GrantingCashbackRequest,
-  ): Promise<GrantingCashbackResponse> {
+  async grantCashback({
+    customerId,
+    purchaseAmount,
+  }: GrantingCashbackRequest): Promise<GrantingCashbackResponse> {
     // no cashback for merchant
+    // Resolve the flatRate of cashback service
+    const customerType = await this.customerQuery.getType(customerId);
+    if (customerType === "merchant") {
+      throw new CashbackReversalNotAllowedError(customerId);
+    }
+    const variant = customerType;
+    const flatRate = await this.cashbackSettingsRepository.getFlatRate(variant);
+
     throw new Error("Method not implemented.");
   }
 

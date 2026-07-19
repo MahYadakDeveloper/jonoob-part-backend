@@ -1,16 +1,16 @@
-import { Barcode } from "@feature/common";
+import { Barcode, LineItems } from "@feature/common";
 import { Good } from "../model/good";
-import { GoodDetails } from "../model/good-detials";
+import { GoodDetails } from "../model/good-details";
 
 export const WAREHOUSE_REPOSITORY = "IWarehouseRepository";
 
-type Item = { goodId: string; quantity: number };
+type Stock = { goodId: string; quantity: number };
 export interface IWarehouseRepository {
-  issueGoods(items: Item[]): Promise<void>;
-  receiptGoods(items: Item[]): Promise<void>;
-  reserveStock(items: Item[]): Promise<void>;
-  releaseStock(items: Item[]): Promise<void>;
+  issueGoods(items: LineItems<Stock>): Promise<void>;
+  receiptGoods(items: LineItems<Stock>): Promise<void>;
+  reserveStock(items: LineItems<Stock>): Promise<void>;
+  releaseStock(items: LineItems<Stock>): Promise<void>;
   findGoodByBarcode(barcode: Barcode): Promise<Good>;
   updateGoodDetails(goodId: string, details: GoodDetails): Promise<void>;
-  getAvailableStocksByIds(goodIds: string[]): Promise<Record<string, number>>;
+  getAvailableStocksByIds(goodIds: string[]): Promise<LineItems<Stock>>;
 }

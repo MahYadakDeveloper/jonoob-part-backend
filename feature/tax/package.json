@@ -1,0 +1,23 @@
+{
+  "name": "@feature/tax",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "private": true,
+  "dependencies": {
+    "@feature/common": "workspace:*",
+    "@feature/tax-api": "workspace:*"
+  }
+}

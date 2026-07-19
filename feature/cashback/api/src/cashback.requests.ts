@@ -1,9 +1,10 @@
-import { CustomerType, Money } from "@feature/common";
+import { GrantedCashback, Money } from "@feature/common";
 import { CashbackReversalPolicy } from "./cashback.enums";
 
 export interface ReversalCashbackRequest {
   customerId: string;
   refundAmount: Money;
+  granted: GrantedCashback;
   policy: CashbackReversalPolicy;
 }
 

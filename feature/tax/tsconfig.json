@@ -1,0 +1,12 @@
+{
+  "extends": "./../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "sourceRoot": "./src",
+    "paths": { "*": ["./src/*"], "@/*": ["./src/*"] }
+  },
+
+  "include": ["src/**/*.ts", "../pricing/src/model/product.projection.ts"],
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+}

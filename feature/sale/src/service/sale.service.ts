@@ -18,9 +18,8 @@ import { type IPricingService } from "@feature/pricing-api";
 import {
   SaleRecordedEventPayload,
   SaleRecordedEventType,
-  SaleReturnRecordedEventPayload,
-  SaleReturnRecordedEventType,
 } from "@feature/sale-api";
+import { type ITaxService } from "@feature/tax-api";
 import { type IWarehouseService } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
 import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.error";
@@ -29,6 +28,7 @@ import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match
 import { ReturnSnapshot } from "model/sale-return";
 import { type IProductQuery } from "port/product-query.port";
 import { type ISaleDocumentsRepository } from "repository/sale-documents.repository";
+import { type ISaleReturnDocumentsRepository } from "repository/sale-return-documents.repository";
 import { ProductLineItem } from "types/product-line-item.type";
 import { flattenInvoiceItems } from "utils/flatten-invoice-item";
 import { flattenRefundableItems } from "utils/flatten-refundable-items";
@@ -42,6 +42,7 @@ import { RecordReturnResponse } from "./sale.responses";
 @Injectable()
 export class SaleService {
   constructor(
+    private readonly saleReturnDocumentsRepository: ISaleReturnDocumentsRepository,
     private readonly saleDocumentsRepository: ISaleDocumentsRepository,
     private readonly productQuery: IProductQuery,
     private readonly warehouseService: IWarehouseService,
@@ -49,6 +50,7 @@ export class SaleService {
     private readonly paymentService: IPaymentService,
     private readonly discountService: IDiscountService,
     private readonly cashbackService: ICashbackService,
+    private readonly taxService: ITaxService,
     private readonly outboxRepository: IOutboxRepository,
   ) {}
 
@@ -66,7 +68,7 @@ export class SaleService {
     // TODO: Add transactional handling for the return workflow.
     // Currently, a failure while recording the return document after stock restoration
     // can leave the system in an inconsistent state (stock updated but return not recorded).
-    const sale = await this.saleDocumentsRepository.findSaleById(saleId);
+    const sale = await this.saleDocumentsRepository.findById(saleId);
 
     items.assertUniqueBy(
       (item) => item.productId,
@@ -89,12 +91,15 @@ export class SaleService {
 
     const { customerId } = sale.snapshot.header;
 
-    const payableRefund =
+    // TODO Add tax calculation for deducting from refund
+
+    let payableRefund =
       customerId && sale.snapshot.summary.cashback
         ? (
             await this.cashbackService.processCashbackReversal({
               customerId,
               refundAmount: refund,
+              granted: sale.snapshot.summary.cashback,
               policy: cashbackReversalPolicy!,
             })
           ).payableRefund
@@ -109,6 +114,17 @@ export class SaleService {
         (item) => item.goodId,
       ),
     });
+
+    // Tax
+    if (sale.snapshot.summary.tax) {
+      const taxRefund = this.calculateProportionalTax(
+        sale.snapshot.summary.tax,
+        refund,
+        sale.snapshot.summary.grandTotal,
+      );
+
+      payableRefund = payableRefund.subtract(taxRefund);
+    }
 
     const returnDocument: ReturnSnapshot = {
       header: sale.snapshot.header,
@@ -127,7 +143,7 @@ export class SaleService {
     };
 
     const { saleReturnId } =
-      await this.saleDocumentsRepository.recordReturn(returnDocument);
+      await this.saleReturnDocumentsRepository.recordReturn(returnDocument);
 
     // await this.outboxRepository.save({
     //   type: SaleReturnRecordedEventType,
@@ -190,6 +206,11 @@ export class SaleService {
           },
         };
 
+    // Tax
+    const { tax } = await this.taxService.calculateTax({
+      paymentAmount: invoice.summary.grandTotal,
+    });
+
     // Issuing goods
     const flattenedItems = flattenInvoiceItems(invoice.items);
     await this.warehouseService.recordGoodsIssue({
@@ -214,7 +235,7 @@ export class SaleService {
         issuedAt: new Date(Date.now()),
       },
       items: invoice.items,
-      summary: { ...invoice.summary, cashback: grantedCashback },
+      summary: { ...invoice.summary, cashback: grantedCashback, tax },
       payment,
     };
 
@@ -246,6 +267,16 @@ export class SaleService {
 
     // TODO: Make this flow steps as transactional and has ability to rollback any changes made to aggregate
     // TODO: transaction:(warehouse issue + saving sale record + cashback + discount usage commit + outbox)
+  }
+
+  private calculateProportionalTax(
+    tax: Money,
+    refund: Money,
+    invoiceTotal: Money,
+  ): Money {
+    const ratio = refund.value / invoiceTotal.value;
+
+    return tax.multiply(ratio);
   }
 
   private computeRefund(

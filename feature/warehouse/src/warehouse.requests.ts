@@ -1,13 +1,10 @@
 import { Barcode } from "@feature/common";
-import { Good } from "./model/good";
-import { GoodDetails } from "./model/good-detials";
+import { GoodDetails } from "./model/good-details";
+import { Stock } from "./model/stock";
 
 export interface StockAdjustmentRequest {
-  goodId: string;
-  stock: number;
+  stock: Stock;
 }
-
-
 
 export interface AvailableStocksRequest {
   goodIds: string[];

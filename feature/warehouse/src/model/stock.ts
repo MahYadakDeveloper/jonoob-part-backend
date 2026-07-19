@@ -1,0 +1,1 @@
+export type Stock = {goodId: string, quantity: number}

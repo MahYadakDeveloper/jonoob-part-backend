@@ -1,14 +1,16 @@
+import { type IOutboxRepository } from "@feature/common";
 import {
-  GoodsIssuedEvent,
+  GoodsIssuedEventPayload,
+  GoodsIssuedEventType,
   GoodsIssuingRequest,
-  GoodsReceiptedEvent,
+  GoodsReceiptedEventPayload,
+  GoodsReceiptedEventType,
   GoodsReceptionRequest,
   IWarehouseService,
   StockReleasingRequest,
   StockReservingRequest,
 } from "@feature/warehouse-api";
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { EventEmitter2 } from "@nestjs/event-emitter";
 import {
   WAREHOUSE_REPOSITORY,
   type IWarehouseRepository,
@@ -33,7 +35,7 @@ export class WarehouseService implements IWarehouseService {
   constructor(
     @Inject(WAREHOUSE_REPOSITORY)
     private readonly warehouseRepository: IWarehouseRepository,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly outboxRepository: IOutboxRepository,
   ) {
     this.logger = new Logger(WarehouseService.name);
   }
@@ -41,10 +43,19 @@ export class WarehouseService implements IWarehouseService {
   async recordGoodsIssue(req: GoodsIssuingRequest): Promise<void> {
     await this.warehouseRepository.issueGoods(req.items);
 
-    this.eventEmitter.emit(
-      "warehouse.goods-issued",
-      new GoodsIssuedEvent(req.items.map((item) => item.goodId)),
-    );
+    this.outboxRepository.save({
+      type: GoodsIssuedEventType,
+      payload: {
+        goodIds: [
+          ...req.items
+            .transform(
+              (item) => item.goodId,
+              (item) => item,
+            )
+            .toArray(),
+        ],
+      } satisfies GoodsIssuedEventPayload,
+    });
   }
 
   reserveStock(req: StockReservingRequest): Promise<void> {
@@ -110,10 +121,19 @@ export class WarehouseService implements IWarehouseService {
   async recordGoodsReceipt(req: GoodsReceptionRequest) {
     await this.warehouseRepository.receiptGoods(req.items);
 
-    this.eventEmitter.emit(
-      "warehouse.goods-receipted",
-      new GoodsReceiptedEvent(req.items.map((item) => item.goodId)),
-    );
+    this.outboxRepository.save({
+      type: GoodsReceiptedEventType,
+      payload: {
+        goodIds: [
+          ...req.items
+            .transform(
+              (item) => item.goodId,
+              (item) => item,
+            )
+            .toArray(),
+        ],
+      } satisfies GoodsReceiptedEventPayload,
+    });
   }
 
   async findGoodByBarcode(

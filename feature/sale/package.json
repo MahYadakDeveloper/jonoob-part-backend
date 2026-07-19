@@ -23,6 +23,7 @@
     "@feature/payment-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
     "@feature/sale-api": "workspace:*",
+    "@feature/tax-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.1.27",
     "zod": "^4.4.3"

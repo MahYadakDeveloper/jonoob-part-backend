@@ -1,5 +1,5 @@
 import { Cache } from "@infra/common-persistent";
-import { StockChangePlan } from "./stock-planner";
+import { StockChangePlan } from "../stock-planner";
 
 type Stock = number;
 

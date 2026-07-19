@@ -8,7 +8,7 @@ export type InvoiceHeader = {
   readonly customerId?: string;
 };
 
-export interface AppliedDiscount {
+export type AppliedDiscount = {
   source: {
     id: string;
     isLimited?: true | false;
@@ -16,7 +16,12 @@ export interface AppliedDiscount {
   discountPerUnit: Money;
   discountedQuantity: number;
   totalDiscount: Money;
-}
+};
+
+export type GrantedCashback = {
+  appliedRate: number;
+  amount: Money;
+};
 
 export type InvoiceItemBase = {
   readonly productId: string;
@@ -52,10 +57,11 @@ export type InvoicePayment =
     };
 
 export type InvoiceSummary = {
-  readonly cashback?: Money;
+  readonly cashback?: GrantedCashback;
   readonly subtotal: Money;
   readonly grandTotal: Money;
   readonly discount?: Money;
+  readonly tax?: Money;
 };
 
 export type InvoiceSnapshot = {
