@@ -1,51 +1,52 @@
 import {
   CashbackReversalPolicy,
+  GrantingCashbackRequest,
+  GrantingCashbackResponse,
   ICashbackService,
   ReversalCashbackRequest,
   ReversalCashbackResponse,
 } from "@feature/cashback-api";
-import { type ICustomersService } from "@feature/customer-api";
-import { SaleRecordedEvent } from "@feature/sale-api";
+import { Money } from "@feature/common";
 import { Injectable } from "@nestjs/common";
-import { OnEvent } from "@nestjs/event-emitter";
-import { GrantCashbackResponse } from "./cashback.responses";
-import { CustomerType, Money } from "@feature/common";
+import { CashbackReversalNotAllowedError } from "./errors/cashback-reversal-not-allowed.error";
+import { type ICustomerQuery } from "./ports/customer.query";
+import { type ICashbackBalanceRepository } from "./repository/cashback-balance.repository";
+import { type ICashbackSettingsRepository } from "./repository/cashback-settings.repository";
 
 @Injectable()
 export class CashbackService implements ICashbackService {
-  constructor(private readonly customersService: ICustomersService) {}
+  constructor(
+    private readonly customerQuery: ICustomerQuery,
+    private readonly cashbackSettingsRepository: ICashbackSettingsRepository,
+    private readonly cashbackBalanceRepository: ICashbackBalanceRepository,
+  ) {}
 
-  @OnEvent("pos.sale-recorded")
-  async handleSaleRecordedEvent(
-    event: SaleRecordedEvent,
-  ): Promise<GrantCashbackResponse> {
-    
-    // Note: If customer type is merchant there is no cashback considered for them.
-    const { customerType } = await this.customersService.resolveCustomerType({
-      customerId: ,
-    });
-
-    throw new Error("Method not implemented.");
-  }
-
-
+  /**
+   *
+   */
   async processCashbackReversal({
     customerId,
-    refund,
+    refundAmount,
     policy,
   }: ReversalCashbackRequest): Promise<ReversalCashbackResponse> {
-    const { customerType } = await this.customersService.resolveCustomerType({
-      customerId,
-    });
-    const cashback = await this.calculateCashback(customerType, refund);
+    // Resolve the flatRate of cashback service
+    const customerType = await this.customerQuery.getType(customerId);
+    if (customerType === "merchant") {
+      throw new CashbackReversalNotAllowedError(customerId);
+    }
+    const variant = customerType;
+    const flatRate = await this.cashbackSettingsRepository.getFlatRate(variant);
+
+    if (flatRate.disabled) return { payableRefund: refundAmount };
+    const reversalCashback = this.calculateCashback(flatRate, refundAmount);
 
     switch (policy) {
       case CashbackReversalPolicy.DeductFromRefund: {
-        return { payableRefund: refund.subtract(cashback) };
+        return { payableRefund: refundAmount.subtract(reversalCashback) };
       }
       case CashbackReversalPolicy.ReverseGrantedCashback: {
-        await this.revokeCashback(customerId, cashback);
-        return { payableRefund: refund };
+        await this.revokeCashback(customerId, reversalCashback);
+        return { payableRefund: refundAmount };
       }
       default: {
         const _exhaustive: never = policy;
@@ -54,17 +55,19 @@ export class CashbackService implements ICashbackService {
     }
   }
 
-  private calculateCashback(
-    customerType: CustomerType,
-    amount: Money,
-  ): Promise<Money> {
-    throw new Error("Method not implemented.");
+  private calculateCashback(flatRate: number, amount: Money): Money {
+    return amount.multiply(flatRate);
   }
 
   /**
    *
    */
-  private async grantCashback(customerId: string, cashback: Money) {}
+  grantCashback(
+    request: GrantingCashbackRequest,
+  ): Promise<GrantingCashbackResponse> {
+    // no cashback for merchant
+    throw new Error("Method not implemented.");
+  }
 
   /**
    *
@@ -72,6 +75,4 @@ export class CashbackService implements ICashbackService {
    * @param cashback
    */
   private async revokeCashback(customerId: string, cashback: Money) {}
-
-
 }

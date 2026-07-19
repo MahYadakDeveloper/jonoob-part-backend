@@ -89,15 +89,16 @@ export class SaleService {
 
     const { customerId } = sale.snapshot.header;
 
-    const payableRefund = customerId
-      ? (
-          await this.cashbackService.processCashbackReversal({
-            customerId,
-            refund,
-            policy: cashbackReversalPolicy!,
-          })
-        ).payableRefund
-      : refund;
+    const payableRefund =
+      customerId && sale.snapshot.summary.cashback
+        ? (
+            await this.cashbackService.processCashbackReversal({
+              customerId,
+              refundAmount: refund,
+              policy: cashbackReversalPolicy!,
+            })
+          ).payableRefund
+        : refund;
 
     await this.warehouseService.recordGoodsReceipt({
       items: returnDocumentItems.transform(

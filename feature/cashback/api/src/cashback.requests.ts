@@ -3,7 +3,7 @@ import { CashbackReversalPolicy } from "./cashback.enums";
 
 export interface ReversalCashbackRequest {
   customerId: string;
-  refund: Money;
+  refundAmount: Money;
   policy: CashbackReversalPolicy;
 }
 
