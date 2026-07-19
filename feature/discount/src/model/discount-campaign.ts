@@ -1,22 +1,24 @@
 import { LineItems } from "@feature/common";
 import { DiscountUsagePolicy } from "./discount-usage-policy";
 
-export type DiscountCampaignProduct =
-  | {
-      id: string;
-      kind: "unlimited";
-      productId: string;
-      displayDiscountRate: number;
-      realDiscountRate: number;
-    }
-  | {
-      id: string;
-      kind: "limited";
-      productId: string;
-      displayDiscountRate: number;
-      realDiscountRate: number;
-      usagePolicy: Omit<DiscountUsagePolicy, "expiresAt">;
-    };
+type UnlimitedUsagePolicy = Extract<DiscountUsagePolicy, { kind: "unlimited" }>;
+
+type LimitedUsagePolicyWithoutExpiry = Omit<
+  Extract<DiscountUsagePolicy, { kind: "limited" }>,
+  "expiresAt"
+>;
+
+type CampaignUsagePolicy =
+  | UnlimitedUsagePolicy
+  | LimitedUsagePolicyWithoutExpiry;
+
+export type CampaignDiscountItem = {
+  id: string;
+  productId: string;
+  usagePolicy: CampaignUsagePolicy;
+  displayDiscountRate: number;
+  realDiscountRate: number;
+};
 
 export type DiscountCampaign = {
   id: string;
@@ -30,5 +32,5 @@ export type DiscountCampaign = {
 
   // fake & real
 
-  products: LineItems<DiscountCampaignProduct>;
+  items: LineItems<CampaignDiscountItem>;
 };

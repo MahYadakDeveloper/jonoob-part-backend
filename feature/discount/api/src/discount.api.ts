@@ -1,4 +1,5 @@
 import {
+  DiscountUsageRecordRequest,
   FindApplicableDiscountRequest,
   FindManyApplicableDiscountRequest,
 } from "./discount.req";
@@ -29,5 +30,5 @@ export interface IDiscountService {
     req: FindManyApplicableDiscountRequest,
   ): Promise<FindManyApplicableDiscountResponse>;
 
-  // findProductDiscountPolicy(req: FindProductDiscountPolicyRequest): Promise<FindProductDiscountPolicyResponse>
+  commitDiscountUsages(req: DiscountUsageRecordRequest): Promise<void>;
 }

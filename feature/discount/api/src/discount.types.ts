@@ -1,19 +1,19 @@
 import { Money } from "@feature/common";
 
-export type SpecificDiscount = {
+export type ApplicableSpecificDiscount = {
   id: string;
-  kind: "specific";
   displayDiscountPerUnit: Money;
-  realDiscountPreUnit: Money;
-  applicableQuantity: number | "unlimited";
+  realDiscountPerUnit: Money;
+  applicableQuantity: "unlimited" | number;
 };
 
-export type CampaignDiscount = {
+export type ApplicableCampaignDiscount = {
   id: string;
-  kind: "campaign";
   displayDiscountRate: number;
   realDiscountRate: number;
-  applicableQuantity: number | "unlimited";
+  applicableQuantity: "unlimited" | number;
 };
 
-export type ProductDiscount = CampaignDiscount | SpecificDiscount;
+export type ApplicableDiscount =
+  | (ApplicableCampaignDiscount & { kind: "campaign" })
+  | (ApplicableSpecificDiscount & { kind: "specific" });

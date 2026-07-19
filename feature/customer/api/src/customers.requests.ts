@@ -1,3 +1,3 @@
-export interface ResolveCustomerTypeRequest {
-  customerId: string
+export interface ResolvePricingPolicyRequest {
+  customerId: string;
 }

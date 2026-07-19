@@ -1,6 +1,6 @@
-import { Money } from "./money";
-import { LineItems } from "./line-items";
 import { ProductBundleKind, ProductLeafKind } from "../types";
+import { LineItems } from "./line-items";
+import { Money } from "./money";
 
 export type InvoiceHeader = {
   readonly cashierId: string;
@@ -11,7 +11,7 @@ export type InvoiceHeader = {
 export interface AppliedDiscount {
   source: {
     id: string;
-    isLimited?: true | false
+    isLimited?: true | false;
   };
   discountPerUnit: Money;
   discountedQuantity: number;

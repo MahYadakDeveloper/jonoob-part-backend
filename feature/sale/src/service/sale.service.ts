@@ -195,6 +195,14 @@ export class SaleService {
       ),
     });
 
+    // Granting cashback customer for purchase
+    const { grantedCashback } = req.customerId
+      ? await this.cashbackService.grantCashback({
+          customerId: req.customerId,
+          purchaseAmount: invoice.summary.grandTotal,
+        })
+      : { grantedCashback: undefined };
+
     const snapshot: InvoiceSnapshot = {
       header: {
         cashierId: req.cashierId,
@@ -202,7 +210,7 @@ export class SaleService {
         issuedAt: new Date(Date.now()),
       },
       items: invoice.items,
-      summary: invoice.summary,
+      summary: { ...invoice.summary, cashback: grantedCashback },
       payment,
     };
 
@@ -214,6 +222,9 @@ export class SaleService {
         snapshot,
       } satisfies SaleRecordedEventPayload,
     });
+
+    // TODO: Make this flow steps as transactional and has ability to rollback any changes made to aggregate
+    // TODO: transaction:(warehouse issue + saving sale record + cashback + outbox)
   }
 
   private computeRefund(

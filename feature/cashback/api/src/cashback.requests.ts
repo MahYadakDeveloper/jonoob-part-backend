@@ -6,3 +6,8 @@ export interface ReversalCashbackRequest {
   refund: Money;
   policy: CashbackReversalPolicy;
 }
+
+export interface GrantingCashbackRequest {
+  customerId: string;
+  purchaseAmount: Money;
+}

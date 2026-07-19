@@ -95,6 +95,10 @@ export class LineItems<T> implements Iterable<T> {
     return result;
   }
 
+  static empty<T>(keySelector: (item: T) => string) {
+    return new LineItems<T>(keySelector);
+  }
+
   toArray(): readonly T[] {
     return [...this.items.values()];
   }

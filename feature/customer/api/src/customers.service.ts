@@ -1,9 +1,8 @@
-import { ResolveCustomerTypeRequest } from "./customers.requests";
-import { ResolveCustomerTypeResponse } from "./customers.responses";
+import { ResolvePricingPolicyRequest } from "./customers.requests";
+import { ResolvePricingPolicyResponse } from "./customers.responses";
 
 export interface ICustomersService {
-  getCustomerType(
-    request: ResolveCustomerTypeRequest,
-  ): Promise<ResolveCustomerTypeResponse>;
+  resolvePricingPolicy(
+    request: ResolvePricingPolicyRequest,
+  ): Promise<ResolvePricingPolicyResponse>;
 }
-

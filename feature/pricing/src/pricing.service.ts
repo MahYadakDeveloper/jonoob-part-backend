@@ -6,11 +6,10 @@ import {
   LineItems,
   Money,
 } from "@feature/common";
-import { type ICustomersService } from "@feature/customer-api";
 import {
-  CampaignDiscount,
-  ProductDiscount,
-  SpecificDiscount,
+  ApplicableCampaignDiscount,
+  ApplicableDiscount,
+  ApplicableSpecificDiscount,
   type IDiscountService,
 } from "@feature/discount-api";
 import {
@@ -30,28 +29,31 @@ import { Injectable } from "@nestjs/common";
 import { ProductNotFoundError } from "./errors/product-not-found-error";
 import { PurchasePriceNotFoundError } from "./errors/purchase-price-not-found.error";
 import { BundleComponentInvoiceItem } from "./model/bundle-component-invoice-item";
+import { type ICustomerQuery } from "./port/customer.query";
 import { type IMarkupPolicyProvider } from "./port/markup-policy.provider";
-import { Product, type IProductQuerier } from "./port/product.querier";
-import { PurchasePrice, type IPurchaseQuerier } from "./port/purchase.querier";
+import { Product, type IProductQuery } from "./port/product.query";
+import { PurchasePrice, type IPurchaseQuery } from "./port/purchase.query";
 
 @Injectable()
 export class PricingService implements IPricingService {
   constructor(
     private readonly markupPolicyProvider: IMarkupPolicyProvider,
     private readonly discountService: IDiscountService,
-    private readonly customersService: ICustomersService,
-    private readonly productQuerier: IProductQuerier,
-    private readonly purchaseQuerier: IPurchaseQuerier,
+    private readonly customerQuery: ICustomerQuery,
+    private readonly productQuery: IProductQuery,
+    private readonly purchaseQuery: IPurchaseQuery,
   ) {}
+
+  private resolvePolicy(customerType: string) {
+    return customerType === "merchant" ? "wholesale" : "retail";
+  }
 
   async resolvePricingPolicy({
     customerId,
   }: PricingPolicyReq): Promise<PricingPolicyRes> {
-    const { customerType } = await this.customersService.getCustomerType({
-      customerId,
-    });
+    const customerType = await this.customerQuery.getType(customerId);
 
-    return { policy: customerType === "merchant" ? "wholesale" : "retail" };
+    return { policy: this.resolvePolicy(customerType) };
   }
 
   async priceProduct({
@@ -75,7 +77,7 @@ export class PricingService implements IPricingService {
     const markup = await this.markupPolicyProvider.resolve(policy);
 
     // Resolving product
-    const products = await this.productQuerier.findMany([...items.keys()]);
+    const products = await this.productQuery.findMany([...items.keys()]);
 
     for (const productId of items.keys()) {
       if (!products.has(productId)) throw new ProductNotFoundError(productId);
@@ -84,7 +86,7 @@ export class PricingService implements IPricingService {
     const leafProductIds = this.collectLeafProductIds(products);
 
     const leafPurchasePrices =
-      await this.purchaseQuerier.findMany(leafProductIds);
+      await this.purchaseQuery.findMany(leafProductIds);
 
     const prices = new LineItems<{
       productId: string;
@@ -125,7 +127,7 @@ export class PricingService implements IPricingService {
     customerId,
   }: InvoicePricingRequest): Promise<InvoicePricingResponse> {
     // Getting products
-    const products = await this.productQuerier.findMany([...items.keys()]);
+    const products = await this.productQuery.findMany([...items.keys()]);
     for (const item of items) {
       if (!products.has(item.productId)) {
         throw new ProductNotFoundError(item.productId);
@@ -134,17 +136,13 @@ export class PricingService implements IPricingService {
 
     // Resolving purchase prices
     const leafProductIds = this.collectLeafProductIds(products);
-    const purchasePrices = await this.purchaseQuerier.findMany(leafProductIds);
+    const purchasePrices = await this.purchaseQuery.findMany(leafProductIds);
 
     // Resolving markup
     const customerType: CustomerType = customerId
-      ? (
-          await this.customersService.getCustomerType({
-            customerId,
-          })
-        ).customerType
+      ? await this.customerQuery.getType(customerId)
       : "consumer";
-    const policy = customerType === "merchant" ? "wholesale" : "retail";
+    const policy = this.resolvePolicy(customerType);
     const markup = await this.markupPolicyProvider.resolve(policy);
 
     const discounts = !!customerId
@@ -202,7 +200,7 @@ export class PricingService implements IPricingService {
     item: UnpricedProductInvoiceItem,
     purchasePrices: LineItems<PurchasePrice>,
     markup: number,
-    discount?: ProductDiscount,
+    discount?: ApplicableDiscount,
   ): InvoiceItem {
     const purchasePrice = purchasePrices.getOrThrow(
       item.productId,
@@ -235,7 +233,7 @@ export class PricingService implements IPricingService {
     item: UnpricedBundleInvoiceItem,
     purchasePrices: LineItems<PurchasePrice>,
     markup: number,
-    discount?: ProductDiscount,
+    discount?: ApplicableDiscount,
   ): InvoiceItem {
     const pricedBundleItems = new LineItems<BundleComponentInvoiceItem>(
       (x) => x.productId,
@@ -291,7 +289,7 @@ export class PricingService implements IPricingService {
   private applyDiscount(
     price: Money,
     quantity: number,
-    discount?: ProductDiscount,
+    discount?: ApplicableDiscount,
   ) {
     return discount
       ? discount.kind === "campaign"
@@ -301,7 +299,7 @@ export class PricingService implements IPricingService {
   }
 
   private applySpecificDiscount(
-    discount: SpecificDiscount,
+    discount: ApplicableSpecificDiscount,
     quantity: number,
   ): AppliedDiscount {
     const discountedQuantity =
@@ -322,7 +320,7 @@ export class PricingService implements IPricingService {
 
   private applyCampaignDiscount(
     price: Money,
-    discount: CampaignDiscount,
+    discount: ApplicableCampaignDiscount,
     quantity: number,
   ): AppliedDiscount {
     const discountPerUnit = price.multiply(discount.displayDiscountRate);
@@ -348,7 +346,7 @@ export class PricingService implements IPricingService {
 
   private calculateDisplayPrice(
     realPrice: Money,
-    discount?: ProductDiscount,
+    discount?: ApplicableDiscount,
   ): Money {
     if (!discount) return realPrice;
 
@@ -362,7 +360,7 @@ export class PricingService implements IPricingService {
 
       case "specific": {
         const fakeDiscount = discount.displayDiscountPerUnit.subtract(
-          discount.realDiscountPreUnit,
+          discount.realDiscountPerUnit,
         );
 
         return realPrice.add(fakeDiscount);
@@ -372,7 +370,7 @@ export class PricingService implements IPricingService {
 
   private calculateBundleDisplayItems(
     items: LineItems<BundleComponentInvoiceItem>,
-    discount: ProductDiscount,
+    discount: ApplicableDiscount,
   ): LineItems<BundleComponentInvoiceItem> {
     const realBundlePrice = items.reduce(
       (total, item) => total.add(item.lineTotal),

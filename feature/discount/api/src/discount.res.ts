@@ -1,13 +1,13 @@
-import { LineItems, Money } from "@feature/common";
-import { SpecificDiscount, CampaignDiscount } from "./discount.types";
+import { LineItems } from "@feature/common";
+import { ApplicableDiscount } from "./discount.types";
 
 export interface FindApplicableDiscountResponse {
-  discount?: CampaignDiscount | SpecificDiscount;
+  discount?: ApplicableDiscount;
 }
 
 export interface FindManyApplicableDiscountResponse {
   discounts: LineItems<{
     productId: string;
-    discount: CampaignDiscount | SpecificDiscount;
+    discount: ApplicableDiscount;
   }>;
 }

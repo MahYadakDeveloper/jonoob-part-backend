@@ -1,5 +1,5 @@
-import {CustomerType} from '@feature/common'
+import { PricingPolicy } from "@feature/common";
 
-export interface ResolveCustomerTypeResponse {
-  customerType: CustomerType
+export interface ResolvePricingPolicyResponse {
+  pricingPolicy: PricingPolicy;
 }

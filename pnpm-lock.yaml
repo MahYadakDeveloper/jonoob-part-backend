@@ -192,6 +192,9 @@ importers:
       '@feature/discount-api':
         specifier: workspace:*
         version: link:api
+      '@feature/pricing-api':
+        specifier: workspace:*
+        version: link:../pricing/api
       '@feature/sale-api':
         specifier: workspace:*
         version: link:../sale/api
@@ -234,9 +237,6 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../common
-      '@feature/customer-api':
-        specifier: workspace:*
-        version: link:../customer/api
       '@feature/discount-api':
         specifier: workspace:*
         version: link:../discount/api
