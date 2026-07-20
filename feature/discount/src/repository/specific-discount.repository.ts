@@ -1,4 +1,4 @@
 import { SpecificDiscount } from "../model/specific-discount";
-import { IDiscountRepository } from "./discount.repository";
+import { DiscountRepository } from "./discount.repository";
 
-export interface ISpecificDiscountRepository extends IDiscountRepository<SpecificDiscount> {}
+export interface SpecificDiscountRepository extends DiscountRepository<SpecificDiscount> {}

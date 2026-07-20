@@ -1,34 +1,37 @@
 import {
   CashbackError,
-  type ICashbackService,
   InsufficientCashbackBalanceError,
+  type CashbackApi,
 } from "@feature/cashback-api";
 import {
   AppliedDiscount,
   InvoiceItem,
   InvoiceItemBase,
   InvoiceSnapshot,
-  type IOutboxRepository,
   LineItems,
   Money,
+  type OutboxRepository,
+  type TransactionManager,
 } from "@feature/common";
-import { type IDiscountService } from "@feature/discount-api";
-import { type IPaymentService } from "@feature/payment-api";
-import { type IPricingService } from "@feature/pricing-api";
+import { type DiscountApi } from "@feature/discount-api";
+import { type PaymentApi } from "@feature/payment-api";
+import { type PricingApi } from "@feature/pricing-api";
 import {
+  ReturnSnapshot,
   SaleRecordedEventPayload,
   SaleRecordedEventType,
+  SaleReturnRecordedEventPayload,
+  SaleReturnRecordedEventType,
 } from "@feature/sale-api";
-import { type ITaxService } from "@feature/tax-api";
-import { type IWarehouseService } from "@feature/warehouse-api";
+import { type TaxApi } from "@feature/tax-api";
+import { type WarehouseApi } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
 import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.error";
 import { DuplicateItemsInSaleError } from "errors/duplicate-items-in-sale.error";
 import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match-sale.error";
-import { ReturnSnapshot } from "model/sale-return";
-import { type IProductQuery } from "port/product-query.port";
-import { type ISaleDocumentsRepository } from "repository/sale-documents.repository";
-import { type ISaleReturnDocumentsRepository } from "repository/sale-return-documents.repository";
+import { type ProductQuery } from "port/product-query.port";
+import { type SaleDocumentsRepository } from "repository/sale-documents.repository";
+import { type SaleReturnDocumentsRepository } from "repository/sale-return-documents.repository";
 import { ProductLineItem } from "types/product-line-item.type";
 import { flattenInvoiceItems } from "utils/flatten-invoice-item";
 import { flattenRefundableItems } from "utils/flatten-refundable-items";
@@ -42,16 +45,17 @@ import { RecordReturnResponse } from "./sale.responses";
 @Injectable()
 export class SaleService {
   constructor(
-    private readonly saleReturnDocumentsRepository: ISaleReturnDocumentsRepository,
-    private readonly saleDocumentsRepository: ISaleDocumentsRepository,
-    private readonly productQuery: IProductQuery,
-    private readonly warehouseService: IWarehouseService,
-    private readonly pricingService: IPricingService,
-    private readonly paymentService: IPaymentService,
-    private readonly discountService: IDiscountService,
-    private readonly cashbackService: ICashbackService,
-    private readonly taxService: ITaxService,
-    private readonly outboxRepository: IOutboxRepository,
+    private readonly saleReturnDocumentsRepository: SaleReturnDocumentsRepository,
+    private readonly saleDocumentsRepository: SaleDocumentsRepository,
+    private readonly productQuery: ProductQuery,
+    private readonly warehouse: WarehouseApi,
+    private readonly pricing: PricingApi,
+    private readonly payment: PaymentApi,
+    private readonly discount: DiscountApi,
+    private readonly cashback: CashbackApi,
+    private readonly tax: TaxApi,
+    private readonly outboxRepository: OutboxRepository,
+    private readonly tx: TransactionManager,
   ) {}
 
   /**
@@ -65,208 +69,212 @@ export class SaleService {
     cashbackReversalPolicy,
     items,
   }: RecordReturnRequest): Promise<RecordReturnResponse> {
-    // TODO: Add transactional handling for the return workflow.
+    // Added transactional handling for the return workflow.
     // Currently, a failure while recording the return document after stock restoration
     // can leave the system in an inconsistent state (stock updated but return not recorded).
-    const sale = await this.saleDocumentsRepository.findById(saleId);
+    return await this.tx.run(async () => {
+      const sale = await this.saleDocumentsRepository.findById(saleId);
 
-    items.assertUniqueBy(
-      (item) => item.productId,
-      (productId) => new DuplicateItemsInReturnError(productId),
-    );
-
-    const returnItems = items.toLineItems((item) => item.productId);
-
-    const soldItems = sale.snapshot.items;
-
-    const returnDocumentItems = returnItems.transform(
-      (item) => this.computeRefundableLine(soldItems, item),
-      (item) => item.productId,
-    );
-
-    const refund = returnDocumentItems.reduce(
-      (total, item) => total.add(item.lineTotal),
-      Money.zero(),
-    );
-
-    const { customerId } = sale.snapshot.header;
-
-    // TODO Add tax calculation for deducting from refund
-
-    let payableRefund =
-      customerId && sale.snapshot.summary.cashback
-        ? (
-            await this.cashbackService.processCashbackReversal({
-              customerId,
-              refundAmount: refund,
-              granted: sale.snapshot.summary.cashback,
-              policy: cashbackReversalPolicy!,
-            })
-          ).payableRefund
-        : refund;
-
-    await this.warehouseService.recordGoodsReceipt({
-      items: returnDocumentItems.transform(
-        (item) => ({
-          goodId: item.productId,
-          quantity: item.quantity,
-        }),
-        (item) => item.goodId,
-      ),
-    });
-
-    // Tax
-    if (sale.snapshot.summary.tax) {
-      const taxRefund = this.calculateProportionalTax(
-        sale.snapshot.summary.tax,
-        refund,
-        sale.snapshot.summary.grandTotal,
+      items.assertUniqueBy(
+        (item) => item.productId,
+        (productId) => new DuplicateItemsInReturnError(productId),
       );
 
-      payableRefund = payableRefund.subtract(taxRefund);
-    }
+      const returnItems = items.toLineItems((item) => item.productId);
 
-    const returnDocument: ReturnSnapshot = {
-      header: sale.snapshot.header,
+      const soldItems = sale.snapshot.items;
 
-      items: returnDocumentItems,
+      const returnDocumentItems = returnItems.transform(
+        (item) => this.computeRefundableLine(soldItems, item),
+        (item) => item.productId,
+      );
 
-      summary: {
-        refund,
-        payableRefund,
-      },
+      const refund = returnDocumentItems.reduce(
+        (total, item) => total.add(item.lineTotal),
+        Money.zero(),
+      );
 
-      refund: {
-        amount: payableRefund,
-        cashbackReversed: refund.subtract(payableRefund),
-      },
-    };
+      const { customerId } = sale.snapshot.header;
 
-    const { saleReturnId } =
+      let payableRefund =
+        customerId && sale.snapshot.summary.cashback
+          ? (
+              await this.cashback.processCashbackReversal({
+                customerId,
+                refundAmount: refund,
+                referenceId: sale.id,
+                granted: sale.snapshot.summary.cashback,
+                policy: cashbackReversalPolicy!,
+              })
+            ).payableRefund
+          : refund;
+
+      await this.warehouse.recordGoodsReceipt({
+        items: returnDocumentItems.transform(
+          (item) => ({
+            goodId: item.productId,
+            quantity: item.quantity,
+          }),
+          (item) => item.goodId,
+        ),
+      });
+
+      // Tax
+      if (sale.snapshot.summary.tax) {
+        const taxRefund = this.calculateProportionalTax(
+          sale.snapshot.summary.tax,
+          refund,
+          sale.snapshot.summary.grandTotal,
+        );
+
+        payableRefund = payableRefund.subtract(taxRefund);
+      }
+
+      const returnDocument: ReturnSnapshot = {
+        header: sale.snapshot.header,
+
+        items: returnDocumentItems,
+
+        summary: {
+          refund,
+          payableRefund,
+        },
+
+        refund: {
+          amount: payableRefund,
+          cashbackReversed: refund.subtract(payableRefund),
+        },
+      };
+
       await this.saleReturnDocumentsRepository.recordReturn(returnDocument);
 
-    // await this.outboxRepository.save({
-    //   type: SaleReturnRecordedEventType,
-    //   payload: {
-    //     TODO: "Define the event payload type",
-    //   } satisfies SaleReturnRecordedEventPayload,
-    // });
+      await this.outboxRepository.save({
+        type: SaleReturnRecordedEventType,
+        payload: {
+          snapshot: returnDocument,
+        } satisfies SaleReturnRecordedEventPayload,
+      });
 
-    return {
-      payableRefund,
-    };
+      return {
+        payableRefund,
+      };
+    });
   }
+
   /**
    *
    *
    * @param input
    */
   async recordSale(req: RecordSaleRequest) {
-    // Uniqueness validation
-    req.items.assertUniqueBy(
-      (x) => x.productId,
-      (key) => new DuplicateItemsInSaleError(key),
-    );
-
-    const requestedItems = req.items.toLineItems((item) => item.productId);
-
-    const products = await this.productQuery.findMany([
-      ...requestedItems.keys(),
-    ]);
-
-    const unpricedInvoiceItems = products.transform(
-      (product) =>
-        mapProductToUnpricedInvoiceItem(
-          product,
-          requestedItems.getOrThrow(product.id).qty,
-        ),
-      (product) => product.productId,
-    );
-
-    // Pricing invoice
-    const { pricedInvoice: invoice } = await this.pricingService.priceInvoice({
-      customerId: req.cashierId,
-      items: unpricedInvoiceItems,
-    });
-
-    // Processing payment
-    const { payment } = req.customerId
-      ? await this.paymentService.planPayment({
-          amountDue: invoice.summary.grandTotal,
-          customerId: req.customerId,
-          useWallet: req.useWallet,
-          externalPaymentMethod: "posTerminal",
-        })
-      : {
-          payment: {
-            externalPayment: {
-              amount: invoice.summary.subtotal,
-              paymentMethod: "posTerminal",
-            },
-          },
-        };
-
-    // Tax
-    const { tax } = await this.taxService.calculateTax({
-      paymentAmount: invoice.summary.grandTotal,
-    });
-
-    // Issuing goods
-    const flattenedItems = flattenInvoiceItems(invoice.items);
-    await this.warehouseService.recordGoodsIssue({
-      items: flattenedItems.transform(
-        (item) => ({ goodId: item.productId, quantity: item.quantity }),
-        (item) => item.goodId,
-      ),
-    });
-
-    // Granting cashback customer for purchase
-    const { grantedCashback } = req.customerId
-      ? await this.cashbackService.grantCashback({
-          customerId: req.customerId,
-          purchaseAmount: invoice.summary.grandTotal,
-        })
-      : { grantedCashback: undefined };
-
-    const snapshot: InvoiceSnapshot = {
-      header: {
-        cashierId: req.cashierId,
-        customerId: req.customerId,
-        issuedAt: new Date(Date.now()),
-      },
-      items: invoice.items,
-      summary: { ...invoice.summary, cashback: grantedCashback, tax },
-      payment,
-    };
-
-    await this.saleDocumentsRepository.recordSale(snapshot);
-
-    // Commit discount usages
-    if (req.customerId) {
-      const appliedDiscounts = snapshot.items.reduce(
-        (discounted, item) => {
-          if (!item.discount) return discounted;
-
-          return discounted.set(item.discount);
-        },
-        new LineItems<AppliedDiscount>((x) => x.source.id),
+    await this.tx.run(async () => {
+      // Uniqueness validation
+      req.items.assertUniqueBy(
+        (x) => x.productId,
+        (key) => new DuplicateItemsInSaleError(key),
       );
 
-      await this.discountService.commitDiscountUsages({
-        customerId: req.customerId,
-        appliedDiscounts,
+      const requestedItems = req.items.toLineItems((item) => item.productId);
+
+      const products = await this.productQuery.findMany([
+        ...requestedItems.keys(),
+      ]);
+
+      const unpricedInvoiceItems = products.transform(
+        (product) =>
+          mapProductToUnpricedInvoiceItem(
+            product,
+            requestedItems.getOrThrow(product.id).qty,
+          ),
+        (product) => product.productId,
+      );
+
+      // Pricing invoice
+      const { pricedInvoice: invoice } = await this.pricing.priceInvoice(
+        {
+          customerId: req.cashierId,
+          items: unpricedInvoiceItems,
+        },
+      );
+
+      // Processing payment
+      const { payment } = req.customerId
+        ? await this.payment.planPayment({
+            amountDue: invoice.summary.grandTotal,
+            customerId: req.customerId,
+            useWallet: req.useWallet, //TODO Change the contract of the method request api
+            externalPaymentMethod: "posTerminal",
+          })
+        : {
+            payment: {
+              externalPayment: {
+                amount: invoice.summary.subtotal,
+                paymentMethod: "posTerminal",
+              },
+            },
+          };
+
+      // Tax
+      const { tax } = await this.tax.calculateTax({
+        paymentAmount: invoice.summary.grandTotal,
       });
-    }
 
-    await this.outboxRepository.save({
-      type: SaleRecordedEventType,
-      payload: {
-        snapshot,
-      } satisfies SaleRecordedEventPayload,
+      // Issuing goods
+      const flattenedItems = flattenInvoiceItems(invoice.items);
+      await this.warehouse.recordGoodsIssue({
+        items: flattenedItems.transform(
+          (item) => ({ goodId: item.productId, quantity: item.quantity }),
+          (item) => item.goodId,
+        ),
+      });
+
+      // Granting cashback customer for purchase
+      // TODO Extract the cashback calculator and grant after sale recorded and pass the referenceId(saleId)
+      const { grantedCashback } = req.customerId
+        ? await this.cashback.grantCashback({
+            customerId: req.customerId,
+            referenceId: 
+            purchaseAmount: invoice.summary.grandTotal,
+          })
+        : { grantedCashback: undefined };
+
+      const snapshot: InvoiceSnapshot = {
+        header: {
+          cashierId: req.cashierId,
+          customerId: req.customerId,
+          issuedAt: new Date(Date.now()),
+        },
+        items: invoice.items,
+        summary: { ...invoice.summary, cashback: grantedCashback, tax },
+        payment,
+      };
+
+      await this.saleDocumentsRepository.recordSale(snapshot);
+
+      // Commit discount usages
+      if (req.customerId) {
+        const appliedDiscounts = snapshot.items.reduce(
+          (discounted, item) => {
+            if (!item.discount) return discounted;
+
+            return discounted.set(item.discount);
+          },
+          new LineItems<AppliedDiscount>((x) => x.source.id),
+        );
+
+        await this.discount.commitDiscountUsages({
+          customerId: req.customerId,
+          appliedDiscounts,
+        });
+      }
+
+      await this.outboxRepository.save({
+        type: SaleRecordedEventType,
+        payload: {
+          snapshot,
+        } satisfies SaleRecordedEventPayload,
+      });
     });
-
-    // TODO: Make this flow steps as transactional and has ability to rollback any changes made to aggregate
-    // TODO: transaction:(warehouse issue + saving sale record + cashback + discount usage commit + outbox)
   }
 
   private calculateProportionalTax(

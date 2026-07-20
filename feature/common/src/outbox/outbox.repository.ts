@@ -1,6 +1,6 @@
 import { NewOutboxEvent, OutboxEvent } from "./outbox-event";
 
-export interface IOutboxRepository {
+export interface OutboxRepository {
   save(event: NewOutboxEvent): Promise<void>;
   saveMany(events: NewOutboxEvent[]): Promise<void>;
   findPending(limit: number): Promise<OutboxEvent[]>;

@@ -12,7 +12,7 @@ export type Product =
       }>;
     });
 
-export interface IProductQuery {
+export interface ProductQuery {
   find(id: string): Promise<Product | undefined>;
   findMany(ids: string[]): Promise<LineItems<Product>>;
 }

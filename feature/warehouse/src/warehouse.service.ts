@@ -1,4 +1,4 @@
-import { type IOutboxRepository } from "@feature/common";
+import { type OutboxRepository } from "@feature/common";
 import {
   GoodsIssuedEventPayload,
   GoodsIssuedEventType,
@@ -6,14 +6,14 @@ import {
   GoodsReceiptedEventPayload,
   GoodsReceiptedEventType,
   GoodsReceptionRequest,
-  IWarehouseService,
+  WarehouseApi,
   StockReleasingRequest,
   StockReservingRequest,
 } from "@feature/warehouse-api";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import {
   WAREHOUSE_REPOSITORY,
-  type IWarehouseRepository,
+  type WarehouseRepository,
 } from "./repository/warehouse.repository";
 import {
   AvailableStockRequest,
@@ -30,12 +30,12 @@ import {
 // Note: use pipelines? for value validation for input requests
 
 @Injectable()
-export class WarehouseService implements IWarehouseService {
+export class WarehouseService implements WarehouseApi {
   private readonly logger: Logger;
   constructor(
     @Inject(WAREHOUSE_REPOSITORY)
-    private readonly warehouseRepository: IWarehouseRepository,
-    private readonly outboxRepository: IOutboxRepository,
+    private readonly warehouseRepository: WarehouseRepository,
+    private readonly outboxRepository: OutboxRepository,
   ) {
     this.logger = new Logger(WarehouseService.name);
   }

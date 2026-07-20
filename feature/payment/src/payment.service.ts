@@ -1,60 +1,86 @@
 import { Money, Payment } from "@feature/common";
 import {
+  InsufficientWalletBalanceError,
+  InvalidWalletPaymentAmountError,
   PlanPaymentRequest,
   PlanPaymentResponse,
-  type IPaymentService,
+  WalletPaymentExceedsInvoiceError,
+  type PaymentApi,
 } from "@feature/payment-api";
-import { type IWalletService } from "@feature/wallet-api";
+import { type WalletApi } from "@feature/wallet-api";
+import { Injectable } from "@nestjs/common";
 
-export class PaymentService implements IPaymentService {
-  constructor(private readonly walletService: IWalletService) {}
+@Injectable()
+export class PaymentService implements PaymentApi {
+  constructor(private readonly wallet: WalletApi) {}
 
-  async planPayment(req: PlanPaymentRequest): Promise<PlanPaymentResponse> {
-    const { useWallet, amountDue, customerId } = req;
-    const { balance } = await this.walletService.getWalletBalance({
-      customerId,
-    });
-
-    // TODO Complete this ...
-    // Verification
-    if (useWallet) {
-      // ...
-      // Throw an error if not verified
-    }
+  async planPayment({
+    customerId,
+    amountDue,
+    useWallet,
+  }: PlanPaymentRequest): Promise<PlanPaymentResponse> {
+    const { balance: balance } = await this.wallet.getBalance({ customerId });
 
     let walletAmount = Money.zero();
 
-    if (!!useWallet && useWallet.wallet instanceof Money) {
-      const { wallet } = useWallet;
-      if (balance.lt(wallet)) throw new Error("Insufficient balance!");
-      if (wallet.gt(amountDue))
-        throw new Error("The paying amount is more then expected!");
+    switch (useWallet) {
+      case false:
+        walletAmount = Money.zero();
+        break;
 
-      walletAmount = wallet;
-    } else if (useWallet) {
-      walletAmount = Money.min(balance, amountDue);
+      default:
+        if (useWallet.mode === "full") {
+          walletAmount = Money.min(balance.available, amountDue);
+          break;
+        }
+
+        if (useWallet.amount.lte(Money.zero())) {
+          throw new InvalidWalletPaymentAmountError(useWallet.amount);
+        }
+
+        if (useWallet.amount.gt(amountDue)) {
+          throw new WalletPaymentExceedsInvoiceError(
+            useWallet.amount,
+            amountDue,
+          );
+        }
+
+        if (balance.available.lt(useWallet.amount)) {
+          throw new InsufficientWalletBalanceError(
+            customerId,
+            useWallet.amount,
+            balance.available,
+          );
+        }
+
+        walletAmount = useWallet.amount;
+        break;
     }
 
     const remaining = amountDue.subtract(walletAmount);
 
     const payment: Payment = remaining.isZero()
       ? {
-          paidAmountByBalance: walletAmount,
+          kind: "wallet",
+          walletAmount,
         }
       : walletAmount.isZero()
         ? {
-            externalPayment: {
-              paymentMethod: "posTerminal",
+            kind: "external",
+            external: {
+              method: "posTerminal",
               amount: remaining,
             },
           }
         : {
-            paidAmountByBalance: walletAmount,
-            externalPayment: {
-              paymentMethod: "posTerminal",
+            kind: "mixed",
+            walletAmount,
+            external: {
+              method: "posTerminal",
               amount: remaining,
             },
           };
+
     return { payment };
   }
 }

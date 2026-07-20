@@ -10,12 +10,12 @@ import {
   ApplicableCampaignDiscount,
   ApplicableDiscount,
   ApplicableSpecificDiscount,
-  type IDiscountService,
+  type DiscountApi,
 } from "@feature/discount-api";
 import {
   InvoicePricingRequest,
   InvoicePricingResponse,
-  IPricingService,
+  PricingApi,
   ManyProductPricingRequest,
   ManyProductPricingResponse,
   PricingPolicyReq,
@@ -29,19 +29,19 @@ import { Injectable } from "@nestjs/common";
 import { ProductNotFoundError } from "./errors/product-not-found-error";
 import { PurchasePriceNotFoundError } from "./errors/purchase-price-not-found.error";
 import { BundleComponentInvoiceItem } from "./model/bundle-component-invoice-item";
-import { type ICustomerQuery } from "./port/customer.query";
-import { type IMarkupPolicyProvider } from "./port/markup-policy.provider";
-import { Product, type IProductQuery } from "./port/product.query";
-import { PurchasePrice, type IPurchaseQuery } from "./port/purchase.query";
+import { type CustomerQuery } from "./port/customer.query";
+import { type MarkupPolicyProvider } from "./port/markup-policy.provider";
+import { Product, type ProductQuery } from "./port/product.query";
+import { PurchasePrice, type PurchaseQuery } from "./port/purchase.query";
 
 @Injectable()
-export class PricingService implements IPricingService {
+export class PricingService implements PricingApi {
   constructor(
-    private readonly markupPolicyProvider: IMarkupPolicyProvider,
-    private readonly discountService: IDiscountService,
-    private readonly customerQuery: ICustomerQuery,
-    private readonly productQuery: IProductQuery,
-    private readonly purchaseQuery: IPurchaseQuery,
+    private readonly markupPolicyProvider: MarkupPolicyProvider,
+    private readonly discount: DiscountApi,
+    private readonly customerQuery: CustomerQuery,
+    private readonly productQuery: ProductQuery,
+    private readonly purchaseQuery: PurchaseQuery,
   ) {}
 
   private resolvePolicy(customerType: string) {
@@ -149,7 +149,7 @@ export class PricingService implements IPricingService {
 
     const discounts = !!customerId
       ? (
-          await this.discountService.findManyApplicableDiscount({
+          await this.discount.findManyApplicableDiscount({
             customerId,
             productIds: [...items.keys()],
           })

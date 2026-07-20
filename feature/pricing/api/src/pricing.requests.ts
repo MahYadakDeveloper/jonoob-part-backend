@@ -1,5 +1,5 @@
-import { CustomerType, LineItems, PricingPolicy } from "@feature/common";
-import {  UnpricedInvoiceItem } from "./types";
+import { LineItems, PricingPolicy } from "@feature/common";
+import { UnpricedInvoiceItem } from "./pricing.types";
 
 type Item = { productId: string };
 

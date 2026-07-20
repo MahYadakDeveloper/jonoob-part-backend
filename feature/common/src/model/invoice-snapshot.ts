@@ -1,4 +1,4 @@
-import { ProductBundleKind, ProductLeafKind } from "../types";
+import { Payment, ProductBundleKind, ProductLeafKind } from "../types";
 import { LineItems } from "./line-items";
 import { Money } from "./money";
 
@@ -41,20 +41,7 @@ export type BundleInvoiceItem = InvoiceItemBase &
 
 export type InvoiceItem = ProductInvoiceItem | BundleInvoiceItem;
 
-export type InvoicePayment =
-  | {
-      paidAmountByBalance: Money;
-      externalPayment?: {
-        paymentMethod: "onlinePaymentGateway" | "posTerminal";
-        amount: Money;
-      };
-    }
-  | {
-      externalPayment: {
-        paymentMethod: "onlinePaymentGateway" | "posTerminal";
-        amount: Money;
-      };
-    };
+export type InvoicePayment = Payment
 
 export type InvoiceSummary = {
   readonly cashback?: GrantedCashback;

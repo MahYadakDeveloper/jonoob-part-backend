@@ -5,7 +5,7 @@ import {
   StockReservingRequest,
 } from "./warehouse.requests";
 
-export interface IWarehouseService {
+export interface WarehouseApi {
   /**
    *
    */

@@ -1,9 +1,9 @@
-import { IEventHandler } from "./event-handler";
+import { EventHandler } from "./event-handler";
 
-export interface IEventHandlerRegistry {
-  register(eventType: string, handler: IEventHandler): void;
+export interface EventHandlerRegistry {
+  register(eventType: string, handler: EventHandler): void;
 
    get(
     eventType: string,
-  ): IEventHandler | undefined;   
+  ): EventHandler | undefined;   
 }

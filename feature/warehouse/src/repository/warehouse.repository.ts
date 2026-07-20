@@ -5,7 +5,7 @@ import { GoodDetails } from "../model/good-details";
 export const WAREHOUSE_REPOSITORY = "IWarehouseRepository";
 
 type Stock = { goodId: string; quantity: number };
-export interface IWarehouseRepository {
+export interface WarehouseRepository {
   issueGoods(items: LineItems<Stock>): Promise<void>;
   receiptGoods(items: LineItems<Stock>): Promise<void>;
   reserveStock(items: LineItems<Stock>): Promise<void>;

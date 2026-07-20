@@ -1,7 +1,7 @@
 import { LineItems } from "@feature/common";
 import { DiscountUsage } from "../model/discount-usage";
 
-export interface IDiscountUsageRepository {
+export interface DiscountUsageRepository {
   findCustomerUsage(
     customerId: string,
     discountId: string,

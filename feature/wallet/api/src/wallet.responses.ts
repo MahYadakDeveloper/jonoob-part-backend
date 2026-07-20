@@ -1,5 +1,5 @@
-import { Money } from "@feature/common";
+import { WalletBalanceView } from "./wallet.types";
 
-export interface WalletBalanceRes {
-  balance: Money;
+export interface GetWalletBalanceResponse {
+  balance: WalletBalanceView;
 }

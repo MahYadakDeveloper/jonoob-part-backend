@@ -1,5 +1,5 @@
-import { IEventHandlerRegistry } from "./event-handler-registry";
+import { EventHandlerRegistry } from "./event-handler-registry";
 
-export interface IEventHandler<TPayload = unknown> {
+export interface EventHandler<TPayload = unknown> {
   handle(payload: TPayload): Promise<void>;
 }

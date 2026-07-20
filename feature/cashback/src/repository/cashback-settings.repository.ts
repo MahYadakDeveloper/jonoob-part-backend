@@ -1,14 +1,21 @@
 import { CustomerType } from "@feature/common";
 
-export type FlatRateVariant = Exclude<CustomerType, "merchant">;
-export type CashbackFlatRate =
-  | { disabled: true }
-  | { disabled: false; rate: number };
+export type CashbackPolicyVariant = Exclude<CustomerType, "merchant">;
 
-export interface ICashbackSettingsRepository {
-  getFlatRate(variant: FlatRateVariant): Promise<CashbackFlatRate>;
-  updateFlatRate(
-    variant: FlatRateVariant,
-    flatRate: CashbackFlatRate,
+export type CashbackPolicy =
+  | {
+      enabled: false;
+    }
+  | {
+      enabled: true;
+      rate: number;
+    };
+
+export interface CashbackSettingsRepository {
+  getPolicy(variant: CashbackPolicyVariant): Promise<CashbackPolicy>;
+
+  setPolicy(
+    variant: CashbackPolicyVariant,
+    policy: CashbackPolicy,
   ): Promise<void>;
 }

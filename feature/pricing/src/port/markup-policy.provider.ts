@@ -1,5 +1,5 @@
-import { PricingPolicy } from "@feature/pricing-api";
+import { PricingPolicy } from "@feature/common";
 
-export interface IMarkupPolicyProvider {
+export interface MarkupPolicyProvider {
   resolve(policy: PricingPolicy): Promise<number>;
 }

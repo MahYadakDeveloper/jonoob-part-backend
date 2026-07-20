@@ -8,7 +8,7 @@ import {
   FindManyApplicableDiscountResponse,
 } from "./discount.res";
 
-export interface IDiscountService {
+export interface DiscountApi {
   /**
    * Calculates the discount that can be applied to a product for a specific customer,
    * based on the product's discount policy and the customer's remaining eligibility.

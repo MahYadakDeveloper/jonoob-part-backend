@@ -7,7 +7,7 @@ import {
   ReversalCashbackResponse,
 } from "./cashback.responses";
 
-export interface ICashbackService {
+export interface CashbackApi {
   grantCashback(
     request: GrantingCashbackRequest,
   ): Promise<GrantingCashbackResponse>;

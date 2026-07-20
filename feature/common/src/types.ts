@@ -5,6 +5,29 @@ export type UnitOfMeasure = "piece" | "pair" | "set";
 export type CustomerType = "merchant" | "consumer" | "technician";
 export type PricingPolicy = "wholesale" | "retail";
 
+export type PaymentMethod = "posTerminal" | "onlinePaymentGateway";
+
+export type Payment =
+  | {
+      kind: "wallet";
+      walletAmount: Money;
+    }
+  | {
+      kind: "external";
+      external: {
+        method: PaymentMethod;
+        amount: Money;
+      };
+    }
+  | {
+      kind: "mixed";
+      walletAmount: Money;
+      external: {
+        method: PaymentMethod;
+        amount: Money;
+      };
+    };
+
 export type ProductLeafKind = { kind: "product" };
 export type ProductBundleKind = { kind: "bundle" };
 export type ProductKind = ProductBundleKind | ProductLeafKind;

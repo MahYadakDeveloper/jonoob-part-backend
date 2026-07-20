@@ -5,7 +5,7 @@ export type PurchasePrice = {
   price: Money;
 };
 
-export interface IPurchaseQuery {
+export interface PurchaseQuery {
   /**
    *
    */

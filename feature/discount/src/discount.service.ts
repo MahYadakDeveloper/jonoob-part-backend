@@ -1,33 +1,33 @@
 import { AppliedDiscount, LineItems } from "@feature/common";
 import {
   ApplicableDiscount,
+  DiscountApi,
   DiscountUsageRecordRequest,
   FindApplicableDiscountRequest,
   FindApplicableDiscountResponse,
   FindManyApplicableDiscountRequest,
   FindManyApplicableDiscountResponse,
-  IDiscountService,
 } from "@feature/discount-api";
-import { type IPricingService } from "@feature/pricing-api";
+import { type PricingApi } from "@feature/pricing-api";
 import { Injectable } from "@nestjs/common";
 import { DiscountCustomerUsageLimitExceededError } from "./errors/discount-customer-usage-limit-exceeded-error";
 import { DiscountTotalUsageLimitExceededError } from "./errors/discount-total-usage-limit-exceeded-error";
 import { DiscountUsage } from "./model/discount-usage";
 import { DiscountUsagePolicy } from "./model/discount-usage-policy";
 import { DiscountWithUsagePolicy } from "./model/discount-with-usage-policy";
-import { type ISynchronizer } from "./ports/synchronizer";
-import { type ICampaignDiscountRepository } from "./repository/campaign-discount.repository";
-import { type IDiscountUsageRepository } from "./repository/discount-usage.repository";
-import { type ISpecificDiscountRepository } from "./repository/specific-discount.repository";
+import { type Synchronizer } from "./ports/synchronizer";
+import { type CampaignDiscountRepository } from "./repository/campaign-discount.repository";
+import { type DiscountUsageRepository } from "./repository/discount-usage.repository";
+import { type SpecificDiscountRepository } from "./repository/specific-discount.repository";
 
 @Injectable()
-export class DiscountService implements IDiscountService {
+export class DiscountService implements DiscountApi {
   constructor(
-    private readonly discountUsageRepository: IDiscountUsageRepository,
-    private readonly campaignDiscountRepository: ICampaignDiscountRepository,
-    private readonly specificDiscountRepository: ISpecificDiscountRepository,
-    private readonly pricingService: IPricingService,
-    private readonly synchronizer: ISynchronizer,
+    private readonly discountUsageRepository: DiscountUsageRepository,
+    private readonly campaignDiscountRepository: CampaignDiscountRepository,
+    private readonly specificDiscountRepository: SpecificDiscountRepository,
+    private readonly pricing: PricingApi,
+    private readonly synchronizer: Synchronizer,
   ) {}
   private static readonly SYNCHRONIZER_LOCK_KEY =
     "DiscountUsageConsumptionLock";
@@ -92,7 +92,7 @@ export class DiscountService implements IDiscountService {
     customerId,
     productIds,
   }: FindManyApplicableDiscountRequest): Promise<FindManyApplicableDiscountResponse> {
-    const { policy } = await this.pricingService.resolvePricingPolicy({
+    const { policy } = await this.pricing.resolvePricingPolicy({
       customerId,
     });
 
@@ -163,7 +163,7 @@ export class DiscountService implements IDiscountService {
     productId,
   }: FindApplicableDiscountRequest): Promise<FindApplicableDiscountResponse> {
     // Eligibility check
-    const { policy } = await this.pricingService.resolvePricingPolicy({
+    const { policy } = await this.pricing.resolvePricingPolicy({
       customerId,
     });
     if (policy === "wholesale") return {};

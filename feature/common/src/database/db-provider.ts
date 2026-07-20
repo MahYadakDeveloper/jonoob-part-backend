@@ -1,3 +1,3 @@
-export interface IDbProvider<TClient = unknown> {
+export interface DbProvider<TClient = unknown> {
   current();
 }

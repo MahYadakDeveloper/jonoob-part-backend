@@ -1,3 +1,3 @@
-export interface ITaxFormulaRepository {
+export interface TaxFormulaRepository {
   getFormula(): Promise<string>;
 }

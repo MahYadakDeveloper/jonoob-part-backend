@@ -1,5 +1,5 @@
 import { Money } from "@feature/common";
 
-export interface ITaxFormulaEvaluator {
+export interface TaxFormulaEvaluator {
   evaluate(expr: string, variable: { paymentAmount: Money }): Money;
 }

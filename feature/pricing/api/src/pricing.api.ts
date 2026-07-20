@@ -11,7 +11,7 @@ import {
   ProductPricingResponse,
 } from "./pricing.responses";
 
-export interface IPricingService {
+export interface PricingApi {
   priceProduct(req: ProductPricingRequest): Promise<ProductPricingResponse>;
   priceManyProduct(
     req: ManyProductPricingRequest,

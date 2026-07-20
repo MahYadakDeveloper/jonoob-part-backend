@@ -1,5 +1,5 @@
 import { CustomerType } from "@feature/common";
 
-export interface ICustomerQuery {
+export interface CustomerQuery {
   getType(id): Promise<CustomerType>;
 }

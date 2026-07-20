@@ -1,15 +1,15 @@
 import {
-  ITaxService,
+  TaxApi,
   TaxCalculationRequest,
   TaxCalculationResponse,
 } from "@feature/tax-api";
-import { ITaxFormulaEvaluator } from "tax.evaluator";
-import { ITaxFormulaRepository } from "tax.repository";
+import { TaxFormulaEvaluator } from "tax.evaluator";
+import { TaxFormulaRepository } from "tax.repository";
 
-export class TaxService implements ITaxService {
+export class TaxService implements TaxApi {
   constructor(
-    private readonly taxFormulaRepository: ITaxFormulaRepository,
-    private readonly taxFormulaEvaluator: ITaxFormulaEvaluator,
+    private readonly taxFormulaRepository: TaxFormulaRepository,
+    private readonly taxFormulaEvaluator: TaxFormulaEvaluator,
   ) {}
   async calculateTax(
     request: TaxCalculationRequest,

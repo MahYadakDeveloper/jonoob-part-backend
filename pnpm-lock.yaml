@@ -147,6 +147,9 @@ importers:
       '@feature/sale-api':
         specifier: workspace:*
         version: link:../sale/api
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:../wallet/api
       '@nestjs/common':
         specifier: ^11.1.27
         version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)

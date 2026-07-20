@@ -1,7 +1,13 @@
-import { BalanceDeductionReq, WalletBalanceReq } from "./wallet.requests";
-import { WalletBalanceRes } from "./wallet.responses";
+import {
+  CreditWalletRequest,
+  DebitWalletRequest,
+  GetWalletBalanceRequest,
+} from "./wallet.requests";
+import { GetWalletBalanceResponse } from "./wallet.responses";
+import { WalletTransactionResult } from "./wallet.types";
 
-export interface IWalletService {
-  deductBalance(req: BalanceDeductionReq): Promise<void>;
-  getWalletBalance(req: WalletBalanceReq): Promise<WalletBalanceRes>;
+export interface WalletApi {
+  credit(req: CreditWalletRequest): Promise<WalletTransactionResult>;
+  debit(req: DebitWalletRequest): Promise<WalletTransactionResult>;
+  getBalance(req: GetWalletBalanceRequest): Promise<GetWalletBalanceResponse>;
 }

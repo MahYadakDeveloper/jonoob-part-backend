@@ -1,9 +1,10 @@
-import { Money } from "@feature/common";
+import { Money, Payment } from "@feature/common";
+import { UseWallet } from "./payment.types";
 
 export interface PlanPaymentRequest {
   customerId: string;
   amountDue: Money;
-  useWallet: false | { wallet: true | Money; verifyCode: string };
+  useWallet: UseWallet;
 
-  externalPaymentMethod?: "posTerminal" | "onlinePaymentGateway";
+  payment: Payment;
 }
