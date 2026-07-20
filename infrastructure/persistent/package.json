@@ -1,13 +1,13 @@
 {
-  "name": "@infra/common-persistent",
+  "name": "@infra/persistent",
   "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc"
   },
-  "type": "commonjs",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -16,8 +16,6 @@
     }
   },
   "dependencies": {
-    "@feature/common": "workspace:*",
-    "@infra/prisma-db": "workspace:*",
     "@nestjs/common": "^11.1.28"
   }
 }

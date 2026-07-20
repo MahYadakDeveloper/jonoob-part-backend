@@ -385,9 +385,12 @@ importers:
 
   infrastructure/database/prisma:
     dependencies:
-      '@feature/tax':
+      '@feature/common':
         specifier: workspace:*
-        version: link:../../../feature/tax
+        version: link:../../../feature/common
+      '@infra/transaction':
+        specifier: workspace:*
+        version: link:../../transaction
       '@nestjs/common':
         specifier: ^11.1.26
         version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -493,7 +496,23 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
-  infrastructure/persistent/common: {}
+  infrastructure/persistent:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  infrastructure/persistent/common:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../feature/common
+      '@infra/prisma-db':
+        specifier: workspace:*
+        version: link:../../database/prisma
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   infrastructure/persistent/tax:
     dependencies:
@@ -503,12 +522,18 @@ importers:
 
   infrastructure/persistent/warehouse:
     dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../feature/common
       '@feature/warehouse':
         specifier: workspace:*
         version: link:../../../feature/warehouse
       '@infra/common-persistent':
         specifier: workspace:*
         version: link:../common
+      '@infra/prisma-db':
+        specifier: workspace:*
+        version: link:../../database/prisma
       '@nestjs/common':
         specifier: ^11.1.26
         version: 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -541,6 +566,15 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+
+  infrastructure/transaction:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../feature/common
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
 packages:
 

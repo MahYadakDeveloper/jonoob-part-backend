@@ -1,3 +1,3 @@
 export * from "./cache.interface";
-export * from "./datasource.interface";
+export * from "./base-repository"
 import "./extensions";

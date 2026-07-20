@@ -1,20 +1,27 @@
+import { type IDbProvider } from "@feature/common";
 import {
   DuplicateGoodError,
   InsufficientStockError,
   StockNotFoundError,
   type IWarehouseRepository,
 } from "@feature/warehouse";
+import { BaseRepository } from "@infra/common-persistent";
+import { PrismaDbClient } from "@infra/prisma-db";
 import { Injectable } from "@nestjs/common";
-import { planStockChanges } from "./stock-planner";
 import { type StockCache } from "./cache/stock.cache";
-import { type StockDatasource } from "./datasource/stock.datasource";
+import { planStockChanges } from "./stock-planner";
 
 @Injectable()
-export class WarehouseRepository implements IWarehouseRepository {
+export class WarehouseRepository
+  extends BaseRepository<PrismaDbClient>
+  implements IWarehouseRepository
+{
   constructor(
-    private readonly datasource: StockDatasource,
+    dbProvider: IDbProvider<PrismaDbClient>,
     private readonly cache: StockCache,
-  ) {}
+  ) {
+    super(dbProvider);
+  }
 
   /**
    * Issues goods from the warehouse by decreasing their available stock.
@@ -39,42 +46,39 @@ export class WarehouseRepository implements IWarehouseRepository {
     const goodIds = items.map((item) => item.goodId);
 
     // Plan and commit changes
-    const changes = await this.datasource.transaction(async (tx) => {
-      // Ensuring theres no duplications
-      items.assertUniqueBy(
-        (item) => item.goodId,
-        (goodId) => new DuplicateGoodError(goodId),
+    // Ensuring theres no duplications
+    items.assertUniqueBy(
+      (item) => item.goodId,
+      (goodId) => new DuplicateGoodError(goodId),
+    );
+
+    const issueQuantities = items.toMap(
+      (item) => item.goodId,
+      (item) => item.quantity,
+    );
+
+    // Read for update (atomic)
+    // TODO Do research about (query|execute)raw[unsafe]
+    const stocks = await this.db.``;
+     
+
+    // Ensuring all stocks exist and have sufficient quantity available
+
+    const changes = planStockChanges(stocks, issueQuantities);
+
+    // Committing
+    if (changes.updates.size > 0) {
+      await this.datasource.updateMany(
+        Array.from(changes.updates, ([goodId, quantity]) => ({
+          goodId,
+          quantity,
+        })),
       );
+    }
 
-      const issueQuantities = items.toMap(
-        (item) => item.goodId,
-        (item) => item.quantity,
-      );
-
-      const stocks = (await tx.findManyForUpdate(goodIds)).toMap(
-        (stock) => stock.goodId,
-        (stock) => stock.quantity,
-      );
-
-      // Ensuring all stocks exist and have sufficient quantity available
-      const { updates, deletions } = planStockChanges(stocks, issueQuantities);
-
-      // Committing
-      if (updates.size > 0) {
-        await tx.updateMany(
-          Array.from(updates, ([goodId, quantity]) => ({
-            goodId,
-            quantity,
-          })),
-        );
-      }
-
-      if (deletions.length > 0) {
-        await tx.deleteMany(deletions);
-      }
-
-      return { updates, deletions };
-    });
+    if (changes.deletions.length > 0) {
+      await this.datasource.deleteMany(changes.deletions);
+    }
 
     // Synchronize cache
     await this.cache.synchronize(changes);
@@ -84,9 +88,7 @@ export class WarehouseRepository implements IWarehouseRepository {
    * TODO Comment this later
    * @param items
    */
-  receiptGoods(items: { goodId: string; quantity: number }[]): Promise<void> {
-    
-  }
+  receiptGoods(items: { goodId: string; quantity: number }[]): Promise<void> {}
 
   /**
    *
