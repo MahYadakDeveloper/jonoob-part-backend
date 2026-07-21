@@ -1,11 +1,11 @@
-import { ISynchronizer } from "@feature/warehouse";
+import { Synchronizer } from "@feature/warehouse";
 import { ConfigService } from "@nestjs/config";
 import { Injectable } from "@nestjs/common";
 import Redis from "ioredis";
 import Redlock from "redlock";
 
 @Injectable()
-export class RedlockSynchronizer implements ISynchronizer {
+export class RedlockSynchronizer implements Synchronizer {
   private readonly redlock: Redlock;
 
   /**

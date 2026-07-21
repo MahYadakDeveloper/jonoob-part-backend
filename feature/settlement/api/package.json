@@ -1,5 +1,5 @@
 {
-  "name": "@feature/wallet",
+  "name": "@feature/settlement-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,6 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/wallet-api": "workspace:*"
+    "@feature/common": "workspace:*"
   }
 }

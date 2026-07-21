@@ -1,11 +1,11 @@
-import { ITransactionContext } from "@feature/common";
+import { TransactionContext } from "@feature/common";
 import { Injectable } from "@nestjs/common";
 import { AsyncLocalStorage } from "node:async_hooks";
 
 @Injectable()
 export class AsyncLocalTransactionContext<
   TClient,
-> implements ITransactionContext<TClient> {
+> implements TransactionContext<TClient> {
   private readonly storage = new AsyncLocalStorage<TClient>();
 
   current(): TClient | null {

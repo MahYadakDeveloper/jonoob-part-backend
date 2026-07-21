@@ -1,9 +1,9 @@
-import { type IDbProvider } from "@feature/common";
+import { type DbProvider } from "@feature/common";
 import {
-  DuplicateGoodError,
-  InsufficientStockError,
-  StockNotFoundError,
-  type IWarehouseRepository,
+    DuplicateGoodError,
+    InsufficientStockError,
+    StockNotFoundError,
+    type WarehouseRepository,
 } from "@feature/warehouse";
 import { BaseRepository } from "@infra/common-persistent";
 import { PrismaDbClient } from "@infra/prisma-db";
@@ -12,12 +12,12 @@ import { type StockCache } from "./cache/stock.cache";
 import { planStockChanges } from "./stock-planner";
 
 @Injectable()
-export class WarehouseRepository
+export class WarehouseRepositoryImpl
   extends BaseRepository<PrismaDbClient>
-  implements IWarehouseRepository
+  implements WarehouseRepository
 {
   constructor(
-    dbProvider: IDbProvider<PrismaDbClient>,
+    dbProvider: DbProvider<PrismaDbClient>,
     private readonly cache: StockCache,
   ) {
     super(dbProvider);

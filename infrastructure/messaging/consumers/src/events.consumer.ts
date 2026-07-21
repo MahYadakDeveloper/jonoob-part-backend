@@ -1,11 +1,11 @@
 import { OnQueueEvent, Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
 import { UnknownEventHandlerError } from "./unknown-event-handler.error";
-import { type IEventHandlerRegistry } from "@feature/common";
+import { type EventHandlerRegistry } from "@feature/common";
 
 @Processor("events")
 export class EventsConsumer extends WorkerHost {
-  constructor(private readonly registry: IEventHandlerRegistry) {
+  constructor(private readonly registry: EventHandlerRegistry) {
     super();
   }
 

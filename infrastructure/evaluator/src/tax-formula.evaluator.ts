@@ -1,8 +1,8 @@
 import { Money } from "@feature/common";
-import { type ITaxFormulaEvaluator } from "@feature/tax";
+import { type TaxFormulaEvaluator } from "@feature/tax";
 import math from "mathjs";
 
-export class MathjsTaxFormulaEvaluator implements ITaxFormulaEvaluator {
+export class MathjsTaxFormulaEvaluator implements TaxFormulaEvaluator {
   private readonly parser = math.parser();
 
   evaluate(

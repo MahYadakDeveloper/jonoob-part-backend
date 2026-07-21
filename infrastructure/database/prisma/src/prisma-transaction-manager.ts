@@ -1,10 +1,10 @@
-import { ITransactionManager } from "@feature/common";
+import { TransactionManager } from "@feature/common";
 import { AsyncLocalTransactionContext } from "@infra/transaction";
 import { Injectable } from "@nestjs/common";
 import { Prisma, PrismaClient } from "./generated/prisma/client";
 
 @Injectable()
-export class PrismaTransactionManager implements ITransactionManager {
+export class PrismaTransactionManager implements TransactionManager {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly txContext: AsyncLocalTransactionContext<Prisma.TransactionClient>,

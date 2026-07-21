@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
-import { type IOutboxRepository } from "@feature/common";
+import { type OutboxRepository } from "@feature/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 
@@ -9,7 +9,7 @@ export class OutboxPublisher {
   constructor(
     @InjectQueue("events")
     private readonly queue: Queue,
-    private readonly outboxRepository: IOutboxRepository,
+    private readonly outboxRepository: OutboxRepository,
   ) {}
 
   @Cron("*/5 * * * * *")

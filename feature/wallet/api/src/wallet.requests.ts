@@ -1,5 +1,17 @@
 import { Money } from "@feature/common";
-import { WalletOperationRequest } from "./wallet.types";
+
+export type WalletOperationRequest = {
+  customerId: string;
+
+  /** Business reference (saleId, returnId, campaignId, etc.) */
+  referenceId: string;
+
+  /** Prevent duplicate processing */
+  idempotencyKey: string;
+
+  /** Optional audit note */
+  description?: string;
+};
 
 export type RefundWalletRequest = {
   customerId: string;
@@ -17,13 +29,13 @@ export type RefundWalletRequest = {
   description?: string;
 };
 
-export type CreditWalletRequest = WalletOperationRequest & {
+export type WalletDepositRequest = WalletOperationRequest & {
   amount: Money;
 
   reason: "cashback" | "refund" | "manual_adjustment";
 };
 
-export type DebitWalletRequest = WalletOperationRequest & {
+export type WalletWithdrawRequest = WalletOperationRequest & {
   amount: Money;
 
   reason:
@@ -35,4 +47,22 @@ export type DebitWalletRequest = WalletOperationRequest & {
 
 export interface GetWalletBalanceRequest {
   customerId: string;
+}
+
+export interface FreezeWalletAmountRequest {
+  customerId: string;
+  amount: Money;
+
+  referenceId: string;
+  reason: "withdrawal-request" | "refund" | "manual";
+}
+
+export interface CommitFrozenAmountRequest {
+  freezeId: string;
+  referenceId: string;
+}
+
+export interface ReleaseFrozenAmountRequest {
+  freezeId: string;
+  reason: "withdrawal-request" | "refund" | "manual";
 }

@@ -318,6 +318,27 @@ importers:
 
   feature/sale/api: {}
 
+  feature/settlement:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../common
+      '@feature/wallet':
+        specifier: workspace:*
+        version: link:../wallet
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:../wallet/api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/settlement/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
+
   feature/tax:
     dependencies:
       '@feature/common':
@@ -333,7 +354,11 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
-  feature/wallet: {}
+  feature/wallet:
+    dependencies:
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:api
 
   feature/wallet/api:
     dependencies:

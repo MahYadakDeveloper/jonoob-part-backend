@@ -1,13 +1,29 @@
 import {
-  CreditWalletRequest,
-  DebitWalletRequest,
+  CommitFrozenAmountRequest,
+  FreezeWalletAmountRequest,
   GetWalletBalanceRequest,
+  ReleaseFrozenAmountRequest,
+  WalletDepositRequest,
+  WalletWithdrawRequest,
 } from "./wallet.requests";
-import { GetWalletBalanceResponse } from "./wallet.responses";
-import { WalletTransactionResult } from "./wallet.types";
+import {
+  FrozenBalanceResponse,
+  GetWalletBalanceResponse,
+  WalletTransactionResponse,
+} from "./wallet.responses";
 
 export interface WalletApi {
-  credit(req: CreditWalletRequest): Promise<WalletTransactionResult>;
-  debit(req: DebitWalletRequest): Promise<WalletTransactionResult>;
+  deposit(req: WalletDepositRequest): Promise<WalletTransactionResponse>;
+
+  withdraw(req: WalletWithdrawRequest): Promise<WalletTransactionResponse>;
+
   getBalance(req: GetWalletBalanceRequest): Promise<GetWalletBalanceResponse>;
+
+  freeze(req: FreezeWalletAmountRequest): Promise<FrozenBalanceResponse>;
+
+  commitFrozen(
+    req: CommitFrozenAmountRequest,
+  ): Promise<WalletTransactionResponse>;
+
+  releaseFrozen(req: ReleaseFrozenAmountRequest): Promise<void>;
 }

@@ -1,5 +1,5 @@
 import {
-  IOutboxRepository,
+  OutboxRepository,
   NewOutboxEvent,
   OutboxEvent,
 } from "@feature/common";
@@ -7,7 +7,7 @@ import { Injectable } from "@nestjs/common";
 import { type OutboxDatasource } from "./outbox-datasource";
 
 @Injectable()
-export class OutboxRepository implements IOutboxRepository {
+export class OutboxRepositoryImpl implements OutboxRepository {
   constructor(private readonly datasource: OutboxDatasource) {}
 
   async save(event: NewOutboxEvent): Promise<void> {
