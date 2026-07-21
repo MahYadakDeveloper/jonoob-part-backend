@@ -18,6 +18,7 @@
   "private": true,
   "dependencies": {
     "@feature/common": "workspace:*",
+    "@feature/settlement-api": "workspace:*",
     "@feature/wallet": "workspace:*",
     "@feature/wallet-api": "workspace:*",
     "@nestjs/common": "^11.1.28"

@@ -41,7 +41,7 @@ export type BundleInvoiceItem = InvoiceItemBase &
 
 export type InvoiceItem = ProductInvoiceItem | BundleInvoiceItem;
 
-export type InvoicePayment = Payment
+export type InvoicePayment = Payment;
 
 export type InvoiceSummary = {
   readonly cashback?: GrantedCashback;

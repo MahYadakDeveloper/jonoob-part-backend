@@ -1,4 +1,6 @@
 import {
+  CalculateCashbackRequest,
+  CalculateCashbackResponse,
   CashbackApi,
   CashbackReversalPolicy,
   GrantingCashbackRequest,
@@ -6,11 +8,20 @@ import {
   ReversalCashbackRequest,
   ReversalCashbackResponse,
 } from "@feature/cashback-api";
-import { Money } from "@feature/common";
+import {
+  GrantedCashback,
+  InvoiceItem,
+  LineItems,
+  Money,
+} from "@feature/common";
 import { type WalletApi } from "@feature/wallet-api";
 import { Injectable } from "@nestjs/common";
 import { type CustomerQuery } from "./ports/customer.query";
 import { type CashbackSettingsRepository } from "./repository/cashback-settings.repository";
+import {
+  CashbackAmountChangedError,
+  InvalidCashbackRateError,
+} from "./cashback.errors";
 
 @Injectable()
 export class CashbackService implements CashbackApi {
@@ -20,68 +31,129 @@ export class CashbackService implements CashbackApi {
     private readonly wallet: WalletApi,
   ) {}
 
-  async grantCashback({
+  async calculate({
+    customerId,
+    purchasedItems,
+  }: CalculateCashbackRequest): Promise<CalculateCashbackResponse> {
+    return {
+      cashback: await this.resolveGrantedCashback(customerId, purchasedItems),
+    };
+  }
+
+  async grant({
     customerId,
     referenceId,
-    purchaseAmount,
+    purchasedItems,
+    expectedCashback,
   }: GrantingCashbackRequest): Promise<GrantingCashbackResponse> {
-    const customerType = await this.customerQuery.getType(customerId);
-
-    // merchants do not receive cashback
-    if (customerType === "merchant") {
-      return this.noCashback();
-    }
-
-    const policy = await this.cashbackSettings.getPolicy(customerType);
-
-    if (!policy.enabled) {
-      return this.noCashback();
-    }
-
-    const cashback = this.calculateCashback(policy.rate, purchaseAmount);
-
-    await this.wallet.credit({
+    const granted = await this.resolveGrantedCashback(
       customerId,
-      amount: cashback,
+      purchasedItems,
+    );
+
+    if (
+      expectedCashback.appliedRate !== granted.appliedRate ||
+      !expectedCashback.amount.equals(granted.amount)
+    ) {
+      throw new CashbackAmountChangedError({
+        expected: expectedCashback,
+        actual: granted,
+      });
+    }
+
+    if (granted.amount.isZero()) {
+      return { grantedCashback: this.emptyCashback() };
+    }
+
+    await this.wallet.deposit({
+      customerId,
+      amount: granted.amount,
       reason: "cashback",
       referenceId,
       idempotencyKey: `cashback:${referenceId}`,
     });
 
     return {
-      grantedCashback: {
-        appliedRate: policy.rate,
-        amount: cashback,
-      },
+      grantedCashback: granted,
     };
   }
 
   async processCashbackReversal({
     customerId,
-    refundAmount,
+    refundedItems,
     referenceId,
     granted,
     policy,
   }: ReversalCashbackRequest): Promise<ReversalCashbackResponse> {
+    const eligibleRefundAmount =
+      this.resolveCashbackEligibleAmount(refundedItems);
+
     const reversalCashback = this.calculateCashback(
       granted.appliedRate,
-      refundAmount,
+      eligibleRefundAmount,
     );
 
     switch (policy) {
       case CashbackReversalPolicy.DeductFromRefund:
         return {
-          payableRefund: refundAmount.subtract(reversalCashback),
+          kind: "deduct_from_refund",
+          deductedAmount: reversalCashback,
         };
 
       case CashbackReversalPolicy.ReverseGrantedCashback:
+        if (!reversalCashback.isZero()) {
+          await this.revokeCashback(customerId, referenceId, reversalCashback);
+        }
         await this.revokeCashback(customerId, referenceId, reversalCashback);
 
-        return { payableRefund: refundAmount };
+        return {
+          kind: "reversed",
+          reversedAmount: reversalCashback,
+        };
     }
   }
 
+  private async resolveGrantedCashback(
+    customerId: string,
+    purchasedItems: LineItems<InvoiceItem>,
+  ): Promise<GrantedCashback> {
+    const customerType = await this.customerQuery.getType(customerId);
+
+    if (customerType === "merchant") {
+      return this.emptyCashback();
+    }
+
+    const policy = await this.cashbackSettings.getPolicy(customerType);
+
+    if (!policy.enabled) {
+      return this.emptyCashback();
+    }
+
+    const eligibleAmount = this.resolveCashbackEligibleAmount(purchasedItems);
+
+    return {
+      appliedRate: policy.rate,
+      amount: this.calculateCashback(policy.rate, eligibleAmount),
+    };
+  }
+
+  private resolveCashbackEligibleAmount<
+    T extends {
+      lineTotal: Money;
+      discount?: { totalDiscount: Money };
+    },
+  >(items: LineItems<T>): Money {
+    return items.reduce((total, item) => {
+      if (item.discount?.totalDiscount.gt(Money.zero())) return total;
+      return total.add(item.lineTotal);
+    }, Money.zero());
+  }
+
   private calculateCashback(rate: number, amount: Money): Money {
+    if (rate < 0 || rate > 1) {
+      throw new InvalidCashbackRateError(rate);
+    }
+
     return amount.multiply(rate);
   }
 
@@ -90,7 +162,7 @@ export class CashbackService implements CashbackApi {
     referenceId: string,
     cashback: Money,
   ): Promise<void> {
-    await this.wallet.debit({
+    await this.wallet.withdraw({
       customerId,
       amount: cashback,
       reason: "cashback_reversal",
@@ -99,12 +171,10 @@ export class CashbackService implements CashbackApi {
     });
   }
 
-  private noCashback(): GrantingCashbackResponse {
+  private emptyCashback(): GrantedCashback {
     return {
-      grantedCashback: {
-        appliedRate: 0,
-        amount: Money.zero(),
-      },
+      appliedRate: 0,
+      amount: Money.zero(),
     };
   }
 }

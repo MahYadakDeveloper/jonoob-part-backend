@@ -1,29 +1,31 @@
 import {
-    CashbackError,
-    InsufficientCashbackBalanceError,
-    type CashbackApi,
+  CashbackError,
+  InsufficientCashbackBalanceError,
+  type CashbackApi,
 } from "@feature/cashback-api";
 import {
-    AppliedDiscount,
-    InvoiceItem,
-    InvoiceItemBase,
-    InvoiceSnapshot,
-    LineItems,
-    Money,
-    type OutboxRepository,
-    type TransactionManager,
+  AppliedDiscount,
+  InvoiceItem,
+  InvoiceItemBase,
+  InvoiceSnapshot,
+  LineItems,
+  Money,
+  type OutboxRepository,
+  type TransactionManager,
 } from "@feature/common";
 import { type DiscountApi } from "@feature/discount-api";
-import { type PaymentApi } from "@feature/payment-api";
+import { PlanPaymentRequest, type PaymentApi } from "@feature/payment-api";
 import { type PricingApi } from "@feature/pricing-api";
 import {
-    ReturnSnapshot,
-    SaleRecordedEventPayload,
-    SaleRecordedEventType,
-    SaleReturnRecordedEventPayload,
-    SaleReturnRecordedEventType,
+  ReturnSnapshot,
+  SaleRecordedEventPayload,
+  SaleRecordedEventType,
+  SaleReturnRecordedEventPayload,
+  SaleReturnRecordedEventType,
 } from "@feature/sale-api";
+import { type SettlementApi } from "@feature/settlement-api";
 import { type TaxApi } from "@feature/tax-api";
+import { type WalletApi } from "@feature/wallet-api";
 import { type WarehouseApi } from "@feature/warehouse-api";
 import { Injectable } from "@nestjs/common";
 import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.error";
@@ -31,7 +33,7 @@ import { DuplicateItemsInSaleError } from "errors/duplicate-items-in-sale.error"
 import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match-sale.error";
 import { type ProductQuery } from "port/product-query.port";
 import { type ReturnRepository } from "repository/return.repository";
-import { type SaleRepository, } from "repository/sale.repository";
+import { type SaleRepository } from "repository/sale.repository";
 import { ProductLineItem } from "types/product-line-item.type";
 import { flattenInvoiceItems } from "utils/flatten-invoice-item";
 import { flattenRefundableItems } from "utils/flatten-refundable-items";
@@ -53,6 +55,8 @@ export class SaleService {
     private readonly payment: PaymentApi,
     private readonly discount: DiscountApi,
     private readonly cashback: CashbackApi,
+    private readonly settlement: SettlementApi,
+    private readonly wallet: WalletApi,
     private readonly tax: TaxApi,
     private readonly outboxRepository: OutboxRepository,
     private readonly tx: TransactionManager,
@@ -68,6 +72,7 @@ export class SaleService {
     saleId,
     cashbackReversalPolicy,
     items,
+    payoff,
   }: RecordReturnRequest): Promise<RecordReturnResponse> {
     // Added transactional handling for the return workflow.
     // Currently, a failure while recording the return document after stock restoration
@@ -84,18 +89,20 @@ export class SaleService {
 
       const soldItems = sale.snapshot.items;
 
-      const returnDocumentItems = returnItems.transform(
+      const returnSnapshotItems = returnItems.transform(
         (item) => this.computeRefundableLine(soldItems, item),
         (item) => item.productId,
       );
 
-      const refund = returnDocumentItems.reduce(
+      const refund = returnSnapshotItems.reduce(
         (total, item) => total.add(item.lineTotal),
         Money.zero(),
       );
 
       const { customerId } = sale.snapshot.header;
 
+      // FIXME This one because of cashback api is changed we need no fix/upgrade the use of api
+      // Note: the calculation one is based on returned items(may has discount, witch not reversed)
       let payableRefund =
         customerId && sale.snapshot.summary.cashback
           ? (
@@ -110,7 +117,7 @@ export class SaleService {
           : refund;
 
       await this.warehouse.recordGoodsReceipt({
-        items: returnDocumentItems.transform(
+        items: returnSnapshotItems.transform(
           (item) => ({
             goodId: item.productId,
             quantity: item.quantity,
@@ -130,10 +137,10 @@ export class SaleService {
         payableRefund = payableRefund.subtract(taxRefund);
       }
 
-      const returnDocument: ReturnSnapshot = {
+      const returnSnapshot: ReturnSnapshot = {
         header: sale.snapshot.header,
 
-        items: returnDocumentItems,
+        items: returnSnapshotItems,
 
         summary: {
           refund,
@@ -146,17 +153,40 @@ export class SaleService {
         },
       };
 
-      const {saleReturnId} =await this.returnRepository.recordReturn(returnDocument);
+      const { returnId } =
+        await this.returnRepository.recordReturn(returnSnapshot);
+
+      // Settlement
+      if (payoff) {
+        // Payoff
+        await this.settlement.refund({
+          customerId,
+          amount: returnSnapshot.summary.payableRefund,
+          destination: payoff.depositTo,
+          referenceId: returnId,
+        });
+      } else {
+        // Credit
+        if (!customerId) throw new Error("...");
+
+        await this.wallet.deposit({
+          amount: returnSnapshot.summary.payableRefund,
+          customerId,
+          idempotencyKey: `return:${returnId}`,
+          reason: "refund",
+          referenceId: returnId,
+        });
+      }
 
       await this.outboxRepository.save({
         type: SaleReturnRecordedEventType,
         payload: {
-          snapshot: returnDocument,
+          snapshot: returnSnapshot,
         } satisfies SaleReturnRecordedEventPayload,
       });
 
       return {
-        returnId: saleReturnId,
+        returnId: returnId,
       };
     });
   }
@@ -190,29 +220,23 @@ export class SaleService {
       );
 
       // Pricing invoice
-      const { pricedInvoice: invoice } = await this.pricing.priceInvoice(
-        {
-          customerId: req.cashierId,
-          items: unpricedInvoiceItems,
-        },
-      );
+      const { pricedInvoice: invoice } = await this.pricing.priceInvoice({
+        customerId: req.cashierId,
+        items: unpricedInvoiceItems,
+      });
 
       // Processing payment
-      const { payment } = req.customerId
-        ? await this.payment.planPayment({
-            amountDue: invoice.summary.grandTotal,
+      const paymentRequest: PlanPaymentRequest = req.customerId
+        ? {
             customerId: req.customerId,
-            useWallet: req.useWallet, //TODO Change the contract of the method request api
-            externalPaymentMethod: "posTerminal",
-          })
+            amountDue: invoice.summary.grandTotal,
+            useWallet: req.useWallet,
+          }
         : {
-            payment: {
-              externalPayment: {
-                amount: invoice.summary.subtotal,
-                paymentMethod: "posTerminal",
-              },
-            },
+            amountDue: invoice.summary.grandTotal,
           };
+
+      const { payment } = await this.payment.planPayment(paymentRequest);
 
       // Tax
       const { tax } = await this.tax.calculateTax({
@@ -228,15 +252,13 @@ export class SaleService {
         ),
       });
 
-      // Granting cashback customer for purchase
-      // TODO Extract the cashback calculator and grant after sale recorded and pass the referenceId(saleId)
-      const { grantedCashback } = req.customerId
-        ? await this.cashback.grantCashback({
+      // Calculating granting cashback customer for preview
+      const { cashback: cashbackPreview } = req.customerId
+        ? await this.cashback.calculate({
             customerId: req.customerId,
-            referenceId: 
-            purchaseAmount: invoice.summary.grandTotal,
+            purchasedItems: invoice.items,
           })
-        : { grantedCashback: undefined };
+        : { cashback: undefined };
 
       const snapshot: InvoiceSnapshot = {
         header: {
@@ -245,11 +267,19 @@ export class SaleService {
           issuedAt: new Date(Date.now()),
         },
         items: invoice.items,
-        summary: { ...invoice.summary, cashback: grantedCashback, tax },
+        summary: { ...invoice.summary, cashback: cashbackPreview, tax },
         payment,
       };
 
-      await this.saleRepository.recordSale(snapshot);
+      const { saleId } = await this.saleRepository.recordSale(snapshot);
+
+      if (req.customerId)
+        await this.cashback.grant({
+          customerId: req.customerId,
+          purchasedItems: invoice.items,
+          referenceId: saleId,
+          expectedCashback: cashbackPreview!,
+        });
 
       // Commit discount usages
       if (req.customerId) {

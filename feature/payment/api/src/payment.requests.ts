@@ -1,10 +1,12 @@
-import { Money, Payment } from "@feature/common";
+import { Money } from "@feature/common";
 import { UseWallet } from "./payment.types";
 
-export interface PlanPaymentRequest {
-  customerId: string;
-  amountDue: Money;
-  useWallet: UseWallet;
-
-  payment: Payment;
-}
+export type PlanPaymentRequest =
+  | {
+      customerId: string;
+      amountDue: Money;
+      useWallet?: UseWallet;
+    }
+  | {
+      amountDue: Money;
+    };

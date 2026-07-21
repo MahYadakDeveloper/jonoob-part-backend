@@ -54,7 +54,7 @@ export interface FreezeWalletAmountRequest {
   amount: Money;
 
   referenceId: string;
-  reason: "withdrawal-request" | "refund" | "manual";
+  reason: "withdrawal-request" | "manual";
 }
 
 export interface CommitFrozenAmountRequest {
@@ -64,5 +64,5 @@ export interface CommitFrozenAmountRequest {
 
 export interface ReleaseFrozenAmountRequest {
   freezeId: string;
-  reason: "withdrawal-request" | "refund" | "manual";
+  reason: "withdrawal-request" | "manual";
 }

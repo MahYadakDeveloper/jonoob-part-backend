@@ -1,26 +1,63 @@
-import { type TransactionManager } from "@feature/common";
+import {
+  type OutboxRepository,
+  type TransactionManager,
+} from "@feature/common";
+import {
+  PayoffRequestCreatedEventType,
+  RefundRequest,
+  SettlementApi,
+} from "@feature/settlement-api";
 import { type WalletApi } from "@feature/wallet-api";
 import { Injectable } from "@nestjs/common";
 import { WithdrawalRequest } from "requests/withdrawal.request";
 import { type SettlementRepository } from "settlement.repository";
 
 @Injectable()
-export class SettlementService {
+export class SettlementService implements SettlementApi {
   constructor(
     private readonly wallet: WalletApi,
     private readonly repository: SettlementRepository,
+    private readonly outbox: OutboxRepository,
     private readonly tx: TransactionManager,
   ) {}
 
-  /**
-   * Creates a settlement request for either a customer withdrawal or a POS refund payout.
-   *
-   * - Customers specify the amount they want to withdraw from their wallet.
-   * - POS agents specify the approved refund amount for a customer return.
-   *
-   * The amount is frozen immediately and the request is stored with `pending`
-   * status until it is reviewed and processed by an operator.
-   */
+  async refund(req: RefundRequest): Promise<void> {
+    await this.tx.run(async () => {
+      // Bank payoff
+      if (req.destination) {
+        if (!req.customerId) throw new Error("Customer is required for payoff");
+
+        await this.repository.createRequest({
+          type: "refund",
+          customerId: req.customerId,
+          referenceId: req.referenceId,
+          amount: req.amount,
+          destination: req.destination,
+        });
+
+        await this.outbox.save({
+          type: PayoffRequestCreatedEventType,
+          payload: { referenceId: req.referenceId },
+        });
+
+        return;
+      }
+
+      // Wallet credit
+      if (!req.customerId)
+        throw new Error("Customer is required for wallet refund");
+
+      await this.wallet.deposit({
+        customerId: req.customerId,
+        amount: req.amount,
+        reason: "refund",
+        referenceId: req.referenceId,
+        idempotencyKey: `refund:${req.referenceId}`,
+        description: "Sale return refund",
+      });
+    });
+  }
+
   async requestWithdrawal({
     customerId,
     amount,
@@ -29,41 +66,49 @@ export class SettlementService {
     type,
   }: WithdrawalRequest) {
     await this.tx.run(async () => {
-      const res = await this.wallet.freeze({
-        customerId,
-        amount,
-        reason: type === "refund" ? "refund" : "withdrawal-request",
-        referenceId,
-      });
+      // Only withdrawals require wallet freeze
+      if (type === "withdrawal") {
+        const frozen = await this.wallet.freeze({
+          customerId: customerId,
+          amount: amount,
+          reason: "withdrawal-request",
+          referenceId: referenceId,
+        });
 
-      await this.repository.createRequest({
-        customerId,
-        amount,
-        referenceId: referenceId,
-        freezeId: res.freezeId,
-        destination,
-        type,
-      });
+        await this.repository.createRequest({
+          customerId: customerId,
+          amount: amount,
+          referenceId: referenceId,
+          freezeId: frozen.freezeId,
+          destination: destination,
+          type: type,
+        });
+      }
     });
   }
 
   async markAsPaid(id: string, receiptText: string) {
     await this.tx.run(async () => {
-      const { freezeId, referenceId } = await this.repository.getOrThrow(id);
+      const settlementRequest = await this.repository.getOrThrow(id);
       await this.repository.markPaid(id, receiptText);
 
-      await this.wallet.commitFrozen({ freezeId, referenceId });
+      if (settlementRequest.type === "withdrawal")
+        await this.wallet.commitFrozen({
+          freezeId: settlementRequest.freezeId,
+          referenceId: settlementRequest.referenceId,
+        });
     });
   }
 
   async reject(id: string, reason: string) {
     await this.tx.run(async () => {
-      const { freezeId, type } = await this.repository.getOrThrow(id);
+      const settlementRequest = await this.repository.getOrThrow(id);
 
-      await this.wallet.releaseFrozen({
-        freezeId,
-        reason: type === "refund" ? "refund" : "withdrawal-request",
-      });
+      if (settlementRequest.type === "withdrawal")
+        await this.wallet.releaseFrozen({
+          freezeId: settlementRequest.freezeId,
+          reason: "withdrawal-request",
+        });
 
       await this.repository.markRejected(id, reason);
     });

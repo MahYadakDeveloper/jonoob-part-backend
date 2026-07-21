@@ -290,9 +290,15 @@ importers:
       '@feature/sale-api':
         specifier: workspace:*
         version: link:api
+      '@feature/settlement-api':
+        specifier: workspace:*
+        version: link:../settlement/api
       '@feature/tax-api':
         specifier: workspace:*
         version: link:../tax/api
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:../wallet/api
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../warehouse/api
@@ -323,6 +329,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../common
+      '@feature/settlement-api':
+        specifier: workspace:*
+        version: link:api
       '@feature/wallet':
         specifier: workspace:*
         version: link:../wallet

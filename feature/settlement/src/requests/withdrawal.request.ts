@@ -1,10 +1,9 @@
-import { Money } from "@feature/common";
-import { PaymentDestination, SettlementType } from "type";
+import { BankDestination, Money } from "@feature/common";
 
-export interface WithdrawalRequest {
+export type WithdrawalRequest = {
   customerId: string;
+  type: "withdrawal";
   amount: Money;
   referenceId: string;
-  destination: PaymentDestination;
-  type: SettlementType;
-}
+  destination: BankDestination;
+};
