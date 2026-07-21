@@ -1,27 +1,27 @@
 import {
-  CashbackError,
-  InsufficientCashbackBalanceError,
-  type CashbackApi,
+    CashbackError,
+    InsufficientCashbackBalanceError,
+    type CashbackApi,
 } from "@feature/cashback-api";
 import {
-  AppliedDiscount,
-  InvoiceItem,
-  InvoiceItemBase,
-  InvoiceSnapshot,
-  LineItems,
-  Money,
-  type OutboxRepository,
-  type TransactionManager,
+    AppliedDiscount,
+    InvoiceItem,
+    InvoiceItemBase,
+    InvoiceSnapshot,
+    LineItems,
+    Money,
+    type OutboxRepository,
+    type TransactionManager,
 } from "@feature/common";
 import { type DiscountApi } from "@feature/discount-api";
 import { type PaymentApi } from "@feature/payment-api";
 import { type PricingApi } from "@feature/pricing-api";
 import {
-  ReturnSnapshot,
-  SaleRecordedEventPayload,
-  SaleRecordedEventType,
-  SaleReturnRecordedEventPayload,
-  SaleReturnRecordedEventType,
+    ReturnSnapshot,
+    SaleRecordedEventPayload,
+    SaleRecordedEventType,
+    SaleReturnRecordedEventPayload,
+    SaleReturnRecordedEventType,
 } from "@feature/sale-api";
 import { type TaxApi } from "@feature/tax-api";
 import { type WarehouseApi } from "@feature/warehouse-api";
@@ -30,8 +30,8 @@ import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.er
 import { DuplicateItemsInSaleError } from "errors/duplicate-items-in-sale.error";
 import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match-sale.error";
 import { type ProductQuery } from "port/product-query.port";
-import { type SaleDocumentsRepository } from "repository/sale-documents.repository";
-import { type SaleReturnDocumentsRepository } from "repository/sale-return-documents.repository";
+import { type ReturnRepository } from "repository/return.repository";
+import { type SaleRepository, } from "repository/sale.repository";
 import { ProductLineItem } from "types/product-line-item.type";
 import { flattenInvoiceItems } from "utils/flatten-invoice-item";
 import { flattenRefundableItems } from "utils/flatten-refundable-items";
@@ -45,8 +45,8 @@ import { RecordReturnResponse } from "./sale.responses";
 @Injectable()
 export class SaleService {
   constructor(
-    private readonly saleReturnDocumentsRepository: SaleReturnDocumentsRepository,
-    private readonly saleDocumentsRepository: SaleDocumentsRepository,
+    private readonly returnRepository: ReturnRepository,
+    private readonly saleRepository: SaleRepository,
     private readonly productQuery: ProductQuery,
     private readonly warehouse: WarehouseApi,
     private readonly pricing: PricingApi,
@@ -73,7 +73,7 @@ export class SaleService {
     // Currently, a failure while recording the return document after stock restoration
     // can leave the system in an inconsistent state (stock updated but return not recorded).
     return await this.tx.run(async () => {
-      const sale = await this.saleDocumentsRepository.findById(saleId);
+      const sale = await this.saleRepository.findById(saleId);
 
       items.assertUniqueBy(
         (item) => item.productId,
@@ -146,7 +146,7 @@ export class SaleService {
         },
       };
 
-      await this.saleReturnDocumentsRepository.recordReturn(returnDocument);
+      const {saleReturnId} =await this.returnRepository.recordReturn(returnDocument);
 
       await this.outboxRepository.save({
         type: SaleReturnRecordedEventType,
@@ -156,7 +156,7 @@ export class SaleService {
       });
 
       return {
-        payableRefund,
+        returnId: saleReturnId,
       };
     });
   }
@@ -249,7 +249,7 @@ export class SaleService {
         payment,
       };
 
-      await this.saleDocumentsRepository.recordSale(snapshot);
+      await this.saleRepository.recordSale(snapshot);
 
       // Commit discount usages
       if (req.customerId) {
