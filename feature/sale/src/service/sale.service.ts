@@ -133,7 +133,7 @@ export class SaleService {
           sale.snapshot.summary.grandTotal,
         );
 
-        payableRefund = payableRefund.add(refundableTax);
+        payableRefund = payableRefund.subtract(refundableTax);
       }
 
       if (payableRefund.lt(Money.zero())) {
