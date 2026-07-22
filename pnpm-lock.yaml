@@ -163,6 +163,12 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
+  feature/catalog:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../common
+
   feature/common:
     dependencies:
       zod:

@@ -1,5 +1,5 @@
 {
-  "name": "@feature/product",
+  "name": "@feature/catalog",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -16,6 +16,7 @@
     }
   },
   "private": true,
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "@feature/common": "workspace:*"
+  }
 }

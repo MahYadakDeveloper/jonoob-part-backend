@@ -1,6 +1,6 @@
 // TODO some props may change later, this is not complete version
 
-export class ProductService {
+export class CatalogService {
   /**
    * Infra Note For future: use redis for this.
    * This method is responsible for enriching information such as price, stock, discounts, and more.
