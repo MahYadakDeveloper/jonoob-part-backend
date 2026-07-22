@@ -1,4 +1,3 @@
-// TODO some props may change later, this is not complete version
 
 export class CatalogService {
   /**
@@ -39,10 +38,10 @@ export class CatalogService {
    *  ...
    * }
    */
-  findById(): Promise<Extract<Product, { kind: "product" }>> {
+  findById(): Promise<> {
     throw new Error("Method not implemented yet!");
   }
-  findManyById(): Promise<Extract<Product, { kind: "product" }>[]> {
+  findManyById(): Promise<> {
     throw new Error("Method not implemented yet!");
   }
 

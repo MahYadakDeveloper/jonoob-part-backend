@@ -1,10 +1,10 @@
 {
-  "name": "@feature/catalog",
+  "name": "@feature/media-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
-    "_build": "pnpm exec tsc",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "build": "pnpm exec tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,9 +15,5 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
-  "dependencies": {
-    "@feature/common": "workspace:*",
-    "@feature/media-api": "workspace:*"
-  }
+  "private": true
 }
