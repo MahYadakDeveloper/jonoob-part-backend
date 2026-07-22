@@ -101,40 +101,43 @@ export class SaleService {
 
       const { customerId } = sale.snapshot.header;
 
-      // FIXME This one because of cashback api is changed we need no fix/upgrade the use of api
-      // Note: the calculation one is based on returned items(may has discount, witch not reversed)
-      let payableRefund =
-        customerId && sale.snapshot.summary.cashback
-          ? (
-              await this.cashback.processCashbackReversal({
-                customerId,
-                refundAmount: refund,
-                referenceId: sale.id,
-                granted: sale.snapshot.summary.cashback,
-                policy: cashbackReversalPolicy!,
-              })
-            ).payableRefund
-          : refund;
+      let payableRefund: Money = refund;
+      let cashbackReversed = Money.zero();
+      if (customerId && sale.snapshot.summary.cashback) {
+        if (!cashbackReversalPolicy) {
+          throw new Error("Cashback reversal policy is required.");
+        }
+        const result = await this.cashback.processCashbackReversal({
+          customerId,
+          refundedItems: returnSnapshotItems,
+          referenceId: sale.id,
+          granted: sale.snapshot.summary.cashback,
+          policy: cashbackReversalPolicy,
+        });
 
-      await this.warehouse.recordGoodsReceipt({
-        items: returnSnapshotItems.transform(
-          (item) => ({
-            goodId: item.productId,
-            quantity: item.quantity,
-          }),
-          (item) => item.goodId,
-        ),
-      });
+        switch (result.kind) {
+          case "deduct_from_refund":
+            payableRefund = payableRefund.subtract(result.deductedAmount);
+            break;
+          case "reversed":
+            cashbackReversed = result.reversedAmount;
+            break;
+        }
+      }
 
       // Tax
       if (sale.snapshot.summary.tax) {
-        const taxRefund = this.calculateProportionalTax(
+        const refundableTax = this.calculateProportionalTax(
           sale.snapshot.summary.tax,
           refund,
           sale.snapshot.summary.grandTotal,
         );
 
-        payableRefund = payableRefund.subtract(taxRefund);
+        payableRefund = payableRefund.add(refundableTax);
+      }
+
+      if (payableRefund.lt(Money.zero())) {
+        throw new Error("Payable refund cannot be negative.");
       }
 
       const returnSnapshot: ReturnSnapshot = {
@@ -149,7 +152,7 @@ export class SaleService {
 
         refund: {
           amount: payableRefund,
-          cashbackReversed: refund.subtract(payableRefund),
+          cashbackReversed,
         },
       };
 
@@ -177,6 +180,17 @@ export class SaleService {
           referenceId: returnId,
         });
       }
+
+      // Warehouse: Receipt goods
+      await this.warehouse.recordGoodsReceipt({
+        items: returnSnapshotItems.transform(
+          (item) => ({
+            goodId: item.productId,
+            quantity: item.quantity,
+          }),
+          (item) => item.goodId,
+        ),
+      });
 
       await this.outboxRepository.save({
         type: SaleReturnRecordedEventType,

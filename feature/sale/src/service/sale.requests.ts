@@ -12,12 +12,22 @@ export interface RecordSaleRequest {
   }[];
 }
 
-export interface RecordReturnRequest {
-  saleId: string;
-  items: {
-    productId: string;
-    quantity: number;
-  }[];
-  cashbackReversalPolicy?: CashbackReversalPolicy;
-  payoff?: { depositTo: BankDestination };
-}
+export type RecordReturnRequest =
+  | {
+      saleId: string;
+      items: {
+        productId: string;
+        quantity: number;
+      }[];
+      cashbackReversalPolicy: CashbackReversalPolicy;
+      payoff?: { depositTo: BankDestination };
+    }
+  | {
+      saleId: string;
+      items: {
+        productId: string;
+        quantity: number;
+      }[];
+      cashbackReversalPolicy?: never;
+      payoff?: { depositTo: BankDestination };
+    };

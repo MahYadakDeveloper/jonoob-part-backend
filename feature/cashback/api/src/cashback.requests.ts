@@ -1,6 +1,7 @@
 import {
   GrantedCashback,
   InvoiceItem,
+  InvoiceItemBase,
   LineItems,
   Money,
 } from "@feature/common";
@@ -8,7 +9,7 @@ import { CashbackReversalPolicy } from "./cashback.enums";
 
 export interface ReversalCashbackRequest {
   customerId: string;
-  refundedItems: LineItems<InvoiceItem>;
+  refundedItems: LineItems<InvoiceItemBase>;
   referenceId: string;
   granted: GrantedCashback;
   policy: CashbackReversalPolicy;
