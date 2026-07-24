@@ -7,7 +7,19 @@ export type EnrichedData = {
   storageLocation?: string;
 };
 
-export type PopulatedData = {
+/**
+ * Generated search projection for Elasticsearch indexing.
+ */
+type SearchText = string[];
+
+export type ProductReferences = {
+  brandId?: string;
+  categoryIds: string[]; // (taxonomy) `CategoryNode` referenced
+  fitmentIds: string[];
+};
+
+export type ProductRaw = LeafProductRaw | BundleProductRaw;
+export type Product = ProductRaw & {
   displayName: string; // this is generated base on technical
   canonicalName: string; // model-[...variants], we do not doing search base on this
 
@@ -17,20 +29,27 @@ export type PopulatedData = {
    */
   aliases: string[];
 
-  /**
-   * Generated search projection for Elasticsearch indexing.
-   */
-  searchText: string[];
-  brandId: string;
-  categoryIds: string[]; // (taxonomy) `CategoryNode` referenced
-  fitmentIds: string;
-  emplacement?;
+  emplacement?: string;
+  quality?: "oe" | "oem" | "aftermarket";
+
+  enriched?: EnrichedData;
+  references: ProductReferences;
 };
 
-export type ProductRaw = LeafProductRaw | BundleProductRaw;
-export type Product = ProductRaw & {
-  enriched?: EnrichedData;
-  populated: PopulatedData;
+export type SelectKeys<T, S extends Partial<Record<keyof T, boolean>>> = {
+  [K in keyof S]: S[K] extends true ? K : never;
+}[keyof S] &
+  keyof T;
+
+export type Selected<T, S extends Partial<Record<keyof T, boolean>>> = Pick<
+  T,
+  SelectKeys<T, S>
+>;
+
+export type PopulatedProduct<
+  S extends Partial<Record<keyof PopulatedData, boolean>>,
+> = ProductRaw & {
+  populated: Selected<PopulatedData, S>;
 };
 
 export type LeafProductRaw = {

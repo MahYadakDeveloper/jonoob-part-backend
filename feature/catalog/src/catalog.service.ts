@@ -1,7 +1,12 @@
 import { Money } from "@feature/common";
 import { type PricingApi } from "@feature/pricing-api";
 import { type WarehouseApi } from "@feature/warehouse-api";
-import { EnrichedData, ProductRaw } from "model/product";
+import {
+  EnrichedData,
+  PopulatedData,
+  PopulatedProduct,
+  ProductRaw,
+} from "model/product";
 
 export class CatalogService {
   constructor(
@@ -81,8 +86,10 @@ export class CatalogService {
    * Infra Note For future: use redis for this.
    * This method is responsible for populating information such as display name, description, images, and more.
    */
-  private populate(product: Product): Promise<Product> {
-    throw new Error("Method not implemented yet!");
+  private async populate<
+    S extends Partial<Record<keyof PopulatedData, boolean>>,
+  >(product: ProductRaw, select: S): Promise<PopulatedProduct<S>> {
+    throw new Error("");
   }
 
   /**
