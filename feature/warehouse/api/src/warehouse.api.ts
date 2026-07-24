@@ -1,20 +1,67 @@
 import {
+  GetGoodDetailsRequest,
+  GetStockRequest,
+  GetStocksRequest,
+  GetWarehouseViewRequest,
+  GetWarehouseViewsRequest,
+  GoodIdResolvingRequest,
   GoodsIssuingRequest,
-  GoodsReceptionRequest,
+  ReceiveReturnedRequest,
   StockReleasingRequest,
   StockReservingRequest,
 } from "./warehouse.requests";
+import {
+  GetGoodDetailsResponse,
+  GetStockResponse,
+  GetStocksResponse,
+  GetWarehouseViewResponse,
+  GetWarehouseViewsResponse,
+  GoodIdResolvingResponse,
+} from "./warehouse.responses";
 
 export interface WarehouseApi {
   /**
    *
    */
-  recordGoodsIssue(req: GoodsIssuingRequest): Promise<void>;
+  getGoodStock(req: GetStockRequest): Promise<GetStockResponse>;
 
   /**
    *
    */
-  recordGoodsReceipt(req: GoodsReceptionRequest): Promise<void>;
+  getGoodStocks(req: GetStocksRequest): Promise<GetStocksResponse>;
+
+  /**
+   *
+   */
+  getGoodDetails(req: GetGoodDetailsRequest): Promise<GetGoodDetailsResponse>;
+
+  /**
+   *
+   */
+  getWarehouseView(
+    req: GetWarehouseViewRequest,
+  ): Promise<GetWarehouseViewResponse>;
+
+  /**
+   *
+   */
+  getWarehouseViews(
+    req: GetWarehouseViewsRequest,
+  ): Promise<GetWarehouseViewsResponse>;
+
+  /**
+   *
+   */
+  resolveGoodId(req: GoodIdResolvingRequest): Promise<GoodIdResolvingResponse>;
+  /**
+   *
+   */
+  issueGoods(req: GoodsIssuingRequest): Promise<void>;
+
+  /**
+   *
+   */
+  receiveCustomerReturn(req: ReceiveReturnedRequest): Promise<void>;
 
   /**
    * Reserves stock for an operation (e.g. order creation or checkout) to

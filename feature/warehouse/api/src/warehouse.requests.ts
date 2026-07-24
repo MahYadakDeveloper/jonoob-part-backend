@@ -1,26 +1,44 @@
-import { LineItems } from "@feature/common";
+import { Barcode, LineItems } from "@feature/common";
 
-export interface GoodsIssuingRequest {
-  items: LineItems<{ goodId: string; quantity: number }>;
+export interface GoodIdResolvingRequest {
+  barcode: Barcode;
 }
 
-export interface GoodsReceptionRequest {
-  items: LineItems<{
-    goodId: string;
-    quantity: number;
-  }>;
+type Item = { goodId: string; quantity: number };
+
+export interface GoodsIssuingRequest {
+  items: LineItems<Item>;
 }
 
 export interface StockReservingRequest {
-  items: {
-    goodId: string;
-    quantity: number;
-  }[];
+  items: LineItems<Item>;
 }
 
 export interface StockReleasingRequest {
-  items: {
-    goodId: string;
-    quantity: number;
-  }[];
+  items: LineItems<Item>;
+}
+
+export interface ReceiveReturnedRequest {
+  returnId: string;
+  items: LineItems<Item>;
+}
+
+export interface GetStockRequest {
+  goodId: string;
+}
+
+export interface GetStocksRequest {
+  goodIds: string[];
+}
+
+export interface GetGoodDetailsRequest {
+  goodId: string;
+}
+
+export interface GetWarehouseViewRequest {
+  goodId: string;
+}
+
+export interface GetWarehouseViewsRequest {
+  goodIds: string[];
 }

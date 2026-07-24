@@ -1,4 +1,4 @@
-import { Barcode } from "@feature/common";
+import { Barcode, LineItems } from "@feature/common";
 import { GoodDetails } from "./model/good-details";
 import { Stock } from "./model/stock";
 
@@ -20,4 +20,11 @@ export interface FindGoodByBarcodeRequest {
 export interface GoodUpdateRequest {
   goodId: string;
   details: GoodDetails;
+}
+
+export interface GoodsReceiptingRequest {
+  items: LineItems<{
+    goodId: string;
+    quantity: number;
+  }>;
 }

@@ -1,14 +1,21 @@
-import { type OutboxRepository } from "@feature/common";
 import {
+  type OutboxRepository,
+  type TransactionManager,
+} from "@feature/common";
+import {
+  GoodIdResolvingRequest,
+  GoodIdResolvingResponse,
   GoodsIssuedEventPayload,
   GoodsIssuedEventType,
   GoodsIssuingRequest,
+  GoodsQuarantinedEventPayload,
+  GoodsQuarantinedEventType,
   GoodsReceiptedEventPayload,
   GoodsReceiptedEventType,
-  GoodsReceptionRequest,
-  WarehouseApi,
+  ReceiveReturnedRequest,
   StockReleasingRequest,
   StockReservingRequest,
+  WarehouseApi,
 } from "@feature/warehouse-api";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import {
@@ -19,6 +26,7 @@ import {
   AvailableStockRequest,
   AvailableStocksRequest,
   FindGoodByBarcodeRequest,
+  GoodsReceiptingRequest,
   GoodUpdateRequest,
 } from "./warehouse.requests";
 import {
@@ -27,35 +35,51 @@ import {
   FindGoodByBarcodeResponse,
 } from "./warehouse.responses";
 
-// Note: use pipelines? for value validation for input requests
-
 @Injectable()
 export class WarehouseService implements WarehouseApi {
   private readonly logger: Logger;
   constructor(
     @Inject(WAREHOUSE_REPOSITORY)
-    private readonly warehouseRepository: WarehouseRepository,
-    private readonly outboxRepository: OutboxRepository,
+    private readonly tx: TransactionManager,
+    private readonly repository: WarehouseRepository,
+    private readonly outbox: OutboxRepository,
   ) {
     this.logger = new Logger(WarehouseService.name);
   }
 
-  async recordGoodsIssue(req: GoodsIssuingRequest): Promise<void> {
-    await this.warehouseRepository.issueGoods(req.items);
+  /**
+   *
+   */
+  async receiveCustomerReturn(req: ReceiveReturnedRequest): Promise<void> {
+    await this.tx.run(async () => {
+      await this.repository.quarantine(req.items);
 
-    this.outboxRepository.save({
-      type: GoodsIssuedEventType,
-      payload: {
-        goodIds: [
-          ...req.items
-            .transform(
-              (item) => item.goodId,
-              (item) => item,
-            )
-            .toArray(),
-        ],
-      } satisfies GoodsIssuedEventPayload,
+      await this.outbox.save({
+        type: GoodsQuarantinedEventType,
+        payload: {
+          referenceId: req.returnId,
+          reason: "customer_return",
+          items: req.items,
+        } satisfies GoodsQuarantinedEventPayload,
+      });
     });
+  }
+
+  async issueGoods(req: GoodsIssuingRequest): Promise<void> {
+    await this.tx.run(async () => {
+      await this.repository.issue(req.items);
+
+      this.outbox.save({
+        type: GoodsIssuedEventType,
+        payload: {
+          goodIds: [...req.items.keys()],
+        } satisfies GoodsIssuedEventPayload,
+      });
+    });
+  }
+
+  resolveGoodId(req: GoodIdResolvingRequest): Promise<GoodIdResolvingResponse> {
+    throw new Error("Method not implemented.");
   }
 
   reserveStock(req: StockReservingRequest): Promise<void> {
@@ -85,7 +109,7 @@ export class WarehouseService implements WarehouseApi {
   getAvailableStocks(
     req: AvailableStocksRequest,
   ): Promise<AvailableStocksResponse> {
-    return this.warehouseRepository
+    return this.repository
       .getAvailableStocksByIds(req.goodIds)
       .then((stocks) => ({ stocks }));
   }
@@ -93,7 +117,7 @@ export class WarehouseService implements WarehouseApi {
   getAvailableStock(
     req: AvailableStockRequest,
   ): Promise<AvailableStockResponse> {
-    return this.warehouseRepository
+    return this.repository
       .getAvailableStocksByIds([req.goodId])
       .then((stocks) => ({ stock: stocks[req.goodId] }));
   }
@@ -118,32 +142,27 @@ export class WarehouseService implements WarehouseApi {
    *
    * @param req The goods receipt request containing the items to receive.
    */
-  async recordGoodsReceipt(req: GoodsReceptionRequest) {
-    await this.warehouseRepository.receiptGoods(req.items);
+  async receiptGoods(req: GoodsReceiptingRequest) {
+    await this.tx.run(async () => {
+      await this.repository.receipt(req.items);
 
-    this.outboxRepository.save({
-      type: GoodsReceiptedEventType,
-      payload: {
-        goodIds: [
-          ...req.items
-            .transform(
-              (item) => item.goodId,
-              (item) => item,
-            )
-            .toArray(),
-        ],
-      } satisfies GoodsReceiptedEventPayload,
+      this.outbox.save({
+        type: GoodsReceiptedEventType,
+        payload: {
+          goodIds: [...req.items.keys()],
+        } satisfies GoodsReceiptedEventPayload,
+      });
     });
   }
 
   async findGoodByBarcode(
     req: FindGoodByBarcodeRequest,
   ): Promise<FindGoodByBarcodeResponse> {
-    const good = await this.warehouseRepository.findGoodByBarcode(req.barcode);
+    const good = await this.repository.findGoodByBarcode(req.barcode);
     return { good };
   }
 
   async updateGoodData(req: GoodUpdateRequest) {
-    return this.warehouseRepository.updateGoodDetails(req.goodId, req.details);
+    return this.repository.updateGoodDetails(req.goodId, req.details);
   }
 }

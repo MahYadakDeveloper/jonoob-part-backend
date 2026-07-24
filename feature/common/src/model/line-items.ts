@@ -79,6 +79,16 @@ export class LineItems<T> implements Iterable<T> {
     return this.items.entries();
   }
 
+  indexedBy(keySelector: (item: T) => string): LineItems<T> {
+    const result = new LineItems<T>(keySelector);
+
+    for (const item of this) {
+      result.set(item);
+    }
+
+    return result;
+  }
+
   forEach(callback: (item: T, key: string) => void): void {
     this.items.forEach((item, key) => {
       callback(item, key);
