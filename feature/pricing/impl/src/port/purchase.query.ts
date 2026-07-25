@@ -1,4 +1,4 @@
-import { LineItems, Money } from "@feature/common";
+import { LeafProductRaw, LineItems, Money } from "@feature/common";
 
 export type PurchasePrice = {
   id: string;
@@ -9,10 +9,12 @@ export interface PurchaseQuery {
   /**
    *
    */
-  find(id: string): Promise<{ id: string; price: Money } | undefined>;
+  find(
+    product: LeafProductRaw,
+  ): Promise<{ id: string; price: Money } | undefined>;
 
   /**
    *
    */
-  findMany(ids: string[]): Promise<LineItems<PurchasePrice>>;
+  findMany(products: LeafProductRaw[]): Promise<LineItems<PurchasePrice>>;
 }

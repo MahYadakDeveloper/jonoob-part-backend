@@ -40,7 +40,7 @@ importers:
     dependencies:
       '@feature/warehouse':
         specifier: workspace:*
-        version: link:../../feature/warehouse
+        version: link:../../feature/warehouse/impl
       '@infra/warehouse-persistent':
         specifier: workspace:*
         version: link:../../infrastructure/persistent/warehouse
@@ -136,50 +136,38 @@ importers:
         specifier: ^8.20.0
         version: 8.61.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
 
-  feature/cashback:
-    dependencies:
-      '@feature/cashback-api':
-        specifier: workspace:*
-        version: link:api
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../common
-      '@feature/sale-api':
-        specifier: workspace:*
-        version: link:../sale/api
-      '@feature/wallet-api':
-        specifier: workspace:*
-        version: link:../wallet/api
-      '@nestjs/common':
-        specifier: ^11.1.27
-        version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/event-emitter':
-        specifier: ^3.1.0
-        version: 3.1.0(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
-
   feature/cashback/api:
     dependencies:
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
 
-  feature/catalog:
+  feature/cashback/impl:
+    dependencies:
+      '@feature/cashback-api':
+        specifier: workspace:*
+        version: link:../api
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
+      '@feature/sale-api':
+        specifier: workspace:*
+        version: link:../../sale/api
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:../../wallet/api
+      '@nestjs/common':
+        specifier: ^11.1.27
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/event-emitter':
+        specifier: ^3.1.0
+        version: 3.1.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+
+  feature/catalog/api:
     dependencies:
       '@feature/common':
         specifier: workspace:*
-        version: link:../common
-      '@feature/media-api':
-        specifier: workspace:*
-        version: link:../media/api
-      '@feature/pricing-api':
-        specifier: workspace:*
-        version: link:../pricing/api
-      '@feature/warehouse-api':
-        specifier: workspace:*
-        version: link:../warehouse/api
-      '@nestjs/common':
-        specifier: ^11.1.28
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: link:../../common
 
   feature/catalog/common:
     dependencies:
@@ -222,6 +210,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
+      '@feature/fitment-api':
+        specifier: workspace:*
+        version: link:../fitment/api
       '@feature/media-api':
         specifier: workspace:*
         version: link:../../media/api
@@ -235,53 +226,11 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
-  feature/catalog/src/common:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../common
-      '@feature/media-api':
-        specifier: workspace:*
-        version: link:../../../media/api
-      '@feature/pricing-api':
-        specifier: workspace:*
-        version: link:../../../pricing/api
-      '@feature/warehouse-api':
-        specifier: workspace:*
-        version: link:../../../warehouse/api
-      '@nestjs/common':
-        specifier: ^11.1.28
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-
-  feature/catalog/src/fitment/api:
-    dependencies:
-      '@feature/media-api':
-        specifier: workspace:*
-        version: link:../../../../media/api
-
-  feature/catalog/src/fitment/impl:
-    dependencies:
-      '@feature/fitment-api':
-        specifier: workspace:*
-        version: link:../api
-      '@feature/media-api':
-        specifier: workspace:*
-        version: link:../../../../media/api
-
   feature/common:
     dependencies:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
-
-  feature/customer:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../common
-      '@nestjs/common':
-        specifier: ^11.1.27
-        version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/customer/api:
     dependencies:
@@ -289,26 +238,14 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
-  feature/discount:
+  feature/customer/impl:
     dependencies:
       '@feature/common':
         specifier: workspace:*
-        version: link:../common
-      '@feature/discount-api':
-        specifier: workspace:*
-        version: link:api
-      '@feature/pricing-api':
-        specifier: workspace:*
-        version: link:../pricing/api
-      '@feature/sale-api':
-        specifier: workspace:*
-        version: link:../sale/api
+        version: link:../../common
       '@nestjs/common':
-        specifier: ^11.1.28
+        specifier: ^11.1.27
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/event-emitter':
-        specifier: ^3.1.0
-        version: 3.1.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
 
   feature/discount/api:
     dependencies:
@@ -316,24 +253,30 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
-  feature/media/api: {}
-
-  feature/media/impl: {}
-
-  feature/payment:
+  feature/discount/impl:
     dependencies:
       '@feature/common':
         specifier: workspace:*
-        version: link:../common
-      '@feature/payment-api':
+        version: link:../../common
+      '@feature/discount-api':
         specifier: workspace:*
-        version: link:api
-      '@feature/wallet-api':
+        version: link:../api
+      '@feature/pricing-api':
         specifier: workspace:*
-        version: link:../wallet/api
+        version: link:../../pricing/api
+      '@feature/sale-api':
+        specifier: workspace:*
+        version: link:../../sale/api
       '@nestjs/common':
-        specifier: ^11.1.27
-        version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/event-emitter':
+        specifier: ^3.1.0
+        version: 3.1.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+
+  feature/media/api: {}
+
+  feature/media/impl: {}
 
   feature/payment/api:
     dependencies:
@@ -341,23 +284,20 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
-  feature/pricing:
+  feature/payment/impl:
     dependencies:
       '@feature/common':
         specifier: workspace:*
-        version: link:../common
-      '@feature/discount-api':
+        version: link:../../common
+      '@feature/payment-api':
         specifier: workspace:*
-        version: link:../discount/api
-      '@feature/pricing-api':
+        version: link:../api
+      '@feature/wallet-api':
         specifier: workspace:*
-        version: link:api
+        version: link:../../wallet/api
       '@nestjs/common':
         specifier: ^11.1.27
-        version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/pricing/api:
     dependencies:
@@ -365,50 +305,71 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
-  feature/procurement:
+  feature/pricing/impl:
+    dependencies:
+      '@feature/catalog-api':
+        specifier: workspace:*
+        version: link:../../catalog/api
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
+      '@feature/discount-api':
+        specifier: workspace:*
+        version: link:../../discount/api
+      '@feature/pricing-api':
+        specifier: workspace:*
+        version: link:../api
+      '@nestjs/common':
+        specifier: ^11.1.27
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  feature/procurement/impl:
     dependencies:
       '@feature/warehouse-api':
         specifier: workspace:*
-        version: link:../warehouse/api
+        version: link:../../warehouse/api
       '@nestjs/common':
         specifier: ^11.1.26
-        version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/event-emitter':
         specifier: ^3.1.0
-        version: 3.1.0(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+        version: 3.1.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
 
-  feature/recommendation:
+  feature/recommendation/impl:
     dependencies:
       '@feature/cashback-api':
         specifier: workspace:*
-        version: link:../cashback/api
+        version: link:../../cashback/api
       '@feature/common':
         specifier: workspace:*
-        version: link:../common
+        version: link:../../common
       '@feature/discount-api':
         specifier: workspace:*
-        version: link:../discount/api
+        version: link:../../discount/api
       '@feature/payment-api':
         specifier: workspace:*
-        version: link:../payment/api
+        version: link:../../payment/api
       '@feature/pricing-api':
         specifier: workspace:*
-        version: link:../pricing/api
+        version: link:../../pricing/api
       '@feature/sale-api':
         specifier: workspace:*
-        version: link:../sale/api
+        version: link:../../sale/api
       '@feature/settlement-api':
         specifier: workspace:*
-        version: link:../settlement/api
+        version: link:../../settlement/api
       '@feature/tax-api':
         specifier: workspace:*
-        version: link:../tax/api
+        version: link:../../tax/api
       '@feature/wallet-api':
         specifier: workspace:*
-        version: link:../wallet/api
+        version: link:../../wallet/api
       '@feature/warehouse-api':
         specifier: workspace:*
-        version: link:../warehouse/api
+        version: link:../../warehouse/api
       '@nestjs/common':
         specifier: ^11.1.27
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -429,41 +390,43 @@ importers:
         specifier: ^8.61.0
         version: 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2)
 
-  feature/sale:
+  feature/sale/api: {}
+
+  feature/sale/impl:
     dependencies:
       '@feature/cashback-api':
         specifier: workspace:*
-        version: link:../cashback/api
+        version: link:../../cashback/api
       '@feature/common':
         specifier: workspace:*
-        version: link:../common
+        version: link:../../common
       '@feature/discount-api':
         specifier: workspace:*
-        version: link:../discount/api
+        version: link:../../discount/api
       '@feature/payment-api':
         specifier: workspace:*
-        version: link:../payment/api
+        version: link:../../payment/api
       '@feature/pricing-api':
         specifier: workspace:*
-        version: link:../pricing/api
+        version: link:../../pricing/api
       '@feature/sale-api':
         specifier: workspace:*
-        version: link:api
+        version: link:../api
       '@feature/settlement-api':
         specifier: workspace:*
-        version: link:../settlement/api
+        version: link:../../settlement/api
       '@feature/tax-api':
         specifier: workspace:*
-        version: link:../tax/api
+        version: link:../../tax/api
       '@feature/wallet-api':
         specifier: workspace:*
-        version: link:../wallet/api
+        version: link:../../wallet/api
       '@feature/warehouse-api':
         specifier: workspace:*
-        version: link:../warehouse/api
+        version: link:../../warehouse/api
       '@nestjs/common':
         specifier: ^11.1.27
-        version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -473,33 +436,13 @@ importers:
         version: 9.39.4
       '@nestjs/testing':
         specifier: ^11.1.27
-        version: 11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+        version: 11.1.27(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
       globals:
         specifier: ^17.6.0
         version: 17.7.0
       typescript-eslint:
         specifier: ^8.61.0
-        version: 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
-
-  feature/sale/api: {}
-
-  feature/settlement:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../common
-      '@feature/settlement-api':
-        specifier: workspace:*
-        version: link:api
-      '@feature/wallet':
-        specifier: workspace:*
-        version: link:../wallet
-      '@feature/wallet-api':
-        specifier: workspace:*
-        version: link:../wallet/api
-      '@nestjs/common':
-        specifier: ^11.1.28
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2)
 
   feature/settlement/api:
     dependencies:
@@ -507,14 +450,23 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
-  feature/tax:
+  feature/settlement/impl:
     dependencies:
       '@feature/common':
         specifier: workspace:*
-        version: link:../common
-      '@feature/tax-api':
+        version: link:../../common
+      '@feature/settlement-api':
         specifier: workspace:*
-        version: link:api
+        version: link:../api
+      '@feature/wallet':
+        specifier: workspace:*
+        version: link:../../wallet/impl
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:../../wallet/api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/tax/api:
     dependencies:
@@ -522,11 +474,14 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
-  feature/wallet:
+  feature/tax/impl:
     dependencies:
-      '@feature/wallet-api':
+      '@feature/common':
         specifier: workspace:*
-        version: link:api
+        version: link:../../common
+      '@feature/tax-api':
+        specifier: workspace:*
+        version: link:../api
 
   feature/wallet/api:
     dependencies:
@@ -534,30 +489,42 @@ importers:
         specifier: workspace:*
         version: link:../../common
 
-  feature/warehouse:
+  feature/wallet/impl:
+    dependencies:
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:../api
+
+  feature/warehouse/api:
     dependencies:
       '@feature/common':
         specifier: workspace:*
-        version: link:../common
+        version: link:../../common
+
+  feature/warehouse/impl:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
       '@feature/warehouse-api':
         specifier: workspace:*
-        version: link:api
+        version: link:../api
       '@nestjs/common':
         specifier: ^11.1.26
-        version: 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/event-emitter':
         specifier: ^3.1.0
-        version: 3.1.0(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+        version: 3.1.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
       redis:
         specifier: ^6.0.1
         version: 6.0.1
     devDependencies:
       '@nestjs/config':
         specifier: ^4.0.4
-        version: 4.0.4(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+        version: 4.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/testing':
         specifier: ^11.1.26
-        version: 11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+        version: 11.1.27(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
@@ -570,12 +537,6 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
-
-  feature/warehouse/api:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../common
 
   infrastructure/database/elasticsearch: {}
 
@@ -620,10 +581,10 @@ importers:
         version: link:../../feature/common
       '@feature/tax':
         specifier: workspace:*
-        version: link:../../feature/tax
+        version: link:../../feature/tax/impl
       '@feature/warehouse':
         specifier: workspace:*
-        version: link:../../feature/warehouse
+        version: link:../../feature/warehouse/impl
       '@infra/common-persistent':
         specifier: workspace:*
         version: link:../persistent/common
@@ -708,7 +669,7 @@ importers:
     dependencies:
       '@feature/tax':
         specifier: workspace:*
-        version: link:../../../feature/tax
+        version: link:../../../feature/tax/impl
 
   infrastructure/persistent/warehouse:
     dependencies:
@@ -717,7 +678,7 @@ importers:
         version: link:../../../feature/common
       '@feature/warehouse':
         specifier: workspace:*
-        version: link:../../../feature/warehouse
+        version: link:../../../feature/warehouse/impl
       '@infra/common-persistent':
         specifier: workspace:*
         version: link:../common
@@ -739,7 +700,7 @@ importers:
     dependencies:
       '@feature/warehouse':
         specifier: workspace:*
-        version: link:../../feature/warehouse
+        version: link:../../feature/warehouse/impl
       '@nestjs/common':
         specifier: ^11.1.27
         version: 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -5538,17 +5499,17 @@ snapshots:
       lodash: 4.18.1
       rxjs: 7.8.1
 
-  '@nestjs/config@4.0.4(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
+  '@nestjs/config@4.0.4(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
-      '@nestjs/common': 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/common': 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
       dotenv: 17.4.1
       dotenv-expand: 12.0.3
       lodash: 4.18.1
       rxjs: 7.8.2
 
-  '@nestjs/config@4.0.4(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
+  '@nestjs/config@4.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
-      '@nestjs/common': 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/common': 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
       dotenv: 17.4.1
       dotenv-expand: 12.0.3
       lodash: 4.18.1
@@ -5565,28 +5526,6 @@ snapshots:
       tslib: 2.8.1
       uid: 2.0.2
 
-  '@nestjs/core@11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)':
-    dependencies:
-      '@nestjs/common': 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      fast-safe-stringify: 2.1.1
-      iterare: 1.2.1
-      path-to-regexp: 8.4.2
-      reflect-metadata: 0.2.2
-      rxjs: 7.8.2
-      tslib: 2.8.1
-      uid: 2.0.2
-
-  '@nestjs/core@11.1.26(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)':
-    dependencies:
-      '@nestjs/common': 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      fast-safe-stringify: 2.1.1
-      iterare: 1.2.1
-      path-to-regexp: 8.4.2
-      reflect-metadata: 0.2.2
-      rxjs: 7.8.2
-      tslib: 2.8.1
-      uid: 2.0.2
-
   '@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -5597,18 +5536,6 @@ snapshots:
       rxjs: 7.8.2
       tslib: 2.8.1
       uid: 2.0.2
-
-  '@nestjs/event-emitter@3.1.0(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
-    dependencies:
-      '@nestjs/common': 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      eventemitter2: 6.4.9
-
-  '@nestjs/event-emitter@3.1.0(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
-    dependencies:
-      '@nestjs/common': 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 11.1.26(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      eventemitter2: 6.4.9
 
   '@nestjs/event-emitter@3.1.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
     dependencies:
@@ -5654,18 +5581,6 @@ snapshots:
     dependencies:
       '@nestjs/common': 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.1)
       '@nestjs/core': 11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
-      tslib: 2.8.1
-
-  '@nestjs/testing@11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
-    dependencies:
-      '@nestjs/common': 11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 11.1.26(@nestjs/common@11.1.26(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      tslib: 2.8.1
-
-  '@nestjs/testing@11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
-    dependencies:
-      '@nestjs/common': 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 11.1.26(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
       tslib: 2.8.1
 
   '@nestjs/testing@11.1.27(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
@@ -6037,22 +5952,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/eslint-plugin@8.62.1(@typescript-eslint/parser@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2))(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)':
-    dependencies:
-      '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2)
-      '@typescript-eslint/scope-manager': 8.62.1
-      '@typescript-eslint/type-utils': 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
-      '@typescript-eslint/visitor-keys': 8.62.1
-      eslint: 9.39.4(jiti@2.7.0)
-      ignore: 7.0.5
-      natural-compare: 1.4.0
-      ts-api-utils: 2.5.0(typescript@6.0.3)
-      typescript: 6.0.3
-    transitivePeerDependencies:
-      - supports-color
-
   '@typescript-eslint/eslint-plugin@8.62.1(@typescript-eslint/parser@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2))(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
@@ -6081,18 +5980,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)':
-    dependencies:
-      '@typescript-eslint/scope-manager': 8.62.1
-      '@typescript-eslint/types': 8.62.1
-      '@typescript-eslint/typescript-estree': 8.62.1(typescript@6.0.3)
-      '@typescript-eslint/visitor-keys': 8.62.1
-      debug: 4.4.3
-      eslint: 9.39.4(jiti@2.7.0)
-      typescript: 6.0.3
-    transitivePeerDependencies:
-      - supports-color
-
   '@typescript-eslint/parser@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2)':
     dependencies:
       '@typescript-eslint/scope-manager': 8.62.1
@@ -6111,15 +5998,6 @@ snapshots:
       '@typescript-eslint/types': 8.61.0
       debug: 4.4.3
       typescript: 5.9.3
-    transitivePeerDependencies:
-      - supports-color
-
-  '@typescript-eslint/project-service@8.62.1(typescript@6.0.3)':
-    dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.62.1(typescript@6.0.3)
-      '@typescript-eslint/types': 8.62.1
-      debug: 4.4.3
-      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
@@ -6146,10 +6024,6 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  '@typescript-eslint/tsconfig-utils@8.62.1(typescript@6.0.3)':
-    dependencies:
-      typescript: 6.0.3
-
   '@typescript-eslint/tsconfig-utils@8.62.1(typescript@7.0.2)':
     dependencies:
       typescript: 7.0.2
@@ -6163,18 +6037,6 @@ snapshots:
       eslint: 9.39.4(jiti@2.7.0)
       ts-api-utils: 2.5.0(typescript@5.9.3)
       typescript: 5.9.3
-    transitivePeerDependencies:
-      - supports-color
-
-  '@typescript-eslint/type-utils@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)':
-    dependencies:
-      '@typescript-eslint/types': 8.62.1
-      '@typescript-eslint/typescript-estree': 8.62.1(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
-      debug: 4.4.3
-      eslint: 9.39.4(jiti@2.7.0)
-      ts-api-utils: 2.5.0(typescript@6.0.3)
-      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
@@ -6209,21 +6071,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/typescript-estree@8.62.1(typescript@6.0.3)':
-    dependencies:
-      '@typescript-eslint/project-service': 8.62.1(typescript@6.0.3)
-      '@typescript-eslint/tsconfig-utils': 8.62.1(typescript@6.0.3)
-      '@typescript-eslint/types': 8.62.1
-      '@typescript-eslint/visitor-keys': 8.62.1
-      debug: 4.4.3
-      minimatch: 10.2.5
-      semver: 7.8.5
-      tinyglobby: 0.2.17
-      ts-api-utils: 2.5.0(typescript@6.0.3)
-      typescript: 6.0.3
-    transitivePeerDependencies:
-      - supports-color
-
   '@typescript-eslint/typescript-estree@8.62.1(typescript@7.0.2)':
     dependencies:
       '@typescript-eslint/project-service': 8.62.1(typescript@7.0.2)
@@ -6247,17 +6094,6 @@ snapshots:
       '@typescript-eslint/typescript-estree': 8.61.0(typescript@5.9.3)
       eslint: 9.39.4(jiti@2.7.0)
       typescript: 5.9.3
-    transitivePeerDependencies:
-      - supports-color
-
-  '@typescript-eslint/utils@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)':
-    dependencies:
-      '@eslint-community/eslint-utils': 4.9.1(eslint@9.39.4(jiti@2.7.0))
-      '@typescript-eslint/scope-manager': 8.62.1
-      '@typescript-eslint/types': 8.62.1
-      '@typescript-eslint/typescript-estree': 8.62.1(typescript@6.0.3)
-      eslint: 9.39.4(jiti@2.7.0)
-      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
@@ -8683,10 +8519,6 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  ts-api-utils@2.5.0(typescript@6.0.3):
-    dependencies:
-      typescript: 6.0.3
-
   ts-api-utils@2.5.0(typescript@7.0.2):
     dependencies:
       typescript: 7.0.2
@@ -8813,17 +8645,6 @@ snapshots:
       '@typescript-eslint/utils': 8.61.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       eslint: 9.39.4(jiti@2.7.0)
       typescript: 5.9.3
-    transitivePeerDependencies:
-      - supports-color
-
-  typescript-eslint@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3):
-    dependencies:
-      '@typescript-eslint/eslint-plugin': 8.62.1(@typescript-eslint/parser@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2))(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
-      '@typescript-eslint/parser': 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
-      '@typescript-eslint/typescript-estree': 8.62.1(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
-      eslint: 9.39.4(jiti@2.7.0)
-      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 

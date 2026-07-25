@@ -2,10 +2,9 @@ import { Money } from "@feature/common";
 import { type PricingApi } from "@feature/pricing-api";
 import { type WarehouseApi } from "@feature/warehouse-api";
 import {
-  EnrichedData,
-  PopulatedData,
   PopulatedProduct,
   ProductRaw,
+  Specifications,
 } from "model/product";
 
 export class CatalogService {
@@ -18,76 +17,76 @@ export class CatalogService {
    * Infra Note For future: use redis for this.
    * This method is responsible for enriching information such as price, stock, discounts, and more.
    */
-  private async enrich(
-    product: ProductRaw,
-  ): Promise<ProductRaw & { enriched: EnrichedData }> {
-    if (product.kind === "leaf") {
-      const leaf = product;
+  // private async enrich(
+  //   product: ProductRaw,
+  // ): Promise<ProductRaw & { enriched: EnrichedData }> {
+  //   if (product.kind === "leaf") {
+  //     const leaf = product;
 
-      // stock + details
-      const [{ good }, { price }] = await Promise.all([
-        this.warehouse.getWarehouseView({
-          goodId: leaf.goodId,
-        }),
-        this.pricing.priceProduct({ productId: leaf.id }),
-      ]);
+  //     // stock + details
+  //     const [{ good }, { price }] = await Promise.all([
+  //       this.warehouse.getWarehouseView({
+  //         goodId: leaf.goodId,
+  //       }),
+  //       this.pricing.priceProduct({ productId: leaf.id }),
+  //     ]);
 
-      return {
-        ...leaf,
-        enriched: {
-          price,
-          stock: good.stock,
-          storageLocation: good.storageLocation,
-          unitOfMeasure: good.unitOfMeasure,
-        },
-      };
-    }
+  //     return {
+  //       ...leaf,
+  //       enriched: {
+  //         price,
+  //         stock: good.stock,
+  //         storageLocation: good.storageLocation,
+  //         unitOfMeasure: good.unitOfMeasure,
+  //       },
+  //     };
+  //   }
 
-    const bundle = product;
-    const bundleItemsByGoodId = bundle.items.indexedBy((x) => x.goodId);
-    const bundleItemsByProductId = bundle.items.indexedBy((x) => x.productId);
-    const goodIds = [...bundleItemsByGoodId.keys()];
-    const productIds = [...bundleItemsByProductId.keys()];
+  //   const bundle = product;
+  //   const bundleItemsByGoodId = bundle.items.indexedBy((x) => x.goodId);
+  //   const bundleItemsByProductId = bundle.items.indexedBy((x) => x.productId);
+  //   const goodIds = [...bundleItemsByGoodId.keys()];
+  //   const productIds = [...bundleItemsByProductId.keys()];
 
-    // warehouse + pricing
-    const [{ stocks }, { prices }] = await Promise.all([
-      this.warehouse.getGoodStocks({
-        goodIds,
-      }),
-      this.pricing.priceManyProduct({
-        productIds,
-      }),
-    ]);
+  //   // warehouse + pricing
+  //   const [{ stocks }, { prices }] = await Promise.all([
+  //     this.warehouse.getGoodStocks({
+  //       goodIds,
+  //     }),
+  //     this.pricing.priceManyProduct({
+  //       productIds,
+  //     }),
+  //   ]);
 
-    const stock = stocks.reduce((minBundleStock, item) => {
-      const quantity = bundleItemsByGoodId.getOrThrow(item.goodId).quantity;
+  //   const stock = stocks.reduce((minBundleStock, item) => {
+  //     const quantity = bundleItemsByGoodId.getOrThrow(item.goodId).quantity;
 
-      return Math.min(minBundleStock, Math.floor(item.stock / quantity));
-    }, 0);
+  //     return Math.min(minBundleStock, Math.floor(item.stock / quantity));
+  //   }, 0);
 
-    const price = prices.reduce((bundlePrice, itemPrice) => {
-      return bundlePrice.add(
-        itemPrice.price.multiply(
-          bundleItemsByProductId.getOrThrow(itemPrice.productId).quantity,
-        ),
-      );
-    }, Money.zero());
+  //   const price = prices.reduce((bundlePrice, itemPrice) => {
+  //     return bundlePrice.add(
+  //       itemPrice.price.multiply(
+  //         bundleItemsByProductId.getOrThrow(itemPrice.productId).quantity,
+  //       ),
+  //     );
+  //   }, Money.zero());
 
-    return {
-      ...bundle,
-      enriched: {
-        price,
-        stock,
-      },
-    };
-  }
+  //   return {
+  //     ...bundle,
+  //     enriched: {
+  //       price,
+  //       stock,
+  //     },
+  //   };
+  // }
 
   /**
    * Infra Note For future: use redis for this.
    * This method is responsible for populating information such as display name, description, images, and more.
    */
   private async populate<
-    S extends Partial<Record<keyof PopulatedData, boolean>>,
+    S extends Partial<Record<keyof Specifications, boolean>>,
   >(product: ProductRaw, select: S): Promise<PopulatedProduct<S>> {
     throw new Error("");
   }
@@ -115,6 +114,7 @@ export class CatalogService {
    * }
    */
   findById(): Promise<Product> {
+    const x: ProductRaw
     throw new Error("Method not implemented yet!");
   }
   findManyById(): Promise<Product> {

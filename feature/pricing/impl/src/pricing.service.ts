@@ -1,3 +1,4 @@
+import { type CatalogApi } from "@feature/catalog-api";
 import {
   AppliedDiscount,
   CustomerType,
@@ -5,6 +6,8 @@ import {
   InvoiceSummary,
   LineItems,
   Money,
+  ProductRaw,
+  RawProduct,
 } from "@feature/common";
 import {
   ApplicableCampaignDiscount,
@@ -15,9 +18,9 @@ import {
 import {
   InvoicePricingRequest,
   InvoicePricingResponse,
-  PricingApi,
   ManyProductPricingRequest,
   ManyProductPricingResponse,
+  PricingApi,
   PricingPolicyReq,
   PricingPolicyRes,
   ProductPricingRequest,
@@ -31,7 +34,6 @@ import { PurchasePriceNotFoundError } from "./errors/purchase-price-not-found.er
 import { BundleComponentInvoiceItem } from "./model/bundle-component-invoice-item";
 import { type CustomerQuery } from "./port/customer.query";
 import { type MarkupPolicyProvider } from "./port/markup-policy.provider";
-import { Product, type ProductQuery } from "./port/product.query";
 import { PurchasePrice, type PurchaseQuery } from "./port/purchase.query";
 
 @Injectable()
@@ -40,11 +42,11 @@ export class PricingService implements PricingApi {
     private readonly markupPolicyProvider: MarkupPolicyProvider,
     private readonly discount: DiscountApi,
     private readonly customerQuery: CustomerQuery,
-    private readonly productQuery: ProductQuery,
+    private readonly catalog: CatalogApi,
     private readonly purchaseQuery: PurchaseQuery,
   ) {}
 
-  private resolvePolicy(customerType: string) {
+  private resolvePolicy(customerType: CustomerType) {
     return customerType === "merchant" ? "wholesale" : "retail";
   }
 
@@ -73,15 +75,18 @@ export class PricingService implements PricingApi {
 
   // TODO Note this is not complete yet, complete it then
   async priceManyProduct({
-    items,
-    policy,
+    productIds,
   }: ManyProductPricingRequest): Promise<ManyProductPricingResponse> {
+
+    // TODO Later add in this api request priceFor: CustomerType then use it here
+const policy = this.resolvePolicy("consumer");
     const markup = await this.markupPolicyProvider.resolve(policy);
 
-    // Resolving product
-    const products = await this.productQuery.findMany([...items.keys()]);
 
-    for (const productId of items.keys()) {
+    // products
+    const {products} = await this.catalog.getRawProducts({productIds});
+
+    for (const productId of productIds) {
       if (!products.has(productId)) throw new ProductNotFoundError(productId);
     }
 
@@ -96,8 +101,15 @@ export class PricingService implements PricingApi {
     }>((item) => item.productId);
 
     for (const product of products) {
+      const price = prices.reduce((bundlePrice, itemPrice) => {
+        return bundlePrice.add(
+          itemPrice.price.multiply(
+            bundleItemsByProductId.getOrThrow(itemPrice.productId).quantity,
+          ),
+        );
+      }, Money.zero());
       const price =
-        product.kind === "product"
+        product.kind === "leaf"
           ? this.calculateUnitPrice(
               leafPurchasePrices.getOrThrow(
                 product.id,
@@ -129,7 +141,7 @@ export class PricingService implements PricingApi {
     customerId,
   }: InvoicePricingRequest): Promise<InvoicePricingResponse> {
     // Getting products
-    const products = await this.productQuery.findMany([...items.keys()]);
+    const {products} = await this.catalog.getRawProducts({productIds: [...items.keys()]});
     for (const item of items) {
       if (!products.has(item.productId)) {
         throw new ProductNotFoundError(item.productId);
@@ -406,13 +418,13 @@ export class PricingService implements PricingApi {
     );
   }
 
-  private collectLeafProductIds(products: Iterable<Product>): string[] {
+  private collectLeafProductIds(products: Iterable<RawProduct>): string[] {
     const ids: string[] = [];
 
     for (const product of products) {
       if (product.kind === "bundle") {
         for (const item of product.items) {
-          ids.push(item.id);
+          ids.push(item.goodId);
         }
       } else {
         ids.push(product.id);

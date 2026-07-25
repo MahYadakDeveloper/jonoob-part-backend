@@ -1,7 +1,8 @@
-import { FitmentDto } from "./fitment";
+import { FitmentRequest } from "./fitment.requests";
+import { FitmentResponse } from "./fitment.responses";
 
 export interface FitmentApi {
-  fitment(id: string): Promise<FitmentDto>;
+  fitment(request: FitmentRequest): Promise<FitmentResponse>;
   createFitment(): Promise<void>;
   updateFitment(): Promise<void>;
   deleteFitment(): Promise<void>;

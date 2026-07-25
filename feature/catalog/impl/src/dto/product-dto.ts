@@ -1,7 +1,7 @@
 export interface ProductDto {
   displayName: string
   brand: Brand
-  category: Category
+  taxonomy: Taxonomy
   fitment: FitmentDto
-  ...
+// ...
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@feature/pricing",
+  "name": "@feature/catalog-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,11 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/catalog-api": "workspace:*",
-    "@feature/common": "workspace:*",
-    "@feature/discount-api": "workspace:*",
-    "@feature/pricing-api": "workspace:*",
-    "@nestjs/common": "^11.1.27",
-    "zod": "^4.4.3"
+    "@feature/common": "workspace:*"
   }
 }
