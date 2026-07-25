@@ -1,7 +1,6 @@
-import { MediaRef } from "@feature/media-api";
+import { MediaRef } from "@feature/common";
 
-// dto
-export interface FitmentDto {
+export interface FitmentOutputDto {
   make: {
     name: string;
     logo: MediaRef;

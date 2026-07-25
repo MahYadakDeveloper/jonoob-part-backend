@@ -170,7 +170,7 @@ importers:
         version: link:../common
       '@feature/media-api':
         specifier: workspace:*
-        version: link:src/media/api
+        version: link:../media/api
       '@feature/pricing-api':
         specifier: workspace:*
         version: link:../pricing/api
@@ -181,28 +181,92 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
-  feature/catalog/fitment: {}
+  feature/catalog/common:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
+      '@feature/media-api':
+        specifier: workspace:*
+        version: link:../../media/api
+      '@feature/pricing-api':
+        specifier: workspace:*
+        version: link:../../pricing/api
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../../warehouse/api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
-  feature/catalog/fitment/api: {}
+  feature/catalog/fitment/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+      '@feature/media-api':
+        specifier: workspace:*
+        version: link:../../../media/api
 
-  feature/catalog/media: {}
-
-  feature/catalog/media/api: {}
-
-  feature/catalog/src/fitment:
+  feature/catalog/fitment/impl:
     dependencies:
       '@feature/fitment-api':
         specifier: workspace:*
-        version: link:api
+        version: link:../api
       '@feature/media-api':
         specifier: workspace:*
-        version: link:../media/api
+        version: link:../../../media/api
 
-  feature/catalog/src/fitment/api: {}
+  feature/catalog/impl:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
+      '@feature/media-api':
+        specifier: workspace:*
+        version: link:../../media/api
+      '@feature/pricing-api':
+        specifier: workspace:*
+        version: link:../../pricing/api
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../../warehouse/api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
-  feature/catalog/src/media: {}
+  feature/catalog/src/common:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+      '@feature/media-api':
+        specifier: workspace:*
+        version: link:../../../media/api
+      '@feature/pricing-api':
+        specifier: workspace:*
+        version: link:../../../pricing/api
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../../../warehouse/api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
-  feature/catalog/src/media/api: {}
+  feature/catalog/src/fitment/api:
+    dependencies:
+      '@feature/media-api':
+        specifier: workspace:*
+        version: link:../../../../media/api
+
+  feature/catalog/src/fitment/impl:
+    dependencies:
+      '@feature/fitment-api':
+        specifier: workspace:*
+        version: link:../api
+      '@feature/media-api':
+        specifier: workspace:*
+        version: link:../../../../media/api
 
   feature/common:
     dependencies:
@@ -251,6 +315,10 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
+
+  feature/media/api: {}
+
+  feature/media/impl: {}
 
   feature/payment:
     dependencies:
@@ -620,12 +688,6 @@ importers:
       '@nestjs/bullmq':
         specifier: ^11.0.4
         version: 11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.80.5(redis@6.0.1))
-      '@nestjs/common':
-        specifier: ^11.1.28
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-
-  infrastructure/persistent:
-    dependencies:
       '@nestjs/common':
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)

@@ -1,0 +1,26 @@
+{
+  "name": "@feature/catalog-common",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "_build": "pnpm exec tsc",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "private": true,
+  "dependencies": {
+    "@feature/common": "workspace:*",
+    "@feature/media-api": "workspace:*",
+    "@feature/pricing-api": "workspace:*",
+    "@feature/warehouse-api": "workspace:*",
+    "@nestjs/common": "^11.1.28"
+  }
+}
