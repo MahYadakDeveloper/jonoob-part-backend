@@ -1,9 +1,8 @@
-import { Money } from "@feature/common";
+import { Money, RawProduct } from "@feature/common";
 import { type PricingApi } from "@feature/pricing-api";
 import { type WarehouseApi } from "@feature/warehouse-api";
 import {
   PopulatedProduct,
-  ProductRaw,
   Specifications,
 } from "model/product";
 
@@ -87,7 +86,7 @@ export class CatalogService {
    */
   private async populate<
     S extends Partial<Record<keyof Specifications, boolean>>,
-  >(product: ProductRaw, select: S): Promise<PopulatedProduct<S>> {
+  >(product: RawProduct, select: S): Promise<PopulatedProduct<S>> {
     throw new Error("");
   }
 
@@ -114,7 +113,6 @@ export class CatalogService {
    * }
    */
   findById(): Promise<Product> {
-    const x: ProductRaw
     throw new Error("Method not implemented yet!");
   }
   findManyById(): Promise<Product> {

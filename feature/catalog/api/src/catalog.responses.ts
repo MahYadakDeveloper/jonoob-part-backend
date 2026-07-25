@@ -1,5 +1,5 @@
-import { LineItems, ProductRaw } from "@feature/common";
+import { LineItems, RawProduct } from "@feature/common";
 
 export interface RawProductsResponse {
-  products: LineItems<ProductRaw>;
+  products: LineItems<RawProduct>;
 }

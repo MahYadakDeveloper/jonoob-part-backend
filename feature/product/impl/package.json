@@ -1,5 +1,5 @@
 {
-  "name": "@feature/catalog",
+  "name": "@feature/sale",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,12 +17,23 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/brand-api": "workspace:*",
+    "@feature/cashback-api": "workspace:*",
     "@feature/common": "workspace:*",
-    "@feature/fitment-api": "workspace:*",
-    "@feature/media-api": "workspace:*",
+    "@feature/discount-api": "workspace:*",
+    "@feature/payment-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
+    "@feature/sale-api": "workspace:*",
+    "@feature/settlement-api": "workspace:*",
+    "@feature/tax-api": "workspace:*",
+    "@feature/wallet-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "^11.1.28"
+    "@nestjs/common": "^11.1.27",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@nestjs/testing": "^11.1.27",
+    "globals": "^17.6.0",
+    "typescript-eslint": "^8.61.0"
   }
 }

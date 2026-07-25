@@ -1,4 +1,5 @@
-import { ProductRaw } from "@feature/common";
+import { Brand } from "@feature/brand-api";
+import { RawProduct } from "@feature/common";
 import { Fitment } from "@feature/fitment-api";
 
 // export type EnrichedData = {
@@ -25,7 +26,7 @@ export type ProductReferences = {
   fitmentIds: string[];
 };
 
-export type Product = ProductRaw & {
+export type Product = RawProduct & {
   displayName: string; // this is generated base on technical
   canonicalName: string; // model-[...variants], we do not doing search base on this
 
@@ -54,6 +55,6 @@ export type Selected<T, S extends Partial<Record<keyof T, boolean>>> = Pick<
 
 export type PopulatedProduct<
   S extends Partial<Record<keyof Specifications, boolean>>,
-> = ProductRaw & {
+> = RawProduct & {
   populated: Selected<Specifications, S>;
 };

@@ -6,7 +6,6 @@ import {
   InvoiceSummary,
   LineItems,
   Money,
-  ProductRaw,
   RawProduct,
 } from "@feature/common";
 import {
@@ -58,18 +57,13 @@ export class PricingService implements PricingApi {
     return { policy: this.resolvePolicy(customerType) };
   }
 
-  // TODO Note this is not complete yet, complete it then
   async priceProduct({
-    item,
-    policy,
+    productId,
   }: ProductPricingRequest): Promise<ProductPricingResponse> {
-    const { prices } = await this.priceManyProduct({
-      items: [item].toLineItems((x) => x.productId),
-      policy,
-    });
+    const { prices } = await this.priceManyProduct({ productIds: [productId] });
 
     return {
-      price: prices.getOrThrow(item.productId).price,
+      price: prices.getOrThrow(productId).price,
     };
   }
 
@@ -77,14 +71,12 @@ export class PricingService implements PricingApi {
   async priceManyProduct({
     productIds,
   }: ManyProductPricingRequest): Promise<ManyProductPricingResponse> {
-
     // TODO Later add in this api request priceFor: CustomerType then use it here
-const policy = this.resolvePolicy("consumer");
+    const policy = this.resolvePolicy("consumer");
     const markup = await this.markupPolicyProvider.resolve(policy);
 
-
     // products
-    const {products} = await this.catalog.getRawProducts({productIds});
+    const { products } = await this.catalog.getRawProducts({ productIds });
 
     for (const productId of productIds) {
       if (!products.has(productId)) throw new ProductNotFoundError(productId);
@@ -101,34 +93,31 @@ const policy = this.resolvePolicy("consumer");
     }>((item) => item.productId);
 
     for (const product of products) {
-      const price = prices.reduce((bundlePrice, itemPrice) => {
+      if (product.kind === "leaf") {
+        const price = this.calculateUnitPrice(
+          leafPurchasePrices.getOrThrow(
+            product.goodId,
+            (id) => new PurchasePriceNotFoundError(id),
+          ).price,
+          markup,
+        );
+        prices.set({ productId: product.id, price });
+        continue;
+      }
+
+      const bundle = product;
+      const price = bundle.items.reduce((bundlePrice, item) => {
+        const purchasePrice = leafPurchasePrices.getOrThrow(
+          item.goodId,
+          (id) => new PurchasePriceNotFoundError(id),
+        ).price;
+
         return bundlePrice.add(
-          itemPrice.price.multiply(
-            bundleItemsByProductId.getOrThrow(itemPrice.productId).quantity,
+          this.calculateUnitPrice(purchasePrice, markup).multiply(
+            item.quantity,
           ),
         );
       }, Money.zero());
-      const price =
-        product.kind === "leaf"
-          ? this.calculateUnitPrice(
-              leafPurchasePrices.getOrThrow(
-                product.id,
-                (id) => new PurchasePriceNotFoundError(id),
-              ).price,
-              markup,
-            )
-          : product.items.reduce((total, item) => {
-              const purchasePrice = leafPurchasePrices.getOrThrow(
-                item.id,
-                (id) => new PurchasePriceNotFoundError(id),
-              ).price;
-
-              return total.add(
-                this.calculateUnitPrice(purchasePrice, markup).multiply(
-                  item.qty,
-                ),
-              );
-            }, Money.zero());
 
       prices.set({ productId: product.id, price });
     }
@@ -141,7 +130,9 @@ const policy = this.resolvePolicy("consumer");
     customerId,
   }: InvoicePricingRequest): Promise<InvoicePricingResponse> {
     // Getting products
-    const {products} = await this.catalog.getRawProducts({productIds: [...items.keys()]});
+    const { products } = await this.catalog.getRawProducts({
+      productIds: [...items.keys()],
+    });
     for (const item of items) {
       if (!products.has(item.productId)) {
         throw new ProductNotFoundError(item.productId);
