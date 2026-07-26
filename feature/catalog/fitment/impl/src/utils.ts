@@ -1,14 +1,14 @@
-import { FitmentNodeDeep, FitmentRootNode } from "./model/fitment";
+import { FitmentHierarchyNode, FitmentRootNode } from './model/fitment';
 
 export function* ancestors(
-  node: FitmentNodeDeep,
-): Generator<FitmentNodeDeep | FitmentRootNode> {
-  let current: FitmentNodeDeep | FitmentRootNode = node;
+  node: FitmentHierarchyNode,
+): Generator<FitmentHierarchyNode | FitmentRootNode> {
+  let current: FitmentHierarchyNode | FitmentRootNode = node;
 
   while (true) {
     yield current;
 
-    if (current.type === "make") {
+    if (current.type === 'make') {
       break;
     }
 

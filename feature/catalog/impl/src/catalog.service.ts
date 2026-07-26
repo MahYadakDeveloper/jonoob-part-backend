@@ -84,12 +84,12 @@ export class CatalogService {
    * Infra Note For future: use redis for this.
    * This method is responsible for populating information such as display name, description, images, and more.
    */
-  private async populate<S extends Partial<Record<keyof Specifications, boolean>>>(
-    product: RawProduct,
-    select: S,
-  ): Promise<PopulatedProduct<S>> {
-    throw new Error('');
-  }
+  // private async populate<S extends Partial<Record<keyof Specifications, boolean>>>(
+  //   product: RawProduct,
+  //   select: S,
+  // ): Promise<PopulatedProduct<S>> {
+  //   throw new Error('');
+  // }
 
   /**
    * Note: Redis would be used as cache aside for the product too

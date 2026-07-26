@@ -13,26 +13,20 @@ export interface Fitment {
 
 export type FitmentNodeType = 'model' | 'series' | 'transmission' | 'fuelType';
 
-export type FitmentRoot = {
+export type FitmentRootNode = {
   id: string;
   type: 'make';
   name: string;
   logo: MediaRef;
 };
 
-export interface FitmentNode {
+export interface FitmentHierarchyNode {
   id: string;
 
   type: FitmentNodeType;
 
   name: string;
 
-  parentId: string;
+  parent: FitmentHierarchyNode | FitmentRootNode;
 }
 
-export interface FitmentHierarchy {
-  id: string;
-  type: FitmentNodeType;
-  name: string;
-  parent: FitmentHierarchy | FitmentRoot;
-}

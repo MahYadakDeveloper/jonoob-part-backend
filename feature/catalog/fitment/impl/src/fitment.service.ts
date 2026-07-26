@@ -5,6 +5,7 @@ import {
   FitmentResponse,
 } from '@feature/fitment-api';
 import { FitmentRepository } from './fitment.repository';
+import { Fitment, FitmentHierarchyNode } from './model/fitment';
 import { ancestors } from './utils';
 
 export class FitmentService implements FitmentApi {
@@ -13,36 +14,40 @@ export class FitmentService implements FitmentApi {
   async findById({ id }: FitmentRequest): Promise<FitmentResponse> {
     const fitment = await this.repository.find(id);
 
-    const fitmentNode = await this.repository.findNodeHierarchy(fitment.nodeReference);
+    const hierarchy = await this.repository.findNodeHierarchy(fitment.nodeReference);
 
-    // Mapper
+    return {
+      fitment: this.toDto(fitment, hierarchy),
+    };
+  }
+
+
+  // TODO Complete this CURD
+  async create() {}
+  async update() {}
+  async delete() {}
+
+  /**
+   * Mapper
+   */
+  private toDto(fitment: Fitment, node: FitmentHierarchyNode): FitmentDto {
     const result: Partial<FitmentDto> = {
       modelYearRange: fitment.modelYearRange,
     };
 
-    for (const node of ancestors(fitmentNode)) {
-      switch (node.type) {
-        case 'make':
-          result.make = {
-            name: node.name,
-            logo: node.logo,
-          };
-          break;
+    for (const current of ancestors(node)) {
+      if (current.type === 'make') {
+        result.make = {
+          name: current.name,
+          logo: current.logo,
+        };
 
-        default:
-          result[node.type] = node.name;
+        continue;
       }
+
+      result[current.type] = current.name;
     }
 
-    return {
-      fitment: result as FitmentDto,
-    };
+    return result as FitmentDto;
   }
-
-  async create() {}
-  async update() {}
-
-  async delete() {}
-
-
 }
