@@ -1,33 +1,48 @@
-import { FitmentApi, FitmentDto } from "@feature/fitment-api";
-import { FitmentRepository } from "./fitment.repository";
-import { ancestors } from "./utils";
+import {
+  FitmentApi,
+  Fitment as FitmentDto,
+  FitmentRequest,
+  FitmentResponse,
+} from '@feature/fitment-api';
+import { FitmentRepository } from './fitment.repository';
+import { ancestors } from './utils';
 
 export class FitmentService implements FitmentApi {
   constructor(private readonly repository: FitmentRepository) {}
 
-  async fitment(id: string): Promise<FitmentDto> {
-    const reference = await this.repository.findReference(id)
+  async findById({ id }: FitmentRequest): Promise<FitmentResponse> {
+    const fitment = await this.repository.find(id);
 
-    const fitment = await this.repository.findNodeDeep(reference.referenceId)
+    const fitmentNode = await this.repository.findNodeHierarchy(fitment.nodeReference);
 
-    let make: {}
-    let [model, series, transmission, fuelType]:string[] = []
-    for (const node of ancestors(fitment)) {
+    // Mapper
+    const result: Partial<FitmentDto> = {
+      modelYearRange: fitment.modelYearRange,
+    };
+
+    for (const node of ancestors(fitmentNode)) {
       switch (node.type) {
-        case "make":
-          make = node.name
-          continue;
+        case 'make':
+          result.make = {
+            name: node.name,
+            logo: node.logo,
+          };
+          break;
+
+        default:
+          result[node.type] = node.name;
       }
     }
 
     return {
-
-    }
+      fitment: result as FitmentDto,
+    };
   }
 
-  async createFitment() {}
-  async updateFitment() {}
+  async create() {}
+  async update() {}
 
-  async deleteFitment() {}
+  async delete() {}
+
 
 }

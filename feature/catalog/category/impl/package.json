@@ -1,10 +1,10 @@
 {
-  "name": "@feature/fitment",
+  "name": "@feature/category",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
+    "_build": "pnpm exec tsc",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,9 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*",
-    "@feature/fitment-api": "workspace:*",
-    "@feature/media-api": "workspace:*",
     "@nestjs/common": "^11.1.28"
   }
 }

@@ -1,4 +1,4 @@
-import { MediaRef } from "@feature/common";
+import { MediaRef } from '@feature/common';
 
 export interface Fitment {
   make: {
@@ -7,7 +7,10 @@ export interface Fitment {
   };
   model: string;
   series?: string;
-  madeModel?: Date; // Only year
-  fuelType?: "petrol" | "dual";
-  transmission: "manual" | "auto";
+  modelYearRange?: {
+    from?: number;
+    to?: number;
+  };
+  fuelType?: string;
+  transmission?: string;
 }

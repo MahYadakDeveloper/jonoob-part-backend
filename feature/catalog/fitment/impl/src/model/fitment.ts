@@ -1,16 +1,21 @@
-export interface FitmentReference {
+import { MediaRef } from '@feature/common';
+
+export interface Fitment {
   id: string;
 
-  referenceId: string;
+  nodeReference: string;
 
-  madeModel?: Date;
+  modelYearRange?: {
+    from?: number;
+    to?: number;
+  };
 }
 
-export type FitmentNodeType = "model" | "series" | "transmission" | "fuelType";
+export type FitmentNodeType = 'model' | 'series' | 'transmission' | 'fuelType';
 
-export type FitmentRootNode = {
+export type FitmentRoot = {
   id: string;
-  type: "make";
+  type: 'make';
   name: string;
   logo: MediaRef;
 };
@@ -25,9 +30,9 @@ export interface FitmentNode {
   parentId: string;
 }
 
-export interface FitmentNodeDeep {
+export interface FitmentHierarchy {
   id: string;
   type: FitmentNodeType;
   name: string;
-  parent: FitmentNodeDeep | FitmentRootNode;
+  parent: FitmentHierarchy | FitmentRoot;
 }

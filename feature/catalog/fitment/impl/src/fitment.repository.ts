@@ -1,6 +1,6 @@
-import { FitmentNodeDeep, FitmentReference } from "./model/fitment";
+import { Fitment, FitmentNodeDeep } from './model/fitment';
 
 export interface FitmentRepository {
-  findReference(id: string): Promise<FitmentReference>
-  findNodeDeep(referenceId: string): Promise<FitmentNodeDeep>
+  find(id: string): Promise<Fitment>;
+  findNodeHierarchy(referenceId: string): Promise<FitmentNodeDeep>;
 }

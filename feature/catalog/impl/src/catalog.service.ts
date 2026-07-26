@@ -1,15 +1,15 @@
-import { Money, RawProduct } from "@feature/common";
-import { type PricingApi } from "@feature/pricing-api";
-import { type WarehouseApi } from "@feature/warehouse-api";
-import {
-  PopulatedProduct,
-  Specifications,
-} from "model/product";
+import { RawProduct } from '@feature/common';
+import { FitmentApi } from '@feature/fitment-api';
+import { type PricingApi } from '@feature/pricing-api';
+import { type WarehouseApi } from '@feature/warehouse-api';
+import { PopulatedProduct, Specifications } from 'model/product';
 
 export class CatalogService {
   constructor(
     private readonly catalog: CatalogRepository,
     private readonly warehouse: WarehouseApi,
+    private readonly fitment: FitmentApi,
+    private readonly category: 
     private readonly pricing: PricingApi,
   ) {}
   /**
@@ -84,10 +84,11 @@ export class CatalogService {
    * Infra Note For future: use redis for this.
    * This method is responsible for populating information such as display name, description, images, and more.
    */
-  private async populate<
-    S extends Partial<Record<keyof Specifications, boolean>>,
-  >(product: RawProduct, select: S): Promise<PopulatedProduct<S>> {
-    throw new Error("");
+  private async populate<S extends Partial<Record<keyof Specifications, boolean>>>(
+    product: RawProduct,
+    select: S,
+  ): Promise<PopulatedProduct<S>> {
+    throw new Error('');
   }
 
   /**
@@ -113,10 +114,10 @@ export class CatalogService {
    * }
    */
   findById(): Promise<Product> {
-    throw new Error("Method not implemented yet!");
+    throw new Error('Method not implemented yet!');
   }
   findManyById(): Promise<Product> {
-    throw new Error("Method not implemented yet!");
+    throw new Error('Method not implemented yet!');
   }
 
   async findByBarcode({
