@@ -1,5 +1,5 @@
 {
-  "name": "@feature/taxonomy-api",
+  "name": "@feature/category-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",

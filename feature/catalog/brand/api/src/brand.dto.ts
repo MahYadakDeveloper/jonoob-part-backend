@@ -1,4 +1,4 @@
-import { MediaRef } from "@feature/media-api";
+import { MediaRef } from '@feature/common';
 
 /**
  * Brand / Manufacturer information used by the catalog.
@@ -7,15 +7,8 @@ import { MediaRef } from "@feature/media-api";
  * - Bosch
  * - Valeo
  * - NGK
- * - ایساکو
  */
-export type Brand = {
-  /**
-   * Stable unique identifier.
-   * Prefer UUID/ULID.
-   */
-  id: string;
-
+export type BrandDto = {
   /**
    * Display name shown to users.
    */

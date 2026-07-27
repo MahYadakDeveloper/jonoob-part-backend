@@ -1,6 +1,4 @@
-import { Brand } from "@feature/brand-api";
-import { RawProduct } from "@feature/common";
-import { Fitment } from "@feature/fitment-api";
+import { MediaRef, RawProduct } from '@feature/common';
 
 // export type EnrichedData = {
 //   price: Money;
@@ -9,26 +7,28 @@ import { Fitment } from "@feature/fitment-api";
 //   storageLocation?: string;
 // };
 
-export type Specifications = {
-  brand: Brand;
-  fitment: Fitment;
-  taxonomy: Taxonomy;
-};
-
 /**
+ * TODO: Use this for improving searching results.
  * Generated search projection for Elasticsearch indexing.
  */
 type SearchText = string[];
 
-export type ProductReferences = {
+export type SpecificationReferences = {
   brandId?: string;
   categoryIds: string[]; // (taxonomy) `CategoryNode` referenced
   fitmentIds: string[];
 };
 
+export type ProductQuality = 'oe' | 'oem' | 'aftermarket';
+
 export type Product = RawProduct & {
+  id: string;
   displayName: string; // this is generated base on technical
   canonicalName: string; // model-[...variants], we do not doing search base on this
+
+  // TODO: Add constraint to ensure product images only accept valid image MIME types.
+  // Allowed MIME types should be restricted to image formats (e.g. image/jpeg, image/png, image/webp).
+  images: MediaRef[];
 
   /**
    * Human-defined alternative names.
@@ -37,24 +37,30 @@ export type Product = RawProduct & {
   aliases: string[];
 
   emplacement?: string;
-  quality?: "oe" | "oem" | "aftermarket";
+  quality?: ProductQuality;
+
+  description?: {
+    format: 'mdx';
+    content: string;
+  };
 
   // enriched?: EnrichedData;
-  references: ProductReferences;
+  references: SpecificationReferences;
 };
 
-export type SelectKeys<T, S extends Partial<Record<keyof T, boolean>>> = {
-  [K in keyof S]: S[K] extends true ? K : never;
-}[keyof S] &
-  keyof T;
+// export type SelectKeys<T, S extends Partial<Record<keyof T, boolean>>> = {
+//   [K in keyof S]: S[K] extends true ? K : never;
+// }[keyof S] &
+//   keyof T;
 
-export type Selected<T, S extends Partial<Record<keyof T, boolean>>> = Pick<
-  T,
-  SelectKeys<T, S>
->;
+// export type Selected<T, S extends Partial<Record<keyof T, boolean>>> = Pick<
+//   T,
+//   SelectKeys<T, S>
+// >;
 
-export type PopulatedProduct<
-  S extends Partial<Record<keyof Specifications, boolean>>,
-> = RawProduct & {
-  populated: Selected<Specifications, S>;
-};
+// export type PopulatedProduct<
+//   S extends Partial<Record<keyof , boolean>>,
+// > = RawProduct & {
+//   populated: Selected<Specifications, S>;
+//   references: SpecificationReferences;
+// };

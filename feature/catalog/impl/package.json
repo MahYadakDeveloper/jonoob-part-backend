@@ -18,6 +18,7 @@
   "private": true,
   "dependencies": {
     "@feature/brand-api": "workspace:*",
+    "@feature/category-api": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/fitment-api": "workspace:*",
     "@feature/media-api": "workspace:*",

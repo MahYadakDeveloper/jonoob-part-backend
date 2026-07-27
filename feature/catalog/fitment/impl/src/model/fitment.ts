@@ -29,4 +29,3 @@ export interface FitmentHierarchyNode {
 
   parent: FitmentHierarchyNode | FitmentRootNode;
 }
-

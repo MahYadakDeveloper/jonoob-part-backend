@@ -1,15 +1,18 @@
-import { RawProduct } from '@feature/common';
+import { BrandApi } from '@feature/brand-api';
+import { CategoryApi } from '@feature/category-api';
 import { FitmentApi } from '@feature/fitment-api';
 import { type PricingApi } from '@feature/pricing-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
-import { PopulatedProduct, Specifications } from 'model/product';
+import { FindProductByBarcodeRequest } from 'catalog.requests';
+import { FindProductByBarcodeResponse } from 'catalog.responses';
 
 export class CatalogService {
   constructor(
     private readonly catalog: CatalogRepository,
     private readonly warehouse: WarehouseApi,
+    private readonly brand: BrandApi,
     private readonly fitment: FitmentApi,
-    private readonly category: 
+    private readonly category: CategoryApi,
     private readonly pricing: PricingApi,
   ) {}
   /**
@@ -120,11 +123,9 @@ export class CatalogService {
     throw new Error('Method not implemented yet!');
   }
 
-  async findByBarcode({
-    barcode,
-    enrich,
-    populate,
-  }: FindProductByBarcodeRequest): Promise<FindProductByBarcodeResponse> {
+  async findProductByBarcode(
+    req: FindProductByBarcodeRequest,
+  ): Promise<FindProductByBarcodeResponse> {
     // Resolve product id
     const { goodId } = await this.warehouse.resolveGoodId({ barcode });
 

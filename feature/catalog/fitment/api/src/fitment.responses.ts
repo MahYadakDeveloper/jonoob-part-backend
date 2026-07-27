@@ -1,5 +1,5 @@
-import { Fitment } from "./fitment.types";
+import { FitmentDto } from './fitment.dto';
 
 export interface FitmentResponse {
-  fitment: Fitment;
+  fitment: FitmentDto;
 }

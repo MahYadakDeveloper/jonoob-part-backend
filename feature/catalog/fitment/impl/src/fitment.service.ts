@@ -1,9 +1,4 @@
-import {
-  FitmentApi,
-  Fitment as FitmentDto,
-  FitmentRequest,
-  FitmentResponse,
-} from '@feature/fitment-api';
+import { FitmentApi, FitmentDto, FitmentRequest, FitmentResponse } from '@feature/fitment-api';
 import { FitmentRepository } from './fitment.repository';
 import { Fitment, FitmentHierarchyNode } from './model/fitment';
 import { ancestors } from './utils';
@@ -20,7 +15,6 @@ export class FitmentService implements FitmentApi {
       fitment: this.toDto(fitment, hierarchy),
     };
   }
-
 
   // TODO Complete this CURD
   async create() {}
