@@ -1,5 +1,7 @@
-import { BrandDto } from './brand.dto';
+import { FindBrandRequest, FindManyBrandRequest } from './brand.req';
+import { FindBrandResponse, FindManyBrandResponse } from './brand.res';
 
 export interface BrandApi {
-  findById(id: string): Promise<BrandDto>;
+  findById(request: FindBrandRequest): Promise<FindBrandResponse>;
+  findManyByIds(request: FindManyBrandRequest): Promise<FindManyBrandResponse>;
 }

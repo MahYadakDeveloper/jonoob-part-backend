@@ -9,6 +9,7 @@ import { MediaRef } from '@feature/common';
  * - NGK
  */
 export type BrandDto = {
+  id: string;
   /**
    * Display name shown to users.
    */

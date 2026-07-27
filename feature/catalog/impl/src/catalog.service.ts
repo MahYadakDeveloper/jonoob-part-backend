@@ -1,12 +1,37 @@
-import { BrandApi } from '@feature/brand-api';
-import { CategoryApi } from '@feature/category-api';
-import { FitmentApi } from '@feature/fitment-api';
+import { type BrandApi } from '@feature/brand-api';
+import { type CategoryApi } from '@feature/category-api';
+import { LineItems } from '@feature/common';
+import { type FitmentApi } from '@feature/fitment-api';
 import { type PricingApi } from '@feature/pricing-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
-import { FindProductByBarcodeRequest } from 'catalog.requests';
-import { FindProductByBarcodeResponse } from 'catalog.responses';
+import { Injectable } from '@nestjs/common';
+import { type CatalogRepository } from 'catalog.repository';
+import {
+  FindManyProductRequest,
+  FindProductByBarcodeRequest,
+  FindProductRequest,
+} from 'catalog.requests';
+import {
+  FindManyProductResponse,
+  FindProductByBarcodeResponse,
+  FindProductResponse,
+} from 'catalog.responses';
+import { Populate } from 'catalog.types';
+import { ProductDto } from 'dto/product-dto';
+import { Product } from 'model/product';
 
+type ProductPatch = Partial<ProductDto> & { id: string };
+type ProductPopulatePatch = LineItems<ProductPatch>;
+function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined;
+}
+
+@Injectable()
 export class CatalogService {
+  private readonly populators: Record<
+    keyof Populate,
+    (products: LineItems<Product>) => Promise<ProductPopulatePatch>
+  >;
   constructor(
     private readonly catalog: CatalogRepository,
     private readonly warehouse: WarehouseApi,
@@ -14,85 +39,105 @@ export class CatalogService {
     private readonly fitment: FitmentApi,
     private readonly category: CategoryApi,
     private readonly pricing: PricingApi,
-  ) {}
-  /**
-   * Infra Note For future: use redis for this.
-   * This method is responsible for enriching information such as price, stock, discounts, and more.
-   */
-  // private async enrich(
-  //   product: ProductRaw,
-  // ): Promise<ProductRaw & { enriched: EnrichedData }> {
-  //   if (product.kind === "leaf") {
-  //     const leaf = product;
+  ) {
+    this.populators = {
+      brand: async (products: LineItems<Product>): Promise<ProductPopulatePatch> => {
+        const patches = new LineItems<ProductPatch>((patch) => patch.id);
 
-  //     // stock + details
-  //     const [{ good }, { price }] = await Promise.all([
-  //       this.warehouse.getWarehouseView({
-  //         goodId: leaf.goodId,
-  //       }),
-  //       this.pricing.priceProduct({ productId: leaf.id }),
-  //     ]);
+        const brandIds = [
+          ...new Set(
+            [...products]
+              .map((product) => product.references.brandId)
+              .filter((id): id is string => !!id),
+          ),
+        ];
 
-  //     return {
-  //       ...leaf,
-  //       enriched: {
-  //         price,
-  //         stock: good.stock,
-  //         storageLocation: good.storageLocation,
-  //         unitOfMeasure: good.unitOfMeasure,
-  //       },
-  //     };
-  //   }
+        if (brandIds.length === 0) {
+          return patches;
+        }
 
-  //   const bundle = product;
-  //   const bundleItemsByGoodId = bundle.items.indexedBy((x) => x.goodId);
-  //   const bundleItemsByProductId = bundle.items.indexedBy((x) => x.productId);
-  //   const goodIds = [...bundleItemsByGoodId.keys()];
-  //   const productIds = [...bundleItemsByProductId.keys()];
+        const { brands } = await this.brand.findManyByIds({
+          ids: brandIds,
+        });
 
-  //   // warehouse + pricing
-  //   const [{ stocks }, { prices }] = await Promise.all([
-  //     this.warehouse.getGoodStocks({
-  //       goodIds,
-  //     }),
-  //     this.pricing.priceManyProduct({
-  //       productIds,
-  //     }),
-  //   ]);
+        for (const product of products) {
+          const brandId = product.references.brandId;
 
-  //   const stock = stocks.reduce((minBundleStock, item) => {
-  //     const quantity = bundleItemsByGoodId.getOrThrow(item.goodId).quantity;
+          if (!brandId) {
+            continue;
+          }
 
-  //     return Math.min(minBundleStock, Math.floor(item.stock / quantity));
-  //   }, 0);
+          const brand = brands.get(brandId);
 
-  //   const price = prices.reduce((bundlePrice, itemPrice) => {
-  //     return bundlePrice.add(
-  //       itemPrice.price.multiply(
-  //         bundleItemsByProductId.getOrThrow(itemPrice.productId).quantity,
-  //       ),
-  //     );
-  //   }, Money.zero());
+          if (!brand) {
+            continue;
+          }
 
-  //   return {
-  //     ...bundle,
-  //     enriched: {
-  //       price,
-  //       stock,
-  //     },
-  //   };
-  // }
+          patches.set({
+            id: product.id,
+            brand,
+          });
+        }
 
-  /**
-   * Infra Note For future: use redis for this.
-   * This method is responsible for populating information such as display name, description, images, and more.
-   */
-  // private async populate<S extends Partial<Record<keyof Specifications, boolean>>>(
-  //   product: RawProduct,
-  //   select: S,
-  // ): Promise<PopulatedProduct<S>> {
-  //   throw new Error('');
-  // }
+        return patches;
+      },
+
+      categories: async (products: LineItems<Product>): Promise<ProductPopulatePatch> => {
+        const patches = new LineItems<ProductPatch>((patch) => patch.id);
+
+        const categoryIds = [
+          ...new Set([...products].flatMap((product) => product.references.categoryIds)),
+        ];
+
+        if (categoryIds.length === 0) {
+          return patches;
+        }
+
+        const { categories } = await this.category.findManyByIds({
+          ids: categoryIds,
+        });
+
+        for (const product of products) {
+          patches.set({
+            id: product.id,
+            categories: product.references.categoryIds
+              .map((id) => categories.get(id))
+              .filter(isDefined),
+          });
+        }
+
+        return patches;
+      },
+
+      fitments: async (products: LineItems<Product>): Promise<ProductPopulatePatch> => {
+        const patches = new LineItems<ProductPatch>((patch) => patch.id);
+
+        const fitmentIds = [
+          ...new Set([...products].flatMap((product) => product.references.fitmentIds)),
+        ];
+
+        if (fitmentIds.length === 0) {
+          return patches;
+        }
+
+        const { fitments } = await this.fitment.findManyByIds({
+          ids: fitmentIds,
+        });
+
+        for (const product of products) {
+          patches.set({
+            id: product.id,
+            fitments: product.references.fitmentIds.map((id) => fitments.get(id)).filter(isDefined),
+          });
+        }
+
+        return patches;
+      },
+    } satisfies Record<
+      keyof Populate,
+      (products: LineItems<Product>) => Promise<ProductPopulatePatch>
+    >;
+  }
 
   /**
    * Note: Redis would be used as cache aside for the product too
@@ -101,44 +146,44 @@ export class CatalogService {
    * Note: For meaningful or anything else for product searching
    *  we use elastic
    * Retrieves a product by its ID.
-   *
-   * Workflow:
-   * 1. Retrieve the product stock (defaults to zero if not found).
-   * 2. Enrich the product with dynamic information when it is in stock.
-   * 3. Populate descriptive information.
-   * 4. Return the assembled product.
-   *
-   * Throws if the product cannot be populated.
-   *
-   * req: {
-   *  ...
-   *  view: "enriched" | "populated" | "full"
-   *  ...
-   * }
    */
-  findById(): Promise<Product> {
-    throw new Error('Method not implemented yet!');
+  async findById({ productId, populate }: FindProductRequest): Promise<FindProductResponse> {
+    const { products } = await this.findManyByIds({ productIds: [productId], populate });
+    const dto = products.getOrThrow(productId);
+    return { product: dto };
   }
-  findManyById(): Promise<Product> {
-    throw new Error('Method not implemented yet!');
+  async findManyByIds({
+    productIds,
+    populate,
+  }: FindManyProductRequest): Promise<FindManyProductResponse> {
+    const products = await this.catalog.findProductByIds(productIds);
+
+    const dto = await this.populate(products, populate);
+
+    return {
+      products: dto,
+    };
   }
 
-  async findProductByBarcode(
-    req: FindProductByBarcodeRequest,
-  ): Promise<FindProductByBarcodeResponse> {
+  async findProductByBarcode({
+    barcode,
+    populate,
+  }: FindProductByBarcodeRequest): Promise<FindProductByBarcodeResponse> {
     // Resolve product id
     const { goodId } = await this.warehouse.resolveGoodId({ barcode });
 
-    let product: Product = this.catalog.findOrCreate(goodId); // Note: in prisma to findOrCreate use upsert with update:{}
-    if (enrich) {
-      product = await this.enrich(product);
-    }
+    const product = await this.catalog.findProductByGoodId(goodId);
 
-    if (populate) {
-      product = await this.populate(product);
-    }
+    if (product === null) throw new Error('Product not found!');
+    if (product.kind === 'bundle') throw new Error('Only leaf product can be queried by barcode');
 
-    return { product };
+    const products = new LineItems<Product>((p) => p.id, [product]);
+
+    const dto = (await this.populate(products, populate)).getOrThrow(product.id);
+
+    return {
+      product: dto,
+    };
   }
 
   /**
@@ -177,4 +222,38 @@ export class CatalogService {
    * `PopulatedDataInput` must be provided; otherwise the operation fails.
    */
   define(req: DefiningProductRequest): Promise<{ productId: string }> {}
+
+  private async populate(
+    products: LineItems<Product>,
+    populate: Populate,
+  ): Promise<LineItems<ProductDto>> {
+    const result = new LineItems<ProductDto>((product) => product.id);
+
+    // Initialize with raw products
+    for (const product of products) {
+      result.set({
+        ...product,
+      });
+    }
+
+    const patches = await Promise.all(
+      (Object.keys(this.populators) as (keyof Populate)[])
+        .filter((key) => populate[key])
+        .map((key) => this.populators[key](products)),
+    );
+
+    for (const patchCollection of patches) {
+      for (const patch of patchCollection) {
+        const product = result.get(patch.id);
+
+        if (!product) {
+          continue;
+        }
+
+        Object.assign(product, patch);
+      }
+    }
+
+    return result;
+  }
 }

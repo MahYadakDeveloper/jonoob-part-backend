@@ -4,12 +4,13 @@ import { FitmentDto } from '@feature/fitment-api';
 import { ProductQuality } from 'model/product';
 
 export interface ProductDto {
+  id: string;
   displayName: string;
   canonicalName: string;
   aliases: string[];
   brand?: BrandDto;
-  category?: CategoryDto;
-  fitment?: FitmentDto;
+  categories?: CategoryDto[];
+  fitments?: FitmentDto[];
   emplacement?: string;
   quality?: ProductQuality;
 }
