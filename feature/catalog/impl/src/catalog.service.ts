@@ -1,30 +1,29 @@
 import { type BrandApi } from '@feature/brand-api';
 import { type CategoryApi } from '@feature/category-api';
-import { LineItems } from '@feature/common';
+import { BundleItem, LineItems } from '@feature/common';
 import { type FitmentApi } from '@feature/fitment-api';
-import { type PricingApi } from '@feature/pricing-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import { type CatalogRepository } from 'catalog.repository';
 import {
+  DefiningProductRequest,
+  FindByBarcodeRequest,
   FindManyProductRequest,
-  FindProductByBarcodeRequest,
   FindProductRequest,
+  RedefiningProductRequest,
 } from 'catalog.requests';
 import {
+  DefiningProductResponse,
+  FindByBarcodeResponse,
   FindManyProductResponse,
-  FindProductByBarcodeResponse,
   FindProductResponse,
 } from 'catalog.responses';
-import { Populate } from 'catalog.types';
+import { isDefined, isNotFound, Populate, ProductPatch, ProductPopulatePatch } from 'catalog.types';
 import { ProductDto } from 'dto/product-dto';
-import { Product } from 'model/product';
-
-type ProductPatch = Partial<ProductDto> & { id: string };
-type ProductPopulatePatch = LineItems<ProductPatch>;
-function isDefined<T>(value: T | undefined): value is T {
-  return value !== undefined;
-}
+import { Product, SpecificationReferences } from 'model/product';
+import { type ProductSearchEngine } from 'port/search-engine/search-engine';
+import { ProductSearchRequest } from 'port/search-engine/search.req';
+import { ProductSearchResponse } from 'port/search-engine/search.res';
 
 @Injectable()
 export class CatalogService {
@@ -34,11 +33,11 @@ export class CatalogService {
   >;
   constructor(
     private readonly catalog: CatalogRepository,
-    private readonly warehouse: WarehouseApi,
     private readonly brand: BrandApi,
     private readonly fitment: FitmentApi,
     private readonly category: CategoryApi,
-    private readonly pricing: PricingApi,
+    private readonly searchEngine: ProductSearchEngine,
+    private readonly warehouse: WarehouseApi,
   ) {
     this.populators = {
       brand: async (products: LineItems<Product>): Promise<ProductPopulatePatch> => {
@@ -156,7 +155,7 @@ export class CatalogService {
     productIds,
     populate,
   }: FindManyProductRequest): Promise<FindManyProductResponse> {
-    const products = await this.catalog.findProductByIds(productIds);
+    const products = await this.catalog.findMany(productIds);
 
     const dto = await this.populate(products, populate);
 
@@ -165,14 +164,11 @@ export class CatalogService {
     };
   }
 
-  async findProductByBarcode({
-    barcode,
-    populate,
-  }: FindProductByBarcodeRequest): Promise<FindProductByBarcodeResponse> {
+  async findByBarcode({ barcode, populate }: FindByBarcodeRequest): Promise<FindByBarcodeResponse> {
     // Resolve product id
     const { goodId } = await this.warehouse.resolveGoodId({ barcode });
 
-    const product = await this.catalog.findProductByGoodId(goodId);
+    const product = await this.catalog.findByGoodId(goodId);
 
     if (product === null) throw new Error('Product not found!');
     if (product.kind === 'bundle') throw new Error('Only leaf product can be queried by barcode');
@@ -189,39 +185,97 @@ export class CatalogService {
   /**
    * Note: Redis would be used as cache aside for the product too
    *  only product only retrieved by redis if products id is given.
-   *
-   * Note: For meaningful or anything else for product searching
-   *  we use elastic
-   * @param input : {
-   *    query?: string;
-   *    page: number;
-   *    pageSize: number;
-   *    sort?: ProductSort;
-   *    filter?: Filter;
-   *    view: "enriched" | "populated" | "full"
-   *    ...
-   *  }
-   * @param output : {
-   *    page: number;
-   *    items: Product[]
-   *    ...
-   * }
-   * NOTE: Return type include product list witch their kind may "product" | "bundle"
    */
-  search(input) {}
+  async search(req: ProductSearchRequest): Promise<ProductSearchResponse> {
+    return this.searchEngine.search(req);
+  }
 
   /**
    * Defines a product and stores its foundational metadata.
    *
-   * The created definition is later enriched and populated through
-   * `enrich()` and `populate()` to build the complete product representation.
-   *
    * A product can represent either a standalone product or a bundle of products.
    *
-   * When `visibleOnline` is enabled, both `EnrichedDataInput` and
-   * `PopulatedDataInput` must be provided; otherwise the operation fails.
+   * When `visibleOnline` is enabled,
    */
-  define(req: DefiningProductRequest): Promise<{ productId: string }> {}
+  async define({ definitions }: DefiningProductRequest): Promise<DefiningProductResponse> {
+    // [TODO] Move media upload orchestration to the controller and let this method accept only MediaRef values.
+
+    // No meaning when there is the good in warehouse not existed and we have id of it, so
+    // the checking by warehouse will throw an error
+    if (definitions.kind === 'leaf') await this.validateLeafDefinition(definitions.goodId);
+    else await this.validateBundleDefinition(definitions.items);
+
+    // Validating references
+    await this.validateReferences(definitions.references);
+
+    // [TODO] Think more if there any validation process left to be used
+    // [TODO] If anything ok then define the product | create the product
+
+    throw new Error('Not implemented yet!');
+  }
+
+  async redefine(req: RedefiningProductRequest): Promise<void> {}
+
+  private async validateBundleDefinition(items: LineItems<BundleItem>) {
+    const itemsByProductId = items.indexedBy((x) => x.productId);
+    const itemsByGoodId = items.indexedBy((x) => x.goodId);
+    const products = await this.catalog.findMany([...itemsByProductId.keys()]);
+    const { stocks } = await this.warehouse.getGoodStocks({ goodIds: [...itemsByGoodId.keys()] });
+
+    // validating leaf products
+    for (const bundleItem of items) {
+      const product = products.getOrThrow(
+        bundleItem.productId,
+        (id) => new Error(`Product not found. id: ${id}`),
+      );
+      if (product.kind !== 'leaf') throw new Error('Only leaf product allowed!');
+
+      // stock check
+      if (bundleItem.quantity > stocks.getOrThrow(bundleItem.goodId).stock)
+        throw new Error(
+          `Insufficient stock to create one bundle at least!, ProductId: ${bundleItem.productId}`,
+        );
+    }
+  }
+
+  private async validateLeafDefinition(goodId: string) {
+    const { stocks } = await this.warehouse.checkStockExistence({ goodIds: [goodId] });
+    if (!stocks.getOrThrow(goodId).exists) throw new Error(`No good found in warehouse: ${goodId}`);
+    const existingProduct = await this.catalog.findByGoodId(goodId);
+
+    if (existingProduct) {
+      throw new Error(`A product is already defined for good '${goodId}'.`);
+    }
+  }
+
+  private async validateReferences({
+    brandId,
+    fitmentIds,
+    categoryIds,
+    manufacturerId,
+  }: SpecificationReferences) {
+    if (brandId && (await this.brand.findById({ id: brandId }).then(isNotFound)))
+      throw new Error(`Brand reference not found!, Id: ${brandId}`);
+
+    if (manufacturerId && (await this.brand.findById({ id: manufacturerId }).then(isNotFound)))
+      throw new Error(`Manufacture reference not found!, Id: ${manufacturerId}`);
+
+    if (fitmentIds.length > 0) {
+      const { fitments } = await this.fitment.findManyByIds({ ids: fitmentIds });
+      for (const fitmentId of fitmentIds) {
+        if (!fitments.has(fitmentId))
+          throw new Error('Invalid fitment reference found in fitment references.');
+      }
+    }
+
+    if (categoryIds.length > 0) {
+      const { categories } = await this.category.findManyByIds({ ids: categoryIds });
+      for (const categoryId of categoryIds) {
+        if (!categories.has(categoryId))
+          throw new Error('Invalid category reference found in category references.');
+      }
+    }
+  }
 
   private async populate(
     products: LineItems<Product>,

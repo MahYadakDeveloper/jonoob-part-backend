@@ -2,7 +2,7 @@ import { LineItems } from '@feature/common';
 import { BrandDto } from './brand.dto';
 
 export interface FindBrandResponse {
-  brand: BrandDto;
+  brand: BrandDto | null;
 }
 
 export interface FindManyBrandResponse {

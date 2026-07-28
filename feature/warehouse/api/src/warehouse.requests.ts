@@ -1,10 +1,14 @@
-import { Barcode, LineItems } from "@feature/common";
+import { Barcode, LineItems } from '@feature/common';
 
 export interface GoodIdResolvingRequest {
   barcode: Barcode;
 }
 
 type Item = { goodId: string; quantity: number };
+
+export interface StockExistenceRequest {
+  goodIds: string[];
+}
 
 export interface GoodsIssuingRequest {
   items: LineItems<Item>;

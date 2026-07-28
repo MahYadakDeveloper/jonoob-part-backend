@@ -1,7 +1,7 @@
 import { LineItems } from '@feature/common';
 import { ProductDto } from 'dto/product-dto';
 
-export interface FindProductByBarcodeResponse {
+export interface FindByBarcodeResponse {
   product: ProductDto;
 }
 
@@ -11,4 +11,8 @@ export interface FindProductResponse {
 
 export interface FindManyProductResponse {
   products: LineItems<ProductDto>;
+}
+
+export interface DefiningProductResponse {
+  productId: string;
 }

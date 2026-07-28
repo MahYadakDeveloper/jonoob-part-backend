@@ -7,9 +7,10 @@ import {
   GoodIdResolvingRequest,
   GoodsIssuingRequest,
   ReceiveReturnedRequest,
+  StockExistenceRequest,
   StockReleasingRequest,
   StockReservingRequest,
-} from "./warehouse.requests";
+} from './warehouse.requests';
 import {
   GetGoodDetailsResponse,
   GetStockResponse,
@@ -17,9 +18,15 @@ import {
   GetWarehouseViewResponse,
   GetWarehouseViewsResponse,
   GoodIdResolvingResponse,
-} from "./warehouse.responses";
+  StockExistenceResponse,
+} from './warehouse.responses';
 
 export interface WarehouseApi {
+  /**
+   *
+   */
+  checkStockExistence(req: StockExistenceRequest): Promise<StockExistenceResponse>;
+
   /**
    *
    */
@@ -38,16 +45,12 @@ export interface WarehouseApi {
   /**
    *
    */
-  getWarehouseView(
-    req: GetWarehouseViewRequest,
-  ): Promise<GetWarehouseViewResponse>;
+  getWarehouseView(req: GetWarehouseViewRequest): Promise<GetWarehouseViewResponse>;
 
   /**
    *
    */
-  getWarehouseViews(
-    req: GetWarehouseViewsRequest,
-  ): Promise<GetWarehouseViewsResponse>;
+  getWarehouseViews(req: GetWarehouseViewsRequest): Promise<GetWarehouseViewsResponse>;
 
   /**
    *

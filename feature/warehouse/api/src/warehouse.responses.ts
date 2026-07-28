@@ -1,5 +1,9 @@
-import { LineItems } from "@feature/common";
-import { Good, GoodDetails } from "./warehouse.types";
+import { LineItems } from '@feature/common';
+import { Good, GoodDetails } from './warehouse.types';
+
+export interface StockExistenceResponse {
+  stocks: LineItems<{ goodId: string; exists: boolean }>;
+}
 
 export interface GoodIdResolvingResponse {
   goodId: string;
