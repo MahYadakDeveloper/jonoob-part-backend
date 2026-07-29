@@ -1,5 +1,21 @@
 import { MediaRef } from '@feature/common';
 
+export interface ProductSearchCriteria {
+  storefront: true | false;
+
+  query?: string;
+
+  filters?: ProductSearchFilters;
+
+  sort?: ProductSearchSort;
+
+  page?: SearchPagination;
+}
+
+export interface ProductSearchResult {
+  page: SearchPage<ProductSearchPageItem>;
+}
+
 export interface ProductSearchFilters {
   brandIds?: readonly string[];
 

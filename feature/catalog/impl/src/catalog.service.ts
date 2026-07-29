@@ -4,7 +4,6 @@ import { BundleItem, LineItems } from '@feature/common';
 import { type FitmentApi } from '@feature/fitment-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
-import { type CatalogRepository } from 'catalog.repository';
 import {
   DefiningProductRequest,
   FindByBarcodeRequest,
@@ -19,11 +18,12 @@ import {
   FindProductResponse,
 } from 'catalog.responses';
 import { isDefined, isNotFound, Populate, ProductPatch, ProductPopulatePatch } from 'catalog.types';
-import { ProductDto } from 'dto/product-dto';
+import { CatalogVisibility, type CatalogContextProvider } from 'context/catalog.context';
+import { ProductDto } from 'dto/product.dto';
+import { SearchProductParamsDto } from 'dto/search-params.dto';
 import { Product, SpecificationReferences } from 'model/product';
-import { type ProductSearchEngine } from 'port/search-engine/search-engine';
-import { ProductSearchRequest } from 'port/search-engine/search.req';
-import { ProductSearchResponse } from 'port/search-engine/search.res';
+import { ProductSearchCriteria, ProductSearchResult } from 'repository/search';
+import { type CatalogRepository } from './repository/catalog.repository';
 
 @Injectable()
 export class CatalogService {
@@ -36,8 +36,8 @@ export class CatalogService {
     private readonly brand: BrandApi,
     private readonly fitment: FitmentApi,
     private readonly category: CategoryApi,
-    private readonly searchEngine: ProductSearchEngine,
     private readonly warehouse: WarehouseApi,
+    private readonly ctx: CatalogContextProvider,
   ) {
     this.populators = {
       brand: async (products: LineItems<Product>): Promise<ProductPopulatePatch> => {
@@ -155,7 +155,7 @@ export class CatalogService {
     productIds,
     populate,
   }: FindManyProductRequest): Promise<FindManyProductResponse> {
-    const products = await this.catalog.findMany(productIds);
+    const products = await this.catalog.findManyById(productIds);
 
     const dto = await this.populate(products, populate);
 
@@ -186,40 +186,58 @@ export class CatalogService {
    * Note: Redis would be used as cache aside for the product too
    *  only product only retrieved by redis if products id is given.
    */
-  async search(req: ProductSearchRequest): Promise<ProductSearchResponse> {
-    return this.searchEngine.search(req);
+  async search(input: SearchProductParamsDto): Promise<ProductSearchResult> {
+    const storefront = this.ctx.current().visibility === CatalogVisibility.Storefront;
+    const criteria: ProductSearchCriteria = {
+      ...input,
+      storefront,
+    };
+    return this.catalog.search(criteria);
   }
 
   /**
    * Defines a product and stores its foundational metadata.
    *
    * A product can represent either a standalone product or a bundle of products.
-   *
-   * When `visibleOnline` is enabled,
    */
   async define({ definitions }: DefiningProductRequest): Promise<DefiningProductResponse> {
     // [TODO] Move media upload orchestration to the controller and let this method accept only MediaRef values.
 
-    // No meaning when there is the good in warehouse not existed and we have id of it, so
-    // the checking by warehouse will throw an error
-    if (definitions.kind === 'leaf') await this.validateLeafDefinition(definitions.goodId);
-    else await this.validateBundleDefinition(definitions.items);
+    if (definitions.kind === 'leaf') {
+      // No meaning when there is the good in warehouse not existed and we have id of it, so
+      // the checking by warehouse will throw an error
+      await this.checkStockExistence(definitions.goodId);
+    } else await this.validateBundleItems(definitions.items);
 
     // Validating references
     await this.validateReferences(definitions.references);
 
-    // [TODO] Think more if there any validation process left to be used
-    // [TODO] If anything ok then define the product | create the product
+    // Creating
+    const { id } = await this.catalog.create(definitions);
 
-    throw new Error('Not implemented yet!');
+    return { productId: id };
   }
 
-  async redefine(req: RedefiningProductRequest): Promise<void> {}
+  async redefine({ productId, definitions }: RedefiningProductRequest): Promise<void> {
+    const product = await this.catalog.findById(productId);
 
-  private async validateBundleDefinition(items: LineItems<BundleItem>) {
+    if (!product) throw new Error(`The product not found ${productId}`);
+
+    if (definitions.kind === 'bundle') {
+      await this.validateBundleItems(definitions.items);
+    }
+
+    // Validating references
+    await this.validateReferences(definitions.references);
+
+    // Updating
+    await this.catalog.update(definitions);
+  }
+
+  private async validateBundleItems(items: LineItems<BundleItem>) {
     const itemsByProductId = items.indexedBy((x) => x.productId);
     const itemsByGoodId = items.indexedBy((x) => x.goodId);
-    const products = await this.catalog.findMany([...itemsByProductId.keys()]);
+    const products = await this.catalog.findManyById([...itemsByProductId.keys()]);
     const { stocks } = await this.warehouse.getGoodStocks({ goodIds: [...itemsByGoodId.keys()] });
 
     // validating leaf products
@@ -238,7 +256,7 @@ export class CatalogService {
     }
   }
 
-  private async validateLeafDefinition(goodId: string) {
+  private async checkStockExistence(goodId: string) {
     const { stocks } = await this.warehouse.checkStockExistence({ goodIds: [goodId] });
     if (!stocks.getOrThrow(goodId).exists) throw new Error(`No good found in warehouse: ${goodId}`);
     const existingProduct = await this.catalog.findByGoodId(goodId);

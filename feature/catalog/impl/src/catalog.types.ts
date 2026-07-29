@@ -1,5 +1,6 @@
-import { LineItems } from '@feature/common';
-import { ProductDto } from 'dto/product-dto';
+import { LineItems, PartialBy } from '@feature/common';
+import { ProductDto } from 'dto/product.dto';
+import { Product } from 'model/product';
 
 export type Populate = {
   fitments?: true;
@@ -18,3 +19,6 @@ export function isDefined<T>(value: T | undefined): value is T {
 export function isNotFound<T>(x: T | null): boolean {
   return x === null || x === undefined;
 }
+
+export type ProductData = PartialBy<Product, 'id'>;
+export type ProductDefinitions = ProductData;
