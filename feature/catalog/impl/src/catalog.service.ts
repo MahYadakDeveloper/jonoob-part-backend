@@ -1,7 +1,8 @@
-import { type BrandApi } from '@feature/brand-api';
-import { type CategoryApi } from '@feature/category-api';
+import { CatalogApi, RawProductsRequest, RawProductsResponse } from '@feature/catalog-api';
+import { type BrandApi } from '@feature/catalog.brand-api';
+import { type CategoryApi } from '@feature/catalog.category-api';
+import { type FitmentApi } from '@feature/catalog.fitment-api';
 import { BundleItem, LineItems } from '@feature/common';
-import { type FitmentApi } from '@feature/fitment-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import {
@@ -26,7 +27,7 @@ import { ProductSearchCriteria, ProductSearchResult } from 'repository/search';
 import { type CatalogRepository } from './repository/catalog.repository';
 
 @Injectable()
-export class CatalogService {
+export class CatalogService implements CatalogApi {
   private readonly populators: Record<
     keyof Populate,
     (products: LineItems<Product>) => Promise<ProductPopulatePatch>
@@ -55,7 +56,7 @@ export class CatalogService {
           return patches;
         }
 
-        const { brands } = await this.brand.findManyByIds({
+        const { brands } = await this.brand.findMany({
           ids: brandIds,
         });
 
@@ -138,6 +139,11 @@ export class CatalogService {
     >;
   }
 
+  async getRawProducts({ productIds }: RawProductsRequest): Promise<RawProductsResponse> {
+    const products = await this.catalog.findManyById(productIds);
+    return { products };
+  }
+
   /**
    * Note: Redis would be used as cache aside for the product too
    *  only product only retrieved by redis if products id is given.
@@ -146,7 +152,7 @@ export class CatalogService {
    *  we use elastic
    * Retrieves a product by its ID.
    */
-  async findById({ productId, populate }: FindProductRequest): Promise<FindProductResponse> {
+  async findOne({ productId, populate }: FindProductRequest): Promise<FindProductResponse> {
     const { products } = await this.findManyByIds({ productIds: [productId], populate });
     const dto = products.getOrThrow(productId);
     return { product: dto };
@@ -231,7 +237,7 @@ export class CatalogService {
     await this.validateReferences(definitions.references);
 
     // Updating
-    await this.catalog.update(definitions);
+    await this.catalog.update(productId, definitions);
   }
 
   private async validateBundleItems(items: LineItems<BundleItem>) {
@@ -272,10 +278,10 @@ export class CatalogService {
     categoryIds,
     manufacturerId,
   }: SpecificationReferences) {
-    if (brandId && (await this.brand.findById({ id: brandId }).then(isNotFound)))
+    if (brandId && (await this.brand.findOne({ id: brandId }).then(isNotFound)))
       throw new Error(`Brand reference not found!, Id: ${brandId}`);
 
-    if (manufacturerId && (await this.brand.findById({ id: manufacturerId }).then(isNotFound)))
+    if (manufacturerId && (await this.brand.findOne({ id: manufacturerId }).then(isNotFound)))
       throw new Error(`Manufacture reference not found!, Id: ${manufacturerId}`);
 
     if (fitmentIds.length > 0) {

@@ -1,9 +1,9 @@
 import { LineItems } from '@feature/common';
 import { FitmentDto } from './fitment.dto';
 
-export interface FitmentManyResponse {
+export interface FindManyFitmentResponse {
   fitments: LineItems<FitmentDto>;
 }
-export interface FitmentResponse {
+export interface FindFitmentResponse {
   fitment: FitmentDto;
 }

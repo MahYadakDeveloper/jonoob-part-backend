@@ -11,5 +11,5 @@ export interface CatalogRepository {
 
   create(data: ProductData): Promise<{ id: string }>;
 
-  update(data: ProductData): Promise<void>;
+  update(id: string, data: ProductData): Promise<void>;
 }

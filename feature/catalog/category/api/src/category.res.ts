@@ -1,10 +1,10 @@
 import { LineItems } from '@feature/common';
 import { CategoryDto } from './category.dto';
 
-export interface FindOneResponse {
+export interface FindCategoryResponse {
   category: CategoryDto;
 }
 
-export interface FindManyResponse {
+export interface FindManyCategoryResponse {
   categories: LineItems<CategoryDto>;
 }

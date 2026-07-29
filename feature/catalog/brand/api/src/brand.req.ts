@@ -1,7 +1,7 @@
 export interface FindBrandRequest {
-  id: string;
+  brandId: string;
 }
 
 export interface FindManyBrandRequest {
-  ids: string[];
+  brandIds: string[];
 }

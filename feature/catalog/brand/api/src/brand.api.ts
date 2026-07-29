@@ -2,6 +2,6 @@ import { FindBrandRequest, FindManyBrandRequest } from './brand.req';
 import { FindBrandResponse, FindManyBrandResponse } from './brand.res';
 
 export interface BrandApi {
-  findById(request: FindBrandRequest): Promise<FindBrandResponse>;
-  findManyByIds(request: FindManyBrandRequest): Promise<FindManyBrandResponse>;
+  findOne(request: FindBrandRequest): Promise<FindBrandResponse>;
+  findMany(request: FindManyBrandRequest): Promise<FindManyBrandResponse>;
 }

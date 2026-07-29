@@ -1,5 +1,5 @@
 {
-  "name": "@feature/category",
+  "name": "@feature/catalog.category",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",

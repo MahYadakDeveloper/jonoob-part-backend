@@ -1,7 +1,7 @@
-export interface FindOneRequest {
-  id: string;
+export interface FindCategoryRequest {
+  categoryId: string;
 }
 
-export interface FindManyRequest {
-  ids: string[];
+export interface FindManyCategoryRequest {
+  categoryIds: string[];
 }

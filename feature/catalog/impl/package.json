@@ -17,10 +17,11 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/brand-api": "workspace:*",
-    "@feature/category-api": "workspace:*",
+    "@feature/catalog-api": "workspace:*",
+    "@feature/catalog.brand-api": "workspace:*",
+    "@feature/catalog.category-api": "workspace:*",
     "@feature/common": "workspace:*",
-    "@feature/fitment-api": "workspace:*",
+    "@feature/catalog.fitment-api": "workspace:*",
     "@feature/media-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.1.28"

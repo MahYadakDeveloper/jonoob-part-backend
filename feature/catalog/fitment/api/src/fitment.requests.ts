@@ -1,7 +1,7 @@
-export interface FitmentRequest {
-  id: string;
+export interface FindFitmentRequest {
+  fitmentId: string;
 }
 
-export interface FitmentManyRequest {
-  ids: string[];
+export interface FindManyFitmentRequest {
+  fitmentIds: string[];
 }

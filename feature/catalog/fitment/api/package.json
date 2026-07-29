@@ -1,5 +1,5 @@
 {
-  "name": "@feature/fitment-api",
+  "name": "@feature/catalog.fitment-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",

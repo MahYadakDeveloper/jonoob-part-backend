@@ -1,7 +1,7 @@
-import { FitmentManyRequest, FitmentRequest } from './fitment.requests';
-import { FitmentManyResponse, FitmentResponse } from './fitment.responses';
+import { FindFitmentRequest, FindManyFitmentRequest } from './fitment.requests';
+import { FindFitmentResponse, FindManyFitmentResponse } from './fitment.responses';
 
 export interface FitmentApi {
-  findById(request: FitmentRequest): Promise<FitmentResponse>;
-  findManyByIds(request: FitmentManyRequest): Promise<FitmentManyResponse>;
+  findOne(request: FindFitmentRequest): Promise<FindFitmentResponse>;
+  findMany(request: FindManyFitmentRequest): Promise<FindManyFitmentResponse>;
 }

@@ -1,7 +1,7 @@
-import { FindManyRequest, FindOneRequest } from './category.req';
-import { FindManyResponse, FindOneResponse } from './category.res';
+import { FindCategoryRequest, FindManyCategoryRequest } from './category.req';
+import { FindCategoryResponse, FindManyCategoryResponse } from './category.res';
 
 export interface CategoryApi {
-  findById(request: FindOneRequest): Promise<FindOneResponse>;
-  findManyByIds(request: FindManyRequest): Promise<FindManyResponse>;
+  findOne(request: FindCategoryRequest): Promise<FindCategoryResponse>;
+  findMany(request: FindManyCategoryRequest): Promise<FindManyCategoryResponse>;
 }

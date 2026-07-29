@@ -189,9 +189,9 @@ importers:
 
   feature/catalog/brand/impl:
     dependencies:
-      '@feature/fitment-api':
+      '@feature/catalog.brand-api':
         specifier: workspace:*
-        version: link:../../fitment/api
+        version: link:../api
       '@feature/media-api':
         specifier: workspace:*
         version: link:../../../media/api
@@ -243,12 +243,12 @@ importers:
 
   feature/catalog/fitment/impl:
     dependencies:
+      '@feature/catalog.fitment-api':
+        specifier: workspace:*
+        version: link:../api
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
-      '@feature/fitment-api':
-        specifier: workspace:*
-        version: link:../api
       '@feature/media-api':
         specifier: workspace:*
         version: link:../../../media/api
@@ -258,18 +258,21 @@ importers:
 
   feature/catalog/impl:
     dependencies:
-      '@feature/brand-api':
+      '@feature/catalog-api':
+        specifier: workspace:*
+        version: link:../api
+      '@feature/catalog.brand-api':
         specifier: workspace:*
         version: link:../brand/api
-      '@feature/category-api':
+      '@feature/catalog.category-api':
         specifier: workspace:*
         version: link:../category/api
+      '@feature/catalog.fitment-api':
+        specifier: workspace:*
+        version: link:../fitment/api
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
-      '@feature/fitment-api':
-        specifier: workspace:*
-        version: link:../fitment/api
       '@feature/media-api':
         specifier: workspace:*
         version: link:../../media/api
