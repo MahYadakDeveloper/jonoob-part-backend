@@ -1,5 +1,5 @@
 import { LineItems } from '@feature/common';
-import { ProductDto } from 'dto/product-dto';
+import { ProductDto } from 'dto/product.dto';
 
 export interface FindByBarcodeResponse {
   product: ProductDto;
@@ -7,6 +7,10 @@ export interface FindByBarcodeResponse {
 
 export interface FindProductResponse {
   product: ProductDto;
+}
+
+export interface FindManyByReferencedFitmentsResponse {
+  products: LineItems<ProductDto>;
 }
 
 export interface FindManyProductResponse {

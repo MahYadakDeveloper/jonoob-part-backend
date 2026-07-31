@@ -20,5 +20,5 @@ export function isNotFound<T>(x: T | null): boolean {
   return x === null || x === undefined;
 }
 
-export type ProductData = PartialBy<Product, 'id'>;
-export type ProductDefinitions = ProductData;
+export type CreateProduct = PartialBy<Product, 'id'>;
+export type UpdateProduct = PartialBy<Product, 'id' | 'kind'>;

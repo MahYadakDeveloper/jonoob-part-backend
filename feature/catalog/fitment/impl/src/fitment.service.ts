@@ -1,4 +1,5 @@
 import { FitmentNode, type FitmentNodeApi } from '@feature/catalog.fitment.node-api';
+import { OutboxRepository, TransactionManager } from '@feature/common';
 import {
   FindFitmentRequest,
   FindFitmentResponse,
@@ -6,6 +7,10 @@ import {
   FindManyFitmentResponse,
   FitmentApi,
   FitmentDto,
+  FitmentManyDeletedEventPayload,
+  FitmentManyDeletedEventType,
+  FitmentManyUpdatedEventPayload,
+  FitmentManyUpdatedEventType,
 } from '@feature/fitment-api';
 import {
   FitmentCreationRequest,
@@ -21,6 +26,8 @@ export class FitmentService implements FitmentApi {
   constructor(
     private readonly repository: FitmentRepository,
     private readonly node: FitmentNodeApi,
+    private readonly tx: TransactionManager,
+    private readonly outbox: OutboxRepository,
   ) {}
 
   async find({ fitmentId }: FindFitmentRequest): Promise<FindFitmentResponse> {
@@ -80,14 +87,28 @@ export class FitmentService implements FitmentApi {
 
     const { node } = await this.node.find({ nodeId: fitmentDto.nodeReference });
 
-    await this.repository.update(fitmentId, {
-      nodeReference: node.id,
-      modelYearRange: fitmentDto.modelYearRange,
+    await this.tx.run(async () => {
+      await this.repository.update(fitmentId, {
+        nodeReference: node.id,
+        modelYearRange: fitmentDto.modelYearRange,
+      });
+
+      await this.outbox.save({
+        type: FitmentManyUpdatedEventType,
+        payload: { fitmentsIds: [fitmentId] } satisfies FitmentManyUpdatedEventPayload,
+      });
     });
   }
 
   async delete({ fitmentId }: FitmentDeletionRequest): Promise<void> {
-    return this.repository.delete(fitmentId);
+    await this.tx.run(async () => {
+      await this.repository.delete(fitmentId);
+
+      await this.outbox.save({
+        type: FitmentManyDeletedEventType,
+        payload: { fitmentsIds: [fitmentId] } satisfies FitmentManyDeletedEventPayload,
+      });
+    });
   }
 
   /**

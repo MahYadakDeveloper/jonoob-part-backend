@@ -20,8 +20,9 @@
     "@feature/catalog-api": "workspace:*",
     "@feature/catalog.brand-api": "workspace:*",
     "@feature/catalog.category-api": "workspace:*",
-    "@feature/common": "workspace:*",
     "@feature/catalog.fitment-api": "workspace:*",
+    "@feature/catalog.fitment.node-api": "workspace:*",
+    "@feature/common": "workspace:*",
     "@feature/media-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.1.28"

@@ -1,6 +1,7 @@
-import { BrandDto } from '@feature/brand-api';
-import { CategoryDto } from '@feature/category-api';
-import { FitmentDto } from '@feature/fitment-api';
+import { BrandDto } from '@feature/catalog.brand-api';
+import { CatagoryDto } from '@feature/catalog.brand-api';
+import { FitmentDto } from '@feature/catalog.fitment-api';
+import { ImageRef } from '@feature/media-api';
 import { ProductQuality } from 'model/product';
 
 export interface ProductDto {
@@ -8,6 +9,7 @@ export interface ProductDto {
   displayName: string;
   canonicalName: string;
   aliases: string[];
+  images: ImageRef[];
   brand?: BrandDto;
   categories?: CategoryDto[];
   fitments?: FitmentDto[];

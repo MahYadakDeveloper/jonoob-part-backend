@@ -8,6 +8,7 @@ import { Injectable } from '@nestjs/common';
 import {
   DefiningProductRequest,
   FindByBarcodeRequest,
+  FindManyByReferencedFitmentsRequest,
   FindManyProductRequest,
   FindProductRequest,
   RedefiningProductRequest,
@@ -15,6 +16,7 @@ import {
 import {
   DefiningProductResponse,
   FindByBarcodeResponse,
+  FindManyByReferencedFitmentsResponse,
   FindManyProductResponse,
   FindProductResponse,
 } from 'catalog.responses';
@@ -33,7 +35,7 @@ export class CatalogService implements CatalogApi {
     (products: LineItems<Product>) => Promise<ProductPopulatePatch>
   >;
   constructor(
-    private readonly catalog: CatalogRepository,
+    private readonly repository: CatalogRepository,
     private readonly brand: BrandApi,
     private readonly fitment: FitmentApi,
     private readonly category: CategoryApi,
@@ -57,7 +59,7 @@ export class CatalogService implements CatalogApi {
         }
 
         const { brands } = await this.brand.findMany({
-          ids: brandIds,
+          brandIds: brandIds,
         });
 
         for (const product of products) {
@@ -93,8 +95,8 @@ export class CatalogService implements CatalogApi {
           return patches;
         }
 
-        const { categories } = await this.category.findManyByIds({
-          ids: categoryIds,
+        const { categories } = await this.category.findMany({
+          categoryIds: categoryIds,
         });
 
         for (const product of products) {
@@ -120,8 +122,8 @@ export class CatalogService implements CatalogApi {
           return patches;
         }
 
-        const { fitments } = await this.fitment.findManyByIds({
-          ids: fitmentIds,
+        const { fitments } = await this.fitment.findMany({
+          fitmentIds: fitmentIds,
         });
 
         for (const product of products) {
@@ -140,7 +142,7 @@ export class CatalogService implements CatalogApi {
   }
 
   async getRawProducts({ productIds }: RawProductsRequest): Promise<RawProductsResponse> {
-    const products = await this.catalog.findManyById(productIds);
+    const products = await this.repository.findManyById(productIds);
     return { products };
   }
 
@@ -152,7 +154,7 @@ export class CatalogService implements CatalogApi {
    *  we use elastic
    * Retrieves a product by its ID.
    */
-  async findOne({ productId, populate }: FindProductRequest): Promise<FindProductResponse> {
+  async find({ productId, populate }: FindProductRequest): Promise<FindProductResponse> {
     const { products } = await this.findManyByIds({ productIds: [productId], populate });
     const dto = products.getOrThrow(productId);
     return { product: dto };
@@ -161,7 +163,7 @@ export class CatalogService implements CatalogApi {
     productIds,
     populate,
   }: FindManyProductRequest): Promise<FindManyProductResponse> {
-    const products = await this.catalog.findManyById(productIds);
+    const products = await this.repository.findManyById(productIds);
 
     const dto = await this.populate(products, populate);
 
@@ -174,7 +176,7 @@ export class CatalogService implements CatalogApi {
     // Resolve product id
     const { goodId } = await this.warehouse.resolveGoodId({ barcode });
 
-    const product = await this.catalog.findByGoodId(goodId);
+    const product = await this.repository.findByGoodId(goodId);
 
     if (product === null) throw new Error('Product not found!');
     if (product.kind === 'bundle') throw new Error('Only leaf product can be queried by barcode');
@@ -188,6 +190,17 @@ export class CatalogService implements CatalogApi {
     };
   }
 
+  async findManyByReferencedFitments({
+    fitmentReferences,
+  }: FindManyByReferencedFitmentsRequest): Promise<FindManyByReferencedFitmentsResponse> {
+    const products = await this.repository.find({
+      where: { references: { fitmentIds: fitmentReferences } },
+    });
+    return {
+      products,
+    };
+  }
+
   /**
    * Note: Redis would be used as cache aside for the product too
    *  only product only retrieved by redis if products id is given.
@@ -198,7 +211,7 @@ export class CatalogService implements CatalogApi {
       ...input,
       storefront,
     };
-    return this.catalog.search(criteria);
+    return this.repository.search(criteria);
   }
 
   /**
@@ -219,13 +232,16 @@ export class CatalogService implements CatalogApi {
     await this.validateReferences(definitions.references);
 
     // Creating
-    const { id } = await this.catalog.create(definitions);
+    const { id } = await this.repository.create({
+      ...definitions,
+      searchText: '[TODO] Generate searchText (create utils that generate base on some logic)',
+    });
 
     return { productId: id };
   }
 
   async redefine({ productId, definitions }: RedefiningProductRequest): Promise<void> {
-    const product = await this.catalog.findById(productId);
+    const product = await this.repository.findById(productId);
 
     if (!product) throw new Error(`The product not found ${productId}`);
 
@@ -237,13 +253,16 @@ export class CatalogService implements CatalogApi {
     await this.validateReferences(definitions.references);
 
     // Updating
-    await this.catalog.update(productId, definitions);
+    await this.repository.update(productId, {
+      ...definitions,
+      searchText: '[TODO] Generate searchText',
+    });
   }
 
   private async validateBundleItems(items: LineItems<BundleItem>) {
     const itemsByProductId = items.indexedBy((x) => x.productId);
     const itemsByGoodId = items.indexedBy((x) => x.goodId);
-    const products = await this.catalog.findManyById([...itemsByProductId.keys()]);
+    const products = await this.repository.findManyById([...itemsByProductId.keys()]);
     const { stocks } = await this.warehouse.getGoodStocks({ goodIds: [...itemsByGoodId.keys()] });
 
     // validating leaf products
@@ -265,7 +284,7 @@ export class CatalogService implements CatalogApi {
   private async checkStockExistence(goodId: string) {
     const { stocks } = await this.warehouse.checkStockExistence({ goodIds: [goodId] });
     if (!stocks.getOrThrow(goodId).exists) throw new Error(`No good found in warehouse: ${goodId}`);
-    const existingProduct = await this.catalog.findByGoodId(goodId);
+    const existingProduct = await this.repository.findByGoodId(goodId);
 
     if (existingProduct) {
       throw new Error(`A product is already defined for good '${goodId}'.`);
@@ -278,14 +297,14 @@ export class CatalogService implements CatalogApi {
     categoryIds,
     manufacturerId,
   }: SpecificationReferences) {
-    if (brandId && (await this.brand.findOne({ id: brandId }).then(isNotFound)))
+    if (brandId && (await this.brand.find({ brandId: brandId }).then(isNotFound)))
       throw new Error(`Brand reference not found!, Id: ${brandId}`);
 
-    if (manufacturerId && (await this.brand.findOne({ id: manufacturerId }).then(isNotFound)))
+    if (manufacturerId && (await this.brand.find({ brandId: manufacturerId }).then(isNotFound)))
       throw new Error(`Manufacture reference not found!, Id: ${manufacturerId}`);
 
     if (fitmentIds.length > 0) {
-      const { fitments } = await this.fitment.findManyByIds({ ids: fitmentIds });
+      const { fitments } = await this.fitment.findMany({ fitmentIds });
       for (const fitmentId of fitmentIds) {
         if (!fitments.has(fitmentId))
           throw new Error('Invalid fitment reference found in fitment references.');
@@ -293,7 +312,7 @@ export class CatalogService implements CatalogApi {
     }
 
     if (categoryIds.length > 0) {
-      const { categories } = await this.category.findManyByIds({ ids: categoryIds });
+      const { categories } = await this.category.findMany({ categoryIds });
       for (const categoryId of categoryIds) {
         if (!categories.has(categoryId))
           throw new Error('Invalid category reference found in category references.');

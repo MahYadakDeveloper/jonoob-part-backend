@@ -15,13 +15,12 @@
 // @Injectable()
 // export class SaleRecordedEventHandler extends BaseEventHandler<SaleRecordedEventPayload> {
 //   constructor(
-//     private readonly evenHandlerRegistry: IEventHandlerRegistry,
-//     private readonly discountUsageRepository: IDiscountUsageRepository,
+//     private readonly evenHandlerRegistry: EventHandlerRegistry,
+//     private readonly discountUsageRepository: DiscountUsageRepository,
 //   ) {
 //     super(evenHandlerRegistry, SaleRecordedEventType);
 //   }
 
-  
 //   async handle(payload: SaleRecordedEventPayload) {
 //   }
 // }

@@ -5,3 +5,7 @@ export type PartialBy<T, K extends keyof T> = T extends unknown
 export type RequiredBy<T, K extends keyof T> = T extends unknown
   ? Omit<T, K> & Required<Pick<T, K>>
   : never;
+
+export type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
+};

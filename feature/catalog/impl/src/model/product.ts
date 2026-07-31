@@ -1,4 +1,5 @@
-import { MediaRef, RawProduct } from '@feature/common';
+import { RawProduct } from '@feature/common';
+import { ImageRef } from '@feature/media-api';
 
 export type SpecificationReferences = {
   manufacturerId?: string; // This is a reference to brand too, ex: Ezam(brand) -> SazePoyesh(brand)[manufacture]
@@ -26,7 +27,7 @@ export type Product = RawProduct & {
 
   // [TODO] Add constraint to ensure product images only accept valid image MIME types.
   // Allowed MIME types should be restricted to image formats (e.g. image/jpeg, image/png, image/webp).
-  images: MediaRef[];
+  images: ImageRef[];
 
   /**
    * Human-defined alternative names.

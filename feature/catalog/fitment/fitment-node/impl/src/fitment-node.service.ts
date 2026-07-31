@@ -8,7 +8,7 @@ import {
   FitmentModelNode,
   FitmentNode,
   FitmentNodeApi,
-  FitmentNodeDeletedEvent,
+  FitmentNodeDeletedEventType,
   FitmentNodeDeletedPayload,
   FitmentSeriesNode,
   FitmentTransmissionNode,
@@ -210,7 +210,7 @@ export class FitmentNodeService implements FitmentNodeApi {
       await this.repository.deleteMany([...descendants, nodeId]);
 
       await this.outbox.save({
-        type: FitmentNodeDeletedEvent,
+        type: FitmentNodeDeletedEventType,
         payload: {
           fitmentNodes: nodes,
         } satisfies FitmentNodeDeletedPayload,

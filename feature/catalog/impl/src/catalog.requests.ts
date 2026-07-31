@@ -1,6 +1,5 @@
-import { Barcode } from '@feature/common';
-import { Populate, ProductDefinitions } from 'catalog.types';
-import { Product } from 'model/product';
+import { Barcode, PartialBy } from '@feature/common';
+import { CreateProduct, Populate, UpdateProduct } from 'catalog.types';
 
 export interface FindByBarcodeRequest {
   barcode: Barcode;
@@ -19,13 +18,17 @@ export interface FindManyProductRequest {
   populate: Populate;
 }
 
+export interface FindManyByReferencedFitmentsRequest {
+  fitmentReferences: string[];
+}
+
 // [TODO] Move media upload orchestration to the controller and let this method accept only MediaRef values.
 export type DefiningProductRequest = {
   // We didn't omit the id because of type narrowing
-  definitions: ProductDefinitions;
+  definitions: PartialBy<CreateProduct, 'searchText'>;
 };
 
 export type RedefiningProductRequest = {
   productId: string;
-  definitions: ProductDefinitions;
+  definitions: PartialBy<UpdateProduct, 'searchText'>;
 };

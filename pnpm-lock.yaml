@@ -333,6 +333,9 @@ importers:
       '@feature/catalog.fitment-api':
         specifier: workspace:*
         version: link:../fitment/api
+      '@feature/catalog.fitment.node-api':
+        specifier: workspace:*
+        version: link:../fitment/fitment-node/api
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
@@ -396,7 +399,14 @@ importers:
 
   feature/media/api: {}
 
-  feature/media/impl: {}
+  feature/media/impl:
+    dependencies:
+      '@feature/catalog.fitment.node-api':
+        specifier: workspace:*
+        version: link:../../catalog/fitment/fitment-node/api
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
 
   feature/payment/api:
     dependencies:
