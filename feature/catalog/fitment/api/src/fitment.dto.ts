@@ -1,11 +1,15 @@
-import { MediaRef } from '@feature/common';
+import { MediaRef } from '@feature/media-api';
 
 export interface FitmentDto {
+  id: string;
   make: {
     name: string;
     logo: MediaRef;
   };
-  model: string;
+  model: {
+    name: string;
+    image: MediaRef;
+  };
   series?: string;
   modelYearRange?: {
     from?: number;

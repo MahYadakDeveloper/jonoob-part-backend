@@ -1,10 +1,10 @@
-import { LineItems } from "./model/line-items";
-import { Money } from "./model/money";
+import { LineItems } from './model/line-items';
+import { Money } from './model/money';
 
-export type UnitOfMeasure = "piece" | "pair" | "set";
+export type UnitOfMeasure = 'piece' | 'pair' | 'set';
 
-export type CustomerType = "merchant" | "consumer" | "technician";
-export type PricingPolicy = "wholesale" | "retail";
+export type CustomerType = 'merchant' | 'consumer' | 'technician';
+export type PricingPolicy = 'wholesale' | 'retail';
 
 export type BankDestination = {
   cardNumber: string;
@@ -12,45 +12,32 @@ export type BankDestination = {
   lastName: string;
 };
 
-export type ProductLeafKind = { kind: "leaf" };
-export type ProductBundleKind = { kind: "bundle" };
+export type ProductLeafKind = { kind: 'leaf' };
+export type ProductBundleKind = { kind: 'bundle' };
 export type ProductKind = ProductBundleKind | ProductLeafKind;
 
-export type PaymentMethod = "posTerminal" | "onlinePaymentGateway";
+export type PaymentMethod = 'posTerminal' | 'onlinePaymentGateway';
 
 export type Payment =
   | {
-      kind: "wallet";
+      kind: 'wallet';
       walletAmount: Money;
     }
   | {
-      kind: "external";
+      kind: 'external';
       external: {
         method: PaymentMethod;
         amount: Money;
       };
     }
   | {
-      kind: "mixed";
+      kind: 'mixed';
       walletAmount: Money;
       external: {
         method: PaymentMethod;
         amount: Money;
       };
     };
-
-export type MediaRef = {
-  /** Stable identifier */
-  fileId: string;
-
-  /** Original file name */
-  fileName: string;
-
-  mimeType: string;
-  size?: number;
-
-  alt?: string;
-};
 
 export type RawProduct = LeafRawProduct | BundleRawProduct;
 

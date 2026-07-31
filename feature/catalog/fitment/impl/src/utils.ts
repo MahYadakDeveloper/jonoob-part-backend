@@ -1,9 +1,9 @@
-import { FitmentHierarchyNode, FitmentRootNode } from './model/fitment';
+import { FitmentMakeNode, FitmentNode } from '@feature/catalog.fitment.node-api';
 
 export function* ancestors(
-  node: FitmentHierarchyNode,
-): Generator<FitmentHierarchyNode | FitmentRootNode> {
-  let current: FitmentHierarchyNode | FitmentRootNode = node;
+  node: FitmentNode | FitmentMakeNode,
+): Generator<FitmentNode | FitmentMakeNode> {
+  let current: FitmentNode | FitmentMakeNode = node;
 
   while (true) {
     yield current;

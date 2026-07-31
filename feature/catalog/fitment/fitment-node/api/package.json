@@ -1,5 +1,5 @@
 {
-  "name": "@feature/catalog.fitment",
+  "name": "@feature/catalog.fitment.node-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -18,7 +18,6 @@
   "private": true,
   "dependencies": {
     "@feature/catalog.fitment-api": "workspace:*",
-    "@feature/catalog.fitment.node-api": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/media-api": "workspace:*",
     "@nestjs/common": "^11.1.28"

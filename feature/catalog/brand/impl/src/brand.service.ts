@@ -12,7 +12,7 @@ import { BrandCreationRequest, BrandDeletionRequest, BrandUpdatingRequest } from
 @Injectable()
 export class BrandService implements BrandApi {
   constructor(private readonly repository: BrandRepository) {}
-  async findOne({ brandId }: FindBrandRequest): Promise<FindBrandResponse> {
+  async find({ brandId }: FindBrandRequest): Promise<FindBrandResponse> {
     const brand = await this.repository.findById(brandId);
     if (!brand) throw new Error(`Not found brand ${brandId}`);
     return { brand };
@@ -23,15 +23,15 @@ export class BrandService implements BrandApi {
     return { brands };
   }
 
-  async createOne({ brandDto }: BrandCreationRequest): Promise<void> {
+  async create({ brandDto }: BrandCreationRequest): Promise<void> {
     return this.repository.create(brandDto);
   }
 
-  async deleteOne({ brandId }: BrandDeletionRequest): Promise<void> {
+  async delete({ brandId }: BrandDeletionRequest): Promise<void> {
     return this.repository.delete(brandId);
   }
 
-  async updateOne({ brandId, brandDto }: BrandUpdatingRequest): Promise<void> {
+  async update({ brandId, brandDto }: BrandUpdatingRequest): Promise<void> {
     const brand = await this.repository.findById(brandId);
 
     if (!brand) throw new Error(`Not found brand ${brandId}`);

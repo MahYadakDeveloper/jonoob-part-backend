@@ -1,9 +1,7 @@
 import { Controller, Delete, Get, Post, Put } from '@nestjs/common';
-import { FitmentService } from './fitment.service';
 
-@Controller('catalog/fitment')
-export class FitmentController {
-  constructor(private readonly fitment: FitmentService) {}
+@Controller('fitment/make')
+export class FitmentMakeController {
   @Get(':id')
   findOne() {}
   @Post()
