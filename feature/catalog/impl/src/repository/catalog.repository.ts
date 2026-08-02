@@ -4,7 +4,7 @@ import { Product } from 'model/product';
 import { ProductSearchCriteria, ProductSearchResult } from './search';
 
 export interface CatalogRepository {
-  find(filter: { where: DeepPartial<Product> }): Promise<LineItems<Product>>;
+  findMany(filter: { where: DeepPartial<Product> }): Promise<LineItems<Product>>;
   findById(id: string): Promise<Product | null>;
   findManyById(ids: string[]): Promise<LineItems<Product>>;
   findByGoodId(id: string): Promise<Product | null>;

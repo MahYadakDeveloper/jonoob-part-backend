@@ -2,8 +2,8 @@ import { ProductRedefinedEventPayload, ProductRedefinedEventType } from '@featur
 import { type BrandApi } from '@feature/catalog-brand-api';
 import {
   type FitmentApi,
-  FitmentDeletedEventPayload,
-  FitmentDeletedEventType,
+  FitmentManyDeletedEventPayload,
+  FitmentManyDeletedEventType,
 } from '@feature/catalog.fitment-api';
 import {
   BaseEventHandler,
@@ -16,7 +16,7 @@ import { type CatalogRepository } from 'repository/catalog.repository';
 import { generateSearchText } from 'utils/generate-search-text';
 
 @Injectable()
-export class FitmentDeletedEventHandler extends BaseEventHandler<FitmentDeletedEventPayload> {
+export class FitmentManyDeletedEventHandler extends BaseEventHandler<FitmentManyDeletedEventPayload> {
   constructor(
     registry: EventHandlerRegistry,
     private readonly repository: CatalogRepository,
@@ -25,23 +25,23 @@ export class FitmentDeletedEventHandler extends BaseEventHandler<FitmentDeletedE
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {
-    super(registry, FitmentDeletedEventType);
+    super(registry, FitmentManyDeletedEventType);
   }
 
-  async handle(payload: FitmentDeletedEventPayload): Promise<void> {
+  async handle(payload: FitmentManyDeletedEventPayload): Promise<void> {
     const products = await this.repository.findMany({
-      where: { references: { fitmentIds: [payload.fitmentsId] } },
+      where: { references: { fitmentIds: payload.fitmentsIds } },
     });
     if (products.size === 0) return;
 
-    const filterDeleted = (id: string): boolean => payload.fitmentsId === id;
+    const filterDeleted = (id: string): boolean => !!payload.fitmentsIds.find((_id) => id === _id);
 
     await Promise.all([
       products.toArray().map((product) =>
         this.tx.run(async () => {
           // Updating
-          const { fitment } = await this.fitment.find({
-            fitmentId: payload.fitmentsId,
+          const { fitments } = await this.fitment.findMany({
+            fitmentIds: product.references.fitmentIds.filter(filterDeleted),
           });
           const brandId = product.references.brandId;
           const brand = brandId ? (await this.brand.find({ brandId })).brand : undefined;
@@ -54,7 +54,7 @@ export class FitmentDeletedEventHandler extends BaseEventHandler<FitmentDeletedE
             searchText: generateSearchText({
               canonicalName: product.canonicalName,
               aliases: product.aliases,
-              fitments: [fitment].toLineItems((x) => x.id),
+              fitments,
               brand,
             }),
           });

@@ -2,8 +2,9 @@ import { ProductRedefinedEventPayload, ProductRedefinedEventType } from '@featur
 import { type BrandApi } from '@feature/catalog-brand-api';
 import {
   type FitmentApi,
-  FitmentDeletedEventPayload,
-  FitmentDeletedEventType,
+  FitmentManyDeletedEventPayload,
+  FitmentManyUpdatedEventPayload,
+  FitmentManyUpdatedEventType,
 } from '@feature/catalog.fitment-api';
 import {
   BaseEventHandler,
@@ -16,7 +17,7 @@ import { type CatalogRepository } from 'repository/catalog.repository';
 import { generateSearchText } from 'utils/generate-search-text';
 
 @Injectable()
-export class FitmentDeletedEventHandler extends BaseEventHandler<FitmentDeletedEventPayload> {
+export class FitmentUpdatedEventHandler extends BaseEventHandler<FitmentManyUpdatedEventPayload> {
   constructor(
     registry: EventHandlerRegistry,
     private readonly repository: CatalogRepository,
@@ -25,36 +26,30 @@ export class FitmentDeletedEventHandler extends BaseEventHandler<FitmentDeletedE
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {
-    super(registry, FitmentDeletedEventType);
+    super(registry, FitmentManyUpdatedEventType);
   }
 
-  async handle(payload: FitmentDeletedEventPayload): Promise<void> {
+  async handle(payload: FitmentManyUpdatedEventPayload): Promise<void> {
     const products = await this.repository.findMany({
-      where: { references: { fitmentIds: [payload.fitmentsId] } },
+      where: { references: { fitmentIds: payload.fitmentsIds } },
     });
     if (products.size === 0) return;
-
-    const filterDeleted = (id: string): boolean => payload.fitmentsId === id;
 
     await Promise.all([
       products.toArray().map((product) =>
         this.tx.run(async () => {
           // Updating
-          const { fitment } = await this.fitment.find({
-            fitmentId: payload.fitmentsId,
+          const { fitments } = await this.fitment.findMany({
+            fitmentIds: product.references.fitmentIds,
           });
           const brandId = product.references.brandId;
           const brand = brandId ? (await this.brand.find({ brandId })).brand : undefined;
           await this.repository.update(product.id, {
             ...product,
-            references: {
-              ...product.references,
-              fitmentIds: product.references.fitmentIds.filter(filterDeleted),
-            },
             searchText: generateSearchText({
               canonicalName: product.canonicalName,
               aliases: product.aliases,
-              fitments: [fitment].toLineItems((x) => x.id),
+              fitments,
               brand,
             }),
           });

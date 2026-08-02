@@ -1,6 +1,6 @@
 import {
+  FitmentNodeDeletedEventPayload,
   FitmentNodeDeletedEventType,
-  FitmentNodeDeletedPayload,
 } from '@feature/catalog.fitment.node-api';
 import {
   BaseEventHandler,
@@ -8,9 +8,10 @@ import {
   OutboxRepository,
   TransactionManager,
 } from '@feature/common';
+import { FitmentManyDeletedEventPayload, FitmentManyDeletedEventType } from '@feature/fitment-api';
 import { FitmentRepository } from '../repository/fitment.repository';
 
-export class FitmentNodeDeletedEventHandler extends BaseEventHandler<FitmentNodeDeletedPayload> {
+export class FitmentNodeDeletedEventHandler extends BaseEventHandler<FitmentNodeDeletedEventPayload> {
   constructor(
     registry: EventHandlerRegistry,
     private readonly repository: FitmentRepository,
@@ -20,7 +21,7 @@ export class FitmentNodeDeletedEventHandler extends BaseEventHandler<FitmentNode
     super(registry, FitmentNodeDeletedEventType);
   }
 
-  async handle(payload: FitmentNodeDeletedPayload): Promise<void> {
+  async handle(payload: FitmentNodeDeletedEventPayload): Promise<void> {
     const fitments = await this.repository.findManyByReferredFitment([
       ...payload.fitmentNodes.keys(),
     ]);
@@ -29,8 +30,8 @@ export class FitmentNodeDeletedEventHandler extends BaseEventHandler<FitmentNode
       await this.repository.deleteMany([...fitments.keys()]);
 
       await this.outbox.save({
-        type: FitmentNodeDeletedEventType,
-        payload: [...fitments.keys()],
+        type: FitmentManyDeletedEventType,
+        payload: { fitmentsIds: [...fitments.keys()] } satisfies FitmentManyDeletedEventPayload,
       });
     });
   }

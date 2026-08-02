@@ -13,7 +13,6 @@ import { type FitmentApi } from '@feature/catalog.fitment-api';
 import {
   BundleItem,
   LineItems,
-  PartialBy,
   type OutboxRepository,
   type TransactionManager,
 } from '@feature/common';
@@ -42,7 +41,7 @@ import { ProductDto } from 'dto/product.dto';
 import { SearchProductParamsDto } from 'dto/search-params.dto';
 import { Product, SpecificationReferences } from 'model/product';
 import { ProductSearchCriteria, ProductSearchResult } from 'repository/search';
-import { SearchTextBuilder } from 'string-text-builder';
+import { generateSearchText } from 'utils/generate-search-text';
 import { type CatalogRepository } from './repository/catalog.repository';
 
 @Injectable()
@@ -212,7 +211,7 @@ export class CatalogService implements CatalogApi {
   async findManyByReferencedFitments({
     fitmentReferences,
   }: FindManyByReferencedFitmentsRequest): Promise<FindManyByReferencedFitmentsResponse> {
-    const products = await this.repository.find({
+    const products = await this.repository.findMany({
       where: { references: { fitmentIds: fitmentReferences } },
     });
     return {
@@ -251,9 +250,19 @@ export class CatalogService implements CatalogApi {
     await this.validateReferences(definitions.references);
 
     // Creating
+    const { fitments } = await this.fitment.findMany({
+      fitmentIds: definitions.references.fitmentIds,
+    });
+    const brandId = definitions.references.brandId;
+    const brand = brandId ? (await this.brand.find({ brandId })).brand : undefined;
     const { id } = await this.repository.create({
       ...definitions,
-      searchText: await this.generateSearchText(definitions),
+      searchText: generateSearchText({
+        canonicalName: definitions.canonicalName,
+        aliases: definitions.aliases,
+        fitments,
+        brand,
+      }),
     });
 
     return { productId: id };
@@ -273,9 +282,19 @@ export class CatalogService implements CatalogApi {
 
     await this.tx.run(async () => {
       // Updating
+      const { fitments } = await this.fitment.findMany({
+        fitmentIds: definitions.references.fitmentIds,
+      });
+      const brandId = definitions.references.brandId;
+      const brand = brandId ? (await this.brand.find({ brandId })).brand : undefined;
       await this.repository.update(productId, {
         ...definitions,
-        searchText: await this.generateSearchText(definitions),
+        searchText: generateSearchText({
+          canonicalName: definitions.canonicalName,
+          aliases: definitions.aliases,
+          fitments,
+          brand,
+        }),
       });
 
       await this.outbox.save({
@@ -309,36 +328,6 @@ export class CatalogService implements CatalogApi {
         })),
       );
     });
-  }
-
-  private async generateSearchText(
-    product: PartialBy<Product, 'id' | 'searchText' | 'kind'>,
-  ): Promise<string> {
-    const brandId = product.references.brandId;
-
-    const brand = brandId ? await this.brand.find({ brandId }) : undefined;
-
-    const { fitments } = await this.fitment.findMany({
-      fitmentIds: product.references.fitmentIds,
-    });
-
-    const fitmentText = fitments
-      .toArray()
-      .flatMap((fitment) => [
-        fitment.model.name,
-        fitment.series,
-        fitment.transmission,
-        fitment.fuelType,
-      ]);
-
-    // [TODO] Add Persian text normalizer like lowercasing, english digits, arabic to persian and etc.
-    return new SearchTextBuilder()
-      .add(product.canonicalName)
-      .add(...product.aliases)
-      .add(brand?.brand?.name)
-      .add(brand?.brand?.slug)
-      .add(...fitmentText)
-      .build();
   }
 
   private async validateBundleItems(items: LineItems<BundleItem>) {

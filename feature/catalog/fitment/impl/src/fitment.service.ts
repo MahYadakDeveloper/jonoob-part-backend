@@ -6,11 +6,11 @@ import {
   FindManyFitmentRequest,
   FindManyFitmentResponse,
   FitmentApi,
+  FitmentDeletedEventPayload,
   FitmentDto,
-  FitmentManyDeletedEventPayload,
   FitmentManyDeletedEventType,
-  FitmentManyUpdatedEventPayload,
   FitmentManyUpdatedEventType,
+  FitmentUpdatedEventPayload,
 } from '@feature/fitment-api';
 import {
   FitmentCreationRequest,
@@ -95,7 +95,7 @@ export class FitmentService implements FitmentApi {
 
       await this.outbox.save({
         type: FitmentManyUpdatedEventType,
-        payload: { fitmentsIds: [fitmentId] } satisfies FitmentManyUpdatedEventPayload,
+        payload: { fitmentsId: fitmentId } satisfies FitmentUpdatedEventPayload,
       });
     });
   }
@@ -106,7 +106,7 @@ export class FitmentService implements FitmentApi {
 
       await this.outbox.save({
         type: FitmentManyDeletedEventType,
-        payload: { fitmentsIds: [fitmentId] } satisfies FitmentManyDeletedEventPayload,
+        payload: { fitmentsId: fitmentId } satisfies FitmentDeletedEventPayload,
       });
     });
   }
