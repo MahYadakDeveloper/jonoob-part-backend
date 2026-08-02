@@ -21,12 +21,18 @@ export class FitmentManyDeletedEventHandler extends BaseEventHandler<FitmentMany
     });
     if (products.size === 0) return;
 
+    const filterDeleted = (id: string): boolean => !!payload.fitmentsIds.find((_id) => id === _id);
+
     await Promise.all([
       products.toArray().map((product) =>
         this.catalog.redefine({
           productId: product.id,
           definitions: {
             ...product,
+            references: {
+              ...product.references,
+              fitmentIds: product.references.fitmentIds.filter(filterDeleted),
+            },
           },
         }),
       ),

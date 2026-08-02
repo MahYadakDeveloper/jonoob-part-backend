@@ -1,5 +1,5 @@
 {
-  "name": "@infra/queue-messaging",
+  "name": "@infra/messaging-queue",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -16,6 +16,7 @@
     }
   },
   "dependencies": {
+    "@jonoob-part/contracts": "^1.0.1",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.1.28"
   }

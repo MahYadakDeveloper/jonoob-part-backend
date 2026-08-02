@@ -1,5 +1,5 @@
 {
-  "name": "@feature/catalog.brand",
+  "name": "@feature/catalog-brand",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,7 +17,7 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/catalog.brand-api": "workspace:*",
+    "@feature/catalog-brand-api": "workspace:*",
     "@feature/media-api": "workspace:*",
     "@nestjs/common": "^11.1.28"
   }

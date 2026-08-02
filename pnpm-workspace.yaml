@@ -2,6 +2,7 @@ packages:
   - app/*
   - feature/*/**
   - infrastructure/*/**
+  - packages/*
 
 catalog:
   typescript: ^7.0.2
@@ -16,6 +17,9 @@ allowBuilds:
 # httpProxy: "http://192.168.1.10:18888"
 
 fetchTimeout: 90000
+
+minimumReleaseAgeExclude:
+  - '@jonoob-part/contracts@1.0.0 || 1.0.1'
 
 # registries:
 #   default: https://package-mirror.liara.ir/repository/npm/

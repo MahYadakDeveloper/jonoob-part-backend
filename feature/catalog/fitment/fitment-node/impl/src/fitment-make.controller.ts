@@ -24,9 +24,11 @@ export class FitmentMakeController {
   @Post()
   createOne() {}
 
+  // [TODO] Handle media like catalog controller
   @Put()
   updateOne() {}
 
+  // [TODO] Handle media like catalog controller
   @Delete()
   deleteOne() {}
 }

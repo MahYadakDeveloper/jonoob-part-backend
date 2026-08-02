@@ -1,9 +1,7 @@
-import { EventHandler } from "./event-handler";
-import { EventHandlerRegistry } from "./event-handler-registry";
+import { EventHandler } from './event-handler';
+import { EventHandlerRegistry } from './event-handler-registry';
 
-export abstract class BaseEventHandler<
-  TPayload = unknown,
-> implements EventHandler<TPayload> {
+export abstract class BaseEventHandler<TPayload = unknown> implements EventHandler<TPayload> {
   protected constructor(registry: EventHandlerRegistry, eventType: string) {
     registry.register(eventType, this);
   }

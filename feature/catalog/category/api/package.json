@@ -1,5 +1,5 @@
 {
-  "name": "@feature/catalog.category-api",
+  "name": "@feature/catalog-category-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",

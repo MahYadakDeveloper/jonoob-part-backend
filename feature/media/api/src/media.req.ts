@@ -20,6 +20,10 @@ export type DeleteMediaRequest = {
   fileId: string;
 };
 
+export type DeleteManyMediaRequest = {
+  fileIds: string[];
+};
+
 /**
  * Public URL request.
  */

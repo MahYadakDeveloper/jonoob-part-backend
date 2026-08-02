@@ -1,5 +1,5 @@
 {
-  "name": "@feature/catalog.category",
+  "name": "@feature/catalog-category",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,6 +17,8 @@
   },
   "private": true,
   "dependencies": {
+    "@feature/catalog-category-api": "workspace:*",
+    "@feature/common": "workspace:*",
     "@nestjs/common": "^11.1.28"
   }
 }

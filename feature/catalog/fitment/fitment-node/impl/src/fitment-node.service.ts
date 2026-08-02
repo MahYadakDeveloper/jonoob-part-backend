@@ -8,8 +8,10 @@ import {
   FitmentModelNode,
   FitmentNode,
   FitmentNodeApi,
+  FitmentNodeDeletedEventPayload,
   FitmentNodeDeletedEventType,
-  FitmentNodeDeletedPayload,
+  FitmentNodeUpdatedEventPayload,
+  FitmentNodeUpdateEventType,
   FitmentSeriesNode,
   FitmentTransmissionNode,
 } from '@feature/catalog.fitment.node-api';
@@ -131,22 +133,6 @@ export class FitmentNodeService implements FitmentNodeApi {
     };
   }
 
-  async createNode(input: CreateNode) {
-    const node = await this.repository.find({
-      where: {
-        name: input.name,
-        type: input.type,
-        parentId: input.type === 'make' ? undefined : input.parentId,
-      },
-    });
-
-    if (node) {
-      throw new Error(`There is already a ${input.type} named '${input.name}'`);
-    }
-
-    return this.repository.create(input);
-  }
-
   async updateMake({ nodeId, name, logo }: FitmentMakeUpdatingRequest): Promise<void> {
     return this.updateNode(nodeId, {
       name,
@@ -180,6 +166,22 @@ export class FitmentNodeService implements FitmentNodeApi {
     });
   }
 
+  async createNode(input: CreateNode) {
+    const node = await this.repository.find({
+      where: {
+        name: input.name,
+        type: input.type,
+        parentId: input.type === 'make' ? undefined : input.parentId,
+      },
+    });
+
+    if (node) {
+      throw new Error(`There is already a ${input.type} named '${input.name}'`);
+    }
+
+    return this.repository.create(input);
+  }
+
   async updateFuelType({ nodeId, name, parentId }: FitmentFuelTypeUpdatingRequest): Promise<void> {
     return this.updateNode(nodeId, {
       name,
@@ -194,7 +196,28 @@ export class FitmentNodeService implements FitmentNodeApi {
       throw new Error(`Not found node ${nodeId}`);
     }
 
-    await this.repository.update(nodeId, input);
+    const dup = await this.repository.find({
+      where: {
+        name: input.name, // New name, have to be not existed yet!
+        type: node.type,
+        parentId: node.parent?.id,
+      },
+    });
+
+    if (node) {
+      throw new Error(`There is already a ${node.type} named '${input.name}'`);
+    }
+
+    await this.tx.run(async () => {
+      await this.repository.update(nodeId, input);
+
+      await this.outbox.save({
+        type: FitmentNodeUpdateEventType,
+        payload: {
+          fitmentNodeId: nodeId,
+        } satisfies FitmentNodeUpdatedEventPayload,
+      });
+    });
   }
 
   /**
@@ -213,7 +236,7 @@ export class FitmentNodeService implements FitmentNodeApi {
         type: FitmentNodeDeletedEventType,
         payload: {
           fitmentNodes: nodes,
-        } satisfies FitmentNodeDeletedPayload,
+        } satisfies FitmentNodeDeletedEventPayload,
       });
     });
   }

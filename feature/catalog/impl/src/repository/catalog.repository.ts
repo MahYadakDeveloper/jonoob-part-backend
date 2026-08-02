@@ -13,4 +13,7 @@ export interface CatalogRepository {
   create(data: CreateProduct): Promise<{ id: string }>;
 
   update(id: string, data: UpdateProduct): Promise<void>;
+
+  delete(id: string): Promise<void>;
+  deleteMany(ids: string[]): Promise<void>;
 }

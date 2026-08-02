@@ -1,25 +1,25 @@
-import { OnQueueEvent, Processor, WorkerHost } from "@nestjs/bullmq";
-import { Job } from "bullmq";
-import { UnknownEventHandlerError } from "./unknown-event-handler.error";
-import { type EventHandlerRegistry } from "@feature/common";
+import { type EventHandlerRegistry } from '@feature/common';
+import { OnQueueEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+import { UnknownEventHandlerError } from './unknown-event-handler.error';
 
-@Processor("events")
+@Processor('events')
 export class EventsConsumer extends WorkerHost {
   constructor(private readonly registry: EventHandlerRegistry) {
     super();
   }
 
   async process(job: Job) {
-    const handler = this.registry.get(job.name);
+    const handlers = this.registry.get(job.name);
 
-    if (!handler) {
+    if (!handlers.length) {
       throw new UnknownEventHandlerError(job.name);
     }
 
-    await handler.handle(job.data);
+    await Promise.all(handlers.map((handler) => handler.handle(job.data)));
   }
 
-  @OnQueueEvent("failed")
+  @OnQueueEvent('failed')
   onFailed() {
     // TODO Handle the failure of jobs
   }

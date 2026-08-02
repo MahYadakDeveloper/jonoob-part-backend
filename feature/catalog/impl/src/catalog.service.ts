@@ -1,8 +1,22 @@
-import { CatalogApi, RawProductsRequest, RawProductsResponse } from '@feature/catalog-api';
+import {
+  CatalogApi,
+  ProductDeletedEventPayload,
+  ProductDeletedEventType,
+  ProductRedefinedEventPayload,
+  ProductRedefinedEventType,
+  RawProductsRequest,
+  RawProductsResponse,
+} from '@feature/catalog-api';
 import { type BrandApi } from '@feature/catalog.brand-api';
 import { type CategoryApi } from '@feature/catalog.category-api';
 import { type FitmentApi } from '@feature/catalog.fitment-api';
-import { BundleItem, LineItems } from '@feature/common';
+import {
+  BundleItem,
+  LineItems,
+  PartialBy,
+  type OutboxRepository,
+  type TransactionManager,
+} from '@feature/common';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import {
@@ -11,6 +25,8 @@ import {
   FindManyByReferencedFitmentsRequest,
   FindManyProductRequest,
   FindProductRequest,
+  ProductDeletionRequest,
+  ProductManyDeletionRequest,
   RedefiningProductRequest,
 } from 'catalog.requests';
 import {
@@ -26,6 +42,7 @@ import { ProductDto } from 'dto/product.dto';
 import { SearchProductParamsDto } from 'dto/search-params.dto';
 import { Product, SpecificationReferences } from 'model/product';
 import { ProductSearchCriteria, ProductSearchResult } from 'repository/search';
+import { SearchTextBuilder } from 'string-text-builder';
 import { type CatalogRepository } from './repository/catalog.repository';
 
 @Injectable()
@@ -41,6 +58,8 @@ export class CatalogService implements CatalogApi {
     private readonly category: CategoryApi,
     private readonly warehouse: WarehouseApi,
     private readonly ctx: CatalogContextProvider,
+    private readonly tx: TransactionManager,
+    private readonly outbox: OutboxRepository,
   ) {
     this.populators = {
       brand: async (products: LineItems<Product>): Promise<ProductPopulatePatch> => {
@@ -234,7 +253,7 @@ export class CatalogService implements CatalogApi {
     // Creating
     const { id } = await this.repository.create({
       ...definitions,
-      searchText: '[TODO] Generate searchText (create utils that generate base on some logic)',
+      searchText: await this.generateSearchText(definitions),
     });
 
     return { productId: id };
@@ -252,11 +271,74 @@ export class CatalogService implements CatalogApi {
     // Validating references
     await this.validateReferences(definitions.references);
 
-    // Updating
-    await this.repository.update(productId, {
-      ...definitions,
-      searchText: '[TODO] Generate searchText',
+    await this.tx.run(async () => {
+      // Updating
+      await this.repository.update(productId, {
+        ...definitions,
+        searchText: await this.generateSearchText(definitions),
+      });
+
+      await this.outbox.save({
+        type: ProductRedefinedEventType,
+        payload: {
+          productId,
+        } satisfies ProductRedefinedEventPayload,
+      });
     });
+  }
+
+  delete({ productId }: ProductDeletionRequest): Promise<void> {
+    return this.tx.run(async () => {
+      await this.repository.delete(productId);
+
+      await this.outbox.save({
+        type: ProductDeletedEventType,
+        payload: { productId } satisfies ProductDeletedEventPayload,
+      });
+    });
+  }
+
+  deleteMany({ productIds }: ProductManyDeletionRequest): Promise<void> {
+    return this.tx.run(async () => {
+      await this.repository.deleteMany(productIds);
+
+      await this.outbox.saveMany(
+        productIds.map((productId) => ({
+          type: ProductDeletedEventType,
+          payload: { productId } satisfies ProductDeletedEventPayload,
+        })),
+      );
+    });
+  }
+
+  private async generateSearchText(
+    product: PartialBy<Product, 'id' | 'searchText' | 'kind'>,
+  ): Promise<string> {
+    const brandId = product.references.brandId;
+
+    const brand = brandId ? await this.brand.find({ brandId }) : undefined;
+
+    const { fitments } = await this.fitment.findMany({
+      fitmentIds: product.references.fitmentIds,
+    });
+
+    const fitmentText = fitments
+      .toArray()
+      .flatMap((fitment) => [
+        fitment.model.name,
+        fitment.series,
+        fitment.transmission,
+        fitment.fuelType,
+      ]);
+
+    // [TODO] Add Persian text normalizer like lowercasing, english digits, arabic to persian and etc.
+    return new SearchTextBuilder()
+      .add(product.canonicalName)
+      .add(...product.aliases)
+      .add(brand?.brand?.name)
+      .add(brand?.brand?.slug)
+      .add(...fitmentText)
+      .build();
   }
 
   private async validateBundleItems(items: LineItems<BundleItem>) {

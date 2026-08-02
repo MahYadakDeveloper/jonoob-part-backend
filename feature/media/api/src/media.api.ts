@@ -1,14 +1,11 @@
 import {
+  DeleteManyMediaRequest,
   DeleteMediaRequest,
   GetMediaUrlRequest,
   GetSignedMediaUrlRequest,
   UploadFileRequest,
-} from "./media.req";
-import {
-  GetMediaUrlResponse,
-  GetSignedMediaUrlResponse,
-  UploadFileResponse,
-} from "./media.res";
+} from './media.req';
+import { GetMediaUrlResponse, GetSignedMediaUrlResponse, UploadFileResponse } from './media.res';
 
 /**
  * Public contract used by other modules (Catalog, Brand, etc.).
@@ -28,9 +25,10 @@ export interface MediaApi {
    * Delete a file by its stable identifier.
    *
    * Implementations may perform a soft delete if the file
-   * is still referenced by other entities.
+   * is still referenced by other entities. [I don't think so, each file uniquely referenced by its mediaRef]
    */
   delete(request: DeleteMediaRequest): Promise<void>;
+  deleteMany(request: DeleteManyMediaRequest): Promise<void>;
 
   /**
    * Resolve a public URL for a stored file.
@@ -44,7 +42,5 @@ export interface MediaApi {
    *
    * Keep this method even if you do not need it today.
    */
-  getSignedUrl(
-    request: GetSignedMediaUrlRequest,
-  ): Promise<GetSignedMediaUrlResponse>;
+  getSignedUrl(request: GetSignedMediaUrlRequest): Promise<GetSignedMediaUrlResponse>;
 }

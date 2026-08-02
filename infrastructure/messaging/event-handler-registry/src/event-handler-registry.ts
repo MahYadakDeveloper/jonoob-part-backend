@@ -1,15 +1,15 @@
-import { EventHandler, EventHandlerRegistry } from "@feature/common";
+import { EventHandler, EventHandlerRegistry } from '@feature/common';
 
 export class EventHandlerRegistryImpl implements EventHandlerRegistry {
-  private readonly handlers = new Map<string, EventHandler>();
+  private readonly handlers = new Map<string, EventHandler[]>();
   register(eventType: string, handler: EventHandler): void {
-    if (this.handlers.has(eventType)) {
-      throw new Error(`Handler already registered for ${eventType}`);
-    }
+    const handlers = this.handlers.get(eventType) ?? [];
 
-    this.handlers.set(eventType, handler);
+    handlers.push(handler);
+
+    this.handlers.set(eventType, handlers);
   }
-  get(eventType: string): EventHandler | undefined {
-    return this.handlers.get(eventType);
+  get(eventType: string): EventHandler[] {
+    return this.handlers.get(eventType) ?? [];
   }
 }

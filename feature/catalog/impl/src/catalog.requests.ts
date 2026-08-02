@@ -32,3 +32,11 @@ export type RedefiningProductRequest = {
   productId: string;
   definitions: PartialBy<UpdateProduct, 'searchText'>;
 };
+
+export interface ProductDeletionRequest {
+  productId: string;
+}
+
+export interface ProductManyDeletionRequest {
+  productIds: string[];
+}

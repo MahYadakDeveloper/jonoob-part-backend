@@ -3,7 +3,7 @@ import { BaseFitmentNode, CreateNode, UpdateNode } from '../model/fitment-node';
 
 export interface FitmentNodeRepository {
   find(filter: {
-    where: { name: string; type: string; parentId?: string };
+    where: { name?: string; type?: string; parentId?: string };
   }): Promise<BaseFitmentNode>;
   findById(id: string): Promise<BaseFitmentNode>;
   findHierarchyNodeById(id: string): Promise<BaseFitmentNode | null>;

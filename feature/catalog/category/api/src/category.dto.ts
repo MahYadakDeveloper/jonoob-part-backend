@@ -1,3 +1,6 @@
-export interface CategoryDto {
-  taxonomy: Iterable<string>;
+export interface CategoryNodeDto {
+  id: string;
+  name: string;
 }
+
+export type CategoryDto = CategoryNodeDto[];
