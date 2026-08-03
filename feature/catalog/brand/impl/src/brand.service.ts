@@ -1,17 +1,26 @@
 import {
   BrandApi,
+  BrandDeletedEventPayload,
+  BrandDeletedEventType,
+  BrandUpdatedEventPayload,
+  BrandUpdatedEventType,
   FindBrandRequest,
   FindBrandResponse,
   FindManyBrandRequest,
   FindManyBrandResponse,
 } from '@feature/catalog.brand-api';
+import { type OutboxRepository, type TransactionManager } from '@feature/common';
 import { Injectable } from '@nestjs/common';
 import { type BrandRepository } from './brand.repository';
 import { BrandCreationRequest, BrandDeletionRequest, BrandUpdatingRequest } from './brand.req';
 
 @Injectable()
 export class BrandService implements BrandApi {
-  constructor(private readonly repository: BrandRepository) {}
+  constructor(
+    private readonly repository: BrandRepository,
+    private readonly tx: TransactionManager,
+    private readonly outbox: OutboxRepository,
+  ) {}
   async find({ brandId }: FindBrandRequest): Promise<FindBrandResponse> {
     const brand = await this.repository.findById(brandId);
     if (!brand) throw new Error(`Not found brand ${brandId}`);
@@ -28,7 +37,16 @@ export class BrandService implements BrandApi {
   }
 
   async delete({ brandId }: BrandDeletionRequest): Promise<void> {
-    return this.repository.delete(brandId);
+    return this.tx.run(async () => {
+      await this.repository.delete(brandId);
+
+      await this.outbox.save({
+        type: BrandDeletedEventType,
+        payload: {
+          brandId,
+        } satisfies BrandDeletedEventPayload,
+      });
+    });
   }
 
   async update({ brandId, brandDto }: BrandUpdatingRequest): Promise<void> {
@@ -36,6 +54,15 @@ export class BrandService implements BrandApi {
 
     if (!brand) throw new Error(`Not found brand ${brandId}`);
 
-    return this.repository.update(brandId, brandDto);
+    return this.tx.run(async () => {
+      await this.repository.update(brandId, brandDto);
+
+      await this.outbox.save({
+        type: BrandUpdatedEventType,
+        payload: {
+          brandId,
+        } satisfies BrandUpdatedEventPayload,
+      });
+    });
   }
 }

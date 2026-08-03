@@ -30,43 +30,77 @@ export class FitmentManyDeletedEventHandler extends BaseEventHandler<FitmentMany
 
   async handle(payload: FitmentManyDeletedEventPayload): Promise<void> {
     const products = await this.repository.findMany({
-      where: { references: { fitmentIds: payload.fitmentsIds } },
+      where: { references: { fitmentIds: { hasSome: payload.fitmentsIds } } },
     });
     if (products.size === 0) return;
 
-    const filterDeleted = (id: string): boolean => !!payload.fitmentsIds.find((_id) => id === _id);
+    await this.tx.run(async () => {
+      // Updating
 
-    await Promise.all([
-      products.toArray().map((product) =>
-        this.tx.run(async () => {
-          // Updating
-          const { fitments } = await this.fitment.findMany({
-            fitmentIds: product.references.fitmentIds.filter(filterDeleted),
-          });
-          const brandId = product.references.brandId;
-          const brand = brandId ? (await this.brand.find({ brandId })).brand : undefined;
-          await this.repository.update(product.id, {
-            ...product,
-            references: {
-              ...product.references,
-              fitmentIds: product.references.fitmentIds.filter(filterDeleted),
-            },
-            searchText: generateSearchText({
-              canonicalName: product.canonicalName,
-              aliases: product.aliases,
-              fitments,
-              brand,
-            }),
-          });
-
-          await this.outbox.save({
-            type: ProductRedefinedEventType,
-            payload: {
-              productId: product.id,
-            } satisfies ProductRedefinedEventPayload,
-          });
+      // Resolving fitments
+      const productWithNonDeletedFitments = products.transform(
+        (product) => ({
+          productId: product.id,
+          nonDeletedFitments: product.references.fitmentIds.filter(
+            (id) => !payload.fitmentsIds.find((_id) => _id === id),
+          ),
         }),
-      ),
-    ]);
+        (x) => x.productId,
+      );
+      const fitmentIds = [
+        ...new Set(productWithNonDeletedFitments.toArray().flatMap((x) => x.nonDeletedFitments)),
+      ];
+      const { fitments } = await this.fitment.findMany({ fitmentIds });
+
+      // Resolving brands
+      const { brands } = await this.brand.findMany({
+        brandIds: [
+          ...new Set(
+            products
+              .transform(
+                (product) => ({
+                  productId: product.id,
+                  brandId: product.references.brandId,
+                }),
+                (p) => p.productId,
+              )
+              .toArray()
+              .map((x) => x.brandId)
+              .filter((brandId): brandId is string => brandId !== undefined),
+          ),
+        ],
+      });
+
+      for (const product of products) {
+        const brandId = product.references.brandId;
+        const nonDeletedFitmentIds = productWithNonDeletedFitments.getOrThrow(
+          product.id,
+        ).nonDeletedFitments;
+        await this.repository.update(product.id, {
+          ...product,
+          references: {
+            ...product.references,
+            fitmentIds: nonDeletedFitmentIds,
+          },
+          searchText: generateSearchText({
+            canonicalName: product.canonicalName,
+            aliases: product.aliases,
+            fitments: nonDeletedFitmentIds
+              .map((fitmentId) => fitments.getOrThrow(fitmentId))
+              .toLineItems((fitment) => fitment.id),
+            brand: brandId ? brands.get(brandId) : undefined,
+          }),
+        });
+      }
+
+      await this.outbox.saveMany(
+        products.toArray().map((product) => ({
+          type: ProductRedefinedEventType,
+          payload: {
+            productId: product.id,
+          } satisfies ProductRedefinedEventPayload,
+        })),
+      );
+    });
   }
 }

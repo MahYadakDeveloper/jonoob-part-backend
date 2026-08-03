@@ -1,5 +1,5 @@
 {
-  "name": "@feature/procurement",
+  "name": "@feature/procurement-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,7 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "^11.1.26"
+    "@feature/common": "workspace:*"
   }
 }

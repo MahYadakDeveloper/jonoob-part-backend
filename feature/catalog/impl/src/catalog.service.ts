@@ -212,7 +212,7 @@ export class CatalogService implements CatalogApi {
     fitmentReferences,
   }: FindManyByReferencedFitmentsRequest): Promise<FindManyByReferencedFitmentsResponse> {
     const products = await this.repository.findMany({
-      where: { references: { fitmentIds: fitmentReferences } },
+      where: { references: { fitmentIds: { hasSome: fitmentReferences } } },
     });
     return {
       products,

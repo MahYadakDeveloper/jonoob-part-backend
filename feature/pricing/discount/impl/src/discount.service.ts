@@ -1,4 +1,4 @@
-import { AppliedDiscount, LineItems } from "@feature/common";
+import { AppliedDiscount, LineItems } from '@feature/common';
 import {
   ApplicableDiscount,
   DiscountApi,
@@ -7,18 +7,18 @@ import {
   FindApplicableDiscountResponse,
   FindManyApplicableDiscountRequest,
   FindManyApplicableDiscountResponse,
-} from "@feature/discount-api";
-import { type PricingApi } from "@feature/pricing-api";
-import { Injectable } from "@nestjs/common";
-import { DiscountCustomerUsageLimitExceededError } from "./errors/discount-customer-usage-limit-exceeded-error";
-import { DiscountTotalUsageLimitExceededError } from "./errors/discount-total-usage-limit-exceeded-error";
-import { DiscountUsage } from "./model/discount-usage";
-import { DiscountUsagePolicy } from "./model/discount-usage-policy";
-import { DiscountWithUsagePolicy } from "./model/discount-with-usage-policy";
-import { type Synchronizer } from "./ports/synchronizer";
-import { type CampaignDiscountRepository } from "./repository/campaign-discount.repository";
-import { type DiscountUsageRepository } from "./repository/discount-usage.repository";
-import { type SpecificDiscountRepository } from "./repository/specific-discount.repository";
+} from '@feature/discount-api';
+import { type PricingApi } from '@feature/pricing-api';
+import { Injectable } from '@nestjs/common';
+import { DiscountCustomerUsageLimitExceededError } from './errors/discount-customer-usage-limit-exceeded-error';
+import { DiscountTotalUsageLimitExceededError } from './errors/discount-total-usage-limit-exceeded-error';
+import { DiscountUsage } from './model/discount-usage';
+import { DiscountUsagePolicy } from './model/discount-usage-policy';
+import { DiscountWithUsagePolicy } from './model/discount-with-usage-policy';
+import { type Synchronizer } from './ports/synchronizer';
+import { type CampaignDiscountRepository } from './repository/campaign-discount.repository';
+import { type DiscountUsageRepository } from './repository/discount-usage.repository';
+import { type SpecificDiscountRepository } from './repository/specific-discount.repository';
 
 @Injectable()
 export class DiscountService implements DiscountApi {
@@ -29,8 +29,9 @@ export class DiscountService implements DiscountApi {
     private readonly pricing: PricingApi,
     private readonly synchronizer: Synchronizer,
   ) {}
-  private static readonly SYNCHRONIZER_LOCK_KEY =
-    "DiscountUsageConsumptionLock";
+  private static readonly SYNCHRONIZER_LOCK_KEY = 'DiscountUsageConsumptionLock';
+
+  // [TODO] Create a service method that does create discounts[campaign | individual]
 
   /**
    * Updates discount usage records after a sale is completed. If the sale contains
@@ -45,47 +46,42 @@ export class DiscountService implements DiscountApi {
 
     if (requestedUsages.size === 0) return;
 
-    await this.synchronizer.executeExclusive(
-      DiscountService.SYNCHRONIZER_LOCK_KEY,
-      async () => {
-        const discountIds = requestedUsages.keys();
+    await this.synchronizer.executeExclusive(DiscountService.SYNCHRONIZER_LOCK_KEY, async () => {
+      const discountIds = requestedUsages.keys();
 
-        const [specificDiscounts, campaignDiscounts] = await Promise.all([
-          this.specificDiscountRepository.findManyByIds([...discountIds]),
-          this.campaignDiscountRepository.findManyByIds([...discountIds]),
-        ]);
+      const [specificDiscounts, campaignDiscounts] = await Promise.all([
+        this.specificDiscountRepository.findManyByIds([...discountIds]),
+        this.campaignDiscountRepository.findManyByIds([...discountIds]),
+      ]);
 
-        const discounts = new LineItems<DiscountWithUsagePolicy>((x) => x.id);
+      const discounts = new LineItems<DiscountWithUsagePolicy>((x) => x.id);
 
-        for (const discount of [...specificDiscounts, ...campaignDiscounts]) {
-          discounts.set(discount);
-        }
-        const [customerUsages, discountUsages] = await Promise.all([
-          this.discountUsageRepository.findCustomerUsages(customerId, [
-            ...discountIds,
-          ]),
-          this.discountUsageRepository.findDiscountUsages([...discountIds]),
-        ]);
+      for (const discount of [...specificDiscounts, ...campaignDiscounts]) {
+        discounts.set(discount);
+      }
+      const [customerUsages, discountUsages] = await Promise.all([
+        this.discountUsageRepository.findCustomerUsages(customerId, [...discountIds]),
+        this.discountUsageRepository.findDiscountUsages([...discountIds]),
+      ]);
 
-        this.validateRequestedUsages({
-          requestedUsages,
-          customerUsages,
-          discountUsages,
-          discounts,
-        });
+      this.validateRequestedUsages({
+        requestedUsages,
+        customerUsages,
+        discountUsages,
+        discounts,
+      });
 
-        // The upsert method going to update if discountId existed otherwise going to create new row
-        await this.discountUsageRepository.upsertMany(
-          requestedUsages.transform(
-            (x) => ({
-              customerId,
-              ...x,
-            }),
-            (x) => x.discountId,
-          ),
-        );
-      },
-    );
+      // The upsert method going to update if discountId existed otherwise going to create new row
+      await this.discountUsageRepository.upsertMany(
+        requestedUsages.transform(
+          (x) => ({
+            customerId,
+            ...x,
+          }),
+          (x) => x.discountId,
+        ),
+      );
+    });
   }
 
   async findManyApplicableDiscount({
@@ -96,7 +92,7 @@ export class DiscountService implements DiscountApi {
       customerId,
     });
 
-    if (policy === "wholesale") {
+    if (policy === 'wholesale') {
       return {
         discounts: new LineItems<{
           productId: string;
@@ -130,9 +126,9 @@ export class DiscountService implements DiscountApi {
           ...discount,
           applicableQuantity: quantities.getOrThrow(
             discount.id,
-            () => new Error("Applicable quantity not resolved."),
+            () => new Error('Applicable quantity not resolved.'),
           ).applicableQuantity,
-          kind: "specific",
+          kind: 'specific',
         },
       });
     }
@@ -146,9 +142,9 @@ export class DiscountService implements DiscountApi {
           ...discount,
           applicableQuantity: quantities.getOrThrow(
             discount.id,
-            () => new Error("Applicable quantity not resolved."),
+            () => new Error('Applicable quantity not resolved.'),
           ).applicableQuantity,
-          kind: "campaign",
+          kind: 'campaign',
         },
       });
     }
@@ -166,10 +162,9 @@ export class DiscountService implements DiscountApi {
     const { policy } = await this.pricing.resolvePricingPolicy({
       customerId,
     });
-    if (policy === "wholesale") return {};
+    if (policy === 'wholesale') return {};
 
-    const specificDiscount =
-      await this.specificDiscountRepository.findByProductId(productId);
+    const specificDiscount = await this.specificDiscountRepository.findByProductId(productId);
 
     if (specificDiscount) {
       return {
@@ -179,13 +174,12 @@ export class DiscountService implements DiscountApi {
             customerId,
             discount: specificDiscount,
           }),
-          kind: "specific",
+          kind: 'specific',
         },
       };
     }
 
-    const campaignDiscount =
-      await this.campaignDiscountRepository.findByProductId(productId);
+    const campaignDiscount = await this.campaignDiscountRepository.findByProductId(productId);
 
     if (campaignDiscount) {
       return {
@@ -195,7 +189,7 @@ export class DiscountService implements DiscountApi {
             customerId,
             discount: campaignDiscount,
           }),
-          kind: "campaign",
+          kind: 'campaign',
         },
       };
     }
@@ -212,9 +206,9 @@ export class DiscountService implements DiscountApi {
       id: string;
       usagePolicy: DiscountUsagePolicy;
     };
-  }): Promise<"unlimited" | number> {
-    if (discount.usagePolicy.kind === "unlimited") {
-      return "unlimited";
+  }): Promise<'unlimited' | number> {
+    if (discount.usagePolicy.kind === 'unlimited') {
+      return 'unlimited';
     }
 
     const [customerUsage, discountUsages] = await Promise.all([
@@ -238,23 +232,23 @@ export class DiscountService implements DiscountApi {
   }): Promise<
     LineItems<{
       discountId: string;
-      applicableQuantity: "unlimited" | number;
+      applicableQuantity: 'unlimited' | number;
     }>
   > {
     const result = new LineItems<{
       discountId: string;
-      applicableQuantity: "unlimited" | number;
+      applicableQuantity: 'unlimited' | number;
     }>((x) => x.discountId);
 
     const limitedDiscounts = discounts.filter(
-      (discount) => discount.usagePolicy.kind === "limited",
+      (discount) => discount.usagePolicy.kind === 'limited',
     );
 
     for (const discount of discounts) {
-      if (discount.usagePolicy.kind === "unlimited") {
+      if (discount.usagePolicy.kind === 'unlimited') {
         result.set({
           discountId: discount.id,
-          applicableQuantity: "unlimited",
+          applicableQuantity: 'unlimited',
         });
       }
     }
@@ -276,10 +270,7 @@ export class DiscountService implements DiscountApi {
       result.set({
         discountId: discount.id,
         applicableQuantity: this.calculateApplicableQuantity({
-          usagePolicy: discount.usagePolicy as Extract<
-            DiscountUsagePolicy,
-            { kind: "limited" }
-          >,
+          usagePolicy: discount.usagePolicy as Extract<DiscountUsagePolicy, { kind: 'limited' }>,
           customerUsage: customerUsages.get(discount.id) ?? null,
           discountUsages: discountUsages.get(discount.id) ?? emptyLineItems,
         }),
@@ -295,60 +286,46 @@ export class DiscountService implements DiscountApi {
     discountUsages,
     discounts,
   }: {
-    requestedUsages: LineItems<Omit<DiscountUsage, "customerId">>;
+    requestedUsages: LineItems<Omit<DiscountUsage, 'customerId'>>;
     customerUsages: LineItems<DiscountUsage>;
     discountUsages: LineItems<LineItems<DiscountUsage>>;
     discounts: LineItems<DiscountWithUsagePolicy>;
   }): void {
-    const emptyDiscountUsages = new LineItems<DiscountUsage>(
-      (x) => x.discountId,
-    );
+    const emptyDiscountUsages = new LineItems<DiscountUsage>((x) => x.discountId);
 
     for (const requestedUsage of requestedUsages) {
       const discount = discounts.getOrThrow(
         requestedUsage.discountId,
-        () => new Error("Discount not found."),
+        () => new Error('Discount not found.'),
       );
 
-      if (discount.usagePolicy.kind === "unlimited") {
+      if (discount.usagePolicy.kind === 'unlimited') {
         continue;
       }
 
-      const customerUsed =
-        customerUsages.get(requestedUsage.discountId)?.usedQuantity ?? 0;
+      const customerUsed = customerUsages.get(requestedUsage.discountId)?.usedQuantity ?? 0;
 
-      const usages =
-        discountUsages.get(requestedUsage.discountId) ?? emptyDiscountUsages;
+      const usages = discountUsages.get(requestedUsage.discountId) ?? emptyDiscountUsages;
 
-      const totalUsed = usages.reduce(
-        (total, usage) => total + usage.usedQuantity,
-        0,
-      );
+      const totalUsed = usages.reduce((total, usage) => total + usage.usedQuantity, 0);
 
-      const remainingForCustomer =
-        discount.usagePolicy.maxUsesPerCustomer - customerUsed;
+      const remainingForCustomer = discount.usagePolicy.maxUsesPerCustomer - customerUsed;
 
       const remainingTotal = discount.usagePolicy.maxTotalUses - totalUsed;
 
       if (requestedUsage.usedQuantity > remainingTotal) {
-        throw new DiscountTotalUsageLimitExceededError(
-          requestedUsage.discountId,
-        );
+        throw new DiscountTotalUsageLimitExceededError(requestedUsage.discountId);
       }
 
       if (requestedUsage.usedQuantity > remainingForCustomer) {
-        throw new DiscountCustomerUsageLimitExceededError(
-          requestedUsage.discountId,
-        );
+        throw new DiscountCustomerUsageLimitExceededError(requestedUsage.discountId);
       }
     }
   }
   private collectRequestedUsages(
     appliedDiscounts: LineItems<AppliedDiscount>,
-  ): LineItems<Omit<DiscountUsage, "customerId">> {
-    const usages = new LineItems<Omit<DiscountUsage, "customerId">>(
-      (usage) => usage.discountId,
-    );
+  ): LineItems<Omit<DiscountUsage, 'customerId'>> {
+    const usages = new LineItems<Omit<DiscountUsage, 'customerId'>>((usage) => usage.discountId);
 
     for (const item of appliedDiscounts) {
       const current = usages.get(item.source.id);
@@ -375,7 +352,7 @@ export class DiscountService implements DiscountApi {
     customerUsage,
     discountUsages,
   }: {
-    usagePolicy: Extract<DiscountUsagePolicy, { kind: "limited" }>;
+    usagePolicy: Extract<DiscountUsagePolicy, { kind: 'limited' }>;
     customerUsage: DiscountUsage | null;
     discountUsages: LineItems<DiscountUsage>;
   }): number {

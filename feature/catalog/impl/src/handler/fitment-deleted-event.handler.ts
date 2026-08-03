@@ -12,6 +12,7 @@ import {
   type TransactionManager,
 } from '@feature/common';
 import { Injectable } from '@nestjs/common';
+import { UpdateProduct } from 'catalog.types';
 import { type CatalogRepository } from 'repository/catalog.repository';
 import { generateSearchText } from 'utils/generate-search-text';
 
@@ -30,43 +31,85 @@ export class FitmentDeletedEventHandler extends BaseEventHandler<FitmentDeletedE
 
   async handle(payload: FitmentDeletedEventPayload): Promise<void> {
     const products = await this.repository.findMany({
-      where: { references: { fitmentIds: [payload.fitmentsId] } },
+      where: { references: { fitmentIds: { has: payload.fitmentsId } } },
     });
+
     if (products.size === 0) return;
 
-    const filterDeleted = (id: string): boolean => payload.fitmentsId === id;
+    await this.tx.run(async () => {
+      // Updating
 
-    await Promise.all([
-      products.toArray().map((product) =>
-        this.tx.run(async () => {
-          // Updating
-          const { fitment } = await this.fitment.find({
-            fitmentId: payload.fitmentsId,
-          });
-          const brandId = product.references.brandId;
-          const brand = brandId ? (await this.brand.find({ brandId })).brand : undefined;
-          await this.repository.update(product.id, {
+      // Resolving fitments
+      const productWithNonDeletedFitments = products.transform(
+        (product) => ({
+          productId: product.id,
+          nonDeletedFitments: product.references.fitmentIds.filter(
+            (id) => payload.fitmentsId !== id,
+          ),
+        }),
+        (x) => x.productId,
+      );
+      const fitmentIds = [
+        ...new Set(productWithNonDeletedFitments.toArray().flatMap((x) => x.nonDeletedFitments)),
+      ];
+      const { fitments } = await this.fitment.findMany({ fitmentIds });
+
+      // Resolving brands
+      const { brands } = await this.brand.findMany({
+        brandIds: [
+          ...new Set(
+            products
+              .transform(
+                (product) => ({
+                  productId: product.id,
+                  brandId: product.references.brandId,
+                }),
+                (p) => p.productId,
+              )
+              .toArray()
+              .map((x) => x.brandId)
+              .filter((brandId): brandId is string => brandId !== undefined),
+          ),
+        ],
+      });
+
+      const updates: Array<{ id: string; data: UpdateProduct }> = [];
+
+      for (const product of products) {
+        const brandId = product.references.brandId;
+        const nonDeletedFitmentIds = productWithNonDeletedFitments.getOrThrow(
+          product.id,
+        ).nonDeletedFitments;
+        updates.push({
+          id: product.id,
+          data: {
             ...product,
             references: {
               ...product.references,
-              fitmentIds: product.references.fitmentIds.filter(filterDeleted),
+              fitmentIds: nonDeletedFitmentIds,
             },
             searchText: generateSearchText({
               canonicalName: product.canonicalName,
               aliases: product.aliases,
-              fitments: [fitment].toLineItems((x) => x.id),
-              brand,
+              fitments: nonDeletedFitmentIds
+                .map((fitmentId) => fitments.getOrThrow(fitmentId))
+                .toLineItems((fitment) => fitment.id),
+              brand: brandId ? brands.get(brandId) : undefined,
             }),
-          });
+          },
+        });
+      }
 
-          await this.outbox.save({
-            type: ProductRedefinedEventType,
-            payload: {
-              productId: product.id,
-            } satisfies ProductRedefinedEventPayload,
-          });
-        }),
-      ),
-    ]);
+      await this.repository.updateManyById(updates);
+
+      await this.outbox.saveMany(
+        products.toArray().map((product) => ({
+          type: ProductRedefinedEventType,
+          payload: {
+            productId: product.id,
+          } satisfies ProductRedefinedEventPayload,
+        })),
+      );
+    });
   }
 }

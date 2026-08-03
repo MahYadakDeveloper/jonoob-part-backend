@@ -1,4 +1,4 @@
-import { type CatalogApi } from "@feature/catalog-api";
+import { type CatalogApi } from '@feature/catalog-api';
 import {
   AppliedDiscount,
   CustomerType,
@@ -7,13 +7,13 @@ import {
   LineItems,
   Money,
   RawProduct,
-} from "@feature/common";
+} from '@feature/common';
 import {
   ApplicableCampaignDiscount,
   ApplicableDiscount,
   ApplicableSpecificDiscount,
   type DiscountApi,
-} from "@feature/discount-api";
+} from '@feature/discount-api';
 import {
   InvoicePricingRequest,
   InvoicePricingResponse,
@@ -26,14 +26,14 @@ import {
   ProductPricingResponse,
   UnpricedBundleInvoiceItem,
   UnpricedProductInvoiceItem,
-} from "@feature/pricing-api";
-import { Injectable } from "@nestjs/common";
-import { ProductNotFoundError } from "./errors/product-not-found-error";
-import { PurchasePriceNotFoundError } from "./errors/purchase-price-not-found.error";
-import { BundleComponentInvoiceItem } from "./model/bundle-component-invoice-item";
-import { type CustomerQuery } from "./port/customer.query";
-import { type MarkupPolicyProvider } from "./port/markup-policy.provider";
-import { PurchasePrice, type PurchaseQuery } from "./port/purchase.query";
+} from '@feature/pricing-api';
+import { type ProcurementApi } from '@feature/procurement-api';
+import { Injectable } from '@nestjs/common';
+import { ProductNotFoundError } from './errors/product-not-found-error';
+import { PurchasePriceNotFoundError } from './errors/purchase-price-not-found.error';
+import { BundleComponentInvoiceItem } from './model/bundle-component-invoice-item';
+import { type CustomerQuery } from './port/customer.query';
+import { type MarkupPolicyProvider } from './port/markup-policy.provider';
 
 @Injectable()
 export class PricingService implements PricingApi {
@@ -42,24 +42,20 @@ export class PricingService implements PricingApi {
     private readonly discount: DiscountApi,
     private readonly customerQuery: CustomerQuery,
     private readonly catalog: CatalogApi,
-    private readonly purchaseQuery: PurchaseQuery,
+    private readonly procurement: ProcurementApi,
   ) {}
 
   private resolvePolicy(customerType: CustomerType) {
-    return customerType === "merchant" ? "wholesale" : "retail";
+    return customerType === 'merchant' ? 'wholesale' : 'retail';
   }
 
-  async resolvePricingPolicy({
-    customerId,
-  }: PricingPolicyReq): Promise<PricingPolicyRes> {
+  async resolvePricingPolicy({ customerId }: PricingPolicyReq): Promise<PricingPolicyRes> {
     const customerType = await this.customerQuery.getType(customerId);
 
     return { policy: this.resolvePolicy(customerType) };
   }
 
-  async priceProduct({
-    productId,
-  }: ProductPricingRequest): Promise<ProductPricingResponse> {
+  async priceProduct({ productId }: ProductPricingRequest): Promise<ProductPricingResponse> {
     const { prices } = await this.priceManyProduct({ productIds: [productId] });
 
     return {
@@ -72,7 +68,7 @@ export class PricingService implements PricingApi {
     productIds,
   }: ManyProductPricingRequest): Promise<ManyProductPricingResponse> {
     // TODO Later add in this api request priceFor: CustomerType then use it here
-    const policy = this.resolvePolicy("consumer");
+    const policy = this.resolvePolicy('consumer');
     const markup = await this.markupPolicyProvider.resolve(policy);
 
     // products
@@ -82,10 +78,11 @@ export class PricingService implements PricingApi {
       if (!products.has(productId)) throw new ProductNotFoundError(productId);
     }
 
-    const leafProductIds = this.collectLeafProductIds(products);
+    const leafProductIds = this.collectLeafGoodIds(products);
 
-    const leafPurchasePrices =
-      await this.purchaseQuery.findMany(leafProductIds);
+    const { prices: leafPurchasePrices } = await this.procurement.findManyPurchasePrice({
+      goodIds: leafProductIds,
+    });
 
     const prices = new LineItems<{
       productId: string;
@@ -93,12 +90,10 @@ export class PricingService implements PricingApi {
     }>((item) => item.productId);
 
     for (const product of products) {
-      if (product.kind === "leaf") {
+      if (product.kind === 'leaf') {
         const price = this.calculateUnitPrice(
-          leafPurchasePrices.getOrThrow(
-            product.goodId,
-            (id) => new PurchasePriceNotFoundError(id),
-          ).price,
+          leafPurchasePrices.getOrThrow(product.goodId, (id) => new PurchasePriceNotFoundError(id))
+            .price,
           markup,
         );
         prices.set({ productId: product.id, price });
@@ -113,9 +108,7 @@ export class PricingService implements PricingApi {
         ).price;
 
         return bundlePrice.add(
-          this.calculateUnitPrice(purchasePrice, markup).multiply(
-            item.quantity,
-          ),
+          this.calculateUnitPrice(purchasePrice, markup).multiply(item.quantity),
         );
       }, Money.zero());
 
@@ -140,13 +133,15 @@ export class PricingService implements PricingApi {
     }
 
     // Resolving purchase prices
-    const leafProductIds = this.collectLeafProductIds(products);
-    const purchasePrices = await this.purchaseQuery.findMany(leafProductIds);
+    const leafProductIds = this.collectLeafGoodIds(products);
+    const { prices: purchasePrices } = await this.procurement.findManyPurchasePrice({
+      goodIds: leafProductIds,
+    });
 
     // Resolving markup
     const customerType: CustomerType = customerId
       ? await this.customerQuery.getType(customerId)
-      : "consumer";
+      : 'consumer';
     const policy = this.resolvePolicy(customerType);
     const markup = await this.markupPolicyProvider.resolve(policy);
 
@@ -165,14 +160,9 @@ export class PricingService implements PricingApi {
       const discount = discounts?.get(item.productId)?.discount;
 
       pricedInvoiceItems.set(
-        item.kind === "bundle"
+        item.kind === 'bundle'
           ? this.priceBundleInvoiceItem(item, purchasePrices, markup, discount)
-          : this.priceProductInvoiceItem(
-              item,
-              purchasePrices,
-              markup,
-              discount,
-            ),
+          : this.priceProductInvoiceItem(item, purchasePrices, markup, discount),
       );
     }
 
@@ -184,9 +174,7 @@ export class PricingService implements PricingApi {
 
         return {
           grandTotal: summary.grandTotal.add(item.lineTotal),
-          subtotal: summary.subtotal.add(
-            item.unitPrice.multiply(item.quantity),
-          ),
+          subtotal: summary.subtotal.add(item.unitPrice.multiply(item.quantity)),
           discount,
         };
       },
@@ -203,7 +191,7 @@ export class PricingService implements PricingApi {
 
   private priceProductInvoiceItem(
     item: UnpricedProductInvoiceItem,
-    purchasePrices: LineItems<PurchasePrice>,
+    purchasePrices: LineItems<{ goodId: string; price: Money }>,
     markup: number,
     discount?: ApplicableDiscount,
   ): InvoiceItem {
@@ -214,15 +202,8 @@ export class PricingService implements PricingApi {
 
     // This may unit price may consist of real price plus fake discount
     const realUnitPrice = this.calculateUnitPrice(purchasePrice, markup);
-    const displayUnitPrice = this.calculateDisplayPrice(
-      realUnitPrice,
-      discount,
-    );
-    const appliedDiscount = this.applyDiscount(
-      displayUnitPrice,
-      item.quantity,
-      discount,
-    );
+    const displayUnitPrice = this.calculateDisplayPrice(realUnitPrice, discount);
+    const appliedDiscount = this.applyDiscount(displayUnitPrice, item.quantity, discount);
     const lineTotal = displayUnitPrice
       .multiply(item.quantity)
       .subtract(appliedDiscount?.totalDiscount ?? Money.zero());
@@ -236,13 +217,11 @@ export class PricingService implements PricingApi {
 
   private priceBundleInvoiceItem(
     item: UnpricedBundleInvoiceItem,
-    purchasePrices: LineItems<PurchasePrice>,
+    purchasePrices: LineItems<{ goodId: string; price: Money }>,
     markup: number,
     discount?: ApplicableDiscount,
   ): InvoiceItem {
-    const pricedBundleItems = new LineItems<BundleComponentInvoiceItem>(
-      (x) => x.productId,
-    );
+    const pricedBundleItems = new LineItems<BundleComponentInvoiceItem>((x) => x.productId);
 
     for (const bundleItem of item.items) {
       const purchasePrice = purchasePrices.getOrThrow(
@@ -264,19 +243,12 @@ export class PricingService implements PricingApi {
       ? this.calculateBundleDisplayItems(pricedBundleItems, discount)
       : pricedBundleItems;
 
-    const displayUnitPrice = displayPricedBundleItems.reduce(
-      (total, bundleItem) => {
-        return total.add(bundleItem.lineTotal);
-      },
-      Money.zero(),
-    );
+    const displayUnitPrice = displayPricedBundleItems.reduce((total, bundleItem) => {
+      return total.add(bundleItem.lineTotal);
+    }, Money.zero());
 
     // Applying discount
-    const appliedDiscount = this.applyDiscount(
-      displayUnitPrice,
-      item.quantity,
-      discount,
-    );
+    const appliedDiscount = this.applyDiscount(displayUnitPrice, item.quantity, discount);
 
     const lineTotal = displayUnitPrice
       .multiply(item.quantity)
@@ -291,13 +263,9 @@ export class PricingService implements PricingApi {
     };
   }
 
-  private applyDiscount(
-    price: Money,
-    quantity: number,
-    discount?: ApplicableDiscount,
-  ) {
+  private applyDiscount(price: Money, quantity: number, discount?: ApplicableDiscount) {
     return discount
-      ? discount.kind === "campaign"
+      ? discount.kind === 'campaign'
         ? this.applyCampaignDiscount(price, discount, quantity)
         : this.applySpecificDiscount(discount, quantity)
       : undefined;
@@ -308,18 +276,17 @@ export class PricingService implements PricingApi {
     quantity: number,
   ): AppliedDiscount {
     const discountedQuantity =
-      discount.applicableQuantity === "unlimited"
+      discount.applicableQuantity === 'unlimited'
         ? quantity
         : Math.min(discount.applicableQuantity, quantity);
     return {
       source: {
         id: discount.id,
-        isLimited: discount.applicableQuantity !== "unlimited",
+        isLimited: discount.applicableQuantity !== 'unlimited',
       },
       discountPerUnit: discount.displayDiscountPerUnit,
       discountedQuantity,
-      totalDiscount:
-        discount.displayDiscountPerUnit.multiply(discountedQuantity),
+      totalDiscount: discount.displayDiscountPerUnit.multiply(discountedQuantity),
     };
   }
 
@@ -330,14 +297,14 @@ export class PricingService implements PricingApi {
   ): AppliedDiscount {
     const discountPerUnit = price.multiply(discount.displayDiscountRate);
     const discountedQuantity =
-      discount.applicableQuantity === "unlimited"
+      discount.applicableQuantity === 'unlimited'
         ? quantity
         : Math.min(discount.applicableQuantity, quantity);
 
     return {
       source: {
         id: discount.id,
-        isLimited: discount.applicableQuantity !== "unlimited",
+        isLimited: discount.applicableQuantity !== 'unlimited',
       },
       discountPerUnit,
       discountedQuantity,
@@ -349,24 +316,18 @@ export class PricingService implements PricingApi {
     return purchasePrice.multiply(1 + markup);
   }
 
-  private calculateDisplayPrice(
-    realPrice: Money,
-    discount?: ApplicableDiscount,
-  ): Money {
+  private calculateDisplayPrice(realPrice: Money, discount?: ApplicableDiscount): Money {
     if (!discount) return realPrice;
 
     switch (discount.kind) {
-      case "campaign": {
-        const priceFactor =
-          (1 - discount.realDiscountRate) / (1 - discount.displayDiscountRate);
+      case 'campaign': {
+        const priceFactor = (1 - discount.realDiscountRate) / (1 - discount.displayDiscountRate);
 
         return realPrice.multiply(priceFactor);
       }
 
-      case "specific": {
-        const fakeDiscount = discount.displayDiscountPerUnit.subtract(
-          discount.realDiscountPerUnit,
-        );
+      case 'specific': {
+        const fakeDiscount = discount.displayDiscountPerUnit.subtract(discount.realDiscountPerUnit);
 
         return realPrice.add(fakeDiscount);
       }
@@ -377,15 +338,9 @@ export class PricingService implements PricingApi {
     items: LineItems<BundleComponentInvoiceItem>,
     discount: ApplicableDiscount,
   ): LineItems<BundleComponentInvoiceItem> {
-    const realBundlePrice = items.reduce(
-      (total, item) => total.add(item.lineTotal),
-      Money.zero(),
-    );
+    const realBundlePrice = items.reduce((total, item) => total.add(item.lineTotal), Money.zero());
 
-    const displayBundlePrice = this.calculateDisplayPrice(
-      realBundlePrice,
-      discount,
-    );
+    const displayBundlePrice = this.calculateDisplayPrice(realBundlePrice, discount);
 
     const adjustment = displayBundlePrice.subtract(realBundlePrice);
 
@@ -395,9 +350,7 @@ export class PricingService implements PricingApi {
 
         const displayAdjustment = adjustment.multiply(ratio);
 
-        const displayUnitPrice = item.unitPrice.add(
-          displayAdjustment.divide(item.quantity),
-        );
+        const displayUnitPrice = item.unitPrice.add(displayAdjustment.divide(item.quantity));
 
         return {
           ...item,
@@ -409,16 +362,16 @@ export class PricingService implements PricingApi {
     );
   }
 
-  private collectLeafProductIds(products: Iterable<RawProduct>): string[] {
+  private collectLeafGoodIds(products: Iterable<RawProduct>): string[] {
     const ids: string[] = [];
 
     for (const product of products) {
-      if (product.kind === "bundle") {
+      if (product.kind === 'bundle') {
         for (const item of product.items) {
           ids.push(item.goodId);
         }
       } else {
-        ids.push(product.id);
+        ids.push(product.goodId);
       }
     }
 

@@ -1,51 +1,48 @@
+import { ProductRedefinedEventPayload, ProductRedefinedEventType } from '@feature/catalog-api';
 import {
   CategoryUpdatedEventPayload,
   CategoryUpdatedEventType,
 } from '@feature/catalog-category-api';
-import { BaseEventHandler, EventHandlerRegistry } from '@feature/common';
-import { CatalogRepository } from 'repository/catalog.repository';
+import {
+  BaseEventHandler,
+  type EventHandlerRegistry,
+  type OutboxRepository,
+} from '@feature/common';
+import { Injectable } from '@nestjs/common';
+import { type CatalogRepository } from 'repository/catalog.repository';
 
+@Injectable()
 export class CategoryUpdatedEventHandler extends BaseEventHandler<CategoryUpdatedEventPayload> {
   constructor(
     registry: EventHandlerRegistry,
     private readonly repository: CatalogRepository,
+    private readonly outbox: OutboxRepository,
   ) {
     super(registry, CategoryUpdatedEventType);
   }
 
   async handle(payload: CategoryUpdatedEventPayload): Promise<void> {
-    const products = await this.repository.find({
-      where: { references: { fitmentIds: payload.categoryId } },
-    });
-    if (products.size === 0) return;
+    const products = await this.repository
+      .findMany({
+        where: {
+          references: {
+            categoryIds: {
+              has: payload.categoryId,
+            },
+          },
+        },
+      })
+      .then((res) => res.toArray());
 
-    await Promise.all([
-      products.toArray().map((product) =>
-        this.tx.run(async () => {
-          // Updating
-          const { fitments } = await this.fitment.findMany({
-            fitmentIds: product.references.fitmentIds,
-          });
-          const brandId = product.references.brandId;
-          const brand = brandId ? (await this.brand.find({ brandId })).brand : undefined;
-          await this.repository.update(product.id, {
-            ...product,
-            searchText: generateSearchText({
-              canonicalName: product.canonicalName,
-              aliases: product.aliases,
-              fitments,
-              brand,
-            }),
-          });
+    if (products.length === 0) return;
 
-          await this.outbox.save({
-            type: ProductRedefinedEventType,
-            payload: {
-              productId: product.id,
-            } satisfies ProductRedefinedEventPayload,
-          });
-        }),
-      ),
-    ]);
+    await this.outbox.saveMany(
+      products.map((product) => ({
+        type: ProductRedefinedEventType,
+        payload: {
+          productId: product.id,
+        } satisfies ProductRedefinedEventPayload,
+      })),
+    );
   }
 }

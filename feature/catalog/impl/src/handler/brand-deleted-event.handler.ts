@@ -1,10 +1,6 @@
 import { ProductRedefinedEventPayload, ProductRedefinedEventType } from '@feature/catalog-api';
-import { type BrandApi } from '@feature/catalog-brand-api';
-import {
-  type FitmentApi,
-  FitmentUpdatedEventPayload,
-  FitmentUpdatedEventType,
-} from '@feature/catalog.fitment-api';
+import { BrandDeletedEventPayload, BrandDeletedEventType } from '@feature/catalog-brand-api';
+import { type FitmentApi } from '@feature/catalog-fitment-api';
 import {
   BaseEventHandler,
   type EventHandlerRegistry,
@@ -16,28 +12,31 @@ import { type CatalogRepository } from 'repository/catalog.repository';
 import { generateSearchText } from 'utils/generate-search-text';
 
 @Injectable()
-export class FitmentUpdatedEventHandler extends BaseEventHandler<FitmentUpdatedEventPayload> {
+export class BrandDeletedEventHandler extends BaseEventHandler<BrandDeletedEventPayload> {
   constructor(
     registry: EventHandlerRegistry,
     private readonly repository: CatalogRepository,
     private readonly fitment: FitmentApi,
-    private readonly brand: BrandApi,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {
-    super(registry, FitmentUpdatedEventType);
+    super(registry, BrandDeletedEventType);
   }
 
-  async handle(payload: FitmentUpdatedEventPayload): Promise<void> {
+  async handle(payload: BrandDeletedEventPayload): Promise<void> {
     const products = await this.repository.findMany({
-      where: { references: { fitmentIds: { has: payload.fitmentsId } } },
+      where: {
+        references: {
+          brandId: {
+            equals: payload.brandId,
+          },
+        },
+      },
     });
 
     if (products.size === 0) return;
 
     await this.tx.run(async () => {
-      // Updating
-      //
       // Resolving fitments
       const productFitments = products.transform(
         (product) => ({
@@ -48,29 +47,13 @@ export class FitmentUpdatedEventHandler extends BaseEventHandler<FitmentUpdatedE
       );
       const fitmentIds = [...new Set(productFitments.toArray().flatMap((x) => x.fitmentIds))];
       const { fitments } = await this.fitment.findMany({ fitmentIds });
-
-      // Resolving brands
-      const { brands } = await this.brand.findMany({
-        brandIds: [
-          ...new Set(
-            products
-              .transform(
-                (product) => ({
-                  productId: product.id,
-                  brandId: product.references.brandId,
-                }),
-                (p) => p.productId,
-              )
-              .toArray()
-              .map((x) => x.brandId)
-              .filter((brandId): brandId is string => brandId !== undefined),
-          ),
-        ],
-      });
       for (const product of products) {
-        const brandId = product.references.brandId;
         await this.repository.update(product.id, {
           ...product,
+          references: {
+            ...product.references,
+            brandId: undefined,
+          },
           searchText: generateSearchText({
             canonicalName: product.canonicalName,
             aliases: product.aliases,
@@ -78,7 +61,7 @@ export class FitmentUpdatedEventHandler extends BaseEventHandler<FitmentUpdatedE
               .getOrThrow(product.id)
               .fitmentIds.map((fitmentId) => fitments.getOrThrow(fitmentId))
               .toLineItems((fitment) => fitment.id),
-            brand: brandId ? brands.get(brandId) : undefined,
+            brand: undefined,
           }),
         });
       }

@@ -192,6 +192,9 @@ importers:
       '@feature/catalog-brand-api':
         specifier: workspace:*
         version: link:../api
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
       '@feature/media-api':
         specifier: workspace:*
         version: link:../../../media/api
@@ -431,12 +434,21 @@ importers:
       '@feature/pricing-api':
         specifier: workspace:*
         version: link:../api
+      '@feature/procurement-api':
+        specifier: workspace:*
+        version: link:../../procurement/api
       '@nestjs/common':
         specifier: ^11.1.27
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+
+  feature/procurement/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
 
   feature/procurement/impl:
     dependencies:
@@ -446,9 +458,6 @@ importers:
       '@nestjs/common':
         specifier: ^11.1.26
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/event-emitter':
-        specifier: ^3.1.0
-        version: 3.1.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
 
   feature/recommendation/impl:
     dependencies:

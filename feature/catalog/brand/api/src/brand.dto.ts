@@ -1,4 +1,4 @@
-import { MediaRef } from '@feature/common';
+import { LogoRef } from '@feature/media-api';
 
 /**
  * Brand / Manufacturer information used by the catalog.
@@ -24,7 +24,7 @@ export type BrandDto = {
    * Brand logo stored in Media module.
    * Only a file reference is stored here.
    */
-  logo?: MediaRef;
+  logo?: LogoRef;
 
   /**
    * Short description shown on the brand page.

@@ -2,7 +2,6 @@ import { ProductRedefinedEventPayload, ProductRedefinedEventType } from '@featur
 import { type BrandApi } from '@feature/catalog-brand-api';
 import {
   type FitmentApi,
-  FitmentManyDeletedEventPayload,
   FitmentManyUpdatedEventPayload,
   FitmentManyUpdatedEventType,
 } from '@feature/catalog.fitment-api';
@@ -31,37 +30,65 @@ export class FitmentUpdatedEventHandler extends BaseEventHandler<FitmentManyUpda
 
   async handle(payload: FitmentManyUpdatedEventPayload): Promise<void> {
     const products = await this.repository.findMany({
-      where: { references: { fitmentIds: payload.fitmentsIds } },
+      where: { references: { fitmentIds: { hasSome: payload.fitmentsIds } } },
     });
     if (products.size === 0) return;
 
-    await Promise.all([
-      products.toArray().map((product) =>
-        this.tx.run(async () => {
-          // Updating
-          const { fitments } = await this.fitment.findMany({
-            fitmentIds: product.references.fitmentIds,
-          });
-          const brandId = product.references.brandId;
-          const brand = brandId ? (await this.brand.find({ brandId })).brand : undefined;
-          await this.repository.update(product.id, {
-            ...product,
-            searchText: generateSearchText({
-              canonicalName: product.canonicalName,
-              aliases: product.aliases,
-              fitments,
-              brand,
-            }),
-          });
+    // Resolving fitments
+    const productFitments = products.transform(
+      (product) => ({
+        productId: product.id,
+        fitmentIds: product.references.fitmentIds,
+      }),
+      (x) => x.productId,
+    );
+    const fitmentIds = [...new Set(productFitments.toArray().flatMap((x) => x.fitmentIds))];
+    const { fitments } = await this.fitment.findMany({ fitmentIds });
 
-          await this.outbox.save({
-            type: ProductRedefinedEventType,
-            payload: {
-              productId: product.id,
-            } satisfies ProductRedefinedEventPayload,
-          });
-        }),
-      ),
-    ]);
+    // Resolving brands
+    const { brands } = await this.brand.findMany({
+      brandIds: [
+        ...new Set(
+          products
+            .transform(
+              (product) => ({
+                productId: product.id,
+                brandId: product.references.brandId,
+              }),
+              (p) => p.productId,
+            )
+            .toArray()
+            .map((x) => x.brandId)
+            .filter((brandId): brandId is string => brandId !== undefined),
+        ),
+      ],
+    });
+    await this.tx.run(async () => {
+      // Updating
+      for (const product of products) {
+        const brandId = product.references.brandId;
+        await this.repository.update(product.id, {
+          ...product,
+          searchText: generateSearchText({
+            canonicalName: product.canonicalName,
+            aliases: product.aliases,
+            fitments: productFitments
+              .getOrThrow(product.id)
+              .fitmentIds.map((fitmentId) => fitments.getOrThrow(fitmentId))
+              .toLineItems((fitment) => fitment.id),
+            brand: brandId ? brands.get(brandId) : undefined,
+          }),
+        });
+      }
+
+      await this.outbox.saveMany(
+        products.toArray().map((product) => ({
+          type: ProductRedefinedEventType,
+          payload: {
+            productId: product.id,
+          } satisfies ProductRedefinedEventPayload,
+        })),
+      );
+    });
   }
 }
