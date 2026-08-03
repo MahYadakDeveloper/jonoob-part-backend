@@ -434,6 +434,9 @@ importers:
       '@feature/pricing-api':
         specifier: workspace:*
         version: link:../api
+      '@feature/pricing-markup-api':
+        specifier: workspace:*
+        version: link:../markup/api
       '@feature/procurement-api':
         specifier: workspace:*
         version: link:../../procurement/api
@@ -443,6 +446,18 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+
+  feature/pricing/markup/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+
+  feature/pricing/markup/impl:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
 
   feature/procurement/api:
     dependencies:

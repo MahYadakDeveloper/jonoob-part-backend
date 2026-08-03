@@ -27,18 +27,18 @@ import {
   UnpricedBundleInvoiceItem,
   UnpricedProductInvoiceItem,
 } from '@feature/pricing-api';
+import { MarkupDto, type MarkupApi } from '@feature/pricing-markup-api';
 import { type ProcurementApi } from '@feature/procurement-api';
 import { Injectable } from '@nestjs/common';
 import { ProductNotFoundError } from './errors/product-not-found-error';
 import { PurchasePriceNotFoundError } from './errors/purchase-price-not-found.error';
 import { BundleComponentInvoiceItem } from './model/bundle-component-invoice-item';
 import { type CustomerQuery } from './port/customer.query';
-import { type MarkupPolicyProvider } from './port/markup-policy.provider';
 
 @Injectable()
 export class PricingService implements PricingApi {
   constructor(
-    private readonly markupPolicyProvider: MarkupPolicyProvider,
+    private readonly markup: MarkupApi,
     private readonly discount: DiscountApi,
     private readonly customerQuery: CustomerQuery,
     private readonly catalog: CatalogApi,
@@ -55,8 +55,11 @@ export class PricingService implements PricingApi {
     return { policy: this.resolvePolicy(customerType) };
   }
 
-  async priceProduct({ productId }: ProductPricingRequest): Promise<ProductPricingResponse> {
-    const { prices } = await this.priceManyProduct({ productIds: [productId] });
+  async priceProduct({
+    productId,
+    policy,
+  }: ProductPricingRequest): Promise<ProductPricingResponse> {
+    const { prices } = await this.priceManyProduct({ productIds: [productId], policy });
 
     return {
       price: prices.getOrThrow(productId).price,
@@ -66,11 +69,8 @@ export class PricingService implements PricingApi {
   // TODO Note this is not complete yet, complete it then
   async priceManyProduct({
     productIds,
+    policy,
   }: ManyProductPricingRequest): Promise<ManyProductPricingResponse> {
-    // TODO Later add in this api request priceFor: CustomerType then use it here
-    const policy = this.resolvePolicy('consumer');
-    const markup = await this.markupPolicyProvider.resolve(policy);
-
     // products
     const { products } = await this.catalog.getRawProducts({ productIds });
 
@@ -78,10 +78,11 @@ export class PricingService implements PricingApi {
       if (!products.has(productId)) throw new ProductNotFoundError(productId);
     }
 
-    const leafProductIds = this.collectLeafGoodIds(products);
+    const leafGoodIds = this.collectLeafGoodIds(products);
 
+    const { markups } = await this.markup.resolveMany({ goodIds: leafGoodIds, policy });
     const { prices: leafPurchasePrices } = await this.procurement.findManyPurchasePrice({
-      goodIds: leafProductIds,
+      goodIds: leafGoodIds,
     });
 
     const prices = new LineItems<{
@@ -94,7 +95,7 @@ export class PricingService implements PricingApi {
         const price = this.calculateUnitPrice(
           leafPurchasePrices.getOrThrow(product.goodId, (id) => new PurchasePriceNotFoundError(id))
             .price,
-          markup,
+          markups.getOrThrow(product.id).rate,
         );
         prices.set({ productId: product.id, price });
         continue;
@@ -108,7 +109,9 @@ export class PricingService implements PricingApi {
         ).price;
 
         return bundlePrice.add(
-          this.calculateUnitPrice(purchasePrice, markup).multiply(item.quantity),
+          this.calculateUnitPrice(purchasePrice, markups.getOrThrow(item.productId).rate).multiply(
+            item.quantity,
+          ),
         );
       }, Money.zero());
 
@@ -133,9 +136,9 @@ export class PricingService implements PricingApi {
     }
 
     // Resolving purchase prices
-    const leafProductIds = this.collectLeafGoodIds(products);
+    const leafGoodsIds = this.collectLeafGoodIds(products);
     const { prices: purchasePrices } = await this.procurement.findManyPurchasePrice({
-      goodIds: leafProductIds,
+      goodIds: leafGoodsIds,
     });
 
     // Resolving markup
@@ -143,7 +146,7 @@ export class PricingService implements PricingApi {
       ? await this.customerQuery.getType(customerId)
       : 'consumer';
     const policy = this.resolvePolicy(customerType);
-    const markup = await this.markupPolicyProvider.resolve(policy);
+    const { markups } = await this.markup.resolveMany({ goodIds: leafGoodsIds, policy: policy });
 
     const discounts = !!customerId
       ? (
@@ -158,11 +161,15 @@ export class PricingService implements PricingApi {
     const pricedInvoiceItems = new LineItems<InvoiceItem>((x) => x.productId);
     for (const item of items) {
       const discount = discounts?.get(item.productId)?.discount;
-
       pricedInvoiceItems.set(
         item.kind === 'bundle'
-          ? this.priceBundleInvoiceItem(item, purchasePrices, markup, discount)
-          : this.priceProductInvoiceItem(item, purchasePrices, markup, discount),
+          ? this.priceBundleInvoiceItem(item, purchasePrices, markups, discount)
+          : this.priceProductInvoiceItem(
+              item,
+              purchasePrices,
+              markups.getOrThrow(item.productId).rate,
+              discount,
+            ),
       );
     }
 
@@ -192,7 +199,7 @@ export class PricingService implements PricingApi {
   private priceProductInvoiceItem(
     item: UnpricedProductInvoiceItem,
     purchasePrices: LineItems<{ goodId: string; price: Money }>,
-    markup: number,
+    markupRate: number,
     discount?: ApplicableDiscount,
   ): InvoiceItem {
     const purchasePrice = purchasePrices.getOrThrow(
@@ -201,7 +208,7 @@ export class PricingService implements PricingApi {
     ).price;
 
     // This may unit price may consist of real price plus fake discount
-    const realUnitPrice = this.calculateUnitPrice(purchasePrice, markup);
+    const realUnitPrice = this.calculateUnitPrice(purchasePrice, markupRate);
     const displayUnitPrice = this.calculateDisplayPrice(realUnitPrice, discount);
     const appliedDiscount = this.applyDiscount(displayUnitPrice, item.quantity, discount);
     const lineTotal = displayUnitPrice
@@ -218,7 +225,7 @@ export class PricingService implements PricingApi {
   private priceBundleInvoiceItem(
     item: UnpricedBundleInvoiceItem,
     purchasePrices: LineItems<{ goodId: string; price: Money }>,
-    markup: number,
+    markups: LineItems<MarkupDto>,
     discount?: ApplicableDiscount,
   ): InvoiceItem {
     const pricedBundleItems = new LineItems<BundleComponentInvoiceItem>((x) => x.productId);
@@ -229,7 +236,10 @@ export class PricingService implements PricingApi {
         (id) => new PurchasePriceNotFoundError(id),
       ).price;
 
-      const realUnitPrice = this.calculateUnitPrice(purchasePrice, markup);
+      const realUnitPrice = this.calculateUnitPrice(
+        purchasePrice,
+        markups.getOrThrow(bundleItem.productId).rate,
+      );
       const lineTotal = realUnitPrice.multiply(bundleItem.quantity);
       pricedBundleItems.set({
         ...bundleItem,
@@ -312,8 +322,8 @@ export class PricingService implements PricingApi {
     };
   }
 
-  private calculateUnitPrice(purchasePrice: Money, markup: number): Money {
-    return purchasePrice.multiply(1 + markup);
+  private calculateUnitPrice(purchasePrice: Money, markupRate: number): Money {
+    return purchasePrice.multiply(1 + markupRate);
   }
 
   private calculateDisplayPrice(realPrice: Money, discount?: ApplicableDiscount): Money {

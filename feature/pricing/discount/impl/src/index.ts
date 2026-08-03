@@ -1,1 +1,0 @@
-export * from './handler/sale-recorded.handler'
