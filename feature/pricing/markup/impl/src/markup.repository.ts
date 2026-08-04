@@ -1,5 +1,11 @@
 import { LineItems } from '@feature/common';
-import { GlobalMarkupPolicy, MarkupPolicy, MarkupScope } from './model/markup-policy';
+import { CreateMarkupPolicy, UpdateMarkupPolicy } from './markup.types';
+import {
+  GlobalMarkupPolicy,
+  MarkupPolicy,
+  MarkupScope,
+  MarkupVariant,
+} from './model/markup-policy';
 
 export type MarkupReference = {
   scope: MarkupScope;
@@ -8,6 +14,13 @@ export type MarkupReference = {
 
 export interface MarkupPolicyRepository {
   // [TODO] select key by its id not references
+  findById(id: string): Promise<MarkupPolicy | null>;
+  findByReference(reference: MarkupReference): Promise<MarkupPolicy | null>;
   findManyByReference(references: MarkupReference[]): Promise<LineItems<MarkupPolicy>>;
-  globalMarkup(pricingPolicy: 'wholesale' | 'retail'): Promise<GlobalMarkupPolicy>;
+
+  create(data: CreateMarkupPolicy): Promise<string>;
+  update(data: UpdateMarkupPolicy): Promise<void>;
+
+  getGlobalMarkup(variant: MarkupVariant): Promise<GlobalMarkupPolicy>;
+  setGlobalMarkup(variant: MarkupVariant, rate: number): Promise<void>;
 }

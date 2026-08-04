@@ -1,33 +1,31 @@
-export type GlobalMarkupPolicy =
-  | {
-      rate: number;
-      scope: 'global_wholesale';
-    }
-  | {
-      rate: number;
-      scope: 'global_retail';
-    };
+export type MarkupVariant = 'retail' | 'wholesale';
+
+export type GlobalMarkupPolicy = {
+  scope: 'global';
+  variant: MarkupVariant;
+  rate: number;
+};
 
 export type MarkupPolicy =
   | {
       id: string;
       rate: number;
+      referenceId: string;
       scope: 'product';
-      referenceId: string;
     }
   | {
       id: string;
       rate: number;
-      scope: 'brand';
-      priority: number;
       referenceId: string;
-    }
-  | {
-      id: string;
-      rate: number;
       scope: 'category';
       priority: number;
+    }
+  | {
+      id: string;
+      rate: number;
       referenceId: string;
+      scope: 'brand';
+      priority: number;
     };
 
 export type MarkupScope = 'brand' | 'category' | 'product';

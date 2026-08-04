@@ -1,4 +1,6 @@
 import { ProductDto, type CatalogApi } from '@feature/catalog-api';
+import { type BrandApi } from '@feature/catalog-brand-api';
+import { type CategoryApi } from '@feature/catalog-category-api';
 import { LineItems } from '@feature/common';
 import {
   MarkupDto,
@@ -10,6 +12,13 @@ import {
 } from '@feature/pricing-markup-api';
 import { Injectable } from '@nestjs/common';
 import { MarkupReference, type MarkupPolicyRepository } from './markup.repository';
+import {
+  GlobalMarkupPolicyRequest,
+  GlobalMarkupPolicySettingRequest,
+  MarkupCreationRequest,
+  MarkupUpdateRequest,
+} from './markup.req';
+import { GlobalMarkupPolicyResponse } from './markup.res';
 import { MarkupPolicyByScope, PrioritizedMarkupPolicy } from './markup.types';
 import { MarkupPolicy, MarkupScope } from './model/markup-policy';
 
@@ -18,15 +27,17 @@ export class MarkupPolicyService implements MarkupPolicyApi {
   constructor(
     private readonly repository: MarkupPolicyRepository,
     private readonly catalog: CatalogApi,
+    private readonly brand: BrandApi,
+    private readonly category: CategoryApi,
   ) {}
 
   async resolve({ productId, policy }: ResolveMarkupRequest): Promise<ResolveMarkupResponse> {
     const { markups } = await this.resolveMany({ productIds: [productId], policy });
-
-    if (!markups.size) throw new Error(`Markup not resolved for product: ${productId}`);
-
     return {
-      markup: markups.values()[0],
+      markup: markups.getOrThrow(
+        productId,
+        (id) => new Error(`Markup not resolved for product: ${id}`),
+      ),
     };
   }
 
@@ -38,7 +49,7 @@ export class MarkupPolicyService implements MarkupPolicyApi {
 
     if (policy === 'wholesale') {
       const markups = new LineItems<MarkupDto>((x) => x.productId);
-      const wholesaleMarkup = await this.repository.globalMarkup('wholesale');
+      const wholesaleMarkup = await this.repository.getGlobalMarkup('wholesale');
       for (const product of products) {
         markups.set({ productId: product.id, rate: wholesaleMarkup.rate });
       }
@@ -50,7 +61,7 @@ export class MarkupPolicyService implements MarkupPolicyApi {
     const productMarkupPolicies = this.filterMarkupPoliciesWithScope(markupPolicies, 'product');
     const categoryMarkupPolicies = this.filterMarkupPoliciesWithScope(markupPolicies, 'category');
     const brandMarkupPolicies = this.filterMarkupPoliciesWithScope(markupPolicies, 'brand');
-    const globalMarkupPolicy = await this.repository.globalMarkup('retail');
+    const globalMarkupPolicy = await this.repository.getGlobalMarkup('retail');
 
     const markups = new LineItems<MarkupDto>((x) => x.productId);
 
@@ -88,6 +99,58 @@ export class MarkupPolicyService implements MarkupPolicyApi {
     };
   }
 
+  async getGlobal({ variant }: GlobalMarkupPolicyRequest): Promise<GlobalMarkupPolicyResponse> {
+    const m = await this.repository.getGlobalMarkup(variant);
+    return {
+      markup: {
+        variant: m.variant,
+        rate: m.rate,
+      },
+    };
+  }
+
+  async setGlobal({ variant, rate }: GlobalMarkupPolicySettingRequest): Promise<void> {
+    await this.repository.setGlobalMarkup(variant, rate);
+  }
+
+  async create({ markup }: MarkupCreationRequest): Promise<{ id: string }> {
+    const m = await this.repository.findByReference({
+      scope: markup.scope,
+      referenceId: markup.referenceId,
+    });
+    if (m) throw new Error('');
+
+    switch (markup.scope) {
+      case 'product':
+        const { product } = await this.catalog.find({ productId: markup.referenceId }); // this means the product exists otherwise throws an error
+        if (!product) throw new Error(''); // Anyway it throws if the api not throw
+        break;
+      case 'brand':
+        const { brand } = await this.brand.find({ brandId: markup.referenceId });
+
+        if (!brand) throw new Error(''); // Anyway it throws if the api not throw
+        break;
+      case 'category':
+        const { category } = await this.category.find({ categoryId: markup.referenceId });
+
+        if (!category) throw new Error(''); // Anyway it throws if the api not throw
+        break;
+    }
+
+    return { id: await this.repository.create(markup) };
+  }
+
+  /**
+   * [NOTE] This method only allow updating the rate.
+   */
+  async update({ markup }: MarkupUpdateRequest): Promise<void> {
+    const m = await this.repository.findById(markup.id);
+
+    if (!m) throw new Error('');
+
+    await this.repository.update(markup);
+  }
+
   private getMarkupReferences(products: LineItems<ProductDto>): MarkupReference[] {
     return products
       .transform<{ id: string; references: MarkupReference[] }>(
@@ -111,15 +174,17 @@ export class MarkupPolicyService implements MarkupPolicyApi {
       .flatMap((r) => r.references);
   }
 
-  private highestPriorityReducer =
-    <T extends { priority: number }>(getItem: (key: string) => T | undefined) =>
-    (prev: T | undefined, curr: string): T | undefined => {
+  private highestPriorityReducer<T extends { priority: number }>(
+    getItem: (key: string) => T | undefined,
+  ): (prev: T | undefined, curr: string) => T | undefined {
+    return (prev: T | undefined, curr: string): T | undefined => {
       const current = getItem(curr);
 
       if (!current) return prev;
 
       return !prev || current.priority > prev.priority ? current : prev;
     };
+  }
 
   private selectHigherPriority(
     a?: PrioritizedMarkupPolicy,

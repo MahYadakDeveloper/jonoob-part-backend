@@ -458,6 +458,12 @@ importers:
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../../../catalog/api
+      '@feature/catalog-brand-api':
+        specifier: workspace:*
+        version: link:../../../catalog/brand/api
+      '@feature/catalog-category-api':
+        specifier: workspace:*
+        version: link:../../../catalog/category/api
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
