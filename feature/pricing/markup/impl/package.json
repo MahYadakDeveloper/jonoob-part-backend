@@ -17,6 +17,9 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*"
+    "@feature/catalog-api": "workspace:*",
+    "@feature/common": "workspace:*",
+    "@feature/pricing-markup-api": "workspace:*",
+    "@nestjs/common": "^11.1.28"
   }
 }

@@ -27,7 +27,7 @@ import {
   UnpricedBundleInvoiceItem,
   UnpricedProductInvoiceItem,
 } from '@feature/pricing-api';
-import { MarkupDto, type MarkupApi } from '@feature/pricing-markup-api';
+import { MarkupDto, type MarkupPolicyApi } from '@feature/pricing-markup-api';
 import { type ProcurementApi } from '@feature/procurement-api';
 import { Injectable } from '@nestjs/common';
 import { ProductNotFoundError } from './errors/product-not-found-error';
@@ -38,7 +38,7 @@ import { type CustomerQuery } from './port/customer.query';
 @Injectable()
 export class PricingService implements PricingApi {
   constructor(
-    private readonly markup: MarkupApi,
+    private readonly markupPolicy: MarkupPolicyApi,
     private readonly discount: DiscountApi,
     private readonly customerQuery: CustomerQuery,
     private readonly catalog: CatalogApi,
@@ -79,11 +79,12 @@ export class PricingService implements PricingApi {
     }
 
     const leafGoodIds = this.collectLeafGoodIds(products);
-
-    const { markups } = await this.markup.resolveMany({ goodIds: leafGoodIds, policy });
     const { prices: leafPurchasePrices } = await this.procurement.findManyPurchasePrice({
       goodIds: leafGoodIds,
     });
+
+    const leafProductIds = this.collectLeafProductIds(products);
+    const { markups } = await this.markupPolicy.resolveMany({ productIds: leafProductIds, policy });
 
     const prices = new LineItems<{
       productId: string;
@@ -146,7 +147,11 @@ export class PricingService implements PricingApi {
       ? await this.customerQuery.getType(customerId)
       : 'consumer';
     const policy = this.resolvePolicy(customerType);
-    const { markups } = await this.markup.resolveMany({ goodIds: leafGoodsIds, policy: policy });
+    const leafProductIds = this.collectLeafProductIds(products);
+    const { markups } = await this.markupPolicy.resolveMany({
+      productIds: leafProductIds,
+      policy: policy,
+    });
 
     const discounts = !!customerId
       ? (
@@ -370,6 +375,22 @@ export class PricingService implements PricingApi {
       },
       (item) => item.productId,
     );
+  }
+
+  private collectLeafProductIds(products: Iterable<RawProduct>): string[] {
+    const ids: string[] = [];
+
+    for (const product of products) {
+      if (product.kind === 'bundle') {
+        for (const item of product.items) {
+          ids.push(item.productId);
+        }
+      } else {
+        ids.push(product.id);
+      }
+    }
+
+    return ids;
   }
 
   private collectLeafGoodIds(products: Iterable<RawProduct>): string[] {

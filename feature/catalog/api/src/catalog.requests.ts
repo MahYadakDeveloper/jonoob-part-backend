@@ -1,3 +1,11 @@
 export interface RawProductsRequest {
-  productIds: string[]
+  productIds: string[];
+}
+
+export interface FindProductRequest {
+  productId: string;
+}
+
+export interface FindManyProductRequest {
+  productIds: string[];
 }

@@ -455,9 +455,18 @@ importers:
 
   feature/pricing/markup/impl:
     dependencies:
+      '@feature/catalog-api':
+        specifier: workspace:*
+        version: link:../../../catalog/api
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
+      '@feature/pricing-markup-api':
+        specifier: workspace:*
+        version: link:../api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/procurement/api:
     dependencies:

@@ -1,5 +1,5 @@
+import { CategoryDto } from '@feature/catalog-category-api';
 import { BrandDto } from '@feature/catalog.brand-api';
-import { CatagoryDto } from '@feature/catalog.brand-api';
 import { FitmentDto } from '@feature/catalog.fitment-api';
 import { ImageRef } from '@feature/media-api';
 import { ProductQuality } from 'model/product';

@@ -1,9 +1,9 @@
 export interface ResolveMarkupRequest {
-  goodId: string;
+  productId: string;
   policy: 'wholesale' | 'retail';
 }
 
 export interface ResolveManyMarkupRequest {
-  goodIds: string[];
+  productIds: string[];
   policy: 'wholesale' | 'retail';
 }
