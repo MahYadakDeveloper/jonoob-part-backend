@@ -1,5 +1,5 @@
 {
-  "name": "@infra/integrations.cache",
+  "name": "@infra/integrations-cache",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -18,7 +18,8 @@
   "dependencies": {
     "@feature/catalog-api": "workspace:*",
     "@feature/common": "workspace:*",
-    "@jonoob-part/contracts": "*",
+    "@feature/pricing-markup-api": "workspace:*",
+    "@jonoob-part/contracts": "workspace:*",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.1.28",
     "bullmq": "^5.81.3"

@@ -3,6 +3,7 @@
     "Populator"
   ],
   "userWords": [
-    "populators"
+    "populators",
+    "CacheInvalidationQueue"
   ]
 }

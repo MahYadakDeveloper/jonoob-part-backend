@@ -1,21 +1,16 @@
 import {
   InvoicePricingRequest,
   ManyProductPricingRequest,
-  PricingPolicyReq,
   ProductPricingRequest,
-} from "./pricing.requests";
+} from './pricing.requests';
 import {
   InvoicePricingResponse,
   ManyProductPricingResponse,
-  PricingPolicyRes,
   ProductPricingResponse,
-} from "./pricing.responses";
+} from './pricing.responses';
 
 export interface PricingApi {
   priceProduct(req: ProductPricingRequest): Promise<ProductPricingResponse>;
-  priceManyProduct(
-    req: ManyProductPricingRequest,
-  ): Promise<ManyProductPricingResponse>;
+  priceManyProduct(req: ManyProductPricingRequest): Promise<ManyProductPricingResponse>;
   priceInvoice(req: InvoicePricingRequest): Promise<InvoicePricingResponse>;
-  resolvePricingPolicy(req: PricingPolicyReq): Promise<PricingPolicyRes>;
 }

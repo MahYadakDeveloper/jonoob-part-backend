@@ -1,5 +1,9 @@
 import {
   CatalogApi,
+  FindManyProductRequest as FindManyProductRequestApi,
+  FindManyProductResponse as FindManyProductResponseApi,
+  FindProductRequest as FindProductRequestApi,
+  FindProductResponse as FindProductResponseApi,
   ProductDeletedEventPayload,
   ProductDeletedEventType,
   ProductRedefinedEventPayload,
@@ -159,6 +163,21 @@ export class CatalogService implements CatalogApi {
     >;
   }
 
+  /**
+   * [NOTE] This is api method implementation
+   */
+  find(req: FindProductRequestApi): Promise<FindProductResponseApi> {
+    // [TODO] Complete this...
+    throw new Error('Method not implemented.');
+  }
+  /**
+   * [NOTE] This is api method implementation
+   */
+  findMany(req: FindManyProductRequestApi): Promise<FindManyProductResponseApi> {
+    // [TODO] Complete this...
+    throw new Error('Method not implemented.');
+  }
+
   async getRawProducts({ productIds }: RawProductsRequest): Promise<RawProductsResponse> {
     const products = await this.repository.findManyById(productIds);
     return { products };
@@ -172,7 +191,7 @@ export class CatalogService implements CatalogApi {
    *  we use elastic
    * Retrieves a product by its ID.
    */
-  async find({ productId, populate }: FindProductRequest): Promise<FindProductResponse> {
+  async findProduct({ productId, populate }: FindProductRequest): Promise<FindProductResponse> {
     const { products } = await this.findManyByIds({ productIds: [productId], populate });
     const dto = products.getOrThrow(productId);
     return { product: dto };

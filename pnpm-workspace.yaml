@@ -19,7 +19,7 @@ allowBuilds:
 fetchTimeout: 90000
 
 minimumReleaseAgeExclude:
-  - '@jonoob-part/contracts@1.0.0 || 1.0.1'
+  - '@jonoob-part/contracts@1.0.0 || 1.0.1 || 1.0.2'
 
 # registries:
 #   default: https://package-mirror.liara.ir/repository/npm/

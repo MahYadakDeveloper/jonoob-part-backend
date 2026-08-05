@@ -1,11 +1,14 @@
-import { Payment, ProductBundleKind, ProductLeafKind } from "../types";
-import { LineItems } from "./line-items";
-import { Money } from "./money";
+import { CustomerType, Payment, ProductBundleKind, ProductLeafKind } from '../types';
+import { LineItems } from './line-items';
+import { Money } from './money';
 
 export type InvoiceHeader = {
   readonly cashierId: string;
   readonly issuedAt: Date;
-  readonly customerId?: string;
+  readonly customer?: {
+    id: string;
+    type: CustomerType;
+  };
 };
 
 export type AppliedDiscount = {
@@ -36,7 +39,7 @@ export type ProductInvoiceItem = InvoiceItemBase & ProductLeafKind;
 
 export type BundleInvoiceItem = InvoiceItemBase &
   ProductBundleKind & {
-    readonly items: Omit<InvoiceItemBase, "discount">[];
+    readonly items: Omit<InvoiceItemBase, 'discount'>[];
   };
 
 export type InvoiceItem = ProductInvoiceItem | BundleInvoiceItem;

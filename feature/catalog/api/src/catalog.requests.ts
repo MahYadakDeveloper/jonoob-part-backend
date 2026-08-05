@@ -9,3 +9,11 @@ export interface FindProductRequest {
 export interface FindManyProductRequest {
   productIds: string[];
 }
+
+export interface FindProductByBrandRequest {
+  brandId: string;
+}
+
+export interface FindProductByCategoryRequest {
+  categoryId: string;
+}

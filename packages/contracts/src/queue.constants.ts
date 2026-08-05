@@ -1,1 +1,1 @@
-export const CacheInvalidationQueue = 'cache-invalidation';
+export const CacheInvalidationQueueName = 'cache-invalidation';

@@ -1,4 +1,4 @@
-import { CacheInvalidationQueue } from '@jonoob-part/contracts';
+import { CacheInvalidationQueueName } from '@jonoob-part/contracts';
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 
@@ -10,7 +10,16 @@ import { Module } from '@nestjs/common';
       {
         name: 'events',
       },
-      { name: CacheInvalidationQueue },
+      {
+        name: CacheInvalidationQueueName,
+        defaultJobOptions: {
+          attempts: 5,
+          backoff: {
+            type: 'exponential',
+            delay: 5000,
+          },
+        },
+      },
     ),
   ],
 })

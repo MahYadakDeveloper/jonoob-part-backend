@@ -21,6 +21,8 @@ export interface MarkupPolicyRepository {
   create(data: CreateMarkupPolicy): Promise<string>;
   update(data: UpdateMarkupPolicy): Promise<void>;
 
+  delete(id: string): Promise<void>;
+
   getGlobalMarkup(variant: MarkupVariant): Promise<GlobalMarkupPolicy>;
   setGlobalMarkup(variant: MarkupVariant, rate: number): Promise<void>;
 }

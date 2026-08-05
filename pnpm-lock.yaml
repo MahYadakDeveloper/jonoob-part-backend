@@ -548,6 +548,9 @@ importers:
       '@feature/cashback-api':
         specifier: workspace:*
         version: link:../../cashback/api
+      '@feature/catalog-api':
+        specifier: workspace:*
+        version: link:../../catalog/api
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
@@ -761,9 +764,12 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../feature/common
+      '@feature/pricing-markup-api':
+        specifier: workspace:*
+        version: link:../../../feature/pricing/markup/api
       '@jonoob-part/contracts':
-        specifier: '*'
-        version: 1.0.1
+        specifier: workspace:*
+        version: link:../../../packages/contracts
       '@nestjs/bullmq':
         specifier: ^11.0.4
         version: 11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.81.3(redis@6.0.1))
@@ -819,8 +825,8 @@ importers:
   infrastructure/messaging/queue:
     dependencies:
       '@jonoob-part/contracts':
-        specifier: ^1.0.1
-        version: 1.0.1
+        specifier: workspace:*
+        version: link:../../../packages/contracts
       '@nestjs/bullmq':
         specifier: ^11.0.4
         version: 11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.81.3(redis@6.0.1))
@@ -1476,9 +1482,6 @@ packages:
   '@jest/types@30.4.1':
     resolution: {integrity: sha512-f1x/vJXIfjOlEmejYpbkbgw1gOqpPECwMvMEtBqe47j7H2Hg8h8w3o3ikhSXq3MI15kg+oQ0exWO0uCtTNJLoQ==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
-
-  '@jonoob-part/contracts@1.0.1':
-    resolution: {integrity: sha512-X26XM1GYkEjxHNIHGjAqGc5vrqELHw5E4TixBYsvCULohcFAC3Gd4jMIvLCnDWG7EGWun/nLYsYMBldYONhNJg==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -5512,8 +5515,6 @@ snapshots:
       '@types/node': 24.13.2
       '@types/yargs': 17.0.35
       chalk: 4.1.2
-
-  '@jonoob-part/contracts@1.0.1': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

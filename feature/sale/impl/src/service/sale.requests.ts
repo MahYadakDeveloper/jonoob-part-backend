@@ -1,9 +1,12 @@
 import { CashbackReversalPolicy } from '@feature/cashback-api';
-import { BankDestination, Money } from '@feature/common';
+import { BankDestination, CustomerType, Money } from '@feature/common';
 
 export interface RecordSaleRequest {
   cashierId: string;
-  customerId?: string;
+  customer?: {
+    id: string;
+    type: CustomerType;
+  };
   useWallet?: { mode: 'full' } | { mode: 'partial'; amount: Money };
   manualDiscount?: Money;
   items: {

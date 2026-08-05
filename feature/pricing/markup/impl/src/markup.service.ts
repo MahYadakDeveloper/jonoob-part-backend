@@ -1,10 +1,13 @@
 import { ProductDto, type CatalogApi } from '@feature/catalog-api';
 import { type BrandApi } from '@feature/catalog-brand-api';
 import { type CategoryApi } from '@feature/catalog-category-api';
-import { LineItems } from '@feature/common';
+import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/common';
 import {
   MarkupDto,
   MarkupPolicyApi,
+  MarkupPolicyCreatedEventType,
+  MarkupPolicyEventPayload,
+  MarkupPolicyUpdatedEventType,
   ResolveManyMarkupRequest,
   ResolveManyMarkupResponse,
   ResolveMarkupRequest,
@@ -29,6 +32,8 @@ export class MarkupPolicyService implements MarkupPolicyApi {
     private readonly catalog: CatalogApi,
     private readonly brand: BrandApi,
     private readonly category: CategoryApi,
+    private readonly tx: TransactionManager,
+    private readonly outbox: OutboxRepository,
   ) {}
 
   async resolve({ productId, policy }: ResolveMarkupRequest): Promise<ResolveMarkupResponse> {
@@ -110,7 +115,15 @@ export class MarkupPolicyService implements MarkupPolicyApi {
   }
 
   async setGlobal({ variant, rate }: GlobalMarkupPolicySettingRequest): Promise<void> {
-    await this.repository.setGlobalMarkup(variant, rate);
+    await this.tx.run(async () => {
+      await this.repository.setGlobalMarkup(variant, rate);
+      await this.outbox.save({
+        type: MarkupPolicyUpdatedEventType,
+        payload: {
+          scope: 'global',
+        } satisfies MarkupPolicyEventPayload,
+      });
+    });
   }
 
   async create({ markup }: MarkupCreationRequest): Promise<{ id: string }> {
@@ -137,7 +150,20 @@ export class MarkupPolicyService implements MarkupPolicyApi {
         break;
     }
 
-    return { id: await this.repository.create(markup) };
+    const id = await this.tx.run(async () => {
+      const id = await this.repository.create(markup);
+
+      await this.outbox.save({
+        type: MarkupPolicyCreatedEventType,
+        payload: {
+          scope: markup.scope,
+          referenceId: markup.referenceId,
+        } satisfies MarkupPolicyEventPayload,
+      });
+      return id;
+    });
+
+    return { id };
   }
 
   /**
@@ -148,7 +174,16 @@ export class MarkupPolicyService implements MarkupPolicyApi {
 
     if (!m) throw new Error('');
 
-    await this.repository.update(markup);
+    await this.tx.run(async () => {
+      await this.repository.update(markup);
+      await this.outbox.save({
+        type: MarkupPolicyUpdatedEventType,
+        payload: {
+          scope: m.scope,
+          referenceId: m.referenceId,
+        } satisfies MarkupPolicyEventPayload,
+      });
+    });
   }
 
   private getMarkupReferences(products: LineItems<ProductDto>): MarkupReference[] {

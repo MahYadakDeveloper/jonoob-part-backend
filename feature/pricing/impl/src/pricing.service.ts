@@ -20,8 +20,6 @@ import {
   ManyProductPricingRequest,
   ManyProductPricingResponse,
   PricingApi,
-  PricingPolicyReq,
-  PricingPolicyRes,
   ProductPricingRequest,
   ProductPricingResponse,
   UnpricedBundleInvoiceItem,
@@ -33,26 +31,18 @@ import { Injectable } from '@nestjs/common';
 import { ProductNotFoundError } from './errors/product-not-found-error';
 import { PurchasePriceNotFoundError } from './errors/purchase-price-not-found.error';
 import { BundleComponentInvoiceItem } from './model/bundle-component-invoice-item';
-import { type CustomerQuery } from './port/customer.query';
 
 @Injectable()
 export class PricingService implements PricingApi {
   constructor(
     private readonly markupPolicy: MarkupPolicyApi,
     private readonly discount: DiscountApi,
-    private readonly customerQuery: CustomerQuery,
     private readonly catalog: CatalogApi,
     private readonly procurement: ProcurementApi,
   ) {}
 
   private resolvePolicy(customerType: CustomerType) {
     return customerType === 'merchant' ? 'wholesale' : 'retail';
-  }
-
-  async resolvePricingPolicy({ customerId }: PricingPolicyReq): Promise<PricingPolicyRes> {
-    const customerType = await this.customerQuery.getType(customerId);
-
-    return { policy: this.resolvePolicy(customerType) };
   }
 
   async priceProduct({
@@ -122,10 +112,7 @@ export class PricingService implements PricingApi {
     return { prices };
   }
 
-  async priceInvoice({
-    items,
-    customerId,
-  }: InvoicePricingRequest): Promise<InvoicePricingResponse> {
+  async priceInvoice({ items, customer }: InvoicePricingRequest): Promise<InvoicePricingResponse> {
     // Getting products
     const { products } = await this.catalog.getRawProducts({
       productIds: [...items.keys()],
@@ -143,20 +130,17 @@ export class PricingService implements PricingApi {
     });
 
     // Resolving markup
-    const customerType: CustomerType = customerId
-      ? await this.customerQuery.getType(customerId)
-      : 'consumer';
-    const policy = this.resolvePolicy(customerType);
+    const policy = this.resolvePolicy(customer?.type ?? 'consumer');
     const leafProductIds = this.collectLeafProductIds(products);
     const { markups } = await this.markupPolicy.resolveMany({
       productIds: leafProductIds,
       policy: policy,
     });
 
-    const discounts = !!customerId
+    const discounts = customer
       ? (
           await this.discount.findManyApplicableDiscount({
-            customerId,
+            customer,
             productIds: [...items.keys()],
           })
         ).discounts

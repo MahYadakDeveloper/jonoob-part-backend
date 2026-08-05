@@ -16,7 +16,7 @@
     }
   },
   "dependencies": {
-    "@jonoob-part/contracts": "^1.0.1",
+    "@jonoob-part/contracts": "workspace:*",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.1.28"
   }

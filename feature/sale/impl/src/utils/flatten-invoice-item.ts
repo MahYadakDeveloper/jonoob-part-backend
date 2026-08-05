@@ -1,14 +1,12 @@
-import { InvoiceItem, LineItems, ProductInvoiceItem } from "@feature/common";
+import { InvoiceItem, LineItems, ProductInvoiceItem } from '@feature/common';
 
-export function flattenInvoiceItem(
-  item: InvoiceItem,
-): readonly ProductInvoiceItem[] {
-  if (item.kind === "product") {
+export function flattenInvoiceItem(item: InvoiceItem): readonly ProductInvoiceItem[] {
+  if (item.kind === 'leaf') {
     return [item];
   }
 
   return item.items.map((bundleItem) => ({
-    kind: "product",
+    kind: 'leaf',
     productId: bundleItem.productId,
     description: bundleItem.description,
     quantity: bundleItem.quantity * item.quantity,
@@ -17,13 +15,11 @@ export function flattenInvoiceItem(
   }));
 }
 
-export function flattenInvoiceItems(
-  items: LineItems<InvoiceItem>,
-): LineItems<ProductInvoiceItem> {
+export function flattenInvoiceItems(items: LineItems<InvoiceItem>): LineItems<ProductInvoiceItem> {
   const result = new LineItems<ProductInvoiceItem>((p) => p.productId);
 
   for (const item of items) {
-    if (item.kind === "product") {
+    if (item.kind === 'leaf') {
       result.set(item);
       continue;
     }
@@ -40,7 +36,7 @@ export function flattenInvoiceItems(
         });
       } else {
         result.set({
-          kind: "product",
+          kind: 'leaf',
           productId: bundleItem.productId,
           description: bundleItem.description,
           quantity,

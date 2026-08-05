@@ -1,1 +1,1 @@
-export * from './product.updated.event';
+export * from './product.event';

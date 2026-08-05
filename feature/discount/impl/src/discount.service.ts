@@ -1,4 +1,4 @@
-import { AppliedDiscount, LineItems } from '@feature/common';
+import { AppliedDiscount, CustomerType, LineItems } from '@feature/common';
 import {
   ApplicableDiscount,
   DiscountApi,
@@ -39,7 +39,7 @@ export class DiscountService implements DiscountApi {
    * eligibility checks can enforce per-customer limits defined by the discount policy.
    */
   async commitDiscountUsages({
-    customerId,
+    customer,
     appliedDiscounts,
   }: DiscountUsageRecordRequest): Promise<void> {
     const requestedUsages = this.collectRequestedUsages(appliedDiscounts);
@@ -60,7 +60,7 @@ export class DiscountService implements DiscountApi {
         discounts.set(discount);
       }
       const [customerUsages, discountUsages] = await Promise.all([
-        this.discountUsageRepository.findCustomerUsages(customerId, [...discountIds]),
+        this.discountUsageRepository.findCustomerUsages(customer.id, [...discountIds]),
         this.discountUsageRepository.findDiscountUsages([...discountIds]),
       ]);
 
@@ -75,7 +75,7 @@ export class DiscountService implements DiscountApi {
       await this.discountUsageRepository.upsertMany(
         requestedUsages.transform(
           (x) => ({
-            customerId,
+            customerId: customer.id,
             ...x,
           }),
           (x) => x.discountId,
@@ -85,14 +85,10 @@ export class DiscountService implements DiscountApi {
   }
 
   async findManyApplicableDiscount({
-    customerId,
+    customer,
     productIds,
   }: FindManyApplicableDiscountRequest): Promise<FindManyApplicableDiscountResponse> {
-    const { policy } = await this.pricing.resolvePricingPolicy({
-      customerId,
-    });
-
-    if (policy === 'wholesale') {
+    if (this.resolvePolicy(customer.type) === 'wholesale') {
       return {
         discounts: new LineItems<{
           productId: string;
@@ -114,7 +110,7 @@ export class DiscountService implements DiscountApi {
     const allDiscounts = [...specificDiscounts, ...campaignDiscounts];
 
     const quantities = await this.resolveApplicableQuantities({
-      customerId,
+      customerId: customer.id,
       discounts: allDiscounts,
     });
 
@@ -155,14 +151,11 @@ export class DiscountService implements DiscountApi {
   }
 
   async findApplicableDiscount({
-    customerId,
+    customer,
     productId,
   }: FindApplicableDiscountRequest): Promise<FindApplicableDiscountResponse> {
     // Eligibility check
-    const { policy } = await this.pricing.resolvePricingPolicy({
-      customerId,
-    });
-    if (policy === 'wholesale') return {};
+    if (this.resolvePolicy(customer.type) === 'wholesale') return {};
 
     const specificDiscount = await this.specificDiscountRepository.findByProductId(productId);
 
@@ -171,7 +164,7 @@ export class DiscountService implements DiscountApi {
         discount: {
           ...specificDiscount,
           applicableQuantity: await this.resolveApplicableQuantity({
-            customerId,
+            customerId: customer.id,
             discount: specificDiscount,
           }),
           kind: 'specific',
@@ -186,7 +179,7 @@ export class DiscountService implements DiscountApi {
         discount: {
           ...campaignDiscount,
           applicableQuantity: await this.resolveApplicableQuantity({
-            customerId,
+            customerId: customer.id,
             discount: campaignDiscount,
           }),
           kind: 'campaign',
@@ -195,6 +188,10 @@ export class DiscountService implements DiscountApi {
     }
 
     return {};
+  }
+
+  private resolvePolicy(customerType: CustomerType): 'wholesale' | 'retail' {
+    return customerType === 'merchant' ? 'wholesale' : 'retail';
   }
 
   private async resolveApplicableQuantity({

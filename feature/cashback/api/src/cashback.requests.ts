@@ -1,14 +1,17 @@
 import {
+  CustomerType,
   GrantedCashback,
   InvoiceItem,
   InvoiceItemBase,
   LineItems,
-  Money,
-} from "@feature/common";
-import { CashbackReversalPolicy } from "./cashback.enums";
+} from '@feature/common';
+import { CashbackReversalPolicy } from './cashback.enums';
 
 export interface ReversalCashbackRequest {
-  customerId: string;
+  customer: {
+    id: string;
+    type: CustomerType;
+  };
   refundedItems: LineItems<InvoiceItemBase>;
   referenceId: string;
   granted: GrantedCashback;
@@ -16,13 +19,19 @@ export interface ReversalCashbackRequest {
 }
 
 export interface GrantingCashbackRequest {
-  customerId: string;
+  customer: {
+    id: string;
+    type: CustomerType;
+  };
   referenceId: string;
   purchasedItems: LineItems<InvoiceItem>;
   expectedCashback: GrantedCashback;
 }
 
 export interface CalculateCashbackRequest {
-  customerId: string;
+  customer: {
+    id: string;
+    type: CustomerType;
+  };
   purchasedItems: LineItems<InvoiceItem>;
 }

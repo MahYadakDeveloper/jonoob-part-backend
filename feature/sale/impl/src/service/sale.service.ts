@@ -2,7 +2,8 @@ import {
   CashbackError,
   InsufficientCashbackBalanceError,
   type CashbackApi,
-} from "@feature/cashback-api";
+} from '@feature/cashback-api';
+import { type CatalogApi } from '@feature/catalog-api';
 import {
   AppliedDiscount,
   InvoiceItem,
@@ -12,34 +13,33 @@ import {
   Money,
   type OutboxRepository,
   type TransactionManager,
-} from "@feature/common";
-import { type DiscountApi } from "@feature/discount-api";
-import { PlanPaymentRequest, type PaymentApi } from "@feature/payment-api";
-import { type PricingApi } from "@feature/pricing-api";
+} from '@feature/common';
+import { type DiscountApi } from '@feature/discount-api';
+import { PlanPaymentRequest, type PaymentApi } from '@feature/payment-api';
+import { type PricingApi } from '@feature/pricing-api';
 import {
   ReturnSnapshot,
   SaleRecordedEventPayload,
   SaleRecordedEventType,
   SaleReturnRecordedEventPayload,
   SaleReturnRecordedEventType,
-} from "@feature/sale-api";
-import { type SettlementApi } from "@feature/settlement-api";
-import { type TaxApi } from "@feature/tax-api";
-import { type WalletApi } from "@feature/wallet-api";
-import { type WarehouseApi } from "@feature/warehouse-api";
-import { Injectable } from "@nestjs/common";
-import { DuplicateItemsInReturnError } from "errors/duplicate-items-in-return.error";
-import { DuplicateItemsInSaleError } from "errors/duplicate-items-in-sale.error";
-import { ReturnItemsDoNotMatchSaleError } from "errors/return-items-do-not-match-sale.error";
-import { type ProductQuery } from "port/product-query.port";
-import { type ReturnRepository } from "repository/return.repository";
-import { type SaleRepository } from "repository/sale.repository";
-import { ProductLineItem } from "types/product-line-item.type";
-import { flattenInvoiceItems } from "utils/flatten-invoice-item";
-import { flattenRefundableItems } from "utils/flatten-refundable-items";
-import { mapProductToUnpricedInvoiceItem } from "utils/product-to-unpriced-invoice-item.mapper";
-import { RecordReturnRequest, RecordSaleRequest } from "./sale.requests";
-import { RecordReturnResponse } from "./sale.responses";
+} from '@feature/sale-api';
+import { type SettlementApi } from '@feature/settlement-api';
+import { type TaxApi } from '@feature/tax-api';
+import { type WalletApi } from '@feature/wallet-api';
+import { type WarehouseApi } from '@feature/warehouse-api';
+import { Injectable } from '@nestjs/common';
+import { DuplicateItemsInReturnError } from 'errors/duplicate-items-in-return.error';
+import { DuplicateItemsInSaleError } from 'errors/duplicate-items-in-sale.error';
+import { ReturnItemsDoNotMatchSaleError } from 'errors/return-items-do-not-match-sale.error';
+import { type ReturnRepository } from 'repository/return.repository';
+import { type SaleRepository } from 'repository/sale.repository';
+import { ProductLineItem } from 'types/product-line-item.type';
+import { flattenInvoiceItems } from 'utils/flatten-invoice-item';
+import { flattenRefundableItems } from 'utils/flatten-refundable-items';
+import { mapProductToUnpricedInvoiceItem } from 'utils/product-to-unpriced-invoice-item.mapper';
+import { RecordReturnRequest, RecordSaleRequest } from './sale.requests';
+import { RecordReturnResponse } from './sale.responses';
 
 /**
  *
@@ -49,7 +49,6 @@ export class SaleService {
   constructor(
     private readonly returnRepository: ReturnRepository,
     private readonly saleRepository: SaleRepository,
-    private readonly productQuery: ProductQuery,
     private readonly warehouse: WarehouseApi,
     private readonly pricing: PricingApi,
     private readonly payment: PaymentApi,
@@ -57,6 +56,7 @@ export class SaleService {
     private readonly cashback: CashbackApi,
     private readonly settlement: SettlementApi,
     private readonly wallet: WalletApi,
+    private readonly catalog: CatalogApi,
     private readonly tax: TaxApi,
     private readonly outboxRepository: OutboxRepository,
     private readonly tx: TransactionManager,
@@ -99,16 +99,16 @@ export class SaleService {
         Money.zero(),
       );
 
-      const { customerId } = sale.snapshot.header;
+      const { customer } = sale.snapshot.header;
 
       let payableRefund: Money = refund;
       let cashbackReversed = Money.zero();
-      if (customerId && sale.snapshot.summary.cashback) {
+      if (customer && sale.snapshot.summary.cashback) {
         if (!cashbackReversalPolicy) {
-          throw new Error("Cashback reversal policy is required.");
+          throw new Error('Cashback reversal policy is required.');
         }
         const result = await this.cashback.processCashbackReversal({
-          customerId,
+          customer,
           refundedItems: returnSnapshotItems,
           referenceId: sale.id,
           granted: sale.snapshot.summary.cashback,
@@ -116,10 +116,10 @@ export class SaleService {
         });
 
         switch (result.kind) {
-          case "deduct_from_refund":
+          case 'deduct_from_refund':
             payableRefund = payableRefund.subtract(result.deductedAmount);
             break;
-          case "reversed":
+          case 'reversed':
             cashbackReversed = result.reversedAmount;
             break;
         }
@@ -137,7 +137,7 @@ export class SaleService {
       }
 
       if (payableRefund.lt(Money.zero())) {
-        throw new Error("Payable refund cannot be negative.");
+        throw new Error('Payable refund cannot be negative.');
       }
 
       const returnSnapshot: ReturnSnapshot = {
@@ -156,33 +156,32 @@ export class SaleService {
         },
       };
 
-      const { returnId } =
-        await this.returnRepository.recordReturn(returnSnapshot);
+      const { returnId } = await this.returnRepository.recordReturn(returnSnapshot);
 
       // Settlement
       if (payoff) {
         // Payoff
         await this.settlement.refund({
-          customerId,
+          customerId: customer?.id,
           amount: returnSnapshot.summary.payableRefund,
           destination: payoff.depositTo,
           referenceId: returnId,
         });
       } else {
         // Credit
-        if (!customerId) throw new Error("...");
+        if (!customer) throw new Error('...');
 
         await this.wallet.deposit({
           amount: returnSnapshot.summary.payableRefund,
-          customerId,
+          customerId: customer.id,
           idempotencyKey: `return:${returnId}`,
-          reason: "refund",
+          reason: 'refund',
           referenceId: returnId,
         });
       }
 
       // Warehouse: Receipt goods
-      await this.warehouse.recordGoodsReceipt({
+      await this.warehouse.issueGoods({
         items: returnSnapshotItems.transform(
           (item) => ({
             goodId: item.productId,
@@ -220,29 +219,24 @@ export class SaleService {
 
       const requestedItems = req.items.toLineItems((item) => item.productId);
 
-      const products = await this.productQuery.findMany([
-        ...requestedItems.keys(),
-      ]);
+      const { products } = await this.catalog.findMany({ productIds: [...requestedItems.keys()] });
 
       const unpricedInvoiceItems = products.transform(
         (product) =>
-          mapProductToUnpricedInvoiceItem(
-            product,
-            requestedItems.getOrThrow(product.id).qty,
-          ),
+          mapProductToUnpricedInvoiceItem(product, requestedItems.getOrThrow(product.id).qty),
         (product) => product.productId,
       );
 
       // Pricing invoice
       const { pricedInvoice: invoice } = await this.pricing.priceInvoice({
-        customerId: req.cashierId,
+        customer: req.customer,
         items: unpricedInvoiceItems,
       });
 
       // Processing payment
-      const paymentRequest: PlanPaymentRequest = req.customerId
+      const paymentRequest: PlanPaymentRequest = req.customer?.id
         ? {
-            customerId: req.customerId,
+            customerId: req.customer?.id,
             amountDue: invoice.summary.grandTotal,
             useWallet: req.useWallet,
           }
@@ -259,7 +253,7 @@ export class SaleService {
 
       // Issuing goods
       const flattenedItems = flattenInvoiceItems(invoice.items);
-      await this.warehouse.recordGoodsIssue({
+      await this.warehouse.issueGoods({
         items: flattenedItems.transform(
           (item) => ({ goodId: item.productId, quantity: item.quantity }),
           (item) => item.goodId,
@@ -267,9 +261,9 @@ export class SaleService {
       });
 
       // Calculating granting cashback customer for preview
-      const { cashback: cashbackPreview } = req.customerId
+      const { cashback: cashbackPreview } = req.customer
         ? await this.cashback.calculate({
-            customerId: req.customerId,
+            customer: req.customer,
             purchasedItems: invoice.items,
           })
         : { cashback: undefined };
@@ -277,7 +271,7 @@ export class SaleService {
       const snapshot: InvoiceSnapshot = {
         header: {
           cashierId: req.cashierId,
-          customerId: req.customerId,
+          customer: req.customer,
           issuedAt: new Date(Date.now()),
         },
         items: invoice.items,
@@ -287,16 +281,16 @@ export class SaleService {
 
       const { saleId } = await this.saleRepository.recordSale(snapshot);
 
-      if (req.customerId)
+      if (req.customer?.id)
         await this.cashback.grant({
-          customerId: req.customerId,
+          customer: req.customer,
           purchasedItems: invoice.items,
           referenceId: saleId,
           expectedCashback: cashbackPreview!,
         });
 
       // Commit discount usages
-      if (req.customerId) {
+      if (req.customer) {
         const appliedDiscounts = snapshot.items.reduce(
           (discounted, item) => {
             if (!item.discount) return discounted;
@@ -307,7 +301,7 @@ export class SaleService {
         );
 
         await this.discount.commitDiscountUsages({
-          customerId: req.customerId,
+          customer: req.customer,
           appliedDiscounts,
         });
       }
@@ -321,11 +315,7 @@ export class SaleService {
     });
   }
 
-  private calculateProportionalTax(
-    tax: Money,
-    refund: Money,
-    invoiceTotal: Money,
-  ): Money {
+  private calculateProportionalTax(tax: Money, refund: Money, invoiceTotal: Money): Money {
     const ratio = refund.value / invoiceTotal.value;
 
     return tax.multiply(ratio);
@@ -345,14 +335,11 @@ export class SaleService {
         () => new ReturnItemsDoNotMatchSaleError(),
       );
 
-      if (returnItem.quantity > refundableItem.quantity)
-        throw new ReturnItemsDoNotMatchSaleError();
+      if (returnItem.quantity > refundableItem.quantity) throw new ReturnItemsDoNotMatchSaleError();
 
       // Discount given is considered
       refund = refund.add(
-        refundableItem.lineTotal
-          .divide(refundableItem.quantity)
-          .multiply(returnItem.quantity),
+        refundableItem.lineTotal.divide(refundableItem.quantity).multiply(returnItem.quantity),
       );
     }
     return refund;
@@ -375,9 +362,7 @@ export class SaleService {
       ...item,
       description: refundableItem.description,
       unitPrice: refundableItem.unitPrice,
-      lineTotal: refundableItem.lineTotal
-        .divide(refundableItem.quantity)
-        .multiply(item.quantity),
+      lineTotal: refundableItem.lineTotal.divide(refundableItem.quantity).multiply(item.quantity),
     };
   }
 }

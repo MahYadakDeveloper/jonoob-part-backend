@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { CustomerType, LineItems } from '@feature/common';
 import { UnpricedInvoiceItem } from './pricing.types';
 
 export interface ManyProductPricingRequest {
@@ -14,10 +14,9 @@ export interface ProductPricingRequest {
 }
 
 export interface InvoicePricingRequest {
-  customerId?: string;
+  customer?: {
+    id: string;
+    type: CustomerType;
+  };
   items: LineItems<UnpricedInvoiceItem>;
-}
-
-export interface PricingPolicyReq {
-  customerId: string;
 }

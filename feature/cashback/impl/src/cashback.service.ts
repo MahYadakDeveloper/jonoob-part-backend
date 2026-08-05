@@ -7,21 +7,13 @@ import {
   GrantingCashbackResponse,
   ReversalCashbackRequest,
   ReversalCashbackResponse,
-} from "@feature/cashback-api";
-import {
-  GrantedCashback,
-  InvoiceItem,
-  LineItems,
-  Money,
-} from "@feature/common";
-import { type WalletApi } from "@feature/wallet-api";
-import { Injectable } from "@nestjs/common";
-import { type CustomerQuery } from "./ports/customer.query";
-import { type CashbackSettingsRepository } from "./repository/cashback-settings.repository";
-import {
-  CashbackAmountChangedError,
-  InvalidCashbackRateError,
-} from "./cashback.errors";
+} from '@feature/cashback-api';
+import { CustomerType, GrantedCashback, InvoiceItem, LineItems, Money } from '@feature/common';
+import { type WalletApi } from '@feature/wallet-api';
+import { Injectable } from '@nestjs/common';
+import { CashbackAmountChangedError, InvalidCashbackRateError } from './cashback.errors';
+import { type CustomerQuery } from './ports/customer.query';
+import { type CashbackSettingsRepository } from './repository/cashback-settings.repository';
 
 @Injectable()
 export class CashbackService implements CashbackApi {
@@ -32,24 +24,21 @@ export class CashbackService implements CashbackApi {
   ) {}
 
   async calculate({
-    customerId,
+    customer,
     purchasedItems,
   }: CalculateCashbackRequest): Promise<CalculateCashbackResponse> {
     return {
-      cashback: await this.resolveGrantedCashback(customerId, purchasedItems),
+      cashback: await this.resolveGrantedCashback(customer.type, purchasedItems),
     };
   }
 
   async grant({
-    customerId,
+    customer,
     referenceId,
     purchasedItems,
     expectedCashback,
   }: GrantingCashbackRequest): Promise<GrantingCashbackResponse> {
-    const granted = await this.resolveGrantedCashback(
-      customerId,
-      purchasedItems,
-    );
+    const granted = await this.resolveGrantedCashback(customer.type, purchasedItems);
 
     if (
       expectedCashback.appliedRate !== granted.appliedRate ||
@@ -66,9 +55,9 @@ export class CashbackService implements CashbackApi {
     }
 
     await this.wallet.deposit({
-      customerId,
+      customerId: customer.id,
       amount: granted.amount,
-      reason: "cashback",
+      reason: 'cashback',
       referenceId,
       idempotencyKey: `cashback:${referenceId}`,
     });
@@ -79,47 +68,41 @@ export class CashbackService implements CashbackApi {
   }
 
   async processCashbackReversal({
-    customerId,
+    customer,
     refundedItems,
     referenceId,
     granted,
     policy,
   }: ReversalCashbackRequest): Promise<ReversalCashbackResponse> {
-    const eligibleRefundAmount =
-      this.resolveCashbackEligibleAmount(refundedItems);
+    const eligibleRefundAmount = this.resolveCashbackEligibleAmount(refundedItems);
 
-    const reversalCashback = this.calculateCashback(
-      granted.appliedRate,
-      eligibleRefundAmount,
-    );
+    const reversalCashback = this.calculateCashback(granted.appliedRate, eligibleRefundAmount);
 
     switch (policy) {
       case CashbackReversalPolicy.DeductFromRefund:
         return {
-          kind: "deduct_from_refund",
+          kind: 'deduct_from_refund',
           deductedAmount: reversalCashback,
         };
 
       case CashbackReversalPolicy.ReverseGrantedCashback:
         if (!reversalCashback.isZero()) {
-          await this.revokeCashback(customerId, referenceId, reversalCashback);
+          await this.revokeCashback(customer.id, referenceId, reversalCashback);
         }
-        await this.revokeCashback(customerId, referenceId, reversalCashback);
+        await this.revokeCashback(customer.id, referenceId, reversalCashback);
 
         return {
-          kind: "reversed",
+          kind: 'reversed',
           reversedAmount: reversalCashback,
         };
     }
   }
 
   private async resolveGrantedCashback(
-    customerId: string,
+    customerType: CustomerType,
     purchasedItems: LineItems<InvoiceItem>,
   ): Promise<GrantedCashback> {
-    const customerType = await this.customerQuery.getType(customerId);
-
-    if (customerType === "merchant") {
+    if (customerType === 'merchant') {
       return this.emptyCashback();
     }
 
@@ -165,7 +148,7 @@ export class CashbackService implements CashbackApi {
     await this.wallet.withdraw({
       customerId,
       amount: cashback,
-      reason: "cashback_reversal",
+      reason: 'cashback_reversal',
       referenceId,
       idempotencyKey: `cashback-reversal:${referenceId}`,
     });

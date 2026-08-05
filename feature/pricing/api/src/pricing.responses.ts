@@ -1,10 +1,4 @@
-import {
-  InvoiceItem,
-  InvoiceSummary,
-  LineItems,
-  Money,
-  PricingPolicy,
-} from "@feature/common";
+import { InvoiceItem, InvoiceSummary, LineItems, Money } from '@feature/common';
 
 export interface ManyProductPricingResponse {
   prices: LineItems<{
@@ -22,8 +16,4 @@ export interface InvoicePricingResponse {
     items: LineItems<InvoiceItem>;
     summary: InvoiceSummary;
   };
-}
-
-export interface PricingPolicyRes {
-  policy: PricingPolicy;
 }
