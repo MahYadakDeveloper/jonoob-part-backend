@@ -482,11 +482,14 @@ importers:
 
   feature/procurement/impl:
     dependencies:
+      '@feature/procurement-api':
+        specifier: workspace:*
+        version: link:../api
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../../warehouse/api
       '@nestjs/common':
-        specifier: ^11.1.26
+        specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/recommendation/impl:
