@@ -485,9 +485,66 @@ importers:
       '@feature/procurement-api':
         specifier: workspace:*
         version: link:../api
+      '@feature/procurement-supply-api':
+        specifier: workspace:*
+        version: link:../supply/api
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../../warehouse/api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/procurement/supply/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+      '@feature/procurement-api':
+        specifier: workspace:*
+        version: link:../../api
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../../../warehouse/api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/procurement/supply/impl:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+      '@feature/procurement-supply-api':
+        specifier: workspace:*
+        version: link:../api
+      '@feature/procurement-supply-record-api':
+        specifier: workspace:*
+        version: link:../record/api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/procurement/supply/record/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../../common
+
+  feature/procurement/supply/record/impl:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../../common
+      '@feature/procurement-api':
+        specifier: workspace:*
+        version: link:../../../api
+      '@feature/procurement-supply-record-api':
+        specifier: workspace:*
+        version: link:../api
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../../../../warehouse/api
       '@nestjs/common':
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)

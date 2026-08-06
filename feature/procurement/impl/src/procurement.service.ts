@@ -1,13 +1,24 @@
-import { ManyProductPurchasePriceRequest, ManyProductPurchasePriceResponse, ProductPurchasePriceRequest, ProductPurchasePriceResponse, type ProcurementApi} from '@feature/procurement-api'
+import {
+  ManyProductPurchasePriceRequest,
+  ManyProductPurchasePriceResponse,
+  ProductPurchasePriceRequest,
+  ProductPurchasePriceResponse,
+  type ProcurementApi,
+} from '@feature/procurement-api';
+import { type SupplyApi } from '@feature/procurement-supply-api';
 import { Injectable } from '@nestjs/common';
 
-@Injectable() 
-export class ProcurementService implements ProcurementApi{
-  constructor()
+@Injectable()
+export class ProcurementService implements ProcurementApi {
+  constructor(private readonly supply: SupplyApi) {}
+
   findPurchasePrice(req: ProductPurchasePriceRequest): Promise<ProductPurchasePriceResponse> {
-    throw new Error('Method not implemented.');
+    return this.supply.findLatestPurchasePrice(req);
   }
-  findManyPurchasePrice(req: ManyProductPurchasePriceRequest): Promise<ManyProductPurchasePriceResponse> {
-    throw new Error('Method not implemented.');
+
+  findManyPurchasePrice(
+    req: ManyProductPurchasePriceRequest,
+  ): Promise<ManyProductPurchasePriceResponse> {
+    return this.supply.findManyLatestPurchasePrice(req);
   }
 }

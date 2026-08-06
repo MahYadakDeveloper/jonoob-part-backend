@@ -17,8 +17,9 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/procurement-api": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
+    "@feature/common": "workspace:*",
+    "@feature/procurement-supply-api": "workspace:*",
+    "@feature/procurement-supply-record-api": "workspace:*",
     "@nestjs/common": "^11.1.28"
   }
 }
