@@ -1,4 +1,5 @@
-import { MediaRef } from '@feature/common';
+import { Page, Pagination } from '@feature/common';
+import { MediaRef } from '@feature/media-api';
 
 export interface ProductSearchCriteria {
   storefront: true | false;
@@ -9,11 +10,11 @@ export interface ProductSearchCriteria {
 
   sort?: ProductSearchSort;
 
-  page?: SearchPagination;
+  page?: Pagination;
 }
 
 export interface ProductSearchResult {
-  page: SearchPage<ProductSearchPageItem>;
+  page: Page<ProductSearchPageItem>;
 }
 
 export interface ProductSearchFilters {
@@ -39,42 +40,6 @@ export interface ProductSearchSort {
 export type SortDirection = 'asc' | 'desc';
 
 export type ProductSortField = 'relevance' | 'price' | 'createdAt' | 'popularity' | 'name';
-
-export interface SearchPageInfo {
-  number: number;
-
-  size: number;
-
-  totalItems: number;
-
-  totalPages: number;
-
-  hasNext: boolean;
-
-  hasPrevious: boolean;
-}
-
-export interface SearchPage<T> extends SearchPageInfo {
-  items: readonly T[];
-}
-
-export type SearchPagination = OffsetPagination | CursorPagination;
-
-export interface OffsetPagination {
-  type: 'offset';
-
-  page: number;
-
-  size: number;
-}
-
-export interface CursorPagination {
-  type: 'cursor';
-
-  after?: string;
-
-  size: number;
-}
 
 export interface SearchFacets {
   brands?: readonly SearchFacet[];

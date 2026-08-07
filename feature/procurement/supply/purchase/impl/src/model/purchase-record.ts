@@ -1,6 +1,9 @@
 import { Money } from '@feature/common';
 
 type PurchaseRecordBase = {
+  id: string;
+  goodId: string;
+
   recordedAt: Date;
 
   specialistId: string;
@@ -48,3 +51,8 @@ export type PurchaseRecord =
 
 //   @@index([goodId, suppliedAt(sort: Desc)])
 // }
+
+export type CreatePurchaseRecordData<T extends PurchaseRecord['type']> = Omit<
+  Extract<PurchaseRecord, { type: T }>,
+  'id' | 'recordedAt' | 'type'
+>;
