@@ -1,7 +1,8 @@
 import { LineItems, Money, UnitOfMeasure } from '@feature/common';
 
 export const SupplyRecordedEventType = 'procurement:supply-recorded';
-export type SupplyRecordedEventPayload = {
+export const SupplyRecordRemovedEventType = 'procurement:supply-record-removed';
+export type SupplyRecordEventPayload = {
   documentId: string;
 
   specialistId: string;

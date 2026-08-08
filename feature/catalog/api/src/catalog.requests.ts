@@ -17,3 +17,7 @@ export interface FindProductByBrandRequest {
 export interface FindProductByCategoryRequest {
   categoryId: string;
 }
+
+export interface FindManyProductByGoodIdRequest {
+  goodIds: string[];
+}

@@ -33,7 +33,7 @@ export class SupplyService implements SupplyApi {
   }
 
   // [TODO] extract the paging pattern from catalog searching sections and put it in commons for reuse
-  findDocuments(page: number, filter: any, sortBy: 'x' | 'y'): Promise<Page<x>>;
+  documents(page: number, skip: number, filter: any, sortBy: 'x' | 'y'): Promise<Page<x>>;
 
   recordSupply(document) {}
   returnSupply(documentId, items);

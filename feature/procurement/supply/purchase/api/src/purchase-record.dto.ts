@@ -8,3 +8,18 @@ export interface PurchaseRecordDto {
 
   purchasePrice: Money;
 }
+
+export interface NewSuppliedPurchaseRecordDto {
+  goodId: string;
+
+  specialistId: string;
+
+  supplier?: {
+    id: string;
+    displayName: string;
+  };
+
+  purchasePrice: Money;
+
+  documentId: string;
+}

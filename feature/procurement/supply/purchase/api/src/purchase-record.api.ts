@@ -1,6 +1,7 @@
 import {
   FindLatestRecordByGoodIdRequest,
   FindManyLatestRecordByGoodIdRequest,
+  SuppliedRecordManyCreationRequest,
 } from './purchase-record.req';
 import {
   FindLatestRecordByGoodIdResponse,
@@ -14,4 +15,6 @@ export interface PurchaseRecordApi {
   findManyLatestRecordByGoodId(
     req: FindManyLatestRecordByGoodIdRequest,
   ): Promise<FindManyLatestRecordByGoodIdResponse>;
+
+  createManySuppliedRecord(req: SuppliedRecordManyCreationRequest): Promise<void>;
 }

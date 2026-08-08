@@ -19,6 +19,7 @@
     "@feature/catalog-api": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/pricing-markup-api": "workspace:*",
+    "@feature/procurement-supply-purchase-api": "workspace:*",
     "@jonoob-part/contracts": "workspace:*",
     "@nestjs/bullmq": "^11.0.4",
     "@nestjs/common": "^11.1.28",

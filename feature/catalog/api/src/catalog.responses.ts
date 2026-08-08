@@ -19,3 +19,7 @@ export interface FindProductByBrandResponse {
 export interface FindProductByCategoryResponse {
   products: LineItems<ProductDto>;
 }
+
+export interface FindManyProductByGoodIdResponse {
+  products: LineItems<ProductDto>;
+}
