@@ -1,67 +1,103 @@
+import { type OutboxRepository, type TransactionManager } from '@feature/common';
 import {
-  type OutboxRepository,
-  type TransactionManager,
-} from "@feature/common";
-import {
+  GetGoodDetailsRequest,
+  GetGoodDetailsResponse,
+  GetManyStockDetailsByBarcodeRequest,
+  GetManyStockDetailsByBarcodeResponse,
+  GetStockRequest,
+  GetStockResponse,
+  GetStocksRequest,
+  GetStocksResponse,
+  GetWarehouseViewRequest,
+  GetWarehouseViewResponse,
+  GetWarehouseViewsRequest,
+  GetWarehouseViewsResponse,
   GoodIdResolvingRequest,
   GoodIdResolvingResponse,
   GoodsIssuedEventPayload,
   GoodsIssuedEventType,
   GoodsIssuingRequest,
-  GoodsQuarantinedEventPayload,
-  GoodsQuarantinedEventType,
   GoodsReceiptedEventPayload,
   GoodsReceiptedEventType,
+  GoodsReceptionRequest,
   ReceiveReturnedRequest,
+  StockExistenceRequest,
+  StockExistenceResponse,
   StockReleasingRequest,
   StockReservingRequest,
   WarehouseApi,
-} from "@feature/warehouse-api";
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import {
-  WAREHOUSE_REPOSITORY,
-  type WarehouseRepository,
-} from "./repository/warehouse.repository";
+} from '@feature/warehouse-api';
+import { type StockQuarantineApi } from '@feature/warehouse-quarantine-api';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { WAREHOUSE_REPOSITORY, type WarehouseRepository } from './repository/warehouse.repository';
 import {
   AvailableStockRequest,
   AvailableStocksRequest,
-  FindGoodByBarcodeRequest,
-  GoodsReceiptingRequest,
+  FindStockByBarcodeRequest,
   GoodUpdateRequest,
-} from "./warehouse.requests";
+} from './warehouse.requests';
 import {
   AvailableStockResponse,
   AvailableStocksResponse,
-  FindGoodByBarcodeResponse,
-} from "./warehouse.responses";
+  FindStockByBarcodeResponse,
+} from './warehouse.responses';
 
 @Injectable()
 export class WarehouseService implements WarehouseApi {
   private readonly logger: Logger;
   constructor(
-    @Inject(WAREHOUSE_REPOSITORY)
+    private readonly stockQuarantine: StockQuarantineApi,
+    @Inject(WAREHOUSE_REPOSITORY) private readonly repository: WarehouseRepository,
     private readonly tx: TransactionManager,
-    private readonly repository: WarehouseRepository,
     private readonly outbox: OutboxRepository,
   ) {
     this.logger = new Logger(WarehouseService.name);
+  }
+  getManyStockDetailsByBarcode(
+    req: GetManyStockDetailsByBarcodeRequest,
+  ): Promise<GetManyStockDetailsByBarcodeResponse> {
+    throw new Error('Method not implemented.');
+  }
+  checkStockExistence(req: StockExistenceRequest): Promise<StockExistenceResponse> {
+    throw new Error('Method not implemented.');
+  }
+  getGoodStock(req: GetStockRequest): Promise<GetStockResponse> {
+    throw new Error('Method not implemented.');
+  }
+  getGoodStocks(req: GetStocksRequest): Promise<GetStocksResponse> {
+    throw new Error('Method not implemented.');
+  }
+  getGoodDetails(req: GetGoodDetailsRequest): Promise<GetGoodDetailsResponse> {
+    throw new Error('Method not implemented.');
+  }
+  getWarehouseView(req: GetWarehouseViewRequest): Promise<GetWarehouseViewResponse> {
+    throw new Error('Method not implemented.');
+  }
+  getWarehouseViews(req: GetWarehouseViewsRequest): Promise<GetWarehouseViewsResponse> {
+    throw new Error('Method not implemented.');
+  }
+
+  async receiptGoods(req: GoodsReceptionRequest): Promise<void> {
+    await this.tx.run(async () => {
+      await this.repository.receipt(req.goods);
+
+      this.outbox.save({
+        type: GoodsReceiptedEventType,
+        payload: {
+          goodIds: [...req.goods.keys()],
+        } satisfies GoodsReceiptedEventPayload,
+      });
+    });
   }
 
   /**
    *
    */
   async receiveCustomerReturn(req: ReceiveReturnedRequest): Promise<void> {
-    await this.tx.run(async () => {
-      await this.repository.quarantine(req.items);
-
-      await this.outbox.save({
-        type: GoodsQuarantinedEventType,
-        payload: {
-          referenceId: req.returnId,
-          reason: "customer_return",
-          items: req.items,
-        } satisfies GoodsQuarantinedEventPayload,
-      });
+    await this.stockQuarantine.quarantine({
+      items: req.items,
+      reason: 'customer_return',
+      referenceId: req.returnId,
     });
   }
 
@@ -79,15 +115,15 @@ export class WarehouseService implements WarehouseApi {
   }
 
   resolveGoodId(req: GoodIdResolvingRequest): Promise<GoodIdResolvingResponse> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
 
   reserveStock(req: StockReservingRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
 
   releaseStock(req: StockReleasingRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
   /**
    * Adjusts the stock quantity of an inventory item by its ID.
@@ -106,19 +142,13 @@ export class WarehouseService implements WarehouseApi {
    *
    * @throws {WarehouseStockRecordNotFoundError} If no item with the given `id` exists.
    */
-  getAvailableStocks(
-    req: AvailableStocksRequest,
-  ): Promise<AvailableStocksResponse> {
-    return this.repository
-      .getAvailableStocksByIds(req.goodIds)
-      .then((stocks) => ({ stocks }));
+  getAvailableStocks(req: AvailableStocksRequest): Promise<AvailableStocksResponse> {
+    return this.repository.getAvailableStocks(req.goodIds).then((stocks) => ({ stocks }));
   }
 
-  getAvailableStock(
-    req: AvailableStockRequest,
-  ): Promise<AvailableStockResponse> {
+  getAvailableStock(req: AvailableStockRequest): Promise<AvailableStockResponse> {
     return this.repository
-      .getAvailableStocksByIds([req.goodId])
+      .getAvailableStocks([req.goodId])
       .then((stocks) => ({ stock: stocks[req.goodId] }));
   }
 
@@ -142,27 +172,15 @@ export class WarehouseService implements WarehouseApi {
    *
    * @param req The goods receipt request containing the items to receive.
    */
-  async receiptGoods(req: GoodsReceiptingRequest) {
-    await this.tx.run(async () => {
-      await this.repository.receipt(req.items);
+  // async receiptGoods(req: GoodsReceiptingRequest) {
+  //   // }
 
-      this.outbox.save({
-        type: GoodsReceiptedEventType,
-        payload: {
-          goodIds: [...req.items.keys()],
-        } satisfies GoodsReceiptedEventPayload,
-      });
-    });
+  async findStockByBarcode(req: FindStockByBarcodeRequest): Promise<FindStockByBarcodeResponse> {
+    const stock = await this.repository.findStockByBarcode(req.barcode);
+    return { stock };
   }
 
-  async findGoodByBarcode(
-    req: FindGoodByBarcodeRequest,
-  ): Promise<FindGoodByBarcodeResponse> {
-    const good = await this.repository.findGoodByBarcode(req.barcode);
-    return { good };
-  }
-
-  async updateGoodData(req: GoodUpdateRequest) {
-    return this.repository.updateGoodDetails(req.goodId, req.details);
+  async updateStockDetails(req: GoodUpdateRequest) {
+    return this.repository.updateStockDetails(req.goodId, req.details);
   }
 }

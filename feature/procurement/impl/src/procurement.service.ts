@@ -3,9 +3,10 @@ import {
   ManyProductPurchasePriceResponse,
   ProductPurchasePriceRequest,
   ProductPurchasePriceResponse,
+  SupplyReturnRequest,
   type ProcurementApi,
 } from '@feature/procurement-api';
-import { type SupplyApi } from '@feature/procurement-supply-api';
+import { SupplyReturnResponse, type SupplyApi } from '@feature/procurement-supply-api';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -20,5 +21,9 @@ export class ProcurementService implements ProcurementApi {
     req: ManyProductPurchasePriceRequest,
   ): Promise<ManyProductPurchasePriceResponse> {
     return this.supply.findManyLatestPurchasePrice(req);
+  }
+
+  returnSupply(req: SupplyReturnRequest): Promise<SupplyReturnResponse> {
+    return this.supply.returnSupply(req);
   }
 }

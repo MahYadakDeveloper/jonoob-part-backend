@@ -1,5 +1,13 @@
-import { FindLatestPurchasePriceRequest, FindManyLatestPurchasePriceRequest } from './supply.req';
-import { FindLatestPurchasePriceResponse, FindManyLatestPurchasePriceResponse } from './supply.res';
+import {
+  FindLatestPurchasePriceRequest,
+  FindManyLatestPurchasePriceRequest,
+  SupplyReturnRequest,
+} from './supply.req';
+import {
+  FindLatestPurchasePriceResponse,
+  FindManyLatestPurchasePriceResponse,
+  SupplyReturnResponse,
+} from './supply.res';
 
 export interface SupplyApi {
   findLatestPurchasePrice(
@@ -9,4 +17,6 @@ export interface SupplyApi {
   findManyLatestPurchasePrice(
     req: FindManyLatestPurchasePriceRequest,
   ): Promise<FindManyLatestPurchasePriceResponse>;
+
+  returnSupply(req: SupplyReturnRequest): Promise<SupplyReturnResponse>;
 }

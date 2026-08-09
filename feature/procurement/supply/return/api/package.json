@@ -1,5 +1,5 @@
 {
-  "name": "@feature/procurement-supply-purchase",
+  "name": "@feature/procurement-supply-return-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -15,5 +15,8 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@feature/common": "workspace:*"
+  }
 }

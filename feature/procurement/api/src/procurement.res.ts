@@ -7,3 +7,7 @@ export interface ProductPurchasePriceResponse {
 export interface ManyProductPurchasePriceResponse {
   prices: LineItems<{ goodId: string; price: Money }>;
 }
+
+export interface SupplyReturnResponse {
+  returnId: string;
+}

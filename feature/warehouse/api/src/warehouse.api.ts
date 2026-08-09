@@ -1,11 +1,14 @@
 import {
   GetGoodDetailsRequest,
+  GetManyGoodDetailsByBarcodeRequest,
+  GetManyStockDetailsByBarcodeRequest,
   GetStockRequest,
   GetStocksRequest,
   GetWarehouseViewRequest,
   GetWarehouseViewsRequest,
   GoodIdResolvingRequest,
   GoodsIssuingRequest,
+  GoodsReceptionRequest,
   ReceiveReturnedRequest,
   StockExistenceRequest,
   StockReleasingRequest,
@@ -13,6 +16,8 @@ import {
 } from './warehouse.requests';
 import {
   GetGoodDetailsResponse,
+  GetManyGoodDetailsByBarcodeResponse,
+  GetManyStockDetailsByBarcodeResponse,
   GetStockResponse,
   GetStocksResponse,
   GetWarehouseViewResponse,
@@ -45,6 +50,13 @@ export interface WarehouseApi {
   /**
    *
    */
+  getManyStockDetailsByBarcode(
+    req: GetManyStockDetailsByBarcodeRequest,
+  ): Promise<GetManyStockDetailsByBarcodeResponse>;
+
+  /**
+   *
+   */
   getWarehouseView(req: GetWarehouseViewRequest): Promise<GetWarehouseViewResponse>;
 
   /**
@@ -60,6 +72,11 @@ export interface WarehouseApi {
    *
    */
   issueGoods(req: GoodsIssuingRequest): Promise<void>;
+
+  /**
+   *
+   */
+  receiptGoods(req: GoodsReceptionRequest): Promise<void>;
 
   /**
    *

@@ -1,30 +1,32 @@
-import { LineItems, Money } from '@feature/common';
+import { Barcode, LineItems, Money, UnitOfMeasure } from '@feature/common';
 
-export interface SupplyDocument {
+export interface SupplyDocument<LineRefs extends string | Barcode> {
   id: string;
 
   specialistId: string;
 
   supplier: {
     id: string;
-    name: string;
+    displayName: string;
   };
 
   suppliedAt: Date;
 
-  lines: LineItems<SupplyDocumentLine>;
+  lines: LineItems<SupplyDocumentLine<LineRefs>>;
 
-  grandTotal: Money;
+  // It's not required to be persisted, because it's computational
+  // grandTotal: Money;
 }
 
-type SupplyDocumentLine = {
-  goodId: string;
+type SupplyDocumentLine<Ref extends string | Barcode> = {
+  reference: Ref;
 
   quantity: number;
 
-  unit?: string;
+  unit: UnitOfMeasure;
 
   purchasePrice: Money;
 
-  lineTotal: Money;
+  // It's not required to be persisted, because it's computational
+  // lineTotal: Money;
 };

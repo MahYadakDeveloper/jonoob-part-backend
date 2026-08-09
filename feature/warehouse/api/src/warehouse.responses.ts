@@ -1,5 +1,5 @@
 import { LineItems } from '@feature/common';
-import { Good, GoodDetails } from './warehouse.types';
+import { Stock, StockDetails } from './warehouse.types';
 
 export interface StockExistenceResponse {
   stocks: LineItems<{ goodId: string; exists: boolean }>;
@@ -14,17 +14,21 @@ export interface GetStockResponse {
 }
 
 export interface GetStocksResponse {
-  stocks: LineItems<{ goodId: string; stock: number }>;
+  stocks: LineItems<{ goodId: string; quantity: number }>;
 }
 
 export interface GetGoodDetailsResponse {
-  details: GoodDetails;
+  details: StockDetails;
 }
 
 export interface GetWarehouseViewResponse {
-  good: Good;
+  stock: Stock;
 }
 
 export interface GetWarehouseViewsResponse {
-  goods: LineItems<Good>;
+  stocks: LineItems<Stock>;
+}
+
+export interface GetManyStockDetailsByBarcodeResponse {
+  stocksDetails: LineItems<StockDetails>;
 }

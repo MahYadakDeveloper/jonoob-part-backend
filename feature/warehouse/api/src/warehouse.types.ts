@@ -1,11 +1,11 @@
-import { Barcode, UnitOfMeasure } from "@feature/common";
+import { Barcode, UnitOfMeasure } from '@feature/common';
 
-export type Good = {
-  readonly id: string;
+export type Stock = {
+  readonly goodId: string;
   readonly barcode: Barcode;
-  readonly stock: number;
+  readonly quantity: number;
   readonly unitOfMeasure?: UnitOfMeasure;
   readonly storageLocation?: string;
 };
 
-export type GoodDetails = Omit<Good, "stock">;
+export type StockDetails = Omit<Stock, 'stock'>;

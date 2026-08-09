@@ -1,9 +1,8 @@
-import { Barcode, LineItems } from "@feature/common";
-import { GoodDetails } from "./model/good-details";
-import { Stock } from "./model/stock";
+import { Barcode } from '@feature/common';
+import { StockDetails } from '@feature/warehouse-api';
 
 export interface StockAdjustmentRequest {
-  stock: Stock;
+  qty: number;
 }
 
 export interface AvailableStocksRequest {
@@ -13,18 +12,11 @@ export interface AvailableStockRequest {
   goodId: string;
 }
 
-export interface FindGoodByBarcodeRequest {
+export interface FindStockByBarcodeRequest {
   barcode: Barcode;
 }
 
 export interface GoodUpdateRequest {
   goodId: string;
-  details: GoodDetails;
-}
-
-export interface GoodsReceiptingRequest {
-  items: LineItems<{
-    goodId: string;
-    quantity: number;
-  }>;
+  details: Omit<StockDetails, 'goodId'>;
 }
