@@ -1,5 +1,5 @@
 {
-  "name": "@feature/warehouse",
+  "name": "@feature/warehouse-reserve",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -19,18 +19,7 @@
   "dependencies": {
     "@feature/common": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
-    "@feature/warehouse-quarantine-api": "workspace:*",
     "@feature/warehouse-reserve-api": "workspace:*",
-    "@nestjs/common": "^11.1.26",
-    "@nestjs/event-emitter": "^3.1.0",
-    "redis": "^6.0.1"
-  },
-  "devDependencies": {
-    "@nestjs/config": "^4.0.4",
-    "@nestjs/testing": "^11.1.26",
-    "@types/jest": "^30.0.0",
-    "jest": "^30.4.2",
-    "ts-jest": "^29.4.11",
-    "typescript": "^6.0.3"
+    "@nestjs/common": "^11.1.28"
   }
 }

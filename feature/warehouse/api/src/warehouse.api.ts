@@ -1,6 +1,5 @@
 import {
   GetGoodDetailsRequest,
-  GetManyGoodDetailsByBarcodeRequest,
   GetManyStockDetailsByBarcodeRequest,
   GetStockRequest,
   GetStocksRequest,
@@ -13,10 +12,11 @@ import {
   StockExistenceRequest,
   StockReleasingRequest,
   StockReservingRequest,
+  StocksDecreaseRequest,
+  StocksIncreaseRequest,
 } from './warehouse.requests';
 import {
   GetGoodDetailsResponse,
-  GetManyGoodDetailsByBarcodeResponse,
   GetManyStockDetailsByBarcodeResponse,
   GetStockResponse,
   GetStocksResponse,
@@ -100,4 +100,7 @@ export interface WarehouseApi {
    * reserved stock.
    */
   releaseStock(req: StockReleasingRequest): Promise<void>;
+
+  increaseStocks(req: StocksIncreaseRequest): Promise<void>;
+  decreaseStocks(req: StocksDecreaseRequest): Promise<void>;
 }

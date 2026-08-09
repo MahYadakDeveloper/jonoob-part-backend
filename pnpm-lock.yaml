@@ -747,6 +747,9 @@ importers:
       '@feature/warehouse-quarantine-api':
         specifier: workspace:*
         version: link:../quarantine/api
+      '@feature/warehouse-reserve-api':
+        specifier: workspace:*
+        version: link:../reserve/api
       '@nestjs/common':
         specifier: ^11.1.26
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -793,6 +796,27 @@ importers:
       '@feature/warehouse-quarantine-api':
         specifier: workspace:*
         version: link:../api
+
+  feature/warehouse/reserve/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+
+  feature/warehouse/reserve/impl:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../../api
+      '@feature/warehouse-reserve-api':
+        specifier: workspace:*
+        version: link:../api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   infrastructure/database/elasticsearch: {}
 

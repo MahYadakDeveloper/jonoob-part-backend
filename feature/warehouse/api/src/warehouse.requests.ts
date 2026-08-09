@@ -68,7 +68,7 @@ export interface GetWarehouseViewsRequest {
 }
 
 export interface GoodsReceptionRequest {
-  goods: LineItems<
+  items: LineItems<
     | {
         barcode: Barcode;
         quantity: number;
@@ -78,4 +78,18 @@ export interface GoodsReceptionRequest {
         quantity: number;
       }
   >;
+}
+
+export interface StocksIncreaseRequest {
+  items: LineItems<{
+    goodId: string;
+    quantity: number;
+  }>;
+}
+
+export interface StocksDecreaseRequest {
+  items: LineItems<{
+    goodId: string;
+    quantity: number;
+  }>;
 }

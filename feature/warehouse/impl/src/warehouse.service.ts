@@ -25,10 +25,13 @@ import {
   StockExistenceResponse,
   StockReleasingRequest,
   StockReservingRequest,
+  StocksDecreaseRequest,
+  StocksIncreaseRequest,
   WarehouseApi,
 } from '@feature/warehouse-api';
 import { type StockQuarantineApi } from '@feature/warehouse-quarantine-api';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { type StockReserverApi } from '@feature/warehouse-reserve-api';
+import { Inject, Injectable } from '@nestjs/common';
 import { WAREHOUSE_REPOSITORY, type WarehouseRepository } from './repository/warehouse.repository';
 import {
   AvailableStockRequest,
@@ -44,14 +47,19 @@ import {
 
 @Injectable()
 export class WarehouseService implements WarehouseApi {
-  private readonly logger: Logger;
   constructor(
     private readonly stockQuarantine: StockQuarantineApi,
     @Inject(WAREHOUSE_REPOSITORY) private readonly repository: WarehouseRepository,
+    private readonly reserver: StockReserverApi,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
-  ) {
-    this.logger = new Logger(WarehouseService.name);
+  ) {}
+
+  increaseStocks(req: StocksIncreaseRequest): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  decreaseStocks(req: StocksDecreaseRequest): Promise<void> {
+    throw new Error('Method not implemented.');
   }
   getManyStockDetailsByBarcode(
     req: GetManyStockDetailsByBarcodeRequest,
@@ -79,12 +87,12 @@ export class WarehouseService implements WarehouseApi {
 
   async receiptGoods(req: GoodsReceptionRequest): Promise<void> {
     await this.tx.run(async () => {
-      await this.repository.receipt(req.goods);
+      await this.repository.receipt(req.items);
 
       this.outbox.save({
         type: GoodsReceiptedEventType,
         payload: {
-          goodIds: [...req.goods.keys()],
+          goodIds: [...req.items.keys()],
         } satisfies GoodsReceiptedEventPayload,
       });
     });
@@ -119,11 +127,11 @@ export class WarehouseService implements WarehouseApi {
   }
 
   reserveStock(req: StockReservingRequest): Promise<void> {
-    throw new Error('Method not implemented.');
+    return this.reserver.reserveStock(req);
   }
 
   releaseStock(req: StockReleasingRequest): Promise<void> {
-    throw new Error('Method not implemented.');
+    return this.reserver.releaseStock(req);
   }
   /**
    * Adjusts the stock quantity of an inventory item by its ID.
