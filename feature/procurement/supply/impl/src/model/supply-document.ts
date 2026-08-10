@@ -1,6 +1,6 @@
-import { Barcode, LineItems, Money, UnitOfMeasure } from '@feature/common';
+import { LineItems, Money, UnitOfMeasure } from '@feature/common';
 
-export interface SupplyDocument<LineRefs extends string | Barcode> {
+export interface SupplyDocument {
   id: string;
 
   specialistId: string;
@@ -8,18 +8,20 @@ export interface SupplyDocument<LineRefs extends string | Barcode> {
   supplier: {
     id: string;
     displayName: string;
+    contactNumbers: string[];
+    address?: string;
   };
 
   suppliedAt: Date;
 
-  lines: LineItems<SupplyDocumentLine<LineRefs>>;
+  lines: LineItems<SupplyDocumentLine>;
 
   // It's not required to be persisted, because it's computational
   // grandTotal: Money;
 }
 
-type SupplyDocumentLine<Ref extends string | Barcode> = {
-  reference: Ref;
+type SupplyDocumentLine = {
+  goodId: string;
 
   quantity: number;
 

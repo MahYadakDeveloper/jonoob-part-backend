@@ -5,5 +5,7 @@ export interface ReleaseStockRequest {
 }
 
 export interface ReturnToSupplierRequest {
+  specialistId: string;
+  supplierId: string;
   items: LineItems<{ goodId: string; quantity: number }>;
 }

@@ -1,4 +1,4 @@
-import { Barcode, type OutboxRepository, type TransactionManager } from '@feature/common';
+import { type OutboxRepository, type TransactionManager } from '@feature/common';
 import {
   FindLatestPurchasePriceRequest,
   FindLatestPurchasePriceResponse,
@@ -53,48 +53,43 @@ export class SupplyService implements SupplyApi {
     return this.repository.documents(criteria).then((page) => ({ page }));
   }
 
+  /**
+   * [NOTE]
+   *
+   * When recording a supply by scanning a good's barcode in the Business Manager app,
+   * the scanned barcode must first be resolved to a `goodId`.
+   *
+   * The client should call the good-resolution endpoint, which performs an upsert:
+   * * If the good already exists, return its existing `goodId`.
+   * * If it does not exist, create it and return the new `goodId`.
+   *
+   * If additional good information is required during creation (e.g. `unitOfMeasure`
+   * or `storageLocation`)
+   *
+   * Once the `goodId` has been resolved, it can be used to record the supply.
+   */
   async recordSupply({ document }: SupplyRecordingRequest): Promise<{ documentId: string }> {
     return this.tx.run(async () => {
-      const getBarcodeKey = (barcode: Barcode) => `${barcode.type}_${barcode.value}`;
-
       await this.warehouse.receiptGoods({
-        goods: document.lines.transform(
-          (item) => ({
-            barcode: item.reference,
-            quantity: item.quantity,
-          }),
-          (item) => getBarcodeKey(item.barcode),
+        items: document.lines.transform(
+          (item) => ({ goodId: item.goodId, quantity: item.quantity }),
+          (s) => s.goodId,
         ),
       });
 
-      const { stocksDetails } = await this.warehouse.getManyStockDetailsByBarcode({
-        barcodes: document.lines.toArray().map((item) => item.reference),
-      });
-
-      const resolvedLines = document.lines.transform(
-        (item) => ({
-          ...item,
-          reference: stocksDetails.getOrThrow(getBarcodeKey(item.reference)).goodId,
-        }),
-        (item) => item.reference,
-      );
-
-      const documentId = await this.repository.saveDocument({
-        ...document,
-        lines: resolvedLines,
-      });
+      const documentId = await this.repository.saveDocument(document);
 
       const { supplier, specialistId } = document;
 
-      const suppliedRecords = resolvedLines.transform(
+      const suppliedRecords = document.lines.transform(
         (item) => ({
           documentId,
           ...item,
-          goodId: item.reference,
+          goodId: item.goodId,
           supplier,
           specialistId,
         }),
-        (item) => item.reference,
+        (item) => item.goodId,
       );
 
       await this.purchase.createManySuppliedRecord({

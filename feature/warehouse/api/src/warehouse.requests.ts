@@ -1,5 +1,10 @@
 import { Barcode, LineItems } from '@feature/common';
 
+type ItemType = {
+  goodId: string;
+  quantity: number;
+};
+
 export interface GoodIdResolvingRequest {
   barcode: Barcode;
 }
@@ -9,38 +14,20 @@ export interface StockExistenceRequest {
 }
 
 export interface GoodsIssuingRequest {
-  items: LineItems<
-    | {
-        barcode: Barcode;
-        quantity: number;
-      }
-    | {
-        goodId: string;
-        quantity: number;
-      }
-  >;
+  items: LineItems<ItemType>;
 }
 
 export interface StockReservingRequest {
-  items: LineItems<{
-    goodId: string;
-    quantity: number;
-  }>;
+  items: LineItems<ItemType>;
 }
 
 export interface StockReleasingRequest {
-  items: LineItems<{
-    goodId: string;
-    quantity: number;
-  }>;
+  items: LineItems<ItemType>;
 }
 
 export interface ReceiveReturnedRequest {
   returnId: string;
-  items: LineItems<{
-    goodId: string;
-    quantity: number;
-  }>;
+  items: LineItems<ItemType>;
 }
 
 export interface GetStockRequest {
@@ -55,10 +42,6 @@ export interface GetGoodDetailsRequest {
   goodId: string;
 }
 
-export interface GetManyStockDetailsByBarcodeRequest {
-  barcodes: Barcode[];
-}
-
 export interface GetWarehouseViewRequest {
   goodId: string;
 }
@@ -68,28 +51,13 @@ export interface GetWarehouseViewsRequest {
 }
 
 export interface GoodsReceptionRequest {
-  items: LineItems<
-    | {
-        barcode: Barcode;
-        quantity: number;
-      }
-    | {
-        goodId: string;
-        quantity: number;
-      }
-  >;
+  items: LineItems<ItemType>;
 }
 
 export interface StocksIncreaseRequest {
-  items: LineItems<{
-    goodId: string;
-    quantity: number;
-  }>;
+  items: LineItems<ItemType>;
 }
 
 export interface StocksDecreaseRequest {
-  items: LineItems<{
-    goodId: string;
-    quantity: number;
-  }>;
+  items: LineItems<ItemType>;
 }

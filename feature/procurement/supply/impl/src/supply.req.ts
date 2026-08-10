@@ -1,9 +1,8 @@
-import { Barcode } from '@feature/common';
-import { DocumentCriteria } from './supply.types';
 import { SupplyDocument } from './model/supply-document';
+import { DocumentCriteria } from './supply.types';
 
 export interface SupplyRecordingRequest {
-  document: Omit<SupplyDocument<Barcode>, 'id' | 'suppliedAt'>;
+  document: Omit<SupplyDocument, 'id' | 'suppliedAt'>;
 }
 
 export interface SupplyDocumentPageRequest {

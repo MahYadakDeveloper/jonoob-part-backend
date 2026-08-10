@@ -19,6 +19,7 @@
   "dependencies": {
     "@feature/common": "workspace:*",
     "@feature/procurement-api": "workspace:*",
-    "@feature/warehouse-quarantine-api": "workspace:*"
+    "@feature/warehouse-quarantine-api": "workspace:*",
+    "@nestjs/common": "^11.1.28"
   }
 }

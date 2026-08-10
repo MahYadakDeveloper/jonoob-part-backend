@@ -28,7 +28,3 @@ export interface GetWarehouseViewResponse {
 export interface GetWarehouseViewsResponse {
   stocks: LineItems<Stock>;
 }
-
-export interface GetManyStockDetailsByBarcodeResponse {
-  stocksDetails: LineItems<StockDetails>;
-}

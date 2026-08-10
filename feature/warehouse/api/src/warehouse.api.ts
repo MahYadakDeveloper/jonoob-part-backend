@@ -1,6 +1,5 @@
 import {
   GetGoodDetailsRequest,
-  GetManyStockDetailsByBarcodeRequest,
   GetStockRequest,
   GetStocksRequest,
   GetWarehouseViewRequest,
@@ -17,7 +16,6 @@ import {
 } from './warehouse.requests';
 import {
   GetGoodDetailsResponse,
-  GetManyStockDetailsByBarcodeResponse,
   GetStockResponse,
   GetStocksResponse,
   GetWarehouseViewResponse,
@@ -46,13 +44,6 @@ export interface WarehouseApi {
    *
    */
   getGoodDetails(req: GetGoodDetailsRequest): Promise<GetGoodDetailsResponse>;
-
-  /**
-   *
-   */
-  getManyStockDetailsByBarcode(
-    req: GetManyStockDetailsByBarcodeRequest,
-  ): Promise<GetManyStockDetailsByBarcodeResponse>;
 
   /**
    *
