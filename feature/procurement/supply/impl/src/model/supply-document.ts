@@ -1,4 +1,4 @@
-import { LineItems, Money, UnitOfMeasure } from '@feature/common';
+import { LineItems, Money } from '@feature/common';
 
 export interface SupplyDocument {
   id: string;
@@ -13,6 +13,7 @@ export interface SupplyDocument {
   };
 
   suppliedAt: Date;
+  updatedAt?: Date;
 
   lines: LineItems<SupplyDocumentLine>;
 
@@ -20,12 +21,10 @@ export interface SupplyDocument {
   // grandTotal: Money;
 }
 
-type SupplyDocumentLine = {
+export type SupplyDocumentLine = {
   goodId: string;
 
   quantity: number;
-
-  unit: UnitOfMeasure;
 
   purchasePrice: Money;
 

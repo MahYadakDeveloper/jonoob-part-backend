@@ -164,7 +164,7 @@ importers:
         version: link:../../common
       '@feature/sale-api':
         specifier: workspace:*
-        version: link:../../sale/api
+        version: link:../../pos/sale/impl
       '@feature/wallet-api':
         specifier: workspace:*
         version: link:../../wallet/api
@@ -371,7 +371,7 @@ importers:
         version: link:../../pricing/api
       '@feature/sale-api':
         specifier: workspace:*
-        version: link:../../sale/api
+        version: link:../../pos/sale/impl
       '@nestjs/common':
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -416,6 +416,71 @@ importers:
       '@nestjs/common':
         specifier: ^11.1.27
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/pos/api: {}
+
+  feature/pos/impl:
+    dependencies:
+      '@feature/cashback-api':
+        specifier: workspace:*
+        version: link:../../cashback/api
+      '@feature/catalog-api':
+        specifier: workspace:*
+        version: link:../../catalog/api
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
+      '@feature/discount-api':
+        specifier: workspace:*
+        version: link:../../discount/api
+      '@feature/payment-api':
+        specifier: workspace:*
+        version: link:../../payment/api
+      '@feature/pricing-api':
+        specifier: workspace:*
+        version: link:../../pricing/api
+      '@feature/sale-api':
+        specifier: workspace:*
+        version: link:../sale/impl
+      '@feature/settlement-api':
+        specifier: workspace:*
+        version: link:../../settlement/api
+      '@feature/tax-api':
+        specifier: workspace:*
+        version: link:../../tax/api
+      '@feature/wallet-api':
+        specifier: workspace:*
+        version: link:../../wallet/api
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../../warehouse/api
+      '@nestjs/common':
+        specifier: ^11.1.27
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.39.4
+        version: 9.39.4
+      '@nestjs/testing':
+        specifier: ^11.1.27
+        version: 11.1.27(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+      globals:
+        specifier: ^17.6.0
+        version: 17.7.0
+      typescript-eslint:
+        specifier: ^8.61.0
+        version: 8.66.0(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2)
+
+  feature/pos/return/api: {}
+
+  feature/pos/return/impl: {}
+
+  feature/pos/sale/api: {}
+
+  feature/pos/sale/impl: {}
 
   feature/pricing/api:
     dependencies:
@@ -527,6 +592,9 @@ importers:
       '@feature/procurement-supply-return-api':
         specifier: workspace:*
         version: link:../return/api
+      '@feature/procurement-supply-supplier-api':
+        specifier: workspace:*
+        version: link:../supplier/api
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../../../warehouse/api
@@ -570,6 +638,18 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
+  feature/procurement/supply/supplier/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../../common
+
+  feature/procurement/supply/supplier/impl:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../../common
+
   feature/recommendation/impl:
     dependencies:
       '@feature/cashback-api':
@@ -589,64 +669,7 @@ importers:
         version: link:../../pricing/api
       '@feature/sale-api':
         specifier: workspace:*
-        version: link:../../sale/api
-      '@feature/settlement-api':
-        specifier: workspace:*
-        version: link:../../settlement/api
-      '@feature/tax-api':
-        specifier: workspace:*
-        version: link:../../tax/api
-      '@feature/wallet-api':
-        specifier: workspace:*
-        version: link:../../wallet/api
-      '@feature/warehouse-api':
-        specifier: workspace:*
-        version: link:../../warehouse/api
-      '@nestjs/common':
-        specifier: ^11.1.27
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
-    devDependencies:
-      '@eslint/js':
-        specifier: ^9.39.4
-        version: 9.39.4
-      '@nestjs/testing':
-        specifier: ^11.1.27
-        version: 11.1.27(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
-      globals:
-        specifier: ^17.6.0
-        version: 17.7.0
-      typescript-eslint:
-        specifier: ^8.61.0
-        version: 8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2)
-
-  feature/sale/api: {}
-
-  feature/sale/impl:
-    dependencies:
-      '@feature/cashback-api':
-        specifier: workspace:*
-        version: link:../../cashback/api
-      '@feature/catalog-api':
-        specifier: workspace:*
-        version: link:../../catalog/api
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../common
-      '@feature/discount-api':
-        specifier: workspace:*
-        version: link:../../discount/api
-      '@feature/payment-api':
-        specifier: workspace:*
-        version: link:../../payment/api
-      '@feature/pricing-api':
-        specifier: workspace:*
-        version: link:../../pricing/api
-      '@feature/sale-api':
-        specifier: workspace:*
-        version: link:../api
+        version: link:../../pos/sale/impl
       '@feature/settlement-api':
         specifier: workspace:*
         version: link:../../settlement/api
@@ -735,6 +758,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
+      '@jonoob-part/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
 
   feature/warehouse/good/api:
     dependencies:
@@ -747,6 +773,12 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
+      '@feature/warehouse-good-api':
+        specifier: workspace:*
+        version: link:../api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/warehouse/impl:
     dependencies:
@@ -765,6 +797,9 @@ importers:
       '@feature/warehouse-reserve-api':
         specifier: workspace:*
         version: link:../reserve/api
+      '@feature/warehouse-transaction-api':
+        specifier: workspace:*
+        version: link:../transaction/api
       '@nestjs/common':
         specifier: ^11.1.26
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -830,6 +865,27 @@ importers:
         specifier: workspace:*
         version: link:../../api
       '@feature/warehouse-reserve-api':
+        specifier: workspace:*
+        version: link:../api
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/warehouse/transaction/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+      '@jonoob-part/contracts':
+        specifier: workspace:*
+        version: link:../../../../packages/contracts
+
+  feature/warehouse/transaction/impl:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+      '@feature/warehouse-transaction-api':
         specifier: workspace:*
         version: link:../api
       '@nestjs/common':

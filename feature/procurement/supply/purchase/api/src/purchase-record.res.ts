@@ -8,3 +8,7 @@ export interface FindLatestRecordByGoodIdResponse {
 export interface FindManyLatestRecordByGoodIdResponse {
   records: LineItems<PurchaseRecordDto>;
 }
+
+export interface FindManyRecordByDocumentIdResponse {
+  records: LineItems<PurchaseRecordDto>;
+}

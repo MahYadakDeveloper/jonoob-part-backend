@@ -30,6 +30,7 @@ import {
 import { Good, type WarehouseGoodApi } from '@feature/warehouse-good-api';
 import { type StockQuarantineApi } from '@feature/warehouse-quarantine-api';
 import { type StockReserverApi } from '@feature/warehouse-reserve-api';
+import { type TransactionRecorderApi } from '@feature/warehouse-transaction-api';
 import { Inject, Injectable } from '@nestjs/common';
 import { WAREHOUSE_REPOSITORY, type WarehouseRepository } from './repository/warehouse.repository';
 import {
@@ -50,17 +51,24 @@ export class WarehouseService implements WarehouseApi {
     private readonly stockQuarantine: StockQuarantineApi,
     private readonly reserver: StockReserverApi,
     private readonly declaration: WarehouseGoodApi,
+    private readonly recorder: TransactionRecorderApi,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}
 
-  async declareGood({ good }: { good: Good }): Promise<{ goodId: string }> {
-    const stock = await this.repository.findStockByBarcode(good.barcode);
+  // [TODO] Move this inside its module
+  async declareGood({ good }: { good: Omit<Good, 'goodId'> }): Promise<{ goodId: string }> {
+    const { good: g } = await this.declaration.findByBarcode({ barcode: good.barcode });
 
-    if (!stock) return this.declaration.create({ good });
+    if (!g) return this.declaration.create({ good });
 
-    await this.declaration.update({ good });
-    return { goodId: stock.goodId };
+    const {
+      good: { goodId },
+    } = await this.declaration.findByBarcode({ barcode: good.barcode });
+
+    await this.declaration.update({ good: { goodId, ...good } });
+
+    return { goodId: goodId };
   }
 
   async increaseStocks(req: StocksIncreaseRequest): Promise<void> {
@@ -116,10 +124,7 @@ export class WarehouseService implements WarehouseApi {
   async getGoodDetails(req: GetGoodDetailsRequest): Promise<GetGoodDetailsResponse> {
     const { good } = await this.declaration.find({ goodId: req.goodId });
     return {
-      details: {
-        goodId: req.goodId,
-        ...good,
-      },
+      details: good,
     };
   }
 
@@ -128,7 +133,6 @@ export class WarehouseService implements WarehouseApi {
     const stocks = await this.repository.getAvailableStocks([req.goodId]);
     return {
       stock: {
-        goodId: req.goodId,
         quantity: stocks.get(req.goodId)?.quantity ?? 0,
         ...good,
       },
@@ -143,7 +147,6 @@ export class WarehouseService implements WarehouseApi {
     return {
       stocks: goodIds
         .map((goodId) => ({
-          goodId: goodId,
           quantity: stocks.get(goodId)?.quantity ?? 0,
           ...goods.getOrThrow(goodId),
         }))
@@ -171,14 +174,20 @@ export class WarehouseService implements WarehouseApi {
    *
    * @param req The goods receipt request containing the items to receive.
    */
-  async receiptGoods(req: GoodsReceptionRequest): Promise<void> {
+  async receiptGoods({ items, reference }: GoodsReceptionRequest): Promise<void> {
     await this.tx.run(async () => {
-      await this.repository.receipt(req.items);
+      await this.repository.receipt(items);
 
-      this.outbox.save({
+      await this.recorder.record({
+        type: 'inbound',
+        items,
+        reference,
+      });
+
+      await this.outbox.save({
         type: GoodsReceiptedEventType,
         payload: {
-          goodIds: [...req.items.keys()],
+          goodIds: [...items.keys()],
         } satisfies GoodsReceiptedEventPayload,
       });
     });
@@ -192,14 +201,20 @@ export class WarehouseService implements WarehouseApi {
     });
   }
 
-  async issueGoods(req: GoodsIssuingRequest): Promise<void> {
+  async issueGoods({ items, reference }: GoodsIssuingRequest): Promise<void> {
     await this.tx.run(async () => {
-      await this.repository.issue(req.items);
+      await this.repository.issue(items);
 
-      this.outbox.save({
+      await this.recorder.record({
+        type: 'outbound',
+        items,
+        reference,
+      });
+
+      await this.outbox.save({
         type: GoodsIssuedEventType,
         payload: {
-          goodIds: [...req.items.keys()],
+          goodIds: [...items.keys()],
         } satisfies GoodsIssuedEventPayload,
       });
     });

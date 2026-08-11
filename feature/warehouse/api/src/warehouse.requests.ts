@@ -5,6 +5,11 @@ type ItemType = {
   quantity: number;
 };
 
+type Reference = {
+  source: string;
+  id: string;
+};
+
 export interface GoodIdResolvingRequest {
   barcode: Barcode;
 }
@@ -14,6 +19,7 @@ export interface StockExistenceRequest {
 }
 
 export interface GoodsIssuingRequest {
+  reference: Reference;
   items: LineItems<ItemType>;
 }
 
@@ -51,6 +57,7 @@ export interface GetWarehouseViewsRequest {
 }
 
 export interface GoodsReceptionRequest {
+  reference: Reference;
   items: LineItems<ItemType>;
 }
 

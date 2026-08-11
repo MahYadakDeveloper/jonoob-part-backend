@@ -21,6 +21,7 @@
     "@feature/procurement-supply-api": "workspace:*",
     "@feature/procurement-supply-purchase-api": "workspace:*",
     "@feature/procurement-supply-return-api": "workspace:*",
+    "@feature/procurement-supply-supplier-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.1.28"
   },

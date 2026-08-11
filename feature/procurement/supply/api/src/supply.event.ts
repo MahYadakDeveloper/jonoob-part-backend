@@ -1,4 +1,4 @@
-import { LineItems, Money, UnitOfMeasure } from '@feature/common';
+import { LineItems, Money } from '@feature/common';
 
 export const SupplyRecordedEventType = 'procurement:supply-recorded';
 export const SupplyRecordRemovedEventType = 'procurement:supply-record-removed';
@@ -13,7 +13,6 @@ export type SupplyRecordEventPayload = {
   };
   lines: LineItems<{
     goodId: string;
-    unit: UnitOfMeasure;
     quantity: number;
     purchasePrice: Money;
   }>;

@@ -1,10 +1,10 @@
+import { PageCriteria } from '@feature/common';
 import { SupplyDocument } from './model/supply-document';
-import { DocumentCriteria } from './supply.types';
 
 export interface SupplyRecordingRequest {
-  document: Omit<SupplyDocument, 'id' | 'suppliedAt'>;
+  document: Omit<SupplyDocument, 'id' | 'suppliedAt' | 'supplier'> & { supplierId: string };
 }
 
 export interface SupplyDocumentPageRequest {
-  criteria: DocumentCriteria;
+  criteria: PageCriteria;
 }

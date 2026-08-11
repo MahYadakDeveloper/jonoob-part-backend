@@ -14,7 +14,7 @@ export interface FindGoodByBarcodeRequest {
 }
 
 export interface GoodCreationRequest {
-  good: Good;
+  good: Omit<Good, 'goodId'>;
 }
 
 export interface GoodUpdatingRequest {

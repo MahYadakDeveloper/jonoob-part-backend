@@ -17,6 +17,8 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*"
+    "@feature/common": "workspace:*",
+    "@feature/warehouse-good-api": "workspace:*",
+    "@nestjs/common": "^11.1.28"
   }
 }

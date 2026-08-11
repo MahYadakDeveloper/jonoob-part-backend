@@ -1,8 +1,11 @@
-import { Barcode, Page } from '@feature/common';
+import { Page, PageCriteria } from '@feature/common';
 import { SupplyDocument } from './model/supply-document';
-import { DocumentCriteria } from './supply.types';
 
 export interface SupplyRepository {
-  saveDocument(document: Omit<SupplyDocument<string>, 'id' | 'suppliedAt'>): Promise<string>;
-  documents(criteria: DocumentCriteria): Promise<Page<SupplyDocument<string>>>;
+  findById(id: string): Promise<SupplyDocument | null>;
+  createDocument(document: Omit<SupplyDocument, 'id' | 'suppliedAt'>): Promise<string>;
+  updateDocument(document: Omit<SupplyDocument, 'suppliedAt' | 'supplier'>): Promise<void>;
+  documents(criteria: PageCriteria): Promise<Page<SupplyDocument>>;
+
+  delete(id: string): Promise<void>;
 }

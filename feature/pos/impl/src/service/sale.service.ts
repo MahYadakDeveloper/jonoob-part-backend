@@ -180,8 +180,8 @@ export class SaleService {
         });
       }
 
-      // Warehouse: Receipt goods
-      await this.warehouse.issueGoods({
+      // Warehouse
+      await this.warehouse.receiveCustomerReturn({
         items: returnSnapshotItems.transform(
           (item) => ({
             goodId: item.productId,

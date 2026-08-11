@@ -17,6 +17,7 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*"
+    "@feature/common": "workspace:*",
+    "@jonoob-part/contracts": "workspace:*"
   }
 }
