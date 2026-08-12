@@ -280,8 +280,13 @@ export class SupplyService implements SupplyApi {
   // [TODO] Make the setting api/port reusable in common feature
   // [TODO] Then complete the supplier submodule and return submodule
   // [TODO] And then replenishment module
-  @Cron
-  purgeOldDocuments() {}
+  async purge() {
+    // Cutoff calculation
+    const cutoff = new Date();
+    cutoff.setDate(new Date().getDate() - 3);
+
+    await this.repository.deleteOlderThen(cutoff);
+  }
 
   returnSupply(req: SupplyReturnRequest): Promise<SupplyReturnResponse> {
     return this.supplyReturn.recordSupplyReturn(req);

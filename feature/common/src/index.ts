@@ -9,4 +9,5 @@ export * from './transaction/transaction-manager';
 export * from './types';
 export * from './utils';
 export * from './pagination';
+export * from './settings';
 import './extensions';

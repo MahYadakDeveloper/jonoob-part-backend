@@ -1,29 +1,82 @@
-import { type OutboxRepository, type TransactionManager } from '@feature/common';
 import {
+  type OutboxRepository,
+  type SettingsStore,
+  type TransactionManager,
+  SettingToken,
+} from '@feature/common';
+import {
+  CorrectManyRecordRequest,
+  CorrectRecordRequest,
+  DeleteManyRecordRequest,
+  DeleteRecordRequest,
   FindLatestRecordByGoodIdRequest,
   FindLatestRecordByGoodIdResponse,
   FindManyLatestRecordByGoodIdRequest,
   FindManyLatestRecordByGoodIdResponse,
+  FindManyRecordByDocumentIdRequest,
+  FindManyRecordByDocumentIdResponse,
   ManyPurchaseRecordEventPayload,
   ManyPurchaseRecordEventType,
   PurchaseRecordApi,
   SuppliedRecordManyCreationRequest,
-  SuppliedRecordManyDeletionByDocumentIdRequest,
 } from '@feature/procurement-supply-purchase-api';
 import { Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { Duration, type PurchaseRecordRetentionSettings } from './port/purchase-record-retention';
+import z from 'zod';
 import { type PurchaseRecordRepository } from './purchase-record.repository';
 import { QuotedRecordCreationRequest } from './purchase-record.req';
+import { Duration } from './purchase-record.types';
 
 @Injectable()
 export class PurchaseRecordService implements PurchaseRecordApi {
+  static readonly RETENTION_SETTING: SettingToken<Duration> = {
+    key: 'purchase-record-retention',
+
+    defaultValue: {
+      value: 1,
+      unit: 'year',
+    },
+
+    schema: z.object({
+      value: z.number().positive(),
+      unit: z.enum(['month', 'year', 'week']),
+    }),
+  };
+
   constructor(
     private readonly repository: PurchaseRecordRepository,
-    private readonly retentionSetting: PurchaseRecordRetentionSettings,
+    private readonly settings: SettingsStore,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}
+
+  findManyRecordByDocumentId(
+    req: FindManyRecordByDocumentIdRequest,
+  ): Promise<FindManyRecordByDocumentIdResponse> {
+    throw new Error('Method not implemented.');
+  }
+  correct(req: CorrectRecordRequest): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  correctMany(req: CorrectManyRecordRequest): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  async delete({ recordId }: DeleteRecordRequest): Promise<void> {
+    await this.tx.run(async () => {
+      const record = await this.repository.findById(recordId);
+
+      await this.repository.delete(recordId);
+
+      await this.outbox.save({
+        type: ManyPurchaseRecordEventType,
+        payload: {
+          goodIds: [record.goodId],
+        } satisfies ManyPurchaseRecordEventPayload,
+      });
+    });
+  }
+  deleteMany(req: DeleteManyRecordRequest): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
 
   findLatestRecordByGoodId(
     req: FindLatestRecordByGoodIdRequest,
@@ -80,25 +133,9 @@ export class PurchaseRecordService implements PurchaseRecordApi {
     });
   }
 
-  async delete({ id }: { id: string }): Promise<void> {
-    await this.tx.run(async () => {
-      const record = await this.repository.findById(id);
-
-      await this.repository.delete(id);
-
-      await this.outbox.save({
-        type: ManyPurchaseRecordEventType,
-        payload: {
-          goodIds: [record.goodId],
-        } satisfies ManyPurchaseRecordEventPayload,
-      });
-    });
-  }
-
-  @Cron('0 0 4 * * 5', { timeZone: 'Asia/Tehran' })
   async purgeExpiredRecords() {
-    // Retention resolve
-    const retentionDuration = await this.retentionSetting.getDuration();
+    // Resolve Retention settings
+    const retentionDuration = await this.settings.get(PurchaseRecordService.RETENTION_SETTING);
 
     // Cutoff calculation
     const cutoff = this.subtractDuration(new Date(), retentionDuration);

@@ -60,7 +60,7 @@ export class WarehouseRepositoryImpl
     // Read for update (atomic)
     // TODO Do research about (query|execute)raw[unsafe]
     const stocks = await this.db.``;
-     
+
 
     // Ensuring all stocks exist and have sufficient quantity available
 

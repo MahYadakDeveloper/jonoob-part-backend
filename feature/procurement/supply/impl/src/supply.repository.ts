@@ -8,4 +8,5 @@ export interface SupplyRepository {
   documents(criteria: PageCriteria): Promise<Page<SupplyDocument>>;
 
   delete(id: string): Promise<void>;
+  deleteOlderThen(cutoff: Date): Promise<void>;
 }
