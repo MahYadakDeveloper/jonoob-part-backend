@@ -2,7 +2,9 @@ import {
   type OutboxRepository,
   type SettingsStore,
   type TransactionManager,
+  Duration,
   SettingToken,
+  subtractDuration,
 } from '@feature/common';
 import {
   CorrectManyRecordRequest,
@@ -24,7 +26,6 @@ import { Injectable } from '@nestjs/common';
 import z from 'zod';
 import { type PurchaseRecordRepository } from './purchase-record.repository';
 import { QuotedRecordCreationRequest } from './purchase-record.req';
-import { Duration } from './purchase-record.types';
 
 @Injectable()
 export class PurchaseRecordService implements PurchaseRecordApi {
@@ -138,25 +139,24 @@ export class PurchaseRecordService implements PurchaseRecordApi {
     const retentionDuration = await this.settings.get(PurchaseRecordService.RETENTION_SETTING);
 
     // Cutoff calculation
-    const cutoff = this.subtractDuration(new Date(), retentionDuration);
+    const cutoff = subtractDuration(new Date(), retentionDuration);
 
     // Purge expired
     await this.repository.deleteOlderThan(cutoff);
   }
 
-  private subtractDuration(date: Date, duration: Duration): Date {
-    const result = new Date(date);
+  async getSettings() {
+    const retentionSetting = await this.settings.get(PurchaseRecordService.RETENTION_SETTING);
 
-    switch (duration.unit) {
-      case 'month':
-        result.setMonth(result.getMonth() - duration.value);
-        break;
+    return {
+      settings: {
+        retention: retentionSetting,
+      },
+    };
+  }
 
-      case 'year':
-        result.setFullYear(result.getFullYear() - duration.value);
-        break;
-    }
-
-    return result;
+  async setSetting({ retention }: { retention?: { duration: Duration } }) {
+    if (retention)
+      await this.settings.set(PurchaseRecordService.RETENTION_SETTING, retention.duration);
   }
 }

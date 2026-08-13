@@ -1,8 +1,12 @@
 import {
+  Duration,
   LineItems,
   Money,
   PageResult,
+  SettingToken,
+  subtractDuration,
   type OutboxRepository,
+  type SettingsStore,
   type TransactionManager,
 } from '@feature/common';
 import {
@@ -21,21 +25,41 @@ import { type SupplyReturnApi } from '@feature/procurement-supply-return-api';
 import { type SupplierManagementApi } from '@feature/procurement-supply-supplier-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
+import z from 'zod';
 import { SupplyDocument } from './model/supply-document';
 import { type SupplyRepository } from './supply.repository';
 import { SupplyDocumentPageRequest, SupplyRecordingRequest } from './supply.req';
 
 @Injectable()
 export class SupplyService implements SupplyApi {
+  static readonly RETENTION_SETTING: SettingToken<Duration> = {
+    key: 'supply-document-retention',
+
+    defaultValue: {
+      value: 1,
+      unit: 'year',
+    },
+
+    schema: z.object({
+      value: z.number().positive(),
+      unit: z.enum(['month', 'year', 'week']),
+    }),
+  };
+
   constructor(
     private readonly repository: SupplyRepository,
     private readonly purchase: PurchaseRecordApi,
     private readonly warehouse: WarehouseApi,
+    private readonly settings: SettingsStore,
     private readonly supplyReturn: SupplyReturnApi,
     private readonly supplier: SupplierManagementApi,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}
+
+  /**
+   *
+   */
   async findLatestPurchasePrice({
     goodId,
   }: FindLatestPurchasePriceRequest): Promise<FindLatestPurchasePriceResponse> {
@@ -44,6 +68,9 @@ export class SupplyService implements SupplyApi {
     return { price: record.purchasePrice };
   }
 
+  /**
+   *
+   */
   async findManyLatestPurchasePrice({
     goodIds,
   }: FindManyLatestPurchasePriceRequest): Promise<FindManyLatestPurchasePriceResponse> {
@@ -57,6 +84,9 @@ export class SupplyService implements SupplyApi {
     };
   }
 
+  /**
+   *
+   */
   documents({ criteria }: SupplyDocumentPageRequest): Promise<PageResult<SupplyDocument>> {
     return this.repository.documents(criteria).then((page) => ({ page }));
   }
@@ -246,6 +276,9 @@ export class SupplyService implements SupplyApi {
     });
   }
 
+  /**
+   *
+   */
   async deleteDocument({ documentId }: { documentId: string }) {
     const supply = await this.repository.findById(documentId);
 
@@ -258,7 +291,6 @@ export class SupplyService implements SupplyApi {
       throw new Error('Supply document can no longer be edited');
     }
 
-    // [TODO]
     await this.tx.run(async () => {
       const { records } = await this.purchase.findManyRecordByDocumentId({ documentId });
       await this.purchase.deleteMany({ recordIds: [...records.indexedBy((r) => r.id).keys()] });
@@ -277,18 +309,44 @@ export class SupplyService implements SupplyApi {
     });
   }
 
-  // [TODO] Make the setting api/port reusable in common feature
-  // [TODO] Then complete the supplier submodule and return submodule
-  // [TODO] And then replenishment module
+  /**
+   *
+   */
   async purge() {
-    // Cutoff calculation
-    const cutoff = new Date();
-    cutoff.setDate(new Date().getDate() - 3);
+    // Resolve Retention settings
+    const retentionDuration = await this.settings.get(SupplyService.RETENTION_SETTING);
 
+    // Cutoff calculation
+    const cutoff = subtractDuration(new Date(), retentionDuration);
+
+    // Purge expired
     await this.repository.deleteOlderThen(cutoff);
   }
 
+  /**
+   *
+   */
   returnSupply(req: SupplyReturnRequest): Promise<SupplyReturnResponse> {
     return this.supplyReturn.recordSupplyReturn(req);
+  }
+
+  /**
+   *
+   */
+  async getSettings() {
+    const retentionSetting = await this.settings.get(SupplyService.RETENTION_SETTING);
+
+    return {
+      settings: {
+        retention: retentionSetting,
+      },
+    };
+  }
+
+  /**
+   *
+   */
+  async setSetting({ retention }: { retention?: { duration: Duration } }) {
+    if (retention) await this.settings.set(SupplyService.RETENTION_SETTING, retention.duration);
   }
 }

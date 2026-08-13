@@ -31,8 +31,8 @@ import { Good, type WarehouseGoodApi } from '@feature/warehouse-good-api';
 import { type StockQuarantineApi } from '@feature/warehouse-quarantine-api';
 import { type StockReserverApi } from '@feature/warehouse-reserve-api';
 import { type TransactionRecorderApi } from '@feature/warehouse-transaction-api';
-import { Inject, Injectable } from '@nestjs/common';
-import { WAREHOUSE_REPOSITORY, type WarehouseRepository } from './repository/warehouse.repository';
+import { Injectable } from '@nestjs/common';
+import { type StockRepository } from './repository/stock.repository';
 import {
   AvailableStockRequest,
   AvailableStocksRequest,
@@ -47,7 +47,7 @@ import {
 @Injectable()
 export class WarehouseService implements WarehouseApi {
   constructor(
-    @Inject(WAREHOUSE_REPOSITORY) private readonly repository: WarehouseRepository,
+    private readonly repository: StockRepository,
     private readonly stockQuarantine: StockQuarantineApi,
     private readonly reserver: StockReserverApi,
     private readonly declaration: WarehouseGoodApi,
@@ -109,9 +109,10 @@ export class WarehouseService implements WarehouseApi {
   async getGoodStocks(req: GetStocksRequest): Promise<GetStocksResponse> {
     const stocks = await this.repository.getAvailableStocks(req.goodIds);
 
-    req.goodIds.forEach((goodId) =>
-      stocks.getOrThrow(goodId, (goodId) => new Error(`Stock not found: ${goodId}`)),
-    );
+    if (req.onNotFound !== 'ignore')
+      req.goodIds.forEach((goodId) =>
+        stocks.getOrThrow(goodId, (goodId) => new Error(`Stock not found: ${goodId}`)),
+      );
 
     return {
       stocks: stocks.transform(

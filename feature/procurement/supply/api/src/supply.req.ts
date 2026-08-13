@@ -11,5 +11,5 @@ export interface FindManyLatestPurchasePriceRequest {
 export interface SupplyReturnRequest {
   specialistId: string;
   supplierId: string;
-  item: LineItems<{ goodId: string; quantity: number }>;
+  items: LineItems<{ goodId: string; quantity: number }>;
 }

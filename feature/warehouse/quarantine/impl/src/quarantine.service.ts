@@ -26,7 +26,7 @@ export class StockQuarantine implements StockQuarantineApi {
   }
 
   /**
-   * Release to enter the warehouse
+   * Release to return to the warehouse
    */
   async release(req: ReleaseStockRequest): Promise<void> {
     await this.repository.releaseMany(req.items);

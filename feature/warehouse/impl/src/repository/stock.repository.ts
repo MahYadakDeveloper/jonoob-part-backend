@@ -1,10 +1,8 @@
 import { Barcode, LineItems } from '@feature/common';
 import { Stock } from '../model/stock';
 
-export const WAREHOUSE_REPOSITORY = 'IWarehouseRepository';
-
 type StockItem = { goodId: string; quantity: number };
-export interface WarehouseRepository {
+export interface StockRepository {
   issue(stocks: LineItems<StockItem>): Promise<void>;
   receipt(stocks: LineItems<StockItem>): Promise<void>;
   reserve(stocks: LineItems<StockItem>): Promise<void>;

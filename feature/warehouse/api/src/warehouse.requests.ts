@@ -42,6 +42,7 @@ export interface GetStockRequest {
 
 export interface GetStocksRequest {
   goodIds: string[];
+  onNotFound?: 'ignore' | 'throw';
 }
 
 export interface GetGoodDetailsRequest {

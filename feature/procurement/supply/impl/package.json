@@ -25,7 +25,8 @@
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.1.28",
     "@nestjs/config": "^4.0.4",
-    "@nestjs/schedule": "^6.1.3"
+    "@nestjs/schedule": "^6.1.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

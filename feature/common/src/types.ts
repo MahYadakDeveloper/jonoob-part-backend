@@ -56,3 +56,8 @@ export type BundleItem = {
   goodId: string;
   quantity: number;
 };
+
+export type Duration = {
+  value: number;
+  unit: 'year' | 'month' | 'week';
+};
