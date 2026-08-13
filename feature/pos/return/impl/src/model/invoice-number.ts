@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export class InvoiceNumber {
   private constructor(readonly value: string) {}

@@ -1,4 +1,5 @@
 import { type CatalogApi } from '@feature/catalog-api';
+import { LineItems } from '@feature/common';
 import { type ReplenishmentApi } from '@feature/procurement-replenishment-api';
 import { Injectable } from '@nestjs/common';
 import { ProcurementRequest } from './model/procurement-request';
@@ -18,14 +19,24 @@ export class ProcurementRequestService {
     private readonly catalog: CatalogApi,
   ) {}
 
-  async list(): Promise<{ requests: ProcurementRequest[] }> {
-    const requests = await this.repository.findAll({});
+  async replenishmentRequestList() {
     const { replenishment } = await this.replenishment.findAll({});
     const { products } = await this.catalog.findManyByGoodId({
       goodIds: replenishment.toArray().map((r) => r.goodId),
     });
+
     const displayNames = products.toArray().map((p) => p.displayName);
+
+    const requests = new LineItems<ProcurementRequest>((r) => r.displayName);
     requests.setMany(displayNames.map((displayName) => ({ displayName })));
+
+    return {
+      requests: [...requests.toArray()],
+    };
+  }
+
+  async demandRequestList() {
+    const requests = await this.repository.findAll({});
 
     return {
       requests: [...requests.toArray()],

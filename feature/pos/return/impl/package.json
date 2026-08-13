@@ -1,5 +1,5 @@
 {
-  "name": "@feature/pos-return-api",
+  "name": "@feature/pos-return",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -16,5 +16,17 @@
     }
   },
   "private": true,
-  "dependencies": {}
+  "dependencies": {
+    "@feature/cashback-api": "workspace:*",
+    "@feature/catalog-api": "workspace:*",
+    "@feature/common": "workspace:*",
+    "@feature/payment-api": "workspace:*",
+    "@feature/pos-return-api": "workspace:*",
+    "@feature/pos-sale-api": "workspace:*",
+    "@feature/settlement-api": "workspace:*",
+    "@feature/wallet-api": "workspace:*",
+    "@feature/warehouse-api": "workspace:*",
+    "@nestjs/common": "^11.1.29",
+    "zod": "^4.4.3"
+  }
 }

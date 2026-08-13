@@ -1,5 +1,5 @@
 {
-  "name": "@feature/sale-api",
+  "name": "@feature/pos-sale-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -16,5 +16,7 @@
     }
   },
   "private": true,
-  "dependencies": {}
+  "dependencies": {
+    "@feature/common": "workspace:*"
+  }
 }

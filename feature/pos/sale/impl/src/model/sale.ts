@@ -5,24 +5,20 @@ import {
   InvoiceSnapshot,
   InvoiceSummary,
   LineItems,
-} from "@feature/common";
-import { InvoiceNumber } from "./invoice-number";
+} from '@feature/common';
+import { InvoiceNumber } from './invoice-number';
 
 export class Sale {
   private constructor(
     readonly id: string,
-    readonly returnNumber: InvoiceNumber,
+    readonly invoiceNumber: InvoiceNumber,
     private _header: InvoiceHeader,
     private _items: LineItems<InvoiceItem>,
     private _summary: InvoiceSummary,
     private _payment: InvoicePayment,
   ) {}
 
-  static create(
-    id: string,
-    invoiceNumber: InvoiceNumber,
-    snapshot: InvoiceSnapshot,
-  ): Sale {
+  static create(id: string, invoiceNumber: InvoiceNumber, snapshot: InvoiceSnapshot): Sale {
     return new Sale(
       id,
       invoiceNumber,

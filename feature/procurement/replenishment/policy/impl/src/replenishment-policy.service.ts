@@ -14,6 +14,10 @@ export class ReplenishmentPolicyService {
     return this.repository.create(policy);
   }
 
+  editPolicy({ policy }: { policy: ReplenishmentPolicy }) {
+    return this.repository.update(policy);
+  }
+
   removePolicy({ goodId }: { goodId: string }) {
     return this.repository.delete(goodId);
   }

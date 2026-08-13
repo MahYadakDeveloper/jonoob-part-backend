@@ -1,5 +1,5 @@
 {
-  "name": "@feature/sale-api",
+  "name": "@feature/pos",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
