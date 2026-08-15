@@ -1,4 +1,4 @@
-import { AppliedDiscount, CustomerType, LineItems } from '@feature/common';
+import { AppliedDiscount, CustomerType, LineItems, type Synchronizer } from '@feature/common';
 import {
   ApplicableDiscount,
   DiscountApi,
@@ -15,7 +15,6 @@ import { DiscountTotalUsageLimitExceededError } from './errors/discount-total-us
 import { DiscountUsage } from './model/discount-usage';
 import { DiscountUsagePolicy } from './model/discount-usage-policy';
 import { DiscountWithUsagePolicy } from './model/discount-with-usage-policy';
-import { type Synchronizer } from './ports/synchronizer';
 import { type CampaignDiscountRepository } from './repository/campaign-discount.repository';
 import { type DiscountUsageRepository } from './repository/discount-usage.repository';
 import { type SpecificDiscountRepository } from './repository/specific-discount.repository';

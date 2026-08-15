@@ -12,13 +12,11 @@ import { CustomerType, GrantedCashback, InvoiceItem, LineItems, Money } from '@f
 import { type WalletApi } from '@feature/wallet-api';
 import { Injectable } from '@nestjs/common';
 import { CashbackAmountChangedError, InvalidCashbackRateError } from './cashback.errors';
-import { type CustomerQuery } from './ports/customer.query';
 import { type CashbackSettingsRepository } from './repository/cashback-settings.repository';
 
 @Injectable()
 export class CashbackService implements CashbackApi {
   constructor(
-    private readonly customerQuery: CustomerQuery,
     private readonly cashbackSettings: CashbackSettingsRepository,
     private readonly wallet: WalletApi,
   ) {}

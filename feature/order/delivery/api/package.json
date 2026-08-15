@@ -1,5 +1,5 @@
 {
-  "name": "@feature/cashback",
+  "name": "@feature/order-process",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,13 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/cashback-api": "workspace:*",
-    "@feature/common": "workspace:*",
-    "@feature/wallet-api": "workspace:*",
-    "@nestjs/common": "^11.1.27"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "typescript-eslint": "^8.67.0"
+    "@feature/common": "workspace:*"
   }
 }

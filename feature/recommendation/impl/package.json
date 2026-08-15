@@ -16,20 +16,7 @@
     }
   },
   "private": true,
-  "dependencies": {
-    "@feature/cashback-api": "workspace:*",
-    "@feature/common": "workspace:*",
-    "@feature/discount-api": "workspace:*",
-    "@feature/payment-api": "workspace:*",
-    "@feature/pricing-api": "workspace:*",
-    "@feature/sale-api": "workspace:*",
-    "@feature/settlement-api": "workspace:*",
-    "@feature/tax-api": "workspace:*",
-    "@feature/wallet-api": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "^11.1.27",
-    "zod": "^4.4.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@nestjs/testing": "^11.1.27",

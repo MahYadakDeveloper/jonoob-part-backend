@@ -24,11 +24,10 @@
     "@feature/warehouse-reserve-api": "workspace:*",
     "@feature/warehouse-transaction-api": "workspace:*",
     "@nestjs/common": "^11.1.26",
-    "@nestjs/event-emitter": "^3.1.0",
+    "@nestjs/config": "^4.0.4",
     "redis": "^6.0.1"
   },
   "devDependencies": {
-    "@nestjs/config": "^4.0.4",
     "@nestjs/testing": "^11.1.26",
     "@types/jest": "^30.0.0",
     "jest": "^30.4.2",
