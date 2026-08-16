@@ -1,9 +1,9 @@
-import { defineConfig } from "eslint/config";
-import js from "@eslint/js";
-import tseslint, { parser } from "typescript-eslint";
+import { defineConfig } from 'eslint/config';
+import js from '@eslint/js';
+import tseslint, { parser } from 'typescript-eslint';
 
 export default defineConfig({
-  files: ["**/*.{js,ts}"],
+  files: ['**/*.{js,ts}'],
   extends: [
     js.configs.recommended,
     [
@@ -12,13 +12,13 @@ export default defineConfig({
         languageOptions: {
           parser,
           parserOptions: {
-            project: ["./tsconfig.eslint.json"],
+            project: ['./tsconfig.eslint.json'],
             tsconfigRootDir: import.meta.dirname,
           },
         },
         rules: {
-          "@typescript-eslint/no-floating-promises": "warn",
-          "@typescript-eslint/no-unused-vars": "warn",
+          '@typescript-eslint/no-floating-promises': 'warn',
+          '@typescript-eslint/no-unused-vars': 'warn',
         },
       },
     ],
