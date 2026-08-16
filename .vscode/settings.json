@@ -1,8 +1,5 @@
 {
-  "cSpell.words": [
-    "CODEBAR",
-    "exprimentalpnpm"
-  ],
+  "cSpell.words": ["CODEBAR", "exprimentalpnpm", "tipax"],
   "todo-tree.ripgrep.ripgrep": "/usr/bin/rg",
   "todo-tree.tree.showBadges": true
 }

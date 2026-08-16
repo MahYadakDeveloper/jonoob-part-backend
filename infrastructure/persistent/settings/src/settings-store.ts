@@ -1,6 +1,6 @@
 import { type DbProvider, SettingsStore, SettingToken } from '@feature/common';
 import { BaseRepository } from '@infra/common-persistent';
-import { Prisma, PrismaDbClient } from '@infra/prisma-db';
+import { Prisma, PrismaDbClient } from '@infra/db-prisma';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()

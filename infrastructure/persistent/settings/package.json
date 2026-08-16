@@ -21,7 +21,7 @@
   "dependencies": {
     "@feature/common": "workspace:*",
     "@infra/common-persistent": "workspace:*",
-    "@infra/prisma-db": "workspace:*",
+    "@infra/db-prisma": "workspace:*",
     "@nestjs/common": "^11.1.26"
   }
 }

@@ -1,11 +1,11 @@
 {
-  "name": "@infra/persistent-tax",
-  "private": true,
+  "name": "@feature/order-delivery-location-api",
+  "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
+    "build": "pnpm exec tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
   },
-  "type": "commonjs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -15,7 +15,8 @@
       "require": "./dist/index.js"
     }
   },
+  "private": true,
   "dependencies": {
-    "@feature/tax": "workspace:*"
+    "@feature/common": "workspace:*"
   }
 }

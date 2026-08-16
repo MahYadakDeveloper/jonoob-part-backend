@@ -1,3 +1,4 @@
-export * from './customers.requests'
-export * from './customers.responses'
-export * from './customers.api'
+export * from './customers.req';
+export * from './customers.res';
+export * from './customers.api';
+export * from './customer.type';

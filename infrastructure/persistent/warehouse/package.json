@@ -1,5 +1,5 @@
 {
-  "name": "@infra/warehouse-persistent",
+  "name": "@infra/persistent-warehouse",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -22,7 +22,7 @@
     "@feature/common": "workspace:*",
     "@feature/warehouse": "workspace:*",
     "@infra/common-persistent": "workspace:*",
-    "@infra/prisma-db": "workspace:*",
+    "@infra/db-prisma": "workspace:*",
     "@nestjs/common": "^11.1.26",
     "redis": "^6.0.1"
   }

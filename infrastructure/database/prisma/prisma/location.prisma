@@ -1,0 +1,32 @@
+model Province {
+  id             String @id @default(cuid())
+  sourceId       Int    @unique
+  name           String
+  normalizedName String
+
+  cities City[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([normalizedName])
+}
+
+model City {
+  id             String @id @default(cuid())
+  sourceId       Int
+  name           String
+  normalizedName String
+
+  provinceId String
+  province   Province @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provinceId, sourceId])
+  @@index([name])
+  @@index([normalizedName])
+  @@index([provinceId])
+}
