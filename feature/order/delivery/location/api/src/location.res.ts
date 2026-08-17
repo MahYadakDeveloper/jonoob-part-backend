@@ -1,4 +1,3 @@
-import { LineItems } from '@feature/common';
 import { City, Province } from './location.type';
 
 export interface FindProvinceByIdResponse {
@@ -10,9 +9,9 @@ export interface FindCityByIdResponse {
 }
 
 export interface FindManyCityByProvinceResponse {
-  cities: LineItems<City>;
+  cities: City[];
 }
 
 export interface ListProvinceResponse {
-  provinces: LineItems<Province>;
+  provinces: Province[];
 }

@@ -1,7 +1,15 @@
+import { CustomerType } from '@feature/common';
+
+export type Customer = {
+  fullName: string;
+  type: CustomerType;
+  phone: string;
+};
+
 export type CustomerAddress =
   | {
       scope: 'intra-city';
-      coordinate: {
+      coordinate?: {
         longitude: number;
         latitude: number;
       };

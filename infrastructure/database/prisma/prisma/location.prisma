@@ -1,6 +1,5 @@
 model Province {
-  id             String @id @default(cuid())
-  sourceId       Int    @unique
+  id             Int    @id
   name           String
   normalizedName String
 
@@ -14,18 +13,17 @@ model Province {
 }
 
 model City {
-  id             String @id @default(cuid())
-  sourceId       Int
+  id             Int    @id
   name           String
   normalizedName String
 
-  provinceId String
+  provinceId Int
   province   Province @relation(fields: [provinceId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([provinceId, sourceId])
+  @@unique([provinceId])
   @@index([name])
   @@index([normalizedName])
   @@index([provinceId])

@@ -1,11 +1,11 @@
 export interface FindProvinceByIdRequest {
-  provinceId: string;
+  provinceId: number;
 }
 
 export interface FindCityByIdRequest {
-  cityId: string;
+  cityId: number;
 }
 
 export interface FindManyCityByProvinceRequest {
-  provinceId: string;
+  provinceId: number;
 }

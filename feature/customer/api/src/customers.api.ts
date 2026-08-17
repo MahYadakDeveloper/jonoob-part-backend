@@ -1,8 +1,23 @@
-import { AddAddressRequest, RemoveAddressRequest } from './customers.req';
-import { ListAddressResponse } from './customers.res';
+import {
+  AddAddressForCustomerRequest,
+  FindCustomerByIdRequest,
+  GetAllCustomerAddressesRequest,
+  GetCustomerAddressRequest,
+  RemoveCustomerAddressRequest,
+} from './customers.req';
+import {
+  FindCustomerByIdResponse,
+  GetAllCustomerAddressesResponse,
+  GetCustomerAddressResponse,
+} from './customers.res';
 
 export interface CustomersApi {
-  addAddress(req: AddAddressRequest): Promise<void>;
-  removeAddress(req: RemoveAddressRequest): Promise<void>;
-  listAddress(): Promise<ListAddressResponse>;
+  findById(req: FindCustomerByIdRequest): Promise<FindCustomerByIdResponse>;
+
+  getCustomerAddress(req: GetCustomerAddressRequest): Promise<GetCustomerAddressResponse>;
+  getAllCustomerAddresses(
+    req: GetAllCustomerAddressesRequest,
+  ): Promise<GetAllCustomerAddressesResponse>;
+  addAddressForCustomer(req: AddAddressForCustomerRequest): Promise<void>;
+  removeCustomerAddress(req: RemoveCustomerAddressRequest): Promise<void>;
 }

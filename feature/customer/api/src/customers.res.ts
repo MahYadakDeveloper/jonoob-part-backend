@@ -1,6 +1,14 @@
 import { LineItems } from '@feature/common';
-import { CustomerAddress } from './customer.type';
+import { Customer, CustomerAddress } from './customer.type';
 
-export interface ListAddressResponse {
+export interface GetAllCustomerAddressesResponse {
   addresses: LineItems<CustomerAddress>;
+}
+
+export interface FindCustomerByIdResponse {
+  customer: Customer;
+}
+
+export interface GetCustomerAddressResponse {
+  address: CustomerAddress;
 }

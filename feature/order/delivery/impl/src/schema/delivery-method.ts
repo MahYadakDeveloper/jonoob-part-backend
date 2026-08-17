@@ -59,7 +59,7 @@ export const DeliveryMethodSchema = z
           ]),
           displayName: z.string(),
           description: z.string().optional(),
-          dropOffAddress: z.string().optional(),
+          dropOffAddress: z.string(),
         }),
       }),
     ]),

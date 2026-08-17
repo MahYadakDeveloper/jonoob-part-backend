@@ -1,5 +1,5 @@
 {
-  "name": "@feature/order-delivery",
+  "name": "@feature/courier",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,14 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*",
-    "@feature/courier-api": "workspace:*",
-    "@feature/media-api": "workspace:*",
-    "@feature/order-api": "workspace:*",
-    "@feature/order-delivery-api": "workspace:*",
-    "@feature/order-delivery-location-api": "workspace:*",
-    "@nestjs/common": "^11.2.1",
-    "@nestjs/schedule": "^6.1.3",
-    "zod": "^4.4.3"
+    "@feature/courier-api": "workspace:*"
   }
 }

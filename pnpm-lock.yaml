@@ -47,7 +47,7 @@ importers:
       '@feature/warehouse':
         specifier: workspace:*
         version: link:../../feature/warehouse/impl
-      '@infra/warehouse-persistent':
+      '@infra/persistent-warehouse':
         specifier: workspace:*
         version: link:../../infrastructure/persistent/warehouse
       '@nestjs/bullmq':
@@ -340,6 +340,12 @@ importers:
 
   feature/courier/api: {}
 
+  feature/courier/impl:
+    dependencies:
+      '@feature/courier-api':
+        specifier: workspace:*
+        version: link:../api
+
   feature/customer/api:
     dependencies:
       '@feature/common':
@@ -396,7 +402,14 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
-  feature/order/api: {}
+  feature/order/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../../customer/api
 
   feature/order/delivery/api:
     dependencies:
@@ -412,6 +425,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
+      '@feature/courier-api':
+        specifier: workspace:*
+        version: link:../../../courier/api
       '@feature/media-api':
         specifier: workspace:*
         version: link:../../../media/api
@@ -421,9 +437,15 @@ importers:
       '@feature/order-delivery-api':
         specifier: workspace:*
         version: link:../api
+      '@feature/order-delivery-location-api':
+        specifier: workspace:*
+        version: link:../location/api
       '@nestjs/common':
         specifier: ^11.2.1
         version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/schedule':
+        specifier: ^6.1.3
+        version: 6.1.3(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -6531,6 +6553,12 @@ snapshots:
     dependencies:
       '@nestjs/common': 11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 11.1.26(@nestjs/common@11.1.29(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/websockets@11.1.29)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      cron: 4.4.0
+
+  '@nestjs/schedule@6.1.3(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26)':
+    dependencies:
+      '@nestjs/common': 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 11.1.26(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/websockets@11.1.29)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       cron: 4.4.0
 
   '@nestjs/schematics@11.1.0(chokidar@4.0.3)(prettier@3.8.4)(typescript@5.9.3)':

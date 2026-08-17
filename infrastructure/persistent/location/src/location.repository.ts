@@ -73,7 +73,7 @@ export class LocationRepository extends BaseRepository<PrismaDbClient> implement
     });
 
     return {
-      cities: cities.toLineItems((c) => c.id),
+      cities: cities,
     };
   }
 
@@ -85,7 +85,7 @@ export class LocationRepository extends BaseRepository<PrismaDbClient> implement
     });
 
     return {
-      provinces: provinces.toLineItems((p) => p.id),
+      provinces: provinces,
     };
   }
 

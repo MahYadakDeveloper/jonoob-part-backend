@@ -1,24 +1,22 @@
-export type PickupRequest =
+export type PickupRequest = { orderId: string } & (
   | {
-      courierId: string;
       scope: 'intra-city';
       recipient: {
         fullName: string;
         phone: string;
         address: string;
-        coordinate: {
+        coordinate?: {
           longitude: number;
           latitude: number;
         };
       };
     }
   | {
-      courierId: string;
       scope: 'inter-city';
       carrier: {
-        id: string;
+        provider: string; // unique and in latin
         displayName: string;
-        dropOfAddress: string;
+        dropOffAddress: string;
       };
-      extra?: string;
-    };
+    }
+);
