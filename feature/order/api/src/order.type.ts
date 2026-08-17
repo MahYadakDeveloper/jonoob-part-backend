@@ -1,8 +1,8 @@
 import { Customer, CustomerAddress } from '@feature/customer-api';
 
-export type Order = {
+type BaseOrder = {
   orderId: string;
-  customer: Customer;
+  customer: { id } & Customer;
   recipient:
     | ({
         carrier: 'courier';
@@ -13,3 +13,14 @@ export type Order = {
         };
       } & Extract<CustomerAddress, { scope: 'inter-city' }>);
 };
+
+export type Order = BaseOrder &
+  (
+    | {
+        status: 'in-delivery';
+        deliveryConfirmationCode: string;
+      }
+    | {
+        status: 'preparing';
+      }
+  );

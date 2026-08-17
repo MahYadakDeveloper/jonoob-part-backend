@@ -342,9 +342,18 @@ importers:
 
   feature/courier/impl:
     dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../common
       '@feature/courier-api':
         specifier: workspace:*
         version: link:../api
+      '@feature/order-api':
+        specifier: workspace:*
+        version: link:../../order/api
+      '@nestjs/common':
+        specifier: ^11.2.1
+        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/customer/api:
     dependencies:
@@ -402,6 +411,8 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
+  feature/notification/api: {}
+
   feature/order/api:
     dependencies:
       '@feature/common':
@@ -431,6 +442,9 @@ importers:
       '@feature/media-api':
         specifier: workspace:*
         version: link:../../../media/api
+      '@feature/notification-api':
+        specifier: workspace:*
+        version: link:../../../notification/api
       '@feature/order-api':
         specifier: workspace:*
         version: link:../../api
@@ -1052,6 +1066,15 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
+  infrastructure/crypto/opt:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../feature/common
+      '@nestjs/common':
+        specifier: ^11.2.1
+        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
   infrastructure/database/elasticsearch: {}
 
   infrastructure/database/prisma:
@@ -1139,6 +1162,33 @@ importers:
       '@nestjs/common':
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      bullmq:
+        specifier: ^5.81.3
+        version: 5.81.3(redis@6.0.1)
+
+  infrastructure/integrations/sms:
+    dependencies:
+      '@feature/catalog-api':
+        specifier: workspace:*
+        version: link:../../../feature/catalog/api
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../feature/common
+      '@feature/pricing-markup-api':
+        specifier: workspace:*
+        version: link:../../../feature/pricing/markup/api
+      '@feature/procurement-supply-purchase-api':
+        specifier: workspace:*
+        version: link:../../../feature/procurement/supply/purchase/api
+      '@jonoob-part/contracts':
+        specifier: workspace:*
+        version: link:../../../packages/contracts
+      '@nestjs/bullmq':
+        specifier: ^11.0.4
+        version: 11.0.4(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26)(bullmq@5.81.3(redis@6.0.1))
+      '@nestjs/common':
+        specifier: ^11.1.28
+        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
       bullmq:
         specifier: ^5.81.3
         version: 5.81.3(redis@6.0.1)
@@ -6278,6 +6328,14 @@ snapshots:
       '@nestjs/common': 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 11.1.26(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/websockets@11.1.29)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       bullmq: 5.80.5(redis@6.0.1)
+      tslib: 2.8.1
+
+  '@nestjs/bullmq@11.0.4(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26)(bullmq@5.81.3(redis@6.0.1))':
+    dependencies:
+      '@nestjs/bull-shared': 11.0.4(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.26)
+      '@nestjs/common': 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 11.1.26(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/websockets@11.1.29)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      bullmq: 5.81.3(redis@6.0.1)
       tslib: 2.8.1
 
   '@nestjs/cli@11.0.23(@types/node@24.13.2)(prettier@3.8.4)':

@@ -1,5 +1,5 @@
 {
-  "name": "@feature/courier",
+  "name": "@feature/notification-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -15,11 +15,5 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
-  "dependencies": {
-    "@feature/common": "workspace:*",
-    "@feature/courier-api": "workspace:*",
-    "@feature/order-api": "workspace:*",
-    "@nestjs/common": "^11.2.1"
-  }
+  "private": true
 }

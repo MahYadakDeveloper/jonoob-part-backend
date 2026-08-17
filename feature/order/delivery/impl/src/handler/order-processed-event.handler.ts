@@ -1,14 +1,13 @@
-// [TODO] use courier api to hand the package and after package handed then
-// dispatch an event to be handled by order to update the status
-
 import {
   BaseEventHandler,
   type EventHandlerRegistry,
+  type OtpGenerator,
   type OutboxRepository,
   type SettingsStore,
   type TransactionManager,
 } from '@feature/common';
 import { type CourierApi } from '@feature/courier-api';
+import { type NotificationApi } from '@feature/notification-api';
 import { type OrderApi, OrderEventPayload, OrderProcessedEventType } from '@feature/order-api';
 import {
   CourierDispatchRequestedEventPayload,
@@ -24,6 +23,8 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
     private readonly order: OrderApi,
     private readonly courier: CourierApi,
     private readonly settings: SettingsStore,
+    private readonly notification: NotificationApi,
+    private readonly otp: OtpGenerator,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {
@@ -53,7 +54,7 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
 
     await this.tx.run(async () => {
       // Make a request for shipping
-      if (recipient.scope === 'intra-city')
+      if (recipient.scope === 'intra-city') {
         await this.courier.pickup({
           orderId,
           scope: 'intra-city',
@@ -64,7 +65,17 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
             coordinate: recipient.coordinate,
           },
         });
-      else {
+
+        // Generate verification code
+        const code = this.otp.generate(4);
+
+        // Notify costumer the delivery in progress and have to give
+        // confirmation code to courier
+        await this.notification.notifyDeliveryInProgress({
+          customerId: customer.id,
+          code,
+        });
+      } else {
         const methods = await this.settings.get(DeliverySettingsToken);
         const method = methods.find((method) =>
           method.carrier !== 'courier'
@@ -82,9 +93,7 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
               ...method.carrier,
             },
           });
-        else {
-          throw new Error();
-        }
+        else throw new Error();
       }
 
       // Dispatch event

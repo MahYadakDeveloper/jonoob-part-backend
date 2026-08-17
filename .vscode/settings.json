@@ -9,5 +9,16 @@
     "tipax"
   ],
   "todo-tree.ripgrep.ripgrep": "/usr/bin/rg",
-  "todo-tree.tree.showBadges": true
+  "todo-tree.tree.showBadges": true,
+  "todo-tree.general.tags": [
+    "BUG",
+    "HACK",
+    "FIXME",
+    "TODO",
+    "XXX",
+    "[ ]",
+    "[x]",
+    "[NOTE]",
+    "[TODO]"
+  ]
 }
