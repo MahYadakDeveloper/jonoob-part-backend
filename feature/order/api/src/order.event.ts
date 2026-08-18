@@ -1,4 +1,4 @@
-export const OrderRecordedEventType = 'order:order-recorded';
+export const OrderPaidEventType = 'order:order-paid';
 export const OrderEditingStartedEventType = 'order:order-editing-started';
 export const OrderEditingDoneEventType = 'order:order-editing-done';
 export const OrderCanceledEventType = 'order:order-recorded';

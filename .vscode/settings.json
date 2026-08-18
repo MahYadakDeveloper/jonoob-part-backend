@@ -20,5 +20,6 @@
     "[x]",
     "[NOTE]",
     "[TODO]"
-  ]
+  ],
+  "js/ts.experimental.useTsgo": true
 }

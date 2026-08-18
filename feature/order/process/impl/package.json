@@ -17,6 +17,10 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*"
+    "@feature/catalog-api": "workspace:*",
+    "@feature/common": "workspace:*",
+    "@feature/order-api": "workspace:*",
+    "@feature/warehouse-api": "workspace:*",
+    "@nestjs/common": "^11.2.1"
   }
 }

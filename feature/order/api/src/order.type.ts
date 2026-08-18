@@ -1,8 +1,10 @@
+import { LineItems } from '@feature/common';
 import { Customer, CustomerAddress } from '@feature/customer-api';
 
-type BaseOrder = {
+export type BaseOrder = {
   orderId: string;
   customer: { id } & Customer;
+  items: LineItems<{ productId: string; quantity: number }>;
   recipient:
     | ({
         carrier: 'courier';
@@ -17,7 +19,7 @@ type BaseOrder = {
 export type Order = BaseOrder &
   (
     | {
-        status: 'in-delivery';
+        status: 'in-delivery' | 'delivered';
         deliveryConfirmationCode: string;
       }
     | {

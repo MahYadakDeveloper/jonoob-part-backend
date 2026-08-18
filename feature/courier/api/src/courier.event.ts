@@ -2,6 +2,7 @@ export const PackageHandedOverToCourierEventType = 'courier:package-handed-over-
 export const PackageDeliveredEventType = 'courier:package-delivered';
 
 export type PackageHandedOverToCourierEventPayload = {
+  courierId: string;
   orderId: string;
   occurredAt: Date;
 };

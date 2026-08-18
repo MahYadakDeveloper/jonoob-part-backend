@@ -472,15 +472,45 @@ importers:
 
   feature/order/impl:
     dependencies:
+      '@feature/catalog-api':
+        specifier: workspace:*
+        version: link:../../catalog/api
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
+      '@feature/courier-api':
+        specifier: workspace:*
+        version: link:../../courier/api
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../../customer/api
+      '@feature/order-api':
+        specifier: workspace:*
+        version: link:../api
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../../warehouse/api
+      '@nestjs/common':
+        specifier: ^11.2.1
+        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/order/process/impl:
     dependencies:
+      '@feature/catalog-api':
+        specifier: workspace:*
+        version: link:../../../catalog/api
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
+      '@feature/order-api':
+        specifier: workspace:*
+        version: link:../../api
+      '@feature/warehouse-api':
+        specifier: workspace:*
+        version: link:../../../warehouse/api
+      '@nestjs/common':
+        specifier: ^11.2.1
+        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/payment/api:
     dependencies:

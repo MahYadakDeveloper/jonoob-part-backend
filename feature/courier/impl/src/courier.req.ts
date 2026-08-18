@@ -13,3 +13,8 @@ export type ConfirmDeliveryRequest =
       scope: 'inter-city';
       trackingCode: string;
     };
+
+export interface PickingUpRequest {
+  courierId: string;
+  orderId: string;
+}

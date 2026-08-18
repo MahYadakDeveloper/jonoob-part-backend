@@ -4,6 +4,7 @@ export type ProductDto =
   | {
       id: string;
       kind: 'leaf';
+      goodId: string;
       displayName: string;
       references: {
         brandId?: string;
