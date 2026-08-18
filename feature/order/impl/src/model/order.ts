@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { InvoiceItem, InvoiceSummary, LineItems } from '@feature/common';
 import { Customer, CustomerAddress } from '@feature/customer-api';
 
 type IntraCityDelivery = {
@@ -18,17 +18,24 @@ export type Delivery = InterCityDelivery | IntraCityDelivery;
 export type BaseOrder = {
   orderId: string;
   customer: { id: string } & Customer;
-  items: LineItems<{ productId: string; quantity: number }>;
+  items: LineItems<InvoiceItem>;
+  summary: InvoiceSummary;
 };
 
 export type Order = BaseOrder &
   (
     | {
-        status: 'pending-payment' | 'cancelled';
+        status: 'payment';
+        paymentStatus: 'pending';
+        delivery: Delivery;
+      }
+    | {
+        status: 'cancelled';
+        paymentStatus: 'expired' | 'failed' | 'pending';
         delivery: Delivery;
       }
     | ({
-        payment: Payment;
+        paymentStatus: 'paid';
       } & (
         | {
             status: 'process' | 'in-editing' | 'cancelled';
@@ -62,28 +69,3 @@ export type Order = BaseOrder &
           )
       ))
   );
-
-type Payment = {};
-type Status = 'settlement' | 'preparing' | 'in-delivery' | 'delivered';
-
-declare const order: Order;
-
-if (order.status === 'in-delivery') {
-  if (order.delivery.scope === 'intra-city') {
-    order.delivery.deliveryConfirmationCode;
-    // ✅ string
-  }
-
-  if (order.delivery.scope === 'inter-city') {
-    order.delivery.trackingNumber;
-    // ✅ string
-  }
-}
-
-if (order.status === 'in-delivery') {
-  const recipient = order.recipient;
-
-  if (recipient.scope === 'intra-city') {
-    order.deliveryConfirmationCode;
-  }
-}

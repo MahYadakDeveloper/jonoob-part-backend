@@ -487,6 +487,12 @@ importers:
       '@feature/order-api':
         specifier: workspace:*
         version: link:../api
+      '@feature/payment-api':
+        specifier: workspace:*
+        version: link:../../payment/api
+      '@feature/pricing-api':
+        specifier: workspace:*
+        version: link:../../pricing/api
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../../warehouse/api

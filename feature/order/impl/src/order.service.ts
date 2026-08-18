@@ -2,6 +2,8 @@ import { type CatalogApi } from '@feature/catalog-api';
 import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
 import { OrderEventPayload, OrderPaidEventType } from '@feature/order-api';
+import { type PaymentApi } from '@feature/payment-api';
+import { type PricingApi } from '@feature/pricing-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import { Delivery } from './model/order';
@@ -14,6 +16,8 @@ export class OrderService {
     private readonly customers: CustomersApi,
     private readonly catalog: CatalogApi,
     private readonly warehouse: WarehouseApi,
+    private readonly payment: PaymentApi,
+    private readonly pricing: PricingApi,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}
@@ -21,6 +25,16 @@ export class OrderService {
   /**
    * [NOTE] Do scope/location validation inside controller
    * Tip: use zod for parsing inside controller
+   *
+   * [NOTE] The recording order is every time is available but
+   * the delivery is warned to customer if is recording at out of
+   * business hours and the delivery is going to be delivered in
+   * next business hours
+   * Example: Order recorded at 3pm on friday and the friday is
+   * holiday and store is closed[out of business hours] then the
+   * delivery warned to customer the delivery is would be delivered
+   * saturday 8:30am witch would be processed and delivered at
+   * business hour
    */
   async recordOrder({
     customerId,
@@ -31,6 +45,10 @@ export class OrderService {
     items: LineItems<{ productId: string; quantity: number }>;
     delivery: Delivery;
   }) {
+    const orderInPaymentStatus = await this.repository.findInPaymentStatus(customerId);
+    if (orderInPaymentStatus)
+      throw new Error(`Customer has payment required order:${orderInPaymentStatus.orderId}`);
+
     const { customer } = await this.customers.findById({ customerId });
     const { products } = await this.catalog.findMany({ productIds: [...items.keys()] });
 
@@ -67,18 +85,27 @@ export class OrderService {
     } catch (err) {}
 
     await this.tx.run(async () => {
+
+      // Resolve pricing
+      const pricedItems = await this.pricing...
+
       // Reserver stocks
       await this.warehouse.reserveStock({ items: reserve });
 
       const orderId = await this.repository.create({
-        status: 'pending-payment',
+        status: 'payment',
+        paymentStatus: 'pending',
         customer: {
           id: customerId,
           ...customer,
         },
-        items,
+        items: pricedItems,
         delivery,
       });
+
+      await this.payment.createPaymentSession({
+        orderId
+      })
 
       // dispatch event after successful record
       await this.outbox.save({
@@ -87,8 +114,6 @@ export class OrderService {
       });
     });
   }
-
-  async orderPaid({}: {}) {}
 
   /**
    *
