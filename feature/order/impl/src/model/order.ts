@@ -25,17 +25,11 @@ export type BaseOrder = {
 export type Order = BaseOrder &
   (
     | {
-        status: 'payment';
-        paymentStatus: 'pending';
-        delivery: Delivery;
-      }
-    | {
-        status: 'cancelled';
-        paymentStatus: 'expired' | 'failed' | 'pending';
+        status: 'settlement';
         delivery: Delivery;
       }
     | ({
-        paymentStatus: 'paid';
+        payment: Payment;
       } & (
         | {
             status: 'process' | 'in-editing' | 'cancelled';

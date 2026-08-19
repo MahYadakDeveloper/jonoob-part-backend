@@ -1,5 +1,5 @@
 {
-  "name": "@feature/payment",
+  "name": "@feature/payment-gateway",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -20,6 +20,6 @@
     "@feature/common": "workspace:*",
     "@feature/payment-api": "workspace:*",
     "@feature/wallet-api": "workspace:*",
-    "@nestjs/common": "^11.1.28"
+    "@nestjs/common": "^11.1.27"
   }
 }

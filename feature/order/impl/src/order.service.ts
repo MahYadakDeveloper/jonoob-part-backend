@@ -93,8 +93,7 @@ export class OrderService {
       await this.warehouse.reserveStock({ items: reserve });
 
       const orderId = await this.repository.create({
-        status: 'payment',
-        paymentStatus: 'pending',
+        status: 'settlement',
         customer: {
           id: customerId,
           ...customer,
@@ -104,7 +103,8 @@ export class OrderService {
       });
 
       await this.payment.createPaymentSession({
-        orderId
+        orderId,
+        customerId
       })
 
       // dispatch event after successful record
