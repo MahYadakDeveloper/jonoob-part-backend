@@ -1,5 +1,10 @@
+import { CreatePaymentTicketRequest, VerifyPaymentTicketRequest } from './gateway.req';
+import { CreatePaymentTicketResponse, VerifyPaymentTicketResponse } from './gateway.res';
+
 export interface PaymentGateway {
   name: string;
+  supportsPartialPayment: boolean;
+
   /**
    * Generate Token / Auth
    *
@@ -8,13 +13,7 @@ export interface PaymentGateway {
    * mentioned from provider documentation for example return url
    * link
    */
-  createPayment({
-    orderId,
-    providerId,
-  }: {
-    orderId: string;
-    providerId: number; // paymentSession.id
-  }): Promise<{ paymentUri: string }>;
+  createPaymentTicket(req: CreatePaymentTicketRequest): Promise<CreatePaymentTicketResponse>;
 
-  verifyPayment({ providerId }: { providerId: string }): Promise<void>;
+  verifyPaymentTicket(req: VerifyPaymentTicketRequest): Promise<VerifyPaymentTicketResponse>;
 }

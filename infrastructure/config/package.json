@@ -1,0 +1,26 @@
+{
+  "name": "@infra/config",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@nestjs/config": "^4.0.4"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.2.1",
+    "@nestjs/config": "^4.0.4",
+    "zod": "^4.4.3"
+  }
+}

@@ -18,11 +18,6 @@ export interface PaymentSessionCreationRequest {
   customerId: string;
 }
 
-export interface PayRequest {
-  providerId: number; // sessionId
-  gatewayName: string;
-}
-
 export interface GetPaymentGatewayByOrderIdRequest {
   orderId: string;
 }

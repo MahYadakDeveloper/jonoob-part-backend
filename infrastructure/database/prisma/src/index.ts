@@ -1,3 +1,3 @@
-export * from "./database.module";
-export * from "./prisma.service";
-export * from "./prisma.types"
+export * from './prisma.module';
+export * from './prisma.service';
+export * from './prisma.types';

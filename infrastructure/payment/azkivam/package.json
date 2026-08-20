@@ -1,5 +1,5 @@
 {
-  "name": "@feature/payment-gateway-azkivam",
+  "name": "@infra/payment-azkivam",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -20,10 +20,13 @@
     "@feature/common": "workspace:*",
     "@feature/order-api": "workspace:*",
     "@feature/payment-gateway-api": "workspace:*",
+    "@infra/config": "workspace:*",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.27",
+    "@nestjs/config": "^4.0.4",
     "axios": "^1.19.0",
     "fastify": "^5.12.1",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "zod": "^4.4.3"
   }
 }
