@@ -1,5 +1,5 @@
 import { type OrderApi } from '@feature/order-api';
-import { PaymentGatewayApi } from '@feature/payment-gateway-api';
+import { PaymentGateway } from '@feature/payment-gateway-api';
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
@@ -20,11 +20,11 @@ import { CreateTicketRequest } from './azkivam.types';
  * Move this in infrastructure layer
  */
 @Injectable()
-export class AzkivamGateway implements PaymentGatewayApi {
+export class AzkivamGateway implements PaymentGateway {
   private static readonly CREATE_TICKET_ENDPOINT = '/payment/purchase';
   private static readonly VERIFY_TICKET_ENDPOINT = '/payment/verify';
 
-  readonly provider: string = 'azkivam';
+  readonly name: string = 'azkivam' as const;
 
   constructor(
     private readonly http: HttpService,
@@ -68,7 +68,5 @@ export class AzkivamGateway implements PaymentGatewayApi {
     throw new Error('Method not implemented.');
   }
 
-  verifyPayment(): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
+  async verifyPayment({ providerId }: { providerId: string }): Promise<void> {}
 }

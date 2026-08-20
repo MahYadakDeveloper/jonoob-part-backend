@@ -1,22 +1,23 @@
 export type PaymentSession = {
-  id: number; // prisma: id Int @Id
+  providerId: number; // prisma: id Int @Id - session Id
   createdAt: Date;
   // expires: x
-  reservationId: string; // orderId - prisma: @unique
+  orderId: string; // equivalent to :[orderId, reservationId] - prisma: @unique
 } & (
   | {
       status: 'pending';
-      token?: string;
     }
   | {
       status: 'failed';
+      gateway: string;
     }
   | {
       status: 'cancelled';
+      gateway: string;
     }
   | {
       status: 'paid';
-
+      gateway: string;
       /**
        * Reference Id/Number - Transaction Id/Number
        */

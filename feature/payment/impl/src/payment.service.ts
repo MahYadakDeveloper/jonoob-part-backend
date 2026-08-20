@@ -10,9 +10,10 @@ import {
   WalletPaymentExceedsInvoiceError,
   type PaymentApi,
 } from '@feature/payment-api';
-import { type PaymentGatewayApi } from '@feature/payment-gateway-api';
 import { type WalletApi } from '@feature/wallet-api';
 import { Injectable } from '@nestjs/common';
+import { PaymentGatewayResolver } from './payment-gateway.resolver';
+import { type PaymentSessionRepository } from './payment-session.repository';
 
 /**
  * [NOTE] If the customer cancels the payment on the IPG, the payment
@@ -30,13 +31,12 @@ import { Injectable } from '@nestjs/common';
 export class PaymentService implements PaymentApi {
   constructor(
     private readonly wallet: WalletApi,
-    private readonly sessions: PaymentSessionStore,
-    private readonly gateways: PaymentGatewayApi[],
+    private readonly repository: PaymentSessionRepository,
+    private readonly gateways: PaymentGatewayResolver,
   ) {}
 
-  pay({ paymentSessionId, provider }: PayRequest): Promise<PayResponse> {
-    const gateway = this.gateways.find((g) => g.provider === provider);
-    if (!gateway) throw new Error('Invalid provider');
+  pay({ paymentSessionId, gatewayName }: PayRequest): Promise<PayResponse> {
+    const gateway = this.gateways.resolve(gatewayName);
 
     throw new Error('Method not implemented.');
   }

@@ -17,13 +17,17 @@ export type BaseOrder = {
       } & Extract<CustomerAddress, { scope: 'inter-city' }>);
 };
 
-export type Order = BaseOrder &
-  (
+export type Order = BaseOrder & {
+  payment: {
+    paidAt: Date;
+    gateway: string;
+  };
+} & (
+    | {
+        status: 'preparing';
+      }
     | {
         status: 'in-delivery' | 'delivered';
         deliveryConfirmationCode: string;
-      }
-    | {
-        status: 'preparing';
       }
   );

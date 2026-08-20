@@ -1,1 +1,1 @@
-export * from './gateway.api';
+export * from './gateway.interface';

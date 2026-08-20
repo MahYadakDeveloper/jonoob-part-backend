@@ -1,5 +1,5 @@
-export interface PaymentGatewayApi {
-  provider: string;
+export interface PaymentGateway {
+  name: string;
   /**
    * Generate Token / Auth
    *
@@ -16,5 +16,5 @@ export interface PaymentGatewayApi {
     providerId: number; // paymentSession.id
   }): Promise<{ paymentUri: string }>;
 
-  verifyPayment(): Promise<void>;
+  verifyPayment({ providerId }: { providerId: string }): Promise<void>;
 }
