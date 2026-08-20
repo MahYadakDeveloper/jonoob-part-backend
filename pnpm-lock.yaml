@@ -1402,6 +1402,9 @@ importers:
       '@infra/config':
         specifier: workspace:*
         version: link:../../config
+      '@infra/db-prisma':
+        specifier: workspace:*
+        version: link:../../database/prisma
       '@nestjs/axios':
         specifier: ^4.0.1
         version: 4.0.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(axios@1.19.0)(rxjs@7.8.2)

@@ -21,6 +21,7 @@
     "@feature/order-api": "workspace:*",
     "@feature/payment-gateway-api": "workspace:*",
     "@infra/config": "workspace:*",
+    "@infra/db-prisma": "workspace:*",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.27",
     "@nestjs/config": "^4.0.4",

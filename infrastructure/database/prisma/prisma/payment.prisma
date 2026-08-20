@@ -1,0 +1,10 @@
+model AzkivamToken {
+  key          String @id @default("default")
+  accessToken  String
+  refreshToken String
+}
+
+model AzkivamTicket {
+  ticketId   String @id
+  providerId Int    @unique
+}
