@@ -32,11 +32,11 @@ export type Order = BaseOrder &
         payment: Payment;
       } & (
         | {
-            status: 'process' | 'in-editing' | 'cancelled';
+            status: 'process' | 'cancelled';
             delivery: Delivery;
           }
         | {
-            status: 'courier-requested' | 'in-editing' | 'cancelled';
+            status: 'courier-requested' | 'cancelled';
             delivery: Delivery;
           }
         | (

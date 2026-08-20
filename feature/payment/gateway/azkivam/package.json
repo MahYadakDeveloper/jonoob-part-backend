@@ -1,5 +1,5 @@
 {
-  "name": "@feature/payment-gateway",
+  "name": "@feature/payment-gateway-azkivam",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -18,8 +18,11 @@
   "private": true,
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@feature/payment-api": "workspace:*",
-    "@feature/wallet-api": "workspace:*",
-    "@nestjs/common": "^11.1.27"
+    "@feature/order-api": "workspace:*",
+    "@feature/payment-gateway-api": "workspace:*",
+    "@nestjs/axios": "^4.0.1",
+    "@nestjs/common": "^11.1.27",
+    "axios": "^1.19.0",
+    "rxjs": "^7.8.2"
   }
 }

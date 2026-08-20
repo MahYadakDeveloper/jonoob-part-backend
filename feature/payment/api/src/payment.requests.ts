@@ -17,3 +17,8 @@ export interface PaymentSessionCreationRequest {
   orderId: string;
   customerId: string;
 }
+
+export interface PayRequest {
+  paymentSessionId: number;
+  provider: string;
+}

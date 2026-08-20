@@ -1,11 +1,12 @@
 export type PaymentSession = {
-  id: string;
+  id: number; // prisma: id Int @Id
   createdAt: Date;
   // expires: x
+  reservationId: string; // orderId - prisma: @unique
 } & (
   | {
       status: 'pending';
-      gateway: ???;
+      token?: string;
     }
   | {
       status: 'failed';
@@ -15,5 +16,10 @@ export type PaymentSession = {
     }
   | {
       status: 'paid';
+
+      /**
+       * Reference Id/Number - Transaction Id/Number
+       */
+      transactionId: string;
     }
 );

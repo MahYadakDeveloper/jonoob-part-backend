@@ -19,6 +19,7 @@
   "dependencies": {
     "@feature/common": "workspace:*",
     "@feature/payment-api": "workspace:*",
+    "@feature/payment-gateway-api": "workspace:*",
     "@feature/wallet-api": "workspace:*",
     "@nestjs/common": "^11.1.28"
   }

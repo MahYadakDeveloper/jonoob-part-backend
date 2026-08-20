@@ -1,10 +1,11 @@
-import { LineItems } from '@feature/common';
+import { InvoiceItem, InvoiceSummary, LineItems } from '@feature/common';
 import { Customer, CustomerAddress } from '@feature/customer-api';
 
 export type BaseOrder = {
   orderId: string;
   customer: { id } & Customer;
-  items: LineItems<{ productId: string; quantity: number }>;
+  items: LineItems<InvoiceItem>;
+  summary: InvoiceSummary;
   recipient:
     | ({
         carrier: 'courier';

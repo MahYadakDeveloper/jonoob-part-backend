@@ -115,13 +115,6 @@ export class OrderService {
     });
   }
 
-  /**
-   *
-   */
-  async editOrder() {
-    //  Dispatch the event because before the state is changed to sending package
-    // because the customer can edit and reprocess the package
-  }
 
   /**
    *

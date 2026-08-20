@@ -1,0 +1,41 @@
+export type CreateTicketRequest = {
+  amount: number;
+  redirect_uri: string;
+  fallback_uri: string;
+  provider_id: number;
+  mobile_number: string;
+  merchant_id: string;
+  items: {
+    name: string;
+    count: number;
+    amount: number;
+    url: string;
+  }[];
+};
+
+export type CreateTicketResponse = {
+  rsCode: any;
+  result: {
+    payment_uri: string;
+    ticket_id: string;
+  };
+};
+
+export type VerifyTicketRequest = {
+  ticket_id: string;
+};
+
+/**
+ * 1 (Created)
+ * 2 (Verified)
+ * 3 (Reversed)
+ * 4 (Failed)
+ * 5 (Canceled)
+ * 6 (Settled)
+ * 7 (Expired)
+ * 8 (Done)
+ */
+export type VerifyTicketResponse = {
+  rsCode: any;
+  result: { rsCode: any; ticket_id: string; status: number };
+};
