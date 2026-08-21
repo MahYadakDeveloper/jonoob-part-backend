@@ -6,4 +6,4 @@ export type CreatePaymentTicketRequest = {
   useWallet?: UseWallet;
 };
 
-export type VerifyPaymentTicketRequest = { providerId: string };
+export type VerifyPaymentTicketRequest = { providerId: number };

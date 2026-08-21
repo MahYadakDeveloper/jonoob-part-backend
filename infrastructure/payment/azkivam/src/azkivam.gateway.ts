@@ -1,8 +1,13 @@
+import { type OutboxRepository } from '@feature/common';
 import { type OrderApi } from '@feature/order-api';
 import {
   CreatePaymentTicketRequest,
   CreatePaymentTicketResponse,
   PaymentGateway,
+  TicketVerificationFailedEventPayload,
+  TicketVerificationFailedEventType,
+  TicketVerifiedEventPayload,
+  TicketVerifiedEventType,
   VerifyPaymentTicketRequest,
   VerifyPaymentTicketResponse,
 } from '@feature/payment-gateway-api';
@@ -10,16 +15,28 @@ import { appConfig } from '@infra/config';
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
+import { AxiosInstance } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { PrismaAzkivamTicketRepository } from './azkivam-ticket.repository';
 import { PrismaAzkivamTokenRepository } from './azkivam-token.repository';
 import { azkivamConfig } from './azkivam.config';
-import { CreateTicketRequest, CreateTicketResponse } from './azkivam.types';
+import {
+  AuthRequest,
+  AuthResponse,
+  CreateTicketRequest,
+  CreateTicketResponse,
+  RefreshTokenResponse,
+  VerifyTicketRequest,
+  VerifyTicketResponse,
+} from './azkivam.types';
 
 @Injectable()
 export class AzkivamGateway implements PaymentGateway {
   readonly name: string = 'azkivam' as const;
   readonly supportsPartialPayment: boolean = false;
+
+  private readonly api: AxiosInstance;
+  private refreshPromise?: Promise<string>;
 
   constructor(
     private readonly token: PrismaAzkivamTokenRepository,
@@ -30,7 +47,14 @@ export class AzkivamGateway implements PaymentGateway {
     private readonly azkivam: ConfigType<typeof azkivamConfig>,
     @Inject(appConfig.KEY)
     private readonly app: ConfigType<typeof appConfig>,
-  ) {}
+    private readonly outbox: OutboxRepository,
+  ) {
+    this.api = http.axiosRef.create({
+      baseURL: `${this.azkivam.baseUrl}`,
+    });
+
+    this.setupApiInterceptor();
+  }
 
   /**
    *
@@ -55,9 +79,9 @@ export class AzkivamGateway implements PaymentGateway {
       (x) => x.productId,
     );
 
-    const callback = `${this.app.apiUrl}/payment/callback?providerId=${providerId}`;
+    const callback = `${this.app.apiUrl}/payment/azkivam/callback?providerId=${providerId}`;
 
-    const body: CreateTicketRequest = {
+    const data: CreateTicketRequest = {
       amount: order.summary.grandTotal.value,
       mobile_number: order.customer.phone,
       provider_id: providerId,
@@ -67,100 +91,146 @@ export class AzkivamGateway implements PaymentGateway {
       items,
     };
 
-    const token = await this.resolveToken();
+    const res = await this.api.post<CreateTicketResponse>(this.azkivam.createTicketEndpoint, data);
 
-    try {
-      const res = await firstValueFrom(
-        this.http.post<CreateTicketResponse>(
-          `${this.azkivam.baseUrl}${this.azkivam.createTicketEndpoint}`,
-          body,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token.accessToken}`,
-            },
-          },
-        ),
-      );
+    await this.tickets.create({
+      providerId,
+      ticketId: res.data.result.ticket_id,
+    });
 
-      await this.tickets.create({ providerId, ticketId: res.data.result.ticket_id });
-
-      return {
-        paymentUri: res.data.result.payment_uri,
-      };
-    } catch (err) {
-      const refreshedToken = await this.authenticate();
-      const res = await firstValueFrom(
-        this.http.post<CreateTicketResponse>(
-          `${this.azkivam.baseUrl}${this.azkivam.createTicketEndpoint}`,
-          body,
-          {
-            headers: {
-              'Content-Type': 'application-json',
-              Authorization: `Bearer ${refreshedToken.accessToken}`,
-            },
-          },
-        ),
-      );
-
-      await this.tickets.create({ providerId, ticketId: res.data.result.ticket_id });
-      return {
-        paymentUri: res.data.result.payment_uri,
-      };
-    }
+    return {
+      paymentUri: res.data.result.payment_uri,
+    };
   }
 
   /**
    *
    */
-  async verifyPaymentTicket(req: VerifyPaymentTicketRequest): Promise<VerifyPaymentTicketResponse> {
-    throw new Error('Method not implemented.');
-  }
+  async verifyPaymentTicket({
+    providerId,
+  }: VerifyPaymentTicketRequest): Promise<VerifyPaymentTicketResponse> {
+    const ticket = await this.tickets.findByProviderId(providerId);
 
-  private async resolveToken() {
-    let token = await this.token.get();
-    if (!token) {
-      const res = await firstValueFrom(
-        this.http.post<{
-          accessToken: string;
-          refreshToken: string;
-        }>(`${this.azkivam.baseUrl}${this.azkivam.authenticationEndpoint}`, {
-          username: this.azkivam.username,
-          password: this.azkivam.password,
-        }),
-      );
+    if (!ticket) throw new Error('Ticket not found');
 
-      token = {
-        key: 'default',
-        accessToken: res.data.accessToken,
-        refreshToken: res.data.refreshToken,
-      };
+    const res = await this.api.post<VerifyTicketResponse>(this.azkivam.verifyTicketEndpoint, {
+      ticket_id: ticket.ticketId,
+    } satisfies VerifyTicketRequest);
 
-      await this.token.set(token);
+    switch (res.data.result.status) {
+      case 2: // verified
+        await this.outbox.save({
+          type: TicketVerifiedEventType,
+          payload: { providerId } satisfies TicketVerifiedEventPayload,
+        });
+
+        return { status: 'verified' };
+
+      case 5: // canceled
+        await this.outbox.save({
+          type: TicketVerificationFailedEventType,
+          payload: {
+            providerId,
+            status: 'canceled',
+          } satisfies TicketVerificationFailedEventPayload,
+        });
+        return { status: 'canceled' };
+
+      default:
+        await this.outbox.save({
+          type: TicketVerificationFailedEventType,
+          payload: {
+            providerId,
+            status: 'failure',
+          } satisfies TicketVerificationFailedEventPayload,
+        });
+        return { status: 'failure' };
     }
-
-    return token;
   }
 
-  private async authenticate() {
-    const res = await firstValueFrom(
-      this.http.post<{
-        accessToken: string;
-        refreshToken: string;
-      }>(`${this.azkivam.baseUrl}${this.azkivam.authenticationEndpoint}`, {
+  private setupApiInterceptor() {
+    this.api.interceptors.request.use(async (config) => {
+      const token = await this.token.get();
+
+      if (token?.accessToken) {
+        config.headers.Authorization = `Bearer ${token.accessToken}`;
+      }
+
+      return config;
+    });
+
+    this.api.interceptors.response.use(
+      (response) => response,
+
+      async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status !== 401 || originalRequest._retry) {
+          return Promise.reject(error);
+        }
+
+        originalRequest._retry = true;
+
+        try {
+          const accessToken = await this.getValidAccessToken();
+
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+          return this.api(originalRequest);
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      },
+    );
+  }
+
+  private async authenticate(): Promise<string> {
+    const { data } = await firstValueFrom(
+      this.http.post<AuthResponse>(this.azkivam.authenticateEndpoint, {
         username: this.azkivam.username,
         password: this.azkivam.password,
+      } satisfies AuthRequest),
+    );
+
+    await this.token.set({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+    });
+
+    return data.accessToken;
+  }
+
+  private async refreshAccessToken(): Promise<string> {
+    const currentToken = await this.token.get();
+
+    if (!currentToken) {
+      return this.authenticate();
+    }
+
+    const { data } = await firstValueFrom(
+      this.http.post<RefreshTokenResponse>(this.azkivam.refreshTokenEndpoint, {
+        refreshToken: currentToken.refreshToken,
       }),
     );
 
-    const token = {
-      key: 'default',
-      accessToken: res.data.accessToken,
-      refreshToken: res.data.refreshToken,
-    };
+    const accessToken = data.accessToken;
+    const refreshToken = data.refreshToken ?? currentToken.refreshToken;
 
-    await this.token.set(token);
+    await this.token.set({
+      accessToken,
+      refreshToken,
+    });
 
-    return token;
+    return accessToken;
+  }
+
+  private getValidAccessToken(): Promise<string> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.refreshAccessToken().finally(() => {
+        this.refreshPromise = undefined;
+      });
+    }
+
+    return this.refreshPromise;
   }
 }

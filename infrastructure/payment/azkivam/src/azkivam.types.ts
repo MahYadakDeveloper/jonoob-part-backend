@@ -25,6 +25,21 @@ export type VerifyTicketRequest = {
   ticket_id: string;
 };
 
+export type AuthResponse = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+export type AuthRequest = {
+  username: string;
+  password: string;
+};
+
+export type RefreshTokenResponse = {
+  accessToken: string;
+  refreshToken?: string;
+};
+
 /**
  * 1 (Created)
  * 2 (Verified)

@@ -5,6 +5,7 @@ model AzkivamToken {
 }
 
 model AzkivamTicket {
-  ticketId   String @id
-  providerId Int    @unique
+  ticketId   String   @id
+  providerId Int      @unique
+  createdAt  DateTime @default(now())
 }
