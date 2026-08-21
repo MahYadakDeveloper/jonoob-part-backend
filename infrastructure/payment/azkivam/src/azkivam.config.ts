@@ -21,7 +21,5 @@ export const azkivamConfig = registerAs('azkivam', () => ({
   refreshTokenEndpoint: endpointSchema.parse(process.env.AZKIVAM_REFRESH_TOKEN_ENDPOINT),
   createTicketEndpoint: endpointSchema.parse(process.env.AZKIVAM_CREATE_TICKET_ENDPOINT),
   verifyTicketEndpoint: endpointSchema.parse(process.env.AZKIVAM_VERIFY_TICKET_ENDPOINT),
-
-  // from our host
-  callbackEndpoint: '/payment/callback',
+  ticketStatusEndpoint: endpointSchema.parse(process.env.AZKIVAM_TICKET_STATUS_ENDPOINT),
 }));

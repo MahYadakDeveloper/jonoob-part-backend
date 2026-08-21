@@ -26,6 +26,9 @@ import {
   CreateTicketRequest,
   CreateTicketResponse,
   RefreshTokenResponse,
+  TicketStatus,
+  TicketStatusRequest,
+  TicketStatusResponse,
   VerifyTicketRequest,
   VerifyTicketResponse,
 } from './azkivam.types';
@@ -54,6 +57,10 @@ export class AzkivamGateway implements PaymentGateway {
     });
 
     this.setupApiInterceptor();
+  }
+
+  async removeTicket({ ticketId }: { ticketId: string }): Promise<void> {
+    await this.tickets.delete(ticketId);
   }
 
   /**
@@ -113,39 +120,96 @@ export class AzkivamGateway implements PaymentGateway {
 
     if (!ticket) throw new Error('Ticket not found');
 
-    const res = await this.api.post<VerifyTicketResponse>(this.azkivam.verifyTicketEndpoint, {
-      ticket_id: ticket.ticketId,
-    } satisfies VerifyTicketRequest);
+    const { status } = await this.getTicketStatus({ ticketId: ticket.ticketId });
 
-    switch (res.data.result.status) {
-      case 2: // verified
-        await this.outbox.save({
-          type: TicketVerifiedEventType,
-          payload: { providerId } satisfies TicketVerifiedEventPayload,
-        });
+    switch (status) {
+      case 'done': {
+        const res = await this.api.post<VerifyTicketResponse>(this.azkivam.verifyTicketEndpoint, {
+          ticket_id: ticket.ticketId,
+        } satisfies VerifyTicketRequest);
 
-        return { status: 'verified' };
+        switch (res.data.result.status) {
+          case 2: // verified
+            await this.outbox.save({
+              type: TicketVerifiedEventType,
+              payload: {
+                providerId,
+                gateway: this.name,
+                ticketId: ticket.ticketId,
+              } satisfies TicketVerifiedEventPayload,
+            });
 
-      case 5: // canceled
+            return { status: 'verified' };
+
+          case 5: // canceled
+            await this.outbox.save({
+              type: TicketVerificationFailedEventType,
+              payload: {
+                providerId,
+                gateway: this.name,
+                ticketId: ticket.ticketId,
+                status: 'canceled',
+              } satisfies TicketVerificationFailedEventPayload,
+            });
+            return { status: 'canceled' };
+
+          default:
+            await this.outbox.save({
+              type: TicketVerificationFailedEventType,
+              payload: {
+                providerId,
+                gateway: this.name,
+                ticketId: ticket.ticketId,
+                status: 'failure',
+              } satisfies TicketVerificationFailedEventPayload,
+            });
+            return { status: 'failure' };
+        }
+      }
+      case 'canceled':
+      case 'expired':
+      case 'reversed':
         await this.outbox.save({
           type: TicketVerificationFailedEventType,
           payload: {
             providerId,
-            status: 'canceled',
+            gateway: this.name,
+            ticketId: ticket.ticketId,
+            status,
           } satisfies TicketVerificationFailedEventPayload,
         });
-        return { status: 'canceled' };
-
+        return { status };
+      case 'verified':
+      case 'settled':
+        await this.outbox.save({
+          type: TicketVerificationFailedEventType,
+          payload: {
+            providerId,
+            gateway: this.name,
+            ticketId: ticket.ticketId,
+            status: 'verified-before',
+          } satisfies TicketVerificationFailedEventPayload,
+        });
+        return { status: 'verified-before' };
       default:
         await this.outbox.save({
           type: TicketVerificationFailedEventType,
           payload: {
             providerId,
+            gateway: this.name,
+            ticketId: ticket.ticketId,
             status: 'failure',
           } satisfies TicketVerificationFailedEventPayload,
         });
         return { status: 'failure' };
     }
+  }
+
+  async getTicketStatus({ ticketId }: { ticketId: string }): Promise<{ status: TicketStatus }> {
+    const res = await this.api.post<TicketStatusResponse>(this.azkivam.ticketStatusEndpoint, {
+      ticket_id: ticketId,
+    } satisfies TicketStatusRequest);
+    return { status: TicketStatus[res.data.result.status] };
   }
 
   private setupApiInterceptor() {

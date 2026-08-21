@@ -20,4 +20,14 @@ export class PrismaAzkivamTicketRepository {
   async delete(ticketId: string) {
     await this.prisma.azkivamTicket.delete({ where: { ticketId } });
   }
+
+  async deleteOlderThan(cutoff: Date) {
+    await this.prisma.azkivamTicket.deleteMany({
+      where: {
+        createdAt: {
+          lt: cutoff,
+        },
+      },
+    });
+  }
 }

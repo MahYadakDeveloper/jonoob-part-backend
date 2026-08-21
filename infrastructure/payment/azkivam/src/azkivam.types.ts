@@ -54,3 +54,38 @@ export type VerifyTicketResponse = {
   rsCode: any;
   result: { rsCode: any; ticket_id: string; status: number };
 };
+
+// 1 (Created)
+// 2 (Verified)
+// 3 (Reversed)
+// 4 (Failed)
+// 5 (Canceled)
+// 6 (Settled)
+// 7 (Expired)
+// 8 (Done)
+// 9 (Settle Queue)
+export const TicketStatus = {
+  1: 'created',
+  2: 'verified',
+  3: 'reversed',
+  4: 'failed',
+  5: 'canceled',
+  6: 'settled',
+  7: 'expired',
+  8: 'done',
+  9: 'settleQueued',
+} as const;
+
+export type TicketStatus = (typeof TicketStatus)[keyof typeof TicketStatus];
+
+export type TicketStatusRequest = {
+  ticket_id: string;
+};
+
+export type TicketStatusResponse = {
+  rsCode: any;
+  result: {
+    rsCode: any;
+    status: number;
+  };
+};

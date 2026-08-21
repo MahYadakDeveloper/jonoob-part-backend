@@ -3,4 +3,10 @@ export type VerifyPaymentTicketResponse = {
   status: TicketStatus;
 };
 
-export type TicketStatus = 'verified' | 'failure' | 'verified-before' | 'canceled' | 'expired';
+export type TicketStatus =
+  | 'verified'
+  | 'failure'
+  | 'verified-before'
+  | 'canceled'
+  | 'expired'
+  | 'reversed';
