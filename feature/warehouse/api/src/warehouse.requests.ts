@@ -24,10 +24,12 @@ export interface GoodsIssuingRequest {
 }
 
 export interface StockReservingRequest {
+  referenceId: string;
   items: LineItems<ItemType>;
 }
 
 export interface StockReleasingRequest {
+  referenceId: string;
   items: LineItems<ItemType>;
 }
 

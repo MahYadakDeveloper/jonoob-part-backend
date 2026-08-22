@@ -5,7 +5,7 @@ export type Courier = {
   fullName: string;
   phone: string;
 
-  pickedOrders: LineItems<{
+  pickedUpOrders: LineItems<{
     orderId: string;
   }>;
 };

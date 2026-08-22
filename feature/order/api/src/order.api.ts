@@ -1,6 +1,12 @@
-import { FindOrderByIdRequest } from './order.req';
-import { FindOrderByIdResponse } from './order.res';
+import { Customer } from '@feature/customer-api';
+import { Delivery } from './order.type';
 
 export interface OrderApi {
-  findById(req: FindOrderByIdRequest): Promise<FindOrderByIdResponse>;
+  getDeliveryConfirmationCodeOfHandedPackageOver(req: {
+    orderId: string;
+  }): Promise<{ code: string }>;
+  getDeliveryAddress(req: { orderId: string }): Promise<{ delivery: Delivery }>;
+  getRecipientInformation(req: {
+    orderId: string;
+  }): Promise<{ customer: { id: string } & Customer; delivery: Delivery }>;
 }

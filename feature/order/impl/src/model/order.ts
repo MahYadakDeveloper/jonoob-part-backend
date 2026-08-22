@@ -1,5 +1,6 @@
 import { InvoiceItem, InvoiceSummary, LineItems } from '@feature/common';
 import { Customer, CustomerAddress } from '@feature/customer-api';
+import { PaymentResult } from '@feature/order-api';
 
 type IntraCityDelivery = {
   scope: 'intra-city';
@@ -17,6 +18,7 @@ export type Delivery = InterCityDelivery | IntraCityDelivery;
 
 export type BaseOrder = {
   orderId: string;
+  recordedAt: Date;
   customer: { id: string } & Customer;
   items: LineItems<InvoiceItem>;
   summary: InvoiceSummary;
@@ -28,21 +30,25 @@ export type Order = BaseOrder &
         status: 'settlement';
         delivery: Delivery;
       }
+    | {
+        status: 'canceled';
+        delivery: Delivery;
+        payment: Exclude<PaymentResult, { status: 'paid' }>;
+        canceledAt: Date;
+      }
     | ({
-        payment: Payment;
+        payment: Extract<PaymentResult, { status: 'paid' }>;
+        settledAt: Date;
       } & (
         | {
-            status: 'process' | 'cancelled';
+            status: 'process' | 'courier-requested';
             delivery: Delivery;
-          }
-        | {
-            status: 'courier-requested' | 'cancelled';
-            delivery: Delivery;
+            processedAt: Date;
           }
         | (
             | {
                 status: 'handed-over-to-courier';
-                handedOver: Date;
+                handedOverAt: Date;
                 delivery:
                   | (IntraCityDelivery & {
                       deliveryConfirmationCode: string;

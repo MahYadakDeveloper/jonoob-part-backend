@@ -1,16 +1,16 @@
 import { type CatalogApi } from '@feature/catalog-api';
 import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/common';
-import { type CustomersApi } from '@feature/customer-api';
-import { OrderEventPayload, OrderPaidEventType } from '@feature/order-api';
+import { Customer, type CustomersApi } from '@feature/customer-api';
+import { Delivery, OrderApi, OrderEventPayload, OrderRecordedEventType } from '@feature/order-api';
 import { type PaymentApi } from '@feature/payment-api';
-import { type PricingApi } from '@feature/pricing-api';
+import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
-import { Delivery } from './model/order';
+import { Order } from './model/order';
 import { type OrderRepository } from './order.repository';
 
 @Injectable()
-export class OrderService {
+export class OrderService implements OrderApi {
   constructor(
     private readonly repository: OrderRepository,
     private readonly customers: CustomersApi,
@@ -21,6 +21,60 @@ export class OrderService {
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}
+
+  async getRecipientInformation({ orderId }: { orderId: string }): Promise<{
+    customer: { id: string } & Customer;
+    delivery: Delivery;
+  }> {
+    const order = await this.repository.findById(orderId);
+
+    if (!order) throw new Error('Order not found');
+
+    return {
+      customer: order.customer,
+      delivery: order.delivery,
+    };
+  }
+
+  async getDeliveryConfirmationCodeOfHandedPackageOver({
+    orderId,
+  }: {
+    orderId: string;
+  }): Promise<{ code: string }> {
+    const order = await this.repository.findById(orderId);
+    if (!order) throw new Error();
+
+    if (order.status !== 'handed-over-to-courier' && order.status !== 'delivered')
+      throw new Error();
+
+    if (order.delivery.scope !== 'intra-city') throw new Error('');
+
+    return {
+      code: order.delivery.deliveryConfirmationCode,
+    };
+  }
+
+  async getDeliveryAddress({ orderId }: { orderId: string }): Promise<{
+    delivery: Delivery;
+  }> {
+    const order = await this.repository.findById(orderId);
+    if (!order) throw new Error();
+
+    return {
+      delivery: order.delivery,
+    };
+  }
+
+  async findById({ orderId }: { orderId: string }): Promise<{ order: Order }> {
+    const order = await this.repository.findById(orderId);
+    if (!order) throw new Error('Order not found!');
+
+    return { order };
+  }
+
+  findOne(orderId: string) {
+    return this.repository.findById(orderId);
+  }
 
   /**
    * [NOTE] Do scope/location validation inside controller
@@ -45,9 +99,8 @@ export class OrderService {
     items: LineItems<{ productId: string; quantity: number }>;
     delivery: Delivery;
   }) {
-    const orderInPaymentStatus = await this.repository.findInPaymentStatus(customerId);
-    if (orderInPaymentStatus)
-      throw new Error(`Customer has payment required order:${orderInPaymentStatus.orderId}`);
+    const orderInPaymentStatus = await this.repository.findWaitingToSettleOrders(customerId);
+    if (orderInPaymentStatus.size) throw new Error(`Customer has none active none settled order`);
 
     const { customer } = await this.customers.findById({ customerId });
     const { products } = await this.catalog.findMany({ productIds: [...items.keys()] });
@@ -85,42 +138,76 @@ export class OrderService {
     } catch (err) {}
 
     await this.tx.run(async () => {
-
       // Resolve pricing
-      const pricedItems = await this.pricing...
+      const { pricedInvoice } = await this.pricing.priceInvoice({
+        items: items.transform<UnpricedInvoiceItem>(
+          (item) => {
+            const product = products.getOrThrow(item.productId);
+            if (product.kind === 'bundle')
+              return {
+                kind: 'bundle',
+                productId: item.productId,
+                description: product.displayName,
+                quantity: item.quantity,
+                items: product.items.toArray().map((_item) => ({
+                  description: _item.displayName,
+                  kind: 'leaf',
+                  productId: _item.productId,
+                  quantity: _item.quantity,
+                })),
+              };
 
-      // Reserver stocks
-      await this.warehouse.reserveStock({ items: reserve });
+            return {
+              kind: 'leaf',
+              productId: item.productId,
+              description: product.displayName,
+              quantity: item.quantity,
+            };
+          },
+          (item) => item.description,
+        ),
+        customer: { id: customerId, type: customer.type },
+      });
 
       const orderId = await this.repository.create({
         status: 'settlement',
+        recordedAt: new Date(),
         customer: {
           id: customerId,
           ...customer,
         },
-        items: pricedItems,
+        items: pricedInvoice.items,
         delivery,
+        summary: pricedInvoice.summary,
       });
+
+      // Reserver stocks
+      await this.warehouse.reserveStock({ referenceId: orderId, items: reserve });
 
       await this.payment.createPaymentSession({
         orderId,
-        customerId
-      })
+        customerId,
+      });
 
       // dispatch event after successful record
       await this.outbox.save({
-        type: OrderPaidEventType,
+        type: OrderRecordedEventType,
         payload: { orderId, occurredAt: new Date() } satisfies OrderEventPayload,
       });
     });
-  }
 
+    // [NOTE] no return, just redirect the customer to settlement page
+    // the payment session is already created, so by navigating to
+    // settlement page going to see an active order ready for settlement
+  }
 
   /**
    *
    */
   async cancelOrder() {
-    // Cancellation only available at processing order period
+    // [TODO] Only cancel at states already safe typed but take different
+    // actions for different states like the at processing status have
+    // to return their credit to its provider not to wallet
     // dispatch the event
   }
 }

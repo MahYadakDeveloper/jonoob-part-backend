@@ -1,10 +1,10 @@
 import { Money, Payment } from '@feature/common';
 import {
+  GetPaymentGatewayByOrderIdRequest,
+  GetPaymentGatewayByOrderIdResponse,
   InsufficientWalletBalanceError,
   InvalidWalletPaymentAmountError,
   PaymentSessionCreationRequest,
-  PayRequest,
-  PayResponse,
   PlanPaymentRequest,
   PlanPaymentResponse,
   WalletPaymentExceedsInvoiceError,
@@ -14,6 +14,8 @@ import { type WalletApi } from '@feature/wallet-api';
 import { Injectable } from '@nestjs/common';
 import { PaymentGatewayResolver } from './payment-gateway.resolver';
 import { type PaymentSessionRepository } from './payment-session.repository';
+import { PayRequest } from './payment.req';
+import { PayResponse } from './payment.res';
 
 /**
  * [NOTE] If the customer cancels the payment on the IPG, the payment
@@ -35,7 +37,16 @@ export class PaymentService implements PaymentApi {
     private readonly gateways: PaymentGatewayResolver,
   ) {}
 
-  pay({ paymentSessionId, gatewayName }: PayRequest): Promise<PayResponse> {
+  getPaymentGatewayByOrderId(
+    req: GetPaymentGatewayByOrderIdRequest,
+  ): Promise<GetPaymentGatewayByOrderIdResponse> {
+    throw new Error('Method not implemented.');
+  }
+  getTrackingCode(req: { providerId: number }): Promise<{ trackingCode: string }> {
+    throw new Error('Method not implemented.');
+  }
+
+  pay({ providerId, gatewayName }: PayRequest): Promise<PayResponse> {
     const gateway = this.gateways.resolve(gatewayName);
 
     throw new Error('Method not implemented.');

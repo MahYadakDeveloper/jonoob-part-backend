@@ -29,6 +29,10 @@ export class CourierService implements CourierApi {
     throw new Error('Method not implemented.');
   }
 
+  getDeliveryAddress({ orderId }: { orderId: string }) {
+    return this.order.getDeliveryAddress({ orderId });
+  }
+
   /**
    * role: courier
    * [NOTE] have to get order id from specialist when picking up the package
@@ -36,8 +40,6 @@ export class CourierService implements CourierApi {
    * @param req.orderId is get form the who is playing the role
    */
   async pickedUp({ courierId, orderId }: PickingUpRequest): Promise<void> {
-    const { order } = await this.order.findById({ orderId });
-
     await this.tx.run(async () => {
       await this.courier.addActiveDelivery(courierId, orderId);
 
@@ -54,19 +56,21 @@ export class CourierService implements CourierApi {
   }
 
   async confirmDelivery(req: ConfirmDeliveryRequest) {
-    const { order } = await this.order.findById({ orderId: req.orderId });
+    const { delivery } = await this.order.getDeliveryAddress({
+      orderId: req.orderId,
+    });
 
     if (req.scope === 'intra-city') {
-      if (order.recipient.scope !== req.scope) throw new Error();
+      if (delivery.scope !== req.scope) throw new Error();
 
-      if (order.status !== 'in-delivery') throw new Error();
-
-      if (order.deliveryConfirmationCode !== req.confirmationCode) throw new Error();
+      const { code: deliveryConfirmationCode } =
+        await this.order.getDeliveryConfirmationCodeOfHandedPackageOver({ orderId: req.orderId });
+      if (deliveryConfirmationCode !== req.confirmationCode) throw new Error();
 
       await this.outbox.save({
         type: PackageDeliveredEventType,
         payload: {
-          orderId: order.orderId,
+          orderId: req.orderId,
           scope: 'intra-city',
           occurredAt: new Date(),
         } satisfies PackageDeliveredEventPayload,
@@ -78,8 +82,9 @@ export class CourierService implements CourierApi {
     await this.outbox.save({
       type: PackageDeliveredEventType,
       payload: {
-        orderId: order.orderId,
-        scope: 'intra-city',
+        orderId: req.orderId,
+        scope: 'inter-city',
+        trackingNumber: req.trackingCode,
         occurredAt: new Date(),
       } satisfies PackageDeliveredEventPayload,
     });

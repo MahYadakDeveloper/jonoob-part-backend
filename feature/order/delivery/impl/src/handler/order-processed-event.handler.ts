@@ -47,22 +47,22 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
   //    "id": 1616,
   //    "name": "چمران"
   // }
-  async handle(payload: OrderEventPayload) {
-    const {
-      order: { orderId, customer, recipient },
-    } = await this.order.findById({ orderId: payload.orderId });
+  async handle({ orderId, occurredAt }: OrderEventPayload) {
+    const { customer, delivery } = await this.order.getRecipientInformation({
+      orderId,
+    });
 
     await this.tx.run(async () => {
       // Make a request for shipping
-      if (recipient.scope === 'intra-city') {
+      if (delivery.scope === 'intra-city') {
         await this.courier.pickup({
           orderId,
           scope: 'intra-city',
           recipient: {
-            address: recipient.address,
+            address: delivery.address,
             fullName: customer.fullName,
             phone: customer.phone,
-            coordinate: recipient.coordinate,
+            coordinate: delivery.coordinate,
           },
         });
 
@@ -79,7 +79,7 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
         const methods = await this.settings.get(DeliverySettingsToken);
         const method = methods.find((method) =>
           method.carrier !== 'courier'
-            ? method.carrier.provider === recipient.carrier.provider
+            ? method.carrier.provider === delivery.carrier.provider
             : false,
         );
 
