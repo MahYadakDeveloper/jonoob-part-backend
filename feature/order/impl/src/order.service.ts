@@ -1,24 +1,78 @@
 import { type CatalogApi } from '@feature/catalog-api';
-import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/common';
+import {
+  LineItems,
+  Money,
+  SettingToken,
+  type OutboxRepository,
+  type SettingsStore,
+  type TransactionManager,
+} from '@feature/common';
 import { Customer, type CustomersApi } from '@feature/customer-api';
-import { Delivery, OrderApi, OrderEventPayload, OrderRecordedEventType } from '@feature/order-api';
+import { Delivery, OrderApi } from '@feature/order-api';
 import { type PaymentApi } from '@feature/payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
+import { type WalletApi } from '@feature/wallet-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import { Order } from './model/order';
-import { type OrderRepository } from './order.repository';
+import { OrderCreate, type OrderRepository } from './order.repository';
 
 @Injectable()
 export class OrderService implements OrderApi {
+  static readonly OrderSettings: SettingToken<{
+    cancellationFee:
+      | {
+          type: 'fixed';
+          amount: {
+            value: number;
+            unit: 'toman';
+          };
+        }
+      | {
+          type: 'rate';
+          rate: number;
+        };
+  }> = {
+    key: 'order-settings',
+
+    defaultValue: {
+      cancellationFee: {
+        type: 'fixed',
+        amount: {
+          value: 0,
+          unit: 'toman',
+        },
+      },
+    },
+
+    schema: z.object({
+      cancellationFee: z.discriminatedUnion('type', [
+        z.object({
+          type: z.literal('fixed'),
+          amount: z.object({
+            value: z.number().nonnegative(),
+            unit: z.literal('toman'),
+          }),
+        }),
+        z.object({
+          type: z.literal('rate'),
+          rate: z.number().min(0).max(100),
+        }),
+      ]),
+    }),
+  };
+
   constructor(
     private readonly repository: OrderRepository,
     private readonly customers: CustomersApi,
     private readonly catalog: CatalogApi,
     private readonly warehouse: WarehouseApi,
+    private readonly wallet: WalletApi,
     private readonly payment: PaymentApi,
     private readonly pricing: PricingApi,
     private readonly tx: TransactionManager,
+    private readonly settings: SettingsStore,
     private readonly outbox: OutboxRepository,
   ) {}
 
@@ -26,7 +80,7 @@ export class OrderService implements OrderApi {
     customer: { id: string } & Customer;
     delivery: Delivery;
   }> {
-    const order = await this.repository.findById(orderId);
+    const order = await this.repository.find(orderId);
 
     if (!order) throw new Error('Order not found');
 
@@ -41,7 +95,7 @@ export class OrderService implements OrderApi {
   }: {
     orderId: string;
   }): Promise<{ code: string }> {
-    const order = await this.repository.findById(orderId);
+    const order = await this.repository.find(orderId);
     if (!order) throw new Error();
 
     if (order.status !== 'handed-over-to-courier' && order.status !== 'delivered')
@@ -57,7 +111,7 @@ export class OrderService implements OrderApi {
   async getDeliveryAddress({ orderId }: { orderId: string }): Promise<{
     delivery: Delivery;
   }> {
-    const order = await this.repository.findById(orderId);
+    const order = await this.repository.find(orderId);
     if (!order) throw new Error();
 
     return {
@@ -66,14 +120,14 @@ export class OrderService implements OrderApi {
   }
 
   async findById({ orderId }: { orderId: string }): Promise<{ order: Order }> {
-    const order = await this.repository.findById(orderId);
+    const order = await this.repository.find(orderId);
     if (!order) throw new Error('Order not found!');
 
     return { order };
   }
 
-  findOne(orderId: string) {
-    return this.repository.findById(orderId);
+  findOneByCustomerId({ customerId, orderId }: { customerId: string; orderId: string }) {
+    return this.repository.findOrderByCustomerId(customerId, orderId);
   }
 
   /**
@@ -169,8 +223,9 @@ export class OrderService implements OrderApi {
         customer: { id: customerId, type: customer.type },
       });
 
-      const orderId = await this.repository.create({
-        status: 'settlement',
+      const { cancellationFee } = await this.settings.get(OrderService.OrderSettings);
+      const order = {
+        status: 'recorded',
         recordedAt: new Date(),
         customer: {
           id: customerId,
@@ -178,22 +233,34 @@ export class OrderService implements OrderApi {
         },
         items: pricedInvoice.items,
         delivery,
+        cancellationTerms: {
+          fee: cancellationFee,
+        },
         summary: pricedInvoice.summary,
-      });
+      } satisfies OrderCreate;
 
-      // Reserver stocks
+      const orderId = await this.repository.create(order);
+
+      // Reserve stocks
       await this.warehouse.reserveStock({ referenceId: orderId, items: reserve });
 
-      await this.payment.createPaymentSession({
+      const { paymentSessionId } = await this.payment.createPaymentSession({
         orderId,
         customerId,
       });
 
-      // dispatch event after successful record
-      await this.outbox.save({
-        type: OrderRecordedEventType,
-        payload: { orderId, occurredAt: new Date() } satisfies OrderEventPayload,
+      await this.repository.updateOrderToSettlementStatus({
+        id: orderId,
+        ...order,
+        status: 'settlement',
+        paymentSessionId,
       });
+
+      // [TODO]
+      // await this.outbox.save({
+      //   type: OrderRecordedEventType,
+      //   payload: { orderId, occurredAt: new Date() } satisfies OrderEventPayload,
+      // });
     });
 
     // [NOTE] no return, just redirect the customer to settlement page
@@ -204,10 +271,65 @@ export class OrderService implements OrderApi {
   /**
    *
    */
-  async cancelOrder() {
-    // [TODO] Only cancel at states already safe typed but take different
-    // actions for different states like the at processing status have
-    // to return their credit to its provider not to wallet
-    // dispatch the event
+  async cancelOrder({ customerId, orderId }: { customerId: string; orderId: string }) {
+    const order = await this.repository.findOrderByCustomerId(customerId, orderId);
+
+    if (!order) throw new Error();
+
+    switch (order.status) {
+      case 'settlement':
+        await this.tx.run(async () => {
+          await this.repository.updateOrderToCanceledStatus({
+            ...order,
+            status: 'canceled',
+            canceledAt: new Date(),
+          });
+          await this.payment.cancelPayment({ paymentSessionId: order.paymentSessionId });
+        });
+        break;
+      case 'process':
+      case 'courier-requested':
+        {
+          await this.tx.run(async () => {
+            // update order status
+            await this.repository.updateOrderToCanceledStatus({
+              ...order,
+              status: 'canceled',
+              canceledAt: new Date(),
+            });
+
+            // calculate the cancellation fee and deduct from paid amount
+            // and then charge the customer wallet.
+            const fee = order.cancellationTerms.fee;
+            let refund = Money.zero();
+            if (fee.type === 'fixed')
+              refund = order.summary.grandTotal.subtract(Money.create(fee.amount.value));
+            else {
+              refund = order.summary.grandTotal.subtract(
+                order.summary.grandTotal.multiply(fee.rate),
+              );
+            }
+
+            await this.wallet.deposit({
+              customerId,
+              amount: refund,
+              referenceId: orderId,
+              idempotencyKey: `order-canceled-${orderId}`,
+              reason: 'refund',
+            });
+          });
+        }
+        break;
+      default:
+        throw new Error('Not cancelable at this stage');
+    }
+  }
+
+  async setSettings({
+    newSettings,
+  }: {
+    newSettings: (typeof OrderService.OrderSettings)['defaultValue'];
+  }) {
+    await this.settings.set(OrderService.OrderSettings, newSettings);
   }
 }

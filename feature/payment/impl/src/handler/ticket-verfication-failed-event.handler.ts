@@ -32,23 +32,22 @@ export class TicketVerificationFailedEventHandler extends BaseEventHandler<Ticke
       // [TODO] delete ticket (for delivery confirmation in the order payment ticket is preserved)
       await gateway.removeTicket({ ticketId: payload.ticketId });
 
-      // [TODO] delete the payment session too
-      await this.repository.delete(payload.providerId);
-
       await this.outbox.save({
         type: OrderPaymentFailedEventType,
         payload: {
-          gateway: gateway.name,
-          ticketId: payload.ticketId,
-          occurredAt: new Date(),
-          reason:
-            payload.status === 'canceled'
-              ? 'canceled'
-              : payload.status === 'expired'
-                ? 'expired'
-                : payload.status === 'reversed'
-                  ? 'reversed'
-                  : 'invalid',
+          payment: {
+            gateway: gateway.name,
+            ticketId: payload.ticketId,
+            occurredAt: new Date(),
+            status:
+              payload.status === 'canceled'
+                ? 'canceled'
+                : payload.status === 'expired'
+                  ? 'expired'
+                  : payload.status === 'reversed'
+                    ? 'reversed'
+                    : 'invalid',
+          },
         } satisfies OrderPaymentFailedEventPayload,
       });
     });

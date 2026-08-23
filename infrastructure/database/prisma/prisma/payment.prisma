@@ -1,3 +1,10 @@
+model PaymentSession {
+  providerId Int @id @default(autoincrement())
+
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
 model AzkivamToken {
   key          String @id @default("default")
   accessToken  String

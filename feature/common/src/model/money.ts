@@ -1,4 +1,4 @@
-import * as z from "zod";
+import * as z from 'zod';
 export class Money {
   private constructor(private readonly _value: number) {}
 
@@ -8,7 +8,7 @@ export class Money {
   }
 
   public get value() {
-    return this.value;
+    return this._value;
   }
 
   static zero() {
@@ -28,6 +28,9 @@ export class Money {
   }
 
   subtract(other: Money) {
+    if (other.value > this._value) {
+      throw new Error('Insufficient money');
+    }
     return new Money(this.value - other.value);
   }
 

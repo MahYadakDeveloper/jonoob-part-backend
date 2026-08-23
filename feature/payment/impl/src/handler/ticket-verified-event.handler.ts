@@ -29,13 +29,11 @@ export class TicketVerifiedEventHandler extends BaseEventHandler<TicketVerifiedE
       // [TODO] delete ticket (for delivery confirmation in the order payment ticket is preserved)
       await gateway.removeTicket({ ticketId: payload.ticketId });
 
-      // [TODO] delete the payment session too
-      await this.repository.delete(payload.providerId);
-
       await this.outbox.save({
         type: OrderPaidEventType,
         payload: {
           payment: {
+            status: 'paid',
             ticketId: payload.ticketId,
             gateway: gateway.name,
             providerId: payload.providerId,

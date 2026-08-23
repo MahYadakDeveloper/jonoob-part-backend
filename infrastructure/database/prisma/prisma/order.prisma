@@ -1,0 +1,5 @@
+model Order {
+  id String @id @default(cuid())
+
+  paymentSession PaymentSession?
+}

@@ -3,25 +3,28 @@ export type PaymentSession = {
   createdAt: Date;
   // expires: x
   orderId: string; // equivalent to :[orderId, reservationId] - prisma: @unique
-};
-// & (
-//   | {
-//       status: 'pending';
-//     }
-//   | {
-//       status: 'failed';
-//       gateway: string;
-//     }
-//   | {
-//       status: 'cancelled';
-//       gateway: string;
-//     }
-//   | {
-//       status: 'paid';
-//       gateway: string;
-//       /**
-//        * Reference Id/Number - Transaction Id/Number
-//        */
-//       transactionId: string;
-//     }
-// );
+} & (
+  | {
+      status: 'created';
+      gateway: string;
+    }
+  | {
+      status: 'failed';
+      gateway: string;
+    }
+  | {
+      status: 'cancelled';
+      gateway: string;
+    }
+  | {
+      status: 'paid';
+      gateway: string;
+      /**
+       * Reference Id/Number - Transaction Id/Number
+       */
+      transactionId: string;
+    }
+  | {
+      status: 'reversed';
+    }
+);
