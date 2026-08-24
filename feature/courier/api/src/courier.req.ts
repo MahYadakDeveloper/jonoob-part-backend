@@ -20,3 +20,7 @@ export type PickupRequest = { orderId: string } & (
       };
     }
 );
+
+export type CancelPickupRequest = {
+  orderId: string;
+};

@@ -99,7 +99,10 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
       // Dispatch event
       await this.outbox.save({
         type: CourierDispatchRequestedEventType,
-        payload: { orderId, occurredAt: new Date() } satisfies CourierDispatchRequestedEventPayload,
+        payload: {
+          orderId,
+          requestedAt: new Date(),
+        } satisfies CourierDispatchRequestedEventPayload,
       });
     });
   }

@@ -59,5 +59,5 @@ export type BundleItem = {
 
 export type Duration = {
   value: number;
-  unit: 'year' | 'month' | 'week';
+  unit: 'year' | 'month' | 'week' | 'hour' | 'minute';
 };

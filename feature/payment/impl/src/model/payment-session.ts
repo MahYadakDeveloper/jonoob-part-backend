@@ -1,12 +1,15 @@
 export type PaymentSession = {
   providerId: number; // prisma: id Int @Id - session Id
   createdAt: Date;
-  // expires: x
+  expiresAt: Date;
   orderId: string; // equivalent to :[orderId, reservationId] - prisma: @unique
 } & (
   | {
       status: 'created';
       gateway: string;
+    }
+  | {
+      status: 'expired';
     }
   | {
       status: 'failed';

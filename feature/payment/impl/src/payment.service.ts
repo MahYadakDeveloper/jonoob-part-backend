@@ -1,4 +1,11 @@
-import { Money, Payment } from '@feature/common';
+import {
+  addDuration,
+  Duration,
+  Money,
+  Payment,
+  SettingToken,
+  type SettingsStore,
+} from '@feature/common';
 import {
   GetPaymentGatewayByOrderIdRequest,
   GetPaymentGatewayByOrderIdResponse,
@@ -12,6 +19,7 @@ import {
 } from '@feature/payment-api';
 import { type WalletApi } from '@feature/wallet-api';
 import { Injectable } from '@nestjs/common';
+import z from 'zod';
 import { PaymentGatewayResolver } from './payment-gateway.resolver';
 import { type PaymentSessionRepository } from './payment-session.repository';
 import { PayRequest } from './payment.req';
@@ -31,14 +39,44 @@ import { PayResponse } from './payment.res';
 
 @Injectable()
 export class PaymentService implements PaymentApi {
+  private static readonly PaymentSettings: SettingToken<{ expiresDuration: Duration }> = {
+    key: 'payment',
+    defaultValue: {
+      expiresDuration: {
+        value: 1,
+        unit: 'hour',
+      },
+    },
+
+    schema: z.object({
+      expiresDuration: z.object({
+        value: z.number().positive(),
+        unit: z.enum(['month', 'year', 'week', 'hour', 'minute']),
+      }),
+    }),
+  };
+
   constructor(
     private readonly wallet: WalletApi,
     private readonly repository: PaymentSessionRepository,
+    private readonly settings: SettingsStore,
     private readonly gateways: PaymentGatewayResolver,
   ) {}
 
-  createPaymentSession(req: PaymentSessionCreationRequest): Promise<{ paymentSessionId: number }> {
-    throw new Error('Method not implemented.');
+  async createPaymentSession(
+    req: PaymentSessionCreationRequest,
+  ): Promise<{ paymentSessionId: number }> {
+    const { expiresDuration } = await this.settings.get(PaymentService.PaymentSettings);
+    const expiresAt = addDuration(new Date(), expiresDuration);
+    const { providerId } = await this.repository.create({
+      orderId: req.orderId,
+      expiresAt,
+      status: 'created',
+    });
+
+    return {
+      paymentSessionId: providerId,
+    };
   }
 
   /**
@@ -55,12 +93,18 @@ export class PaymentService implements PaymentApi {
   ): Promise<GetPaymentGatewayByOrderIdResponse> {
     throw new Error('Method not implemented.');
   }
+
   getTrackingCode(req: { providerId: number }): Promise<{ trackingCode: string }> {
     throw new Error('Method not implemented.');
   }
 
   pay({ providerId, gatewayName }: PayRequest): Promise<PayResponse> {
     const gateway = this.gateways.resolve(gatewayName);
+
+    // [TODO] Update expire duration with the expire duration of individual gateway
+
+    // [TODO] count attempts in (redis) for individual session
+    // if exceeded then throw error
 
     throw new Error('Method not implemented.');
   }

@@ -1,17 +1,47 @@
 export type DeliveryAttemptRequest =
-  | {
-      deliveryId: string;
+  | ({
+      orderId: string;
       result: 'delivered';
       deliveredAt: Date;
-    }
-  | {
+    } & (
+      | {
+          scope: 'inter-city';
+          trackingNumber: string;
+        }
+      | {
+          scope: 'intra-city';
+        }
+    ))
+  | ({
       deliveryId: string;
       result: 'failed';
-      reason:
-        | 'recipient-absent'
-        | 'recipient-unreachable'
-        | 'invalid-address'
-        | 'recipient-refused'
-        | 'other';
       attemptedAt: Date;
-    };
+    } & (
+      | ({
+          scope: 'inter-city';
+          reason: 'invalid-address';
+        } & (
+          | {
+              reason: 'invalid-address';
+            }
+          | {
+              reason: 'other';
+              message: string;
+            }
+        ))
+      | ({
+          scope: 'intra-city';
+        } & (
+          | {
+              reason:
+                | 'recipient-absent'
+                | 'recipient-unreachable'
+                | 'invalid-address'
+                | 'recipient-refused';
+            }
+          | {
+              reason: 'other';
+              message: string;
+            }
+        ))
+    ));

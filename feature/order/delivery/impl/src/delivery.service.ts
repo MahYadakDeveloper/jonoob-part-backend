@@ -1,9 +1,15 @@
-import { type SettingsStore, SettingToken } from '@feature/common';
-import { DeliveryApi, DeliveryAttemptRequest } from '@feature/order-delivery-api';
+import { type OutboxRepository, type SettingsStore } from '@feature/common';
+import {
+  DeliveryApi,
+  DeliveryAttemptRequest,
+  PackageDeliveredEventPayload,
+  PackageDeliveredEventType,
+  PackageDeliveryFailedEventPayload,
+  PackageDeliveryFailedEventType,
+} from '@feature/order-delivery-api';
 import { type LocationApi } from '@feature/order-delivery-location-api';
 import { Injectable } from '@nestjs/common';
-import { z } from 'zod';
-import { DeliveryMethod, DeliveryMethodSchema } from './schema/delivery-method';
+import { DeliveryMethod } from './schema/delivery-method';
 import { DeliverySettingsToken } from './setting/token';
 
 @Injectable()
@@ -11,10 +17,30 @@ export class DeliveryService implements DeliveryApi {
   constructor(
     private readonly settings: SettingsStore,
     private readonly location: LocationApi,
+    private readonly outbox: OutboxRepository,
   ) {}
 
-  reportDeliveryAttempt(request: DeliveryAttemptRequest): Promise<void> {
-    throw new Error('Method not implemented.');
+  /**
+   *
+   */
+  async reportDeliveryAttempt(req: DeliveryAttemptRequest): Promise<void> {
+    if (req.result === 'delivered') {
+      await this.outbox.save({
+        type: PackageDeliveredEventType,
+        payload: {
+          ...req,
+        } satisfies PackageDeliveredEventPayload,
+      });
+
+      return;
+    }
+
+    await this.outbox.save({
+      type: PackageDeliveryFailedEventType,
+      payload: {
+        attempt: req,
+      } satisfies PackageDeliveryFailedEventPayload,
+    });
   }
 
   async setMethods({ methods }: { methods: DeliveryMethod[] }) {

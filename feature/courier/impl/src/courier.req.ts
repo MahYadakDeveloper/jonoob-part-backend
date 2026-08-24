@@ -1,13 +1,13 @@
 export type ConfirmDeliveryRequest =
   | {
-      deliveryId: string;
+      courierId: string;
 
       orderId: string;
       scope: 'intra-city';
       confirmationCode: string;
     }
   | {
-      deliveryId: string;
+      courierId: string;
 
       orderId: string;
       scope: 'inter-city';

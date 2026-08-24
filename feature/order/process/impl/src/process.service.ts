@@ -32,4 +32,6 @@ export class ProcessingService {
       throw new Error('Processed stocks do not match required stocks');
     }
   }
+
+  async cancel({ orderId, reason }: { orderId: string; reason: string }) {}
 }

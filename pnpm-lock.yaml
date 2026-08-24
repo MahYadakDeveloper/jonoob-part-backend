@@ -351,6 +351,9 @@ importers:
       '@feature/order-api':
         specifier: workspace:*
         version: link:../../order/api
+      '@feature/order-delivery-api':
+        specifier: workspace:*
+        version: link:../../order/delivery/api
       '@nestjs/common':
         specifier: ^11.2.1
         version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -640,6 +643,9 @@ importers:
       '@nestjs/common':
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
   feature/pos/api: {}
 

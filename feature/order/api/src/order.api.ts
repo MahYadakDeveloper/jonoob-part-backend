@@ -17,6 +17,8 @@ export interface OrderApi {
     status: OrderStatus;
   }>;
 
+  adminCancelOrder(req: { orderId: string; reason: string }): Promise<void>;
+
   calculateReserveStock(
     items: LineItems<{ productId: string; quantity: number }>,
     products: FindManyProductResponse['products'],

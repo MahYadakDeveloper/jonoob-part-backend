@@ -22,6 +22,7 @@
     "@feature/payment-api": "workspace:*",
     "@feature/payment-gateway-api": "workspace:*",
     "@feature/wallet-api": "workspace:*",
-    "@nestjs/common": "^11.1.28"
+    "@nestjs/common": "^11.1.28",
+    "zod": "^4.4.3"
   }
 }

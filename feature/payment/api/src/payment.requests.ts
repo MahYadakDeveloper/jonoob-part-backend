@@ -15,7 +15,6 @@ export type PlanPaymentRequest =
 
 export interface PaymentSessionCreationRequest {
   orderId: string;
-  customerId: string;
 }
 
 export interface GetPaymentGatewayByOrderIdRequest {
