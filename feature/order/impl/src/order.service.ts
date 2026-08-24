@@ -1,5 +1,6 @@
-import { type CatalogApi } from '@feature/catalog-api';
+import { FindManyProductResponse, type CatalogApi } from '@feature/catalog-api';
 import {
+  InvoiceItem,
   LineItems,
   Money,
   SettingToken,
@@ -8,14 +9,19 @@ import {
   type TransactionManager,
 } from '@feature/common';
 import { Customer, type CustomersApi } from '@feature/customer-api';
-import { Delivery, OrderApi } from '@feature/order-api';
+import {
+  Delivery,
+  OrderApi,
+  OrderCanceledEventType,
+  OrderEventPayload,
+  OrderStatus,
+} from '@feature/order-api';
 import { type PaymentApi } from '@feature/payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
 import { type WalletApi } from '@feature/wallet-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { Order } from './model/order';
 import { OrderCreate, type OrderRepository } from './order.repository';
 
 @Injectable()
@@ -76,6 +82,26 @@ export class OrderService implements OrderApi {
     private readonly outbox: OutboxRepository,
   ) {}
 
+  async getOrderItems({ orderId }: { orderId: string }): Promise<{
+    items: LineItems<InvoiceItem>;
+  }> {
+    const order = await this.repository.find(orderId);
+    if (!order) throw new Error();
+
+    return {
+      items: order.items,
+    };
+  }
+
+  async getOrderStatus({ orderId }: { orderId: string }): Promise<{ status: OrderStatus }> {
+    const order = await this.repository.find(orderId);
+    if (!order) throw new Error();
+
+    return {
+      status: order.status,
+    };
+  }
+
   async getRecipientInformation({ orderId }: { orderId: string }): Promise<{
     customer: { id: string } & Customer;
     delivery: Delivery;
@@ -119,14 +145,7 @@ export class OrderService implements OrderApi {
     };
   }
 
-  async findById({ orderId }: { orderId: string }): Promise<{ order: Order }> {
-    const order = await this.repository.find(orderId);
-    if (!order) throw new Error('Order not found!');
-
-    return { order };
-  }
-
-  findOneByCustomerId({ customerId, orderId }: { customerId: string; orderId: string }) {
+  findByCustomerId({ customerId, orderId }: { customerId: string; orderId: string }) {
     return this.repository.findOrderByCustomerId(customerId, orderId);
   }
 
@@ -159,37 +178,7 @@ export class OrderService implements OrderApi {
     const { customer } = await this.customers.findById({ customerId });
     const { products } = await this.catalog.findMany({ productIds: [...items.keys()] });
 
-    const reserve = new LineItems<{ goodId: string; quantity: number }>((s) => s.goodId);
-
-    try {
-      for (const item of items) {
-        const product = products.getOrThrow(item.productId);
-        if (product.kind === 'leaf') {
-          const alreadyAdded = reserve.get(item.productId);
-          if (alreadyAdded)
-            reserve.set({
-              goodId: product.goodId,
-              quantity: alreadyAdded.quantity + item.quantity,
-            });
-          else reserve.set({ goodId: product.goodId, quantity: item.quantity });
-          continue;
-        }
-
-        for (const bundleItem of product.items) {
-          const alreadyAdded = reserve.get(bundleItem.productId);
-          if (alreadyAdded)
-            reserve.set({
-              goodId: bundleItem.goodId,
-              quantity: alreadyAdded.quantity + bundleItem.quantity * item.quantity,
-            });
-          else
-            reserve.set({
-              goodId: bundleItem.goodId,
-              quantity: bundleItem.quantity * item.quantity,
-            });
-        }
-      }
-    } catch (err) {}
+    const reserve = this.calculateReserveStock(items, products);
 
     await this.tx.run(async () => {
       // Resolve pricing
@@ -276,53 +265,64 @@ export class OrderService implements OrderApi {
 
     if (!order) throw new Error();
 
-    switch (order.status) {
-      case 'settlement':
-        await this.tx.run(async () => {
+    await this.tx.run(async () => {
+      switch (order.status) {
+        case 'settlement':
+          await this.repository.updateOrderToCanceledStatus({
+            ...order,
+            status: 'canceled',
+            canceledAt: new Date(),
+          });
+
+          await this.warehouse.releaseStockByRefId({ referenceId: orderId });
+          break;
+        case 'process':
           await this.repository.updateOrderToCanceledStatus({
             ...order,
             status: 'canceled',
             canceledAt: new Date(),
           });
           await this.payment.cancelPayment({ paymentSessionId: order.paymentSessionId });
-        });
-        break;
-      case 'process':
-      case 'courier-requested':
-        {
-          await this.tx.run(async () => {
-            // update order status
-            await this.repository.updateOrderToCanceledStatus({
-              ...order,
-              status: 'canceled',
-              canceledAt: new Date(),
-            });
-
-            // calculate the cancellation fee and deduct from paid amount
-            // and then charge the customer wallet.
-            const fee = order.cancellationTerms.fee;
-            let refund = Money.zero();
-            if (fee.type === 'fixed')
-              refund = order.summary.grandTotal.subtract(Money.create(fee.amount.value));
-            else {
-              refund = order.summary.grandTotal.subtract(
-                order.summary.grandTotal.multiply(fee.rate),
-              );
-            }
-
-            await this.wallet.deposit({
-              customerId,
-              amount: refund,
-              referenceId: orderId,
-              idempotencyKey: `order-canceled-${orderId}`,
-              reason: 'refund',
-            });
+          await this.warehouse.releaseStockByRefId({ referenceId: orderId });
+          break;
+        case 'courier-requested':
+          // update order status
+          await this.repository.updateOrderToCanceledStatus({
+            ...order,
+            status: 'canceled',
+            canceledAt: new Date(),
           });
-        }
-        break;
-      default:
-        throw new Error('Not cancelable at this stage');
-    }
+
+          // calculate the cancellation fee and deduct from paid amount
+          // and then charge the customer wallet.
+          const fee = order.cancellationTerms.fee;
+          let refund = Money.zero();
+          if (fee.type === 'fixed')
+            refund = order.summary.grandTotal.subtract(Money.create(fee.amount.value));
+          else {
+            refund = order.summary.grandTotal.subtract(order.summary.grandTotal.multiply(fee.rate));
+          }
+
+          await this.wallet.deposit({
+            customerId,
+            amount: refund,
+            referenceId: orderId,
+            idempotencyKey: `order-canceled-${orderId}`,
+            reason: 'refund',
+          });
+
+          break;
+        default:
+          throw new Error('Not cancelable at this stage');
+      }
+      await this.outbox.save({
+        type: OrderCanceledEventType,
+        payload: {
+          orderId,
+          occurredAt: new Date(),
+        } satisfies OrderEventPayload,
+      });
+    });
   }
 
   async setSettings({
@@ -331,5 +331,40 @@ export class OrderService implements OrderApi {
     newSettings: (typeof OrderService.OrderSettings)['defaultValue'];
   }) {
     await this.settings.set(OrderService.OrderSettings, newSettings);
+  }
+
+  calculateReserveStock(
+    items: LineItems<{ productId: string; quantity: number }>,
+    products: FindManyProductResponse['products'],
+  ): LineItems<{ goodId: string; quantity: number }> {
+    const reserve = new LineItems<{ goodId: string; quantity: number }>((s) => s.goodId);
+    for (const item of items) {
+      const product = products.getOrThrow(item.productId);
+      if (product.kind === 'leaf') {
+        const alreadyAdded = reserve.get(item.productId);
+        if (alreadyAdded)
+          reserve.set({
+            goodId: product.goodId,
+            quantity: alreadyAdded.quantity + item.quantity,
+          });
+        else reserve.set({ goodId: product.goodId, quantity: item.quantity });
+        continue;
+      }
+
+      for (const bundleItem of product.items) {
+        const alreadyAdded = reserve.get(bundleItem.productId);
+        if (alreadyAdded)
+          reserve.set({
+            goodId: bundleItem.goodId,
+            quantity: alreadyAdded.quantity + bundleItem.quantity * item.quantity,
+          });
+        else
+          reserve.set({
+            goodId: bundleItem.goodId,
+            quantity: bundleItem.quantity * item.quantity,
+          });
+      }
+    }
+    return reserve;
   }
 }

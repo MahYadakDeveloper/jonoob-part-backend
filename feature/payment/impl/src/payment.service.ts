@@ -37,6 +37,19 @@ export class PaymentService implements PaymentApi {
     private readonly gateways: PaymentGatewayResolver,
   ) {}
 
+  createPaymentSession(req: PaymentSessionCreationRequest): Promise<{ paymentSessionId: number }> {
+    throw new Error('Method not implemented.');
+  }
+
+  /**
+   * [TODO]
+   * Try first see if is the money can be reversed|refunded by the payment|credit gateway provider
+   * if the operation is not available then refund the money to their(customer) wallet
+   */
+  cancelPayment({ paymentSessionId }: { paymentSessionId: number }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
   getPaymentGatewayByOrderId(
     req: GetPaymentGatewayByOrderIdRequest,
   ): Promise<GetPaymentGatewayByOrderIdResponse> {
@@ -51,11 +64,6 @@ export class PaymentService implements PaymentApi {
 
     throw new Error('Method not implemented.');
   }
-
-  async createPaymentSession({
-    orderId,
-    customerId,
-  }: PaymentSessionCreationRequest): Promise<void> {}
 
   async planPayment(req: PlanPaymentRequest): Promise<PlanPaymentResponse> {
     if (req.kind === 'guest')

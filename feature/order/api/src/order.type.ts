@@ -11,35 +11,31 @@ export type Delivery =
       };
     } & Extract<CustomerAddress, { scope: 'inter-city' }>);
 
-export type BaseOrder = {
+export type OrderStatus =
+  | 'recorded'
+  | 'settlement'
+  | 'canceled'
+  | 'process'
+  | 'handed-over-to-courier'
+  | 'courier-requested'
+  | 'delivered';
+
+export type Order = {
   orderId: string;
   customer: { id } & Customer;
   items: LineItems<InvoiceItem>;
   summary: InvoiceSummary;
   delivery: Delivery;
+  payment?: PaymentResult;
+  status:
+    | 'recorded'
+    | 'settlement'
+    | 'canceled'
+    | 'process'
+    | 'handed-over-to-courier'
+    | 'courier-requested'
+    | 'delivered';
 };
-
-export type Order = BaseOrder &
-  (
-    | {
-        status: 'settlement';
-      }
-    | {
-        status: 'canceled';
-        payment: Exclude<PaymentResult, { status: 'paid' }>;
-      }
-    | ({
-        payment: Extract<PaymentResult, { status: 'paid' }>;
-      } & (
-        | {
-            status: 'process';
-          }
-        | {
-            status: 'in-delivery' | 'delivered';
-            deliveryConfirmationCode: string;
-          }
-      ))
-  );
 
 export type PaymentResult =
   | {

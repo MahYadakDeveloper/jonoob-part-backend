@@ -1,4 +1,4 @@
-import { LineItemNotFoundError } from "../errors/line-item-not-found.error";
+import { LineItemNotFoundError } from '../errors/line-item-not-found.error';
 
 export class LineItems<T> implements Iterable<T> {
   private readonly items = new Map<string, T>();
@@ -42,10 +42,7 @@ export class LineItems<T> implements Iterable<T> {
     return this.items.has(key);
   }
 
-  transform<U>(
-    fn: (item: T) => U,
-    keySelector: (item: U) => string,
-  ): LineItems<U> {
+  transform<U>(fn: (item: T) => U, keySelector: (item: U) => string): LineItems<U> {
     const result = new LineItems<U>(keySelector);
 
     for (const item of this) {
@@ -115,5 +112,23 @@ export class LineItems<T> implements Iterable<T> {
 
   [Symbol.iterator](): Iterator<T> {
     return this.items.values();
+  }
+
+  equals(other: LineItems<T>, itemEquals: (a: T, b: T) => boolean = Object.is): boolean {
+    if (this.size !== other.size) {
+      return false;
+    }
+
+    for (const [key, item] of this.items) {
+      if (!other.has(key)) {
+        return false;
+      }
+
+      if (!itemEquals(item, other.getOrThrow(key))) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

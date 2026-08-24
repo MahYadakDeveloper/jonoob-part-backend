@@ -33,6 +33,10 @@ export interface StockReleasingRequest {
   items: LineItems<ItemType>;
 }
 
+export interface StockReleasingByRefIdRequest {
+  referenceId: string;
+}
+
 export interface ReceiveReturnedRequest {
   returnId: string;
   items: LineItems<ItemType>;

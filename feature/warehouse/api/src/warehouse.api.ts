@@ -9,6 +9,7 @@ import {
   GoodsReceptionRequest,
   ReceiveReturnedRequest,
   StockExistenceRequest,
+  StockReleasingByRefIdRequest,
   StockReleasingRequest,
   StockReservingRequest,
   StocksDecreaseRequest,
@@ -91,6 +92,7 @@ export interface WarehouseApi {
    * reserved stock.
    */
   releaseStock(req: StockReleasingRequest): Promise<void>;
+  releaseStockByRefId(req: StockReleasingByRefIdRequest): Promise<void>;
 
   increaseStocks(req: StocksIncreaseRequest): Promise<void>;
   decreaseStocks(req: StocksDecreaseRequest): Promise<void>;

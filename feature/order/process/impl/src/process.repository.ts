@@ -1,3 +1,5 @@
+import { LineItems } from '@feature/common';
+
 type ProcessingOrder = {
   orderId: string;
   queuedAt: Date;
@@ -6,5 +8,5 @@ type ProcessingOrder = {
 export interface ProcessingOrderRepository {
   enqueue(orderId: string): Promise<void>;
   remove(orderId: string): Promise<void>;
-  getNext(): Promise<ProcessingOrder | null>;
+  listReadyForProcessing(): Promise<LineItems<ProcessingOrder>>;
 }
