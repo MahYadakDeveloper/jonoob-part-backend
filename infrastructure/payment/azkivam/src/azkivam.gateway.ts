@@ -45,7 +45,6 @@ export class AzkivamGateway implements PaymentGateway {
     private readonly token: PrismaAzkivamTokenRepository,
     private readonly tickets: PrismaAzkivamTicketRepository,
     private readonly http: HttpService,
-    private readonly order: OrderApi,
     @Inject(azkivamConfig.KEY)
     private readonly azkivam: ConfigType<typeof azkivamConfig>,
     @Inject(appConfig.KEY)
@@ -67,11 +66,12 @@ export class AzkivamGateway implements PaymentGateway {
    *
    */
   async createPaymentTicket({
-    orderId,
     providerId,
+    customerContact,
+    purchasedItems,
+    summary,
   }: CreatePaymentTicketRequest): Promise<CreatePaymentTicketResponse> {
-    const { order } = await this.order.findById({ orderId });
-    const items = order.items.toArray().map<CreateTicketRequest['items']['0']>(
+    const items = purchasedItems.toArray().map<CreateTicketRequest['items']['0']>(
       (item) => ({
         name: item.description,
         count: item.quantity,
@@ -89,8 +89,8 @@ export class AzkivamGateway implements PaymentGateway {
     const callback = `${this.app.apiUrl}/payment/azkivam/callback?providerId=${providerId}`;
 
     const data: CreateTicketRequest = {
-      amount: order.summary.grandTotal.value,
-      mobile_number: order.customer.phone,
+      amount: summary.grandTotal.value,
+      mobile_number: customerContact.phone,
       provider_id: providerId,
       redirect_uri: callback,
       fallback_uri: callback,
@@ -106,7 +106,7 @@ export class AzkivamGateway implements PaymentGateway {
     });
 
     return {
-      paymentUri: res.data.result.payment_uri,
+      paymentUrl: res.data.result.payment_uri,
     };
   }
 

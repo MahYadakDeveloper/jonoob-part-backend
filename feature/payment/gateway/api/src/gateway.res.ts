@@ -1,11 +1,15 @@
-export type CreatePaymentTicketResponse = { paymentUri: string };
+export type CreatePaymentTicketResponse = { paymentUrl: string };
 export type VerifyPaymentTicketResponse = {
   status: TicketStatus;
 };
 
+export type GetPaymentTicketIdResponse = {
+  ticketId: string;
+};
+
 export type TicketStatus =
   | 'verified'
-  | 'failure'
+  | 'failed'
   | 'verified-before'
   | 'canceled'
   | 'expired'

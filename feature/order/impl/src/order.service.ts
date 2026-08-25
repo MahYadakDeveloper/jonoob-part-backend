@@ -1,6 +1,7 @@
 import { FindManyProductResponse, type CatalogApi } from '@feature/catalog-api';
 import {
   InvoiceItem,
+  InvoiceSummary,
   LineItems,
   Money,
   SettingToken,
@@ -23,22 +24,12 @@ import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { OrderCreate, type OrderRepository } from './order.repository';
+import { CancellationFee } from './order.type';
 
 @Injectable()
 export class OrderService implements OrderApi {
   static readonly OrderSettings: SettingToken<{
-    cancellationFee:
-      | {
-          type: 'fixed';
-          amount: {
-            value: number;
-            unit: 'toman';
-          };
-        }
-      | {
-          type: 'rate';
-          rate: number;
-        };
+    cancellationFee: CancellationFee;
   }> = {
     key: 'order-settings',
 
@@ -81,6 +72,39 @@ export class OrderService implements OrderApi {
     private readonly settings: SettingsStore,
     private readonly outbox: OutboxRepository,
   ) {}
+
+  async getOrderSummary({ orderId }: { orderId: any }): Promise<{
+    summary: InvoiceSummary;
+  }> {
+    const order = await this.repository.find(orderId);
+    if (!order) throw new Error();
+    return {
+      summary: order.summary,
+    };
+  }
+
+  async adminCancelOrder({ orderId }: { orderId: string; reason: string }): Promise<void> {
+    const order = await this.repository.find(orderId);
+
+    if (!order) throw new Error();
+
+    if (order?.status !== 'process')
+      throw new Error(
+        `Only at process stage can be canceled, the current stage is ${order?.status}`,
+      );
+
+    await this.tx.run(async () => {
+      const { refundedTo } = await this.payment.refund({
+        paymentSessionId: order.paymentSessionId,
+      });
+
+      await this.repository.updateOrderToCanceledByAdminStatus({
+        ...order,
+        status: 'canceled_by_admin',
+        refundedTo,
+      });
+    });
+  }
 
   async getOrderItems({ orderId }: { orderId: string }): Promise<{
     items: LineItems<InvoiceItem>;
@@ -235,7 +259,6 @@ export class OrderService implements OrderApi {
 
       const { paymentSessionId } = await this.payment.createPaymentSession({
         orderId,
-        customerId,
       });
 
       await this.repository.updateOrderToSettlementStatus({
@@ -277,21 +300,19 @@ export class OrderService implements OrderApi {
           await this.warehouse.releaseStockByRefId({ referenceId: orderId });
           break;
         case 'process':
+          const { refundedTo } = await this.payment.refund({
+            paymentSessionId: order.paymentSessionId,
+          });
           await this.repository.updateOrderToCanceledStatus({
             ...order,
             status: 'canceled',
+            refundedTo,
             canceledAt: new Date(),
           });
-          await this.payment.cancelPayment({ paymentSessionId: order.paymentSessionId });
           await this.warehouse.releaseStockByRefId({ referenceId: orderId });
           break;
         case 'courier-requested':
           // update order status
-          await this.repository.updateOrderToCanceledStatus({
-            ...order,
-            status: 'canceled',
-            canceledAt: new Date(),
-          });
 
           // calculate the cancellation fee and deduct from paid amount
           // and then charge the customer wallet.
@@ -309,6 +330,13 @@ export class OrderService implements OrderApi {
             referenceId: orderId,
             idempotencyKey: `order-canceled-${orderId}`,
             reason: 'refund',
+          });
+
+          await this.repository.updateOrderToCanceledStatus({
+            ...order,
+            status: 'canceled',
+            refundedTo: 'wallet',
+            canceledAt: new Date(),
           });
 
           break;

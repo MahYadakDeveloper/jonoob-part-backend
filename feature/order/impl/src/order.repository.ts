@@ -18,4 +18,7 @@ export interface OrderRepository {
 
   updateOrderToSettlementStatus(order: Extract<Order, { status: 'settlement' }>): Promise<void>;
   updateOrderToCanceledStatus(order: Extract<Order, { status: 'canceled' }>): Promise<void>;
+  updateOrderToCanceledByAdminStatus(
+    order: Extract<Order, { status: 'canceled_by_admin' }>,
+  ): Promise<void>;
 }

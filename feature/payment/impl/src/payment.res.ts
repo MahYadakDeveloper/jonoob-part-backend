@@ -1,3 +1,3 @@
 export interface PayResponse {
-  payment_uri: string;
+  paymentUrl: string;
 }

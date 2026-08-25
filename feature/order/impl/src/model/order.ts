@@ -54,9 +54,15 @@ export type Order = BaseOrder &
           }
         | (
             | {
+                status: 'canceled_by_admin';
+                delivery: Delivery;
+                refundedTo: 'wallet' | 'payment_reversed';
+              }
+            | {
                 status: 'canceled';
                 delivery: Delivery;
                 canceledAt: Date;
+                refundedTo?: 'wallet' | 'payment_reversed';
               }
             | (
                 | {

@@ -12,5 +12,9 @@ export interface PaymentApi {
     req: GetPaymentGatewayByOrderIdRequest,
   ): Promise<GetPaymentGatewayByOrderIdResponse>;
   getTrackingCode(req: { providerId: number }): Promise<{ trackingCode: string }>;
-  cancelPayment({ paymentSessionId }: { paymentSessionId: number }): Promise<void>;
+  refund({
+    paymentSessionId,
+  }: {
+    paymentSessionId: number;
+  }): Promise<{ refundedTo: 'wallet' | 'payment_reversed' }>;
 }

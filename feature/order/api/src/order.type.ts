@@ -15,6 +15,7 @@ export type OrderStatus =
   | 'recorded'
   | 'settlement'
   | 'canceled'
+  | 'canceled_by_admin'
   | 'process'
   | 'handed-over-to-courier'
   | 'courier-requested'
@@ -27,14 +28,7 @@ export type Order = {
   summary: InvoiceSummary;
   delivery: Delivery;
   payment?: PaymentResult;
-  status:
-    | 'recorded'
-    | 'settlement'
-    | 'canceled'
-    | 'process'
-    | 'handed-over-to-courier'
-    | 'courier-requested'
-    | 'delivered';
+  status: OrderStatus;
 };
 
 export type PaymentResult =

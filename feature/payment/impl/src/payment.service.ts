@@ -4,8 +4,11 @@ import {
   Money,
   Payment,
   SettingToken,
+  type JobScheduler,
   type SettingsStore,
+  type TransactionManager,
 } from '@feature/common';
+import { type OrderApi } from '@feature/order-api';
 import {
   GetPaymentGatewayByOrderIdRequest,
   GetPaymentGatewayByOrderIdResponse,
@@ -39,17 +42,17 @@ import { PayResponse } from './payment.res';
 
 @Injectable()
 export class PaymentService implements PaymentApi {
-  private static readonly PaymentSettings: SettingToken<{ expiresDuration: Duration }> = {
+  private static readonly PaymentSettings: SettingToken<{ expiry: Duration }> = {
     key: 'payment',
     defaultValue: {
-      expiresDuration: {
-        value: 1,
-        unit: 'hour',
+      expiry: {
+        value: 30,
+        unit: 'minute',
       },
     },
 
     schema: z.object({
-      expiresDuration: z.object({
+      expiry: z.object({
         value: z.number().positive(),
         unit: z.enum(['month', 'year', 'week', 'hour', 'minute']),
       }),
@@ -61,17 +64,22 @@ export class PaymentService implements PaymentApi {
     private readonly repository: PaymentSessionRepository,
     private readonly settings: SettingsStore,
     private readonly gateways: PaymentGatewayResolver,
+    private readonly order: OrderApi,
+    private readonly tx: TransactionManager,
+    private readonly job: JobScheduler,
   ) {}
 
   async createPaymentSession(
     req: PaymentSessionCreationRequest,
   ): Promise<{ paymentSessionId: number }> {
-    const { expiresDuration } = await this.settings.get(PaymentService.PaymentSettings);
-    const expiresAt = addDuration(new Date(), expiresDuration);
+    const { expiry } = await this.settings.get(PaymentService.PaymentSettings);
+    const expiresAt = addDuration(new Date(), expiry);
+
+    const handle = await this.job.schedule(expiresAt, async () => {});
+
     const { providerId } = await this.repository.create({
       orderId: req.orderId,
-      expiresAt,
-      status: 'created',
+      expiryJob: handle,
     });
 
     return {
@@ -84,29 +92,108 @@ export class PaymentService implements PaymentApi {
    * Try first see if is the money can be reversed|refunded by the payment|credit gateway provider
    * if the operation is not available then refund the money to their(customer) wallet
    */
-  cancelPayment({ paymentSessionId }: { paymentSessionId: number }): Promise<void> {
-    throw new Error('Method not implemented.');
+  async refund({
+    paymentSessionId,
+  }: {
+    paymentSessionId: number;
+  }): Promise<{ refundedTo: 'wallet' | 'payment_reversed' }> {
+    const session = await this.repository.findByProviderId(paymentSessionId);
+    if (!session?.gateway) throw new Error();
+
+    if (session.gateway.status !== 'paid') throw new Error();
+
+    const gateway = this.gateways.resolve(session.gateway.name);
+
+    try {
+      await gateway.refundPaymentTicket({
+        providerId: paymentSessionId,
+        ticketId: session.gateway.transactionId,
+      });
+
+      return {
+        refundedTo: 'payment_reversed',
+      };
+    } catch (err) {
+      const { summary } = await this.order.getOrderSummary({ orderId: session.orderId });
+      const { customer } = await this.order.getRecipientInformation({ orderId: session.orderId });
+      await this.wallet.deposit({
+        amount: summary.grandTotal,
+        customerId: customer.id,
+        reason: 'refund',
+        referenceId: session.orderId,
+        idempotencyKey: `order-refunded:${session.orderId}`,
+      });
+
+      return {
+        refundedTo: 'wallet',
+      };
+    }
   }
 
-  getPaymentGatewayByOrderId(
-    req: GetPaymentGatewayByOrderIdRequest,
-  ): Promise<GetPaymentGatewayByOrderIdResponse> {
-    throw new Error('Method not implemented.');
+  async getPaymentGatewayByOrderId({
+    orderId,
+  }: GetPaymentGatewayByOrderIdRequest): Promise<GetPaymentGatewayByOrderIdResponse> {
+    const session = await this.repository.findByOrderId(orderId);
+    if (!session?.gateway) throw new Error();
+
+    return { gateway: session.gateway.name };
   }
 
-  getTrackingCode(req: { providerId: number }): Promise<{ trackingCode: string }> {
-    throw new Error('Method not implemented.');
+  async getTrackingCode({ providerId }: { providerId: number }): Promise<{ trackingCode: string }> {
+    const session = await this.repository.findByProviderId(providerId);
+
+    if (!session?.gateway) throw new Error();
+
+    const gateway = this.gateways.resolve(session.gateway.name);
+    const { ticketId } = await gateway.getPaymentTicketId({ providerId });
+
+    return {
+      trackingCode: ticketId,
+    };
   }
 
-  pay({ providerId, gatewayName }: PayRequest): Promise<PayResponse> {
+  async pay({ providerId, gatewayName, useWallet }: PayRequest): Promise<PayResponse> {
+    const session = await this.repository.findByProviderId(providerId);
+    if (!session) throw new Error();
+    if (session.gateway?.status === 'paid') throw new Error();
+
     const gateway = this.gateways.resolve(gatewayName);
 
-    // [TODO] Update expire duration with the expire duration of individual gateway
+    const expiryExecutionDate = await this.job.getExecutionDate(session.expiryJob.id);
+    const expiresAt = new Date();
+    expiresAt.setMinutes(
+      expiresAt.getMinutes() + gateway.expiryInMinutes + gateway.verificationDeadlineInMinutes,
+    );
 
-    // [TODO] count attempts in (redis) for individual session
-    // if exceeded then throw error
+    // [NOTE] The expired state means even if money paid they would refunded by gateway provider
+    if (expiryExecutionDate < expiresAt) await this.job.update(session.expiryJob.id, expiresAt);
 
-    throw new Error('Method not implemented.');
+    if (!gateway.supportsPartialPayment && useWallet) throw new Error();
+
+    const { customer: customerContact } = await this.order.getRecipientInformation({
+      orderId: session.orderId,
+    });
+    const { items: purchasedItems } = await this.order.getOrderItems({ orderId: session.orderId });
+    const { summary } = await this.order.getOrderSummary({ orderId: session.orderId });
+
+    return await this.tx.run(async () => {
+      const { paymentUrl } = await gateway.createPaymentTicket({
+        providerId,
+        useWallet,
+        customerContact,
+        purchasedItems,
+        summary,
+      });
+
+      await this.repository.updateGatewayStatus({
+        name: gateway.name,
+        status: 'created',
+      });
+
+      return {
+        paymentUrl,
+      };
+    });
   }
 
   async planPayment(req: PlanPaymentRequest): Promise<PlanPaymentResponse> {

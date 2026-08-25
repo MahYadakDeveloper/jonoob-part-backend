@@ -1,33 +1,32 @@
+import { JobHandle } from '@feature/common';
+
 export type PaymentSession = {
   providerId: number; // prisma: id Int @Id - session Id
   createdAt: Date;
-  expiresAt: Date;
+  expiryJob: JobHandle;
   orderId: string; // equivalent to :[orderId, reservationId] - prisma: @unique
-} & (
-  | {
-      status: 'created';
-      gateway: string;
-    }
-  | {
-      status: 'expired';
-    }
-  | {
-      status: 'failed';
-      gateway: string;
-    }
-  | {
-      status: 'cancelled';
-      gateway: string;
-    }
-  | {
-      status: 'paid';
-      gateway: string;
-      /**
-       * Reference Id/Number - Transaction Id/Number
-       */
-      transactionId: string;
-    }
-  | {
-      status: 'reversed';
-    }
-);
+  refunded?:
+    | {
+        destination: 'wallet';
+      }
+    | {
+        destination: 'gateway_provider';
+        name: string;
+      };
+} & {
+  gateway?:
+    | {
+        name: string;
+
+        // [NOTE] The expired status means even if money paid they would refunded by gateway provider
+        status: 'created' | 'expired' | 'failed' | 'canceled';
+      }
+    | {
+        name: string;
+        status: 'paid';
+        /**
+         * Reference Id/Number - Transaction Id/Number
+         */
+        transactionId: string;
+      };
+};

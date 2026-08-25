@@ -1,5 +1,5 @@
 import { FindManyProductResponse } from '@feature/catalog-api';
-import { InvoiceItem, LineItems } from '@feature/common';
+import { InvoiceItem, InvoiceSummary, LineItems } from '@feature/common';
 import { Customer } from '@feature/customer-api';
 import { Delivery, OrderStatus } from './order.type';
 
@@ -11,6 +11,7 @@ export interface OrderApi {
   getRecipientInformation(req: {
     orderId: string;
   }): Promise<{ customer: { id: string } & Customer; delivery: Delivery }>;
+  getOrderSummary(req: { orderId: string }): Promise<{ summary: InvoiceSummary }>;
 
   getOrderItems({ orderId }: { orderId: string }): Promise<{ items: LineItems<InvoiceItem> }>;
   getOrderStatus({ orderId }: { orderId: string }): Promise<{
