@@ -21,7 +21,7 @@
     "@feature/catalog-api": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/discount-api": "workspace:*",
-    "@feature/payment-api": "workspace:*",
+    "@feature/pos-payment-api": "workspace:*",
     "@feature/pos-sale-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
     "@feature/tax-api": "workspace:*",

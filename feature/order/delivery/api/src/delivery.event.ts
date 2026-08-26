@@ -3,6 +3,7 @@ import { DeliveryAttemptRequest } from './delivery.req';
 export const CourierDispatchRequestedEventType = 'delivery:courier-dispatch-requested';
 export const PackageDeliveredEventType = 'delivery:package-delivered';
 export const PackageDeliveryFailedEventType = 'delivery:package-delivery-failed';
+export const PackageHandedOverToCourierEventType = 'courier:package-handed-over-to-courier';
 
 export type CourierDispatchRequestedEventPayload = {
   orderId: string;
@@ -24,4 +25,10 @@ export type PackageDeliveredEventPayload =
 
 export type PackageDeliveryFailedEventPayload = {
   attempt: DeliveryAttemptRequest;
+};
+
+export type PackageHandedOverToCourierEventPayload = {
+  courierId: string;
+  orderId: string;
+  handedOverAt: Date;
 };

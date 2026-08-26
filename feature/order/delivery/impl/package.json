@@ -18,7 +18,7 @@
   "private": true,
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@feature/courier-api": "workspace:*",
+    "@feature/order-delivery-courier-api": "workspace:*",
     "@feature/media-api": "workspace:*",
     "@feature/notification-api": "workspace:*",
     "@feature/order-api": "workspace:*",

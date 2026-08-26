@@ -1,23 +1,9 @@
 import { InvoiceItem, InvoiceSummary, LineItems } from '@feature/common';
-import { Customer, CustomerAddress } from '@feature/customer-api';
-
-type IntraCityDelivery = {
-  scope: 'intra-city';
-  carrier: 'courier';
-} & Omit<Extract<CustomerAddress, { scope: 'intra-city' }>, 'scope'>;
-
-type InterCityDelivery = {
-  scope: 'inter-city';
-  carrier: {
-    provider: string;
-  };
-} & Omit<Extract<CustomerAddress, { scope: 'inter-city' }>, 'scope'>;
-
-export type Delivery = InterCityDelivery | IntraCityDelivery;
+import { Delivery } from '@feature/order-delivery-api';
 
 export type BaseOrder = {
   id: string;
-  customer: { id: string } & Customer;
+  customerId: string;
   items: LineItems<InvoiceItem>;
   cancellationTerms: {
     fee:
@@ -40,59 +26,29 @@ export type Order = BaseOrder &
   (
     | {
         status: 'recorded';
-
         recordedAt: Date;
-        delivery: Delivery;
+        delivery: Extract<Delivery, { status: 'created' }>;
       }
-    | ({
-        paymentSessionId: number;
-        recordedAt: Date;
-      } & (
-        | {
-            status: 'settlement';
-            delivery: Delivery;
-          }
-        | (
-            | {
-                status: 'canceled_by_admin';
-                delivery: Delivery;
-                refundedTo: 'wallet' | 'payment_reversed';
-              }
-            | {
-                status: 'canceled';
-                delivery: Delivery;
-                canceledAt: Date;
-                refundedTo?: 'wallet' | 'payment_reversed';
-              }
-            | (
-                | {
-                    status: 'process' | 'courier-requested';
-                    delivery: Delivery;
-                    processedAt: Date;
-                  }
-                | (
-                    | {
-                        status: 'handed-over-to-courier';
-                        handedOverAt: Date;
-                        delivery:
-                          | (IntraCityDelivery & {
-                              deliveryConfirmationCode: string;
-                            })
-                          | InterCityDelivery;
-                      }
-                    | {
-                        status: 'delivered';
-                        deliveredAt: Date;
-                        delivery:
-                          | (IntraCityDelivery & {
-                              deliveryConfirmationCode: string;
-                            })
-                          | (InterCityDelivery & {
-                              trackingNumber: string;
-                            });
-                      }
-                  )
-              )
-          )
-      ))
+    | {
+        status: 'settlement';
+        payment: Extract<Payment, { status: 'pending' }>;
+        delivery: Extract<Delivery, { status: 'created' }>;
+      }
+    | {
+        status: 'admin-canceled';
+        canceledAt: Date;
+        delivery: Exclude<Delivery, { status: 'delivered' | 'handed-over-to-courier' }>;
+        payment: Extract<Payment, { status: 'refunded' }>;
+      }
+    | {
+        status: 'canceled';
+        delivery: Exclude<Delivery, { status: 'delivered' | 'handed-over-to-courier' }>;
+        canceledAt: Date;
+        payment: Extract<Payment, { status: 'refunded' }>;
+      }
+    | {
+        status: 'processed';
+        delivery: Delivery;
+        payment: Extract<Payment, { status: 'paid' }>;
+      }
   );

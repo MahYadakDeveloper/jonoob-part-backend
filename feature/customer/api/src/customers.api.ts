@@ -1,5 +1,4 @@
 import {
-  AddAddressForCustomerRequest,
   FindCustomerByIdRequest,
   GetAllCustomerAddressesRequest,
   GetCustomerAddressRequest,
@@ -18,6 +17,11 @@ export interface CustomersApi {
   getAllCustomerAddresses(
     req: GetAllCustomerAddressesRequest,
   ): Promise<GetAllCustomerAddressesResponse>;
-  addAddressForCustomer(req: AddAddressForCustomerRequest): Promise<void>;
+  /**
+   * [TODO]
+   * Instead of exposing api method for adding address
+   * the client can use api endpoint to directly add one
+   */
+  // addAddressForCustomer(req: AddAddressForCustomerRequest): Promise<void>;
   removeCustomerAddress(req: RemoveCustomerAddressRequest): Promise<void>;
 }

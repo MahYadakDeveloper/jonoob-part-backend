@@ -16,29 +16,6 @@ export type ProductLeafKind = { kind: 'leaf' };
 export type ProductBundleKind = { kind: 'bundle' };
 export type ProductKind = ProductBundleKind | ProductLeafKind;
 
-export type PaymentMethod = 'posTerminal' | 'onlinePaymentGateway';
-
-export type Payment =
-  | {
-      kind: 'wallet';
-      walletAmount: Money;
-    }
-  | {
-      kind: 'external';
-      external: {
-        method: PaymentMethod;
-        amount: Money;
-      };
-    }
-  | {
-      kind: 'mixed';
-      walletAmount: Money;
-      external: {
-        method: PaymentMethod;
-        amount: Money;
-      };
-    };
-
 export type RawProduct = LeafRawProduct | BundleRawProduct;
 
 export type LeafRawProduct = ProductLeafKind & {

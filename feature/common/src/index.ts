@@ -13,4 +13,5 @@ export * from './transaction/transaction-context';
 export * from './transaction/transaction-manager';
 export * from './types';
 export * from './utils';
+export * from './customer.type';
 import './extensions';

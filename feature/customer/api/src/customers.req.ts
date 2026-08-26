@@ -1,9 +1,7 @@
-import { CustomerAddress } from './customer.type';
-
-export interface AddAddressForCustomerRequest {
-  customerId: string;
-  address: CustomerAddress;
-}
+// export interface AddAddressForCustomerRequest {
+//   customerId: string;
+//   address: CustomerAddress;
+// }
 
 export interface GetCustomerAddressRequest {
   customerId: string;

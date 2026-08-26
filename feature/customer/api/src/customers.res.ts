@@ -1,5 +1,4 @@
-import { LineItems } from '@feature/common';
-import { Customer, CustomerAddress } from './customer.type';
+import { Customer, CustomerAddress, LineItems } from '@feature/common';
 
 export interface GetAllCustomerAddressesResponse {
   addresses: LineItems<CustomerAddress>;
