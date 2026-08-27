@@ -9,21 +9,22 @@ import {
   type SettingsStore,
   type TransactionManager,
 } from '@feature/common';
-import { Customer, type CustomersApi } from '@feature/customer-api';
+import { type CustomersApi } from '@feature/customer-api';
 import {
-  Delivery,
   OrderApi,
   OrderCanceledEventType,
   OrderEventPayload,
+  OrderRecordedEventType,
   OrderStatus,
 } from '@feature/order-api';
-import { type PaymentApi } from '@feature/payment-api';
+import { Delivery } from '@feature/order-delivery-api';
+import { type FulfillmentApi } from '@feature/order-fulfillment-api';
+import { type PaymentApi } from '@feature/order-payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
-import { type WalletApi } from '@feature/wallet-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { OrderCreate, type OrderRepository } from './order.repository';
+import { type OrderRepository } from './order.repository';
 import { CancellationFee } from './order.type';
 
 @Injectable()
@@ -65,9 +66,9 @@ export class OrderService implements OrderApi {
     private readonly customers: CustomersApi,
     private readonly catalog: CatalogApi,
     private readonly warehouse: WarehouseApi,
-    private readonly wallet: WalletApi,
     private readonly payment: PaymentApi,
     private readonly pricing: PricingApi,
+    private readonly fulfillment: FulfillmentApi,
     private readonly tx: TransactionManager,
     private readonly settings: SettingsStore,
     private readonly outbox: OutboxRepository,
@@ -88,20 +89,23 @@ export class OrderService implements OrderApi {
 
     if (!order) throw new Error();
 
-    if (order?.status !== 'process')
+    if (order.status !== 'process')
       throw new Error(
         `Only at process stage can be canceled, the current stage is ${order?.status}`,
       );
 
     await this.tx.run(async () => {
-      const { refundedTo } = await this.payment.refund({
-        paymentSessionId: order.paymentSessionId,
+      const { payment } = await this.payment.refund({
+        sessionId: order.payment.sessionId,
       });
 
-      await this.repository.updateOrderToCanceledByAdminStatus({
+      const { fulfillment } = await this.fulfillment.cancel({ orderId: order.id });
+
+      await this.repository.updateOrderStatusTo<'canceled_by_merchant'>({
         ...order,
-        status: 'canceled_by_admin',
-        refundedTo,
+        status: 'canceled_by_merchant',
+        payment,
+        fulfillment,
       });
     });
   }
@@ -126,20 +130,6 @@ export class OrderService implements OrderApi {
     };
   }
 
-  async getRecipientInformation({ orderId }: { orderId: string }): Promise<{
-    customer: { id: string } & Customer;
-    delivery: Delivery;
-  }> {
-    const order = await this.repository.find(orderId);
-
-    if (!order) throw new Error('Order not found');
-
-    return {
-      customer: order.customer,
-      delivery: order.delivery,
-    };
-  }
-
   async getDeliveryConfirmationCodeOfHandedPackageOver({
     orderId,
   }: {
@@ -148,24 +138,12 @@ export class OrderService implements OrderApi {
     const order = await this.repository.find(orderId);
     if (!order) throw new Error();
 
-    if (order.status !== 'handed-over-to-courier' && order.status !== 'delivered')
-      throw new Error();
+    if (order.status !== 'out_for_delivery' && order.status !== 'delivered') throw new Error();
 
     if (order.delivery.scope !== 'intra-city') throw new Error('');
 
     return {
       code: order.delivery.deliveryConfirmationCode,
-    };
-  }
-
-  async getDeliveryAddress({ orderId }: { orderId: string }): Promise<{
-    delivery: Delivery;
-  }> {
-    const order = await this.repository.find(orderId);
-    if (!order) throw new Error();
-
-    return {
-      delivery: order.delivery,
     };
   }
 
@@ -194,10 +172,11 @@ export class OrderService implements OrderApi {
   }: {
     customerId: string;
     items: LineItems<{ productId: string; quantity: number }>;
-    delivery: Delivery;
+    delivery: Extract<Delivery, { status: 'initiated' }>;
   }) {
-    const orderInPaymentStatus = await this.repository.findWaitingToSettleOrders(customerId);
-    if (orderInPaymentStatus.size) throw new Error(`Customer has none active none settled order`);
+    // Check single payment pending order
+    const paymentPendingOrders = await this.repository.getPaymentPendingOrders(customerId);
+    if (paymentPendingOrders.size) throw new Error(`Customer has none active none settled order`);
 
     const { customer } = await this.customers.findById({ customerId });
     const { products } = await this.catalog.findMany({ productIds: [...items.keys()] });
@@ -237,42 +216,26 @@ export class OrderService implements OrderApi {
       });
 
       const { cancellationFee } = await this.settings.get(OrderService.OrderSettings);
-      const order = {
-        status: 'recorded',
+
+      const orderId = await this.repository.create({
+        status: 'settlement',
         recordedAt: new Date(),
-        customer: {
-          id: customerId,
-          ...customer,
-        },
+        customerId,
         items: pricedInvoice.items,
         delivery,
         cancellationTerms: {
           fee: cancellationFee,
         },
         summary: pricedInvoice.summary,
-      } satisfies OrderCreate;
-
-      const orderId = await this.repository.create(order);
+      });
 
       // Reserve stocks
       await this.warehouse.reserveStock({ referenceId: orderId, items: reserve });
 
-      const { paymentSessionId } = await this.payment.createPaymentSession({
-        orderId,
+      await this.outbox.save({
+        type: OrderRecordedEventType,
+        payload: { orderId, occurredAt: new Date() } satisfies OrderEventPayload,
       });
-
-      await this.repository.updateOrderToSettlementStatus({
-        id: orderId,
-        ...order,
-        status: 'settlement',
-        paymentSessionId,
-      });
-
-      // [TODO]
-      // await this.outbox.save({
-      //   type: OrderRecordedEventType,
-      //   payload: { orderId, occurredAt: new Date() } satisfies OrderEventPayload,
-      // });
     });
 
     // [NOTE] no return, just redirect the customer to settlement page

@@ -1,4 +1,4 @@
-import { Customer, CustomerAddress } from '@feature/common';
+import { CustomerAddress, CustomerContact } from '@feature/common';
 
 export type IntraCityDelivery = Extract<CustomerAddress, { scope: 'intra-city' }>;
 
@@ -8,9 +8,13 @@ export type InterCityDelivery = {
 
 export type Delivery = {
   recipient: {
-    customerContact: Customer;
+    customerContact: CustomerContact;
   } & (InterCityDelivery | IntraCityDelivery);
 } & (
+  | {
+      status: 'initiated';
+      initiatedAt: Date;
+    }
   | {
       status: 'courier-requested';
       requestedAt: Date;

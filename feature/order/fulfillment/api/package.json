@@ -1,5 +1,5 @@
 {
-  "name": "@feature/order-process",
+  "name": "@feature/order-fulfillment-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,10 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/catalog-api": "workspace:*",
-    "@feature/common": "workspace:*",
-    "@feature/order-api": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "^11.2.1"
+    "@feature/common": "workspace:*"
   }
 }

@@ -1,7 +1,7 @@
-import { UseWallet } from '@feature/payment-api';
+import { WalletUsage } from '@feature/order-payment-api';
 
 export interface PayRequest {
   providerId: number; // sessionId
-  gatewayName: string;
-  useWallet?: UseWallet;
+  gateway: string;
+  walletUsage?: WalletUsage;
 }

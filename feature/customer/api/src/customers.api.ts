@@ -1,17 +1,17 @@
 import {
-  FindCustomerByIdRequest,
   GetAllCustomerAddressesRequest,
   GetCustomerAddressRequest,
+  GetCustomerContactRequest,
   RemoveCustomerAddressRequest,
 } from './customers.req';
 import {
-  FindCustomerByIdResponse,
   GetAllCustomerAddressesResponse,
   GetCustomerAddressResponse,
+  GetCustomerContactResponse,
 } from './customers.res';
 
 export interface CustomersApi {
-  findById(req: FindCustomerByIdRequest): Promise<FindCustomerByIdResponse>;
+  getCustomerContact(req: GetCustomerContactRequest): Promise<GetCustomerContactResponse>;
 
   getCustomerAddress(req: GetCustomerAddressRequest): Promise<GetCustomerAddressResponse>;
   getAllCustomerAddresses(

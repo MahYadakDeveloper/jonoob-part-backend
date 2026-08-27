@@ -1,11 +1,11 @@
-import { Customer, CustomerAddress, LineItems } from '@feature/common';
+import { CustomerAddress, CustomerContact, LineItems } from '@feature/common';
 
 export interface GetAllCustomerAddressesResponse {
   addresses: LineItems<CustomerAddress>;
 }
 
-export interface FindCustomerByIdResponse {
-  customer: Customer;
+export interface GetCustomerContactResponse {
+  customer: CustomerContact;
 }
 
 export interface GetCustomerAddressResponse {

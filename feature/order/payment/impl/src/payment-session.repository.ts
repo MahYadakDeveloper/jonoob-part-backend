@@ -1,13 +1,17 @@
-import { JobHandle } from '@feature/common';
+import { Payment } from '@feature/order-payment-api';
 import { PaymentSession } from './model/payment-session';
 
 export interface PaymentSessionRepository {
-  findByProviderId(providerId: number): Promise<PaymentSession | null>;
+  findById(sessionId: number): Promise<PaymentSession | null>;
   findByOrderId(orderId: string): Promise<PaymentSession | null>;
 
-  create(data: { orderId: string; expiryJob: JobHandle }): Promise<{ providerId: number }>;
+  create(
+    data: Omit<Extract<PaymentSession, { status: 'pending' }>, 'sessionId' | 'createdAt'>,
+  ): Promise<Extract<PaymentSession, { status: 'pending' }>>;
 
-  updateGatewayStatus(gateway: PaymentSession['gateway']): Promise<void>;
+  updatePaymentStatusTo<T extends Payment['status']>(
+    data: Extract<Payment, { status: T }>,
+  ): Promise<void>;
   /**
    * [NOTE]
    * No Deletion for sessions because their life is related to orders

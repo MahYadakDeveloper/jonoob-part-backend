@@ -1,14 +1,18 @@
-import { InvoiceItem, InvoiceSummary, LineItems } from '@feature/common';
-import { UseWallet } from '@feature/payment-api';
+import { LineItems, Money } from '@feature/common';
 
 export type CreatePaymentTicketRequest = {
-  providerId: number; // paymentSession.id
+  providerId: number; // payment session id
   customerContact: {
-    phone: string;
+    phoneNumber: string;
   };
-  purchasedItems: LineItems<InvoiceItem>;
-  summary: InvoiceSummary;
-  useWallet?: UseWallet;
+  purchasedItems: LineItems<{
+    productId: string;
+    productName: string;
+    quantity: number;
+    unitPrice: Money;
+  }>;
+
+  amount: Money;
 };
 
 export type VerifyPaymentTicketRequest = { providerId: number };

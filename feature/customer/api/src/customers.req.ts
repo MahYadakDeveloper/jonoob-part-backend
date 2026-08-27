@@ -17,6 +17,6 @@ export interface RemoveCustomerAddressRequest {
   addressId: string;
 }
 
-export interface FindCustomerByIdRequest {
+export interface GetCustomerContactRequest {
   customerId: string;
 }

@@ -1,32 +1,26 @@
 import {
-  addDuration,
-  Duration,
-  Money,
-  Payment,
-  SettingToken,
-  type JobScheduler,
-  type SettingsStore,
-  type TransactionManager,
+    Money,
+    type JobScheduler,
+    type TransactionManager
 } from '@feature/common';
+import { type WalletApi } from '@feature/customer-wallet-api';
 import { type OrderApi } from '@feature/order-api';
 import {
-  GetPaymentGatewayByOrderIdRequest,
-  GetPaymentGatewayByOrderIdResponse,
-  InsufficientWalletBalanceError,
-  InvalidWalletPaymentAmountError,
-  PaymentSessionCreationRequest,
-  PlanPaymentRequest,
-  PlanPaymentResponse,
-  WalletPaymentExceedsInvoiceError,
-  type PaymentApi,
-} from '@feature/payment-api';
-import { type WalletApi } from '@feature/wallet-api';
+    InsufficientWalletBalanceError,
+    InvalidWalletPaymentAmountError,
+    Payment,
+    PaymentAllocation,
+    PaymentSessionCreationRequest,
+    PaymentSessionCreationResponse,
+    RefundRequest,
+    RefundResponse,
+    WalletPaymentExceedsInvoiceError,
+    WalletUsage,
+    type PaymentApi
+} from '@feature/order-payment-api';
 import { Injectable } from '@nestjs/common';
-import z from 'zod';
 import { PaymentGatewayResolver } from './payment-gateway.resolver';
 import { type PaymentSessionRepository } from './payment-session.repository';
-import { PayRequest } from './payment.req';
-import { PayResponse } from './payment.res';
 
 /**
  * [NOTE] If the customer cancels the payment on the IPG, the payment
@@ -42,27 +36,11 @@ import { PayResponse } from './payment.res';
 
 @Injectable()
 export class PaymentService implements PaymentApi {
-  private static readonly PaymentSettings: SettingToken<{ expiry: Duration }> = {
-    key: 'payment',
-    defaultValue: {
-      expiry: {
-        value: 30,
-        unit: 'minute',
-      },
-    },
-
-    schema: z.object({
-      expiry: z.object({
-        value: z.number().positive(),
-        unit: z.enum(['month', 'year', 'week', 'hour', 'minute']),
-      }),
-    }),
-  };
+  
 
   constructor(
     private readonly wallet: WalletApi,
     private readonly repository: PaymentSessionRepository,
-    private readonly settings: SettingsStore,
     private readonly gateways: PaymentGatewayResolver,
     private readonly order: OrderApi,
     private readonly tx: TransactionManager,
@@ -70,21 +48,66 @@ export class PaymentService implements PaymentApi {
   ) {}
 
   async createPaymentSession(
-    req: PaymentSessionCreationRequest,
-  ): Promise<{ paymentSessionId: number }> {
-    const { expiry } = await this.settings.get(PaymentService.PaymentSettings);
-    const expiresAt = addDuration(new Date(), expiry);
+    {
+      orderId,
+      gatewayKey,
+      walletUsage,
+customerContact,
+      purchasedItems, amount
+    }: PaymentSessionCreationRequest,
+  ): Promise<PaymentSessionCreationResponse> {
 
+
+    const gateway = this.gateways.resolve(gatewayKey);
+
+if (!gateway.supportsPartialPayment && walletUsage) throw new Error();
+      if (walletUsage) {
+        // [TODO]
+      }
+
+
+const expiresAt = new Date();
+    expiresAt.setMinutes(
+      expiresAt.getMinutes() + gateway.expiryInMinutes + gateway.verificationDeadlineInMinutes,
+    );
     const handle = await this.job.schedule(expiresAt, async () => {});
 
-    const { providerId } = await this.repository.create({
-      orderId: req.orderId,
+
+    return await this.tx.run(async () => {
+      // [TODO] Withdraw from customer wallet and processed
+      
+      const total = purchasedItems.reduce((acc, item) => 
+        acc.add(item.unitPrice.multiply(item.quantity))
+      , Money.zero())
+
+      if (!total.equals(amount))
+        throw new Error()
+
+const { sessionId } = await this.repository.create({
+      orderId: orderId,
       expiryJob: handle,
+      status: 'pending',
+      gatewayKey: gatewayKey,
     });
 
-    return {
-      paymentSessionId: providerId,
-    };
+      
+      const { paymentUrl } = await gateway.createPaymentTicket({
+        providerId: sessionId,
+        customerContact,
+        purchasedItems,
+        amount,
+      });
+
+
+      return {
+        payment: {
+          status: 'pending',
+          gatewayKey,
+          sessionId
+        },
+        paymentUrl,
+      };
+    });
   }
 
   /**
@@ -93,169 +116,129 @@ export class PaymentService implements PaymentApi {
    * if the operation is not available then refund the money to their(customer) wallet
    */
   async refund({
-    paymentSessionId,
-  }: {
-    paymentSessionId: number;
-  }): Promise<{ refundedTo: 'wallet' | 'payment_reversed' }> {
-    const session = await this.repository.findByProviderId(paymentSessionId);
-    if (!session?.gateway) throw new Error();
+    sessionId,
+    customerId,
+    amount
+  }: RefundRequest): Promise<RefundResponse> {
+    const session = await this.repository.findById(sessionId);
+    if (!session) throw new Error();
 
-    if (session.gateway.status !== 'paid') throw new Error();
+    if (session.status !== 'paid') throw new Error();
 
-    const gateway = this.gateways.resolve(session.gateway.name);
+    const gateway = this.gateways.resolve(session.gatewayKey);
 
     try {
+      if (session.allocation.kind !== 'gateway')
+        throw new Error()
+
       await gateway.refundPaymentTicket({
-        providerId: paymentSessionId,
-        ticketId: session.gateway.transactionId,
+        providerId: sessionId,
+        ticketId: session.allocation.transactionId,
       });
 
+      const data = {
+        ...session,
+        refundedAt: new Date(),
+        destination: 'gateway',
+        status: 'refunded',
+      } satisfies Extract<Payment, {status: 'refunded'}>
+
+      await this.repository.updatePaymentStatusTo<'refunded'>(data)
+
       return {
-        refundedTo: 'payment_reversed',
+        payment: data
       };
     } catch (err) {
-      const { summary } = await this.order.getOrderSummary({ orderId: session.orderId });
-      const { customer } = await this.order.getRecipientInformation({ orderId: session.orderId });
       await this.wallet.deposit({
-        amount: summary.grandTotal,
-        customerId: customer.id,
+        amount,
+        customerId,
         reason: 'refund',
         referenceId: session.orderId,
         idempotencyKey: `order-refunded:${session.orderId}`,
       });
 
       return {
-        refundedTo: 'wallet',
+        payment: {
+          ...session,
+          refundedAt: new Date(),
+          destination: 'wallet',
+          status: 'refunded'
+        }
       };
     }
   }
 
-  async getPaymentGatewayByOrderId({
-    orderId,
-  }: GetPaymentGatewayByOrderIdRequest): Promise<GetPaymentGatewayByOrderIdResponse> {
-    const session = await this.repository.findByOrderId(orderId);
-    if (!session?.gateway) throw new Error();
+  async getTrackingCode({ sessionId }: { sessionId: number }): Promise<{ trackingCode: string }> {
+    const session = await this.repository.findById(sessionId);
 
-    return { gateway: session.gateway.name };
-  }
+    if (!session) throw new Error();
 
-  async getTrackingCode({ providerId }: { providerId: number }): Promise<{ trackingCode: string }> {
-    const session = await this.repository.findByProviderId(providerId);
-
-    if (!session?.gateway) throw new Error();
-
-    const gateway = this.gateways.resolve(session.gateway.name);
-    const { ticketId } = await gateway.getPaymentTicketId({ providerId });
+    const gateway = this.gateways.resolve(session.gatewayKey);
+    const { ticketId } = await gateway.getPaymentTicketId({ providerId: sessionId});
 
     return {
       trackingCode: ticketId,
     };
   }
-
-  async pay({ providerId, gatewayName, useWallet }: PayRequest): Promise<PayResponse> {
-    const session = await this.repository.findByProviderId(providerId);
-    if (!session) throw new Error();
-    if (session.gateway?.status === 'paid') throw new Error();
-
-    const gateway = this.gateways.resolve(gatewayName);
-
-    const expiryExecutionDate = await this.job.getExecutionDate(session.expiryJob.id);
-    const expiresAt = new Date();
-    expiresAt.setMinutes(
-      expiresAt.getMinutes() + gateway.expiryInMinutes + gateway.verificationDeadlineInMinutes,
-    );
-
-    // [NOTE] The expired state means even if money paid they would refunded by gateway provider
-    if (expiryExecutionDate < expiresAt) await this.job.update(session.expiryJob.id, expiresAt);
-
-    if (!gateway.supportsPartialPayment && useWallet) throw new Error();
-
-    const { customer: customerContact } = await this.order.getRecipientInformation({
-      orderId: session.orderId,
-    });
-    const { items: purchasedItems } = await this.order.getOrderItems({ orderId: session.orderId });
-    const { summary } = await this.order.getOrderSummary({ orderId: session.orderId });
-
-    return await this.tx.run(async () => {
-      const { paymentUrl } = await gateway.createPaymentTicket({
-        providerId,
-        useWallet,
-        customerContact,
-        purchasedItems,
-        summary,
-      });
-
-      await this.repository.updateGatewayStatus({
-        name: gateway.name,
-        status: 'created',
-      });
-
-      return {
-        paymentUrl,
-      };
-    });
-  }
-
-  async planPayment(req: PlanPaymentRequest): Promise<PlanPaymentResponse> {
-    if (req.kind === 'guest')
-      return {
-        payment: {
-          kind: 'external',
-          external: {
-            method: 'posTerminal',
-            amount: req.amountDue,
-          },
-        },
-      };
-
-    const { amountDue, customerId, useWallet } = req;
-
+  
+  private async allocatePayment({
+    amount,
+    customerId,
+    walletUsage,
+    gateway,
+  }: {
+    amount: Money;
+    customerId: string;
+    walletUsage: WalletUsage;
+    gateway: string;
+  }): Promise<PaymentAllocation> {
     const balance = await this.wallet.getBalance({ customerId });
 
     let walletAmount = Money.zero();
 
-    if (useWallet) {
-      if (useWallet.mode === 'full') {
-        walletAmount = Money.min(balance.available, amountDue);
+    if (walletUsage) {
+      if (walletUsage.mode === 'full') {
+        walletAmount = Money.min(balance.available, amount);
       } else {
-        if (useWallet.amount.lte(Money.zero())) {
-          throw new InvalidWalletPaymentAmountError(useWallet.amount);
+        if (walletUsage.amount.lte(Money.zero())) {
+          throw new InvalidWalletPaymentAmountError(walletUsage.amount);
         }
 
-        if (useWallet.amount.gt(amountDue)) {
-          throw new WalletPaymentExceedsInvoiceError(useWallet.amount, amountDue);
+        if (walletUsage.amount.gt(amount)) {
+          throw new WalletPaymentExceedsInvoiceError(walletUsage.amount, amount);
         }
 
-        if (balance.available.lt(useWallet.amount)) {
-          throw new InsufficientWalletBalanceError(customerId, useWallet.amount, balance.available);
+        if (balance.available.lt(walletUsage.amount)) {
+          throw new InsufficientWalletBalanceError(
+            customerId,
+            walletUsage.amount,
+            balance.available,
+          );
         }
 
-        walletAmount = useWallet.amount;
+        walletAmount = walletUsage.amount;
       }
     }
 
-    const remaining = amountDue.subtract(walletAmount);
+    const remaining = amount.subtract(walletAmount);
 
-    const payment: Payment = remaining.isZero()
+    const payment: PaymentAllocation = remaining.isZero()
       ? {
           kind: 'wallet',
-          walletAmount,
+          amount,
         }
       : walletAmount.isZero()
         ? {
-            kind: 'external',
-            external: {
-              method: 'posTerminal',
-              amount: remaining,
-            },
+            kind: 'gateway',
+            amount,
+            gateway,
+            transactionId:
           }
         : {
             kind: 'mixed',
             walletAmount,
-            external: {
-              method: 'posTerminal',
-              amount: remaining,
-            },
+            gateway,
+            gatewayAmount: remaining,
           };
 
     return { payment };

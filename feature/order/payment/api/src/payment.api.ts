@@ -1,20 +1,19 @@
 import {
   GetPaymentGatewayByOrderIdRequest,
   PaymentSessionCreationRequest,
-  PlanPaymentRequest,
+  RefundRequest,
 } from './payment.requests';
-import { GetPaymentGatewayByOrderIdResponse, PlanPaymentResponse } from './payment.responses';
+import {
+  GetPaymentGatewayByOrderIdResponse,
+  PaymentSessionCreationResponse,
+  RefundResponse,
+} from './payment.responses';
 
 export interface PaymentApi {
-  planPayment(req: PlanPaymentRequest): Promise<PlanPaymentResponse>;
-  createPaymentSession(req: PaymentSessionCreationRequest): Promise<{ paymentSessionId: number }>;
+  createPaymentSession(req: PaymentSessionCreationRequest): Promise<PaymentSessionCreationResponse>;
   getPaymentGatewayByOrderId(
     req: GetPaymentGatewayByOrderIdRequest,
   ): Promise<GetPaymentGatewayByOrderIdResponse>;
-  getTrackingCode(req: { providerId: number }): Promise<{ trackingCode: string }>;
-  refund({
-    paymentSessionId,
-  }: {
-    paymentSessionId: number;
-  }): Promise<{ refundedTo: 'wallet' | 'payment_reversed' }>;
+  getTrackingCode(req: { sessionId: number }): Promise<{ trackingCode: string }>;
+  refund(req: RefundRequest): Promise<RefundResponse>;
 }

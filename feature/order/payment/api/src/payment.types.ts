@@ -1,40 +1,44 @@
 import { Money } from '@feature/common';
 
-export type UseWallet = { mode: 'full' } | { mode: 'partial'; amount: Money };
+export type WalletUsage = { mode: 'full' } | { mode: 'partial'; amount: Money };
 
-export type OrderPayment =
+export type Payment = {
+  sessionId: number;
+  gatewayKey: string;
+} & (
   | {
       status: 'pending';
     }
   | {
       status: 'paid';
+      paidAt: Date;
+      allocation: PaymentAllocation;
     }
   | {
-      status: 'cancelled';
+      status: 'failure';
     }
   | {
-      status: 'expired';
-    };
+      status: 'refunded';
+      refundedAt: Date;
+      destination: 'wallet' | 'gateway';
+    }
+);
 
-export type ExternalPaymentMethod = 'posTerminal' | 'onlinePaymentGateway';
-
-export type PaymentMethod =
+export type PaymentAllocation =
   | {
       kind: 'wallet';
-      walletAmount: Money;
+      amount: Money;
     }
   | {
-      kind: 'external';
-      external: {
-        method: ExternalPaymentMethod;
-        amount: Money;
-      };
+      kind: 'gateway';
+      gateway: string;
+      amount: Money;
+      transactionId: string;
     }
   | {
       kind: 'mixed';
       walletAmount: Money;
-      external: {
-        method: ExternalPaymentMethod;
-        amount: Money;
-      };
+      gateway: string;
+      gatewayAmount: Money;
+      transactionId: string;
     };

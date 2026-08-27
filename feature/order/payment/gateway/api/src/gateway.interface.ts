@@ -10,7 +10,7 @@ import {
 } from './gateway.res';
 
 export interface PaymentGateway {
-  name: string;
+  key: string;
   supportsPartialPayment: boolean;
 
   expiryInMinutes: number;
