@@ -1,12 +1,17 @@
 import { Payment } from '@feature/order-payment-api';
 import { PaymentSession } from './model/payment-session';
 
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+
 export interface PaymentSessionRepository {
   findById(sessionId: number): Promise<PaymentSession | null>;
   findByOrderId(orderId: string): Promise<PaymentSession | null>;
 
   create(
-    data: Omit<Extract<PaymentSession, { status: 'pending' }>, 'sessionId' | 'createdAt'>,
+    data: DistributiveOmit<
+      Extract<PaymentSession, { status: 'pending' }>,
+      'sessionId' | 'createdAt'
+    >,
   ): Promise<Extract<PaymentSession, { status: 'pending' }>>;
 
   updatePaymentStatusTo<T extends Payment['status']>(

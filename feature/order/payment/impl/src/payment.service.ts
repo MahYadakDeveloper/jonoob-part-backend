@@ -2,18 +2,16 @@ import { Money, type JobScheduler, type TransactionManager } from '@feature/comm
 import { type WalletApi } from '@feature/customer-wallet-api';
 import { type OrderApi } from '@feature/order-api';
 import {
-    InsufficientWalletBalanceError,
-    InvalidWalletPaymentAmountError,
-    Payment,
-    PaymentAllocation,
-    PaymentMethod,
-    PaymentSessionCreationRequest,
-    PaymentSessionCreationResponse,
-    RefundRequest,
-    RefundResponse,
-    WalletPaymentExceedsInvoiceError,
-    WalletUsage,
-    type PaymentApi,
+  InsufficientWalletBalanceError,
+  InvalidWalletPaymentAmountError,
+  Payment,
+  PaymentAllocation,
+  PaymentMethod,
+  PaymentSessionCreationRequest,
+  PaymentSessionCreationResponse,
+  WalletPaymentExceedsInvoiceError,
+  WalletUsage,
+  type PaymentApi,
 } from '@feature/order-payment-api';
 import { Injectable } from '@nestjs/common';
 import { PaymentGatewayResolver } from './payment-gateway.resolver';
@@ -42,57 +40,67 @@ export class PaymentService implements PaymentApi {
     private readonly job: JobScheduler,
   ) {}
 
-  async pay<T extends PaymentMethod>(req
-  : PaymentSessionCreationRequest<T>): Promise<PaymentSessionCreationResponse<T>> {
+  async pay<T extends PaymentMethod>(
+    req: PaymentSessionCreationRequest<T>,
+  ): Promise<PaymentSessionCreationResponse> {
     const total = req.purchasedItems.reduce(
       (acc, item) => acc.add(item.unitPrice.multiply(item.quantity)),
       Money.zero(),
     );
-
     if (!total.equals(req.amount)) throw new Error();
 
-    if (req.method === 'partial')
-      // [TODO] Complete the payment api pay method and request types section
-    
-    const allocation =? await this.allocatePayment({
+    const allocation = await this.allocatePayment({
       amount: req.amount,
-      customerId,
-    }) : ;
+      customerId: req.customerId,
+      walletUsage: req.method === 'wallet' ? req.walletUsage : undefined,
+    });
 
-    return await this.tx.run(async () => {
-      switch (allocation.kind) {
-        case 'wallet':
+    switch (req.method) {
+      case 'wallet':
+        const walletAllocation = allocation as PaymentAllocation<'wallet'>;
+        return await this.tx.run(async () => {
           await this.wallet.withdraw({
-            amount: allocation.amount,
-            customerId,
+            amount: walletAllocation.amount,
+            customerId: req.customerId,
             reason: 'payment',
-            referenceId: orderId,
-            idempotencyKey: `order-payment:${orderId}`,
+            referenceId: req.orderId,
+            idempotencyKey: `order-payment:${req.orderId}`,
           });
 
           const { sessionId } = await this.repository.create({
-            orderId: orderId,
+            orderId: req.orderId,
             status: 'pending',
-            allocation,
+            method: 'wallet',
+            allocation: walletAllocation,
           });
 
-          return {};
+          return {
+            payment: {
+              sessionId,
+              status: 'pending',
+              method: 'wallet',
+              allocation: walletAllocation,
+            },
+          };
+        });
+      case 'partial':
+      case 'gateway':
+        if (!req.gatewayKey) throw new Error();
 
-        case 'partial':
-          await this.wallet.withdraw({
-            amount: allocation.walletAmount,
-            customerId,
-            reason: 'payment',
-            referenceId: orderId,
-            idempotencyKey: `order-payment:${orderId}`,
-          });
+        const gateway = this.gateways.resolve(req.gatewayKey);
 
-        case 'gateway': {
-          if (!gatewayKey) throw new Error();
+        if (req.method === 'partial' && !gateway.supportsPartialPayment) throw new Error();
 
-          const gateway = this.gateways.resolve(gatewayKey);
-
-          if (!gateway.supportsPartialPayment && walletUsage) throw new Error();
+        return await this.tx.run(async () => {
+          if (req.method === 'partial') {
+            await this.wallet.withdraw({
+              amount: (allocation as PaymentAllocation<'partial'>).walletAmount,
+              customerId: req.customerId,
+              reason: 'payment',
+              referenceId: req.orderId,
+              idempotencyKey: `order-payment:${req.orderId}`,
+            });
+          }
 
           const expiresAt = new Date();
           expiresAt.setMinutes(
@@ -103,26 +111,35 @@ export class PaymentService implements PaymentApi {
           const handle = await this.job.schedule(expiresAt, async () => {});
 
           const { sessionId } = await this.repository.create({
-            orderId: orderId,
+            orderId: req.orderId,
             status: 'pending',
             expiryJob: handle,
-            allocation: {
-              ...allocation,
-              gatewayKey,
-            },
+            allocation: allocation as PaymentAllocation<'partial' | 'gateway'>,
+            gatewayKey: req.gatewayKey,
+            method: req.method,
           });
 
           const { paymentUrl } = await gateway.createPaymentTicket({
             providerId: sessionId,
-            customerContact,
-            purchasedItems,
-            amount,
+            customerContact: req.customerContact,
+            purchasedItems: req.purchasedItems,
+            amount: req.amount,
           });
 
-          return {};
-        }
-      }
-    });
+          return {
+            payment: {
+              sessionId,
+              status: 'pending',
+              allocation: allocation as PaymentAllocation<'partial' | 'gateway'>,
+              gatewayKey: req.gatewayKey,
+              method: req.method,
+            },
+            paymentUrl,
+          };
+        });
+      default:
+        throw new Error('Unhandled payment method');
+    }
   }
 
   /**
@@ -240,9 +257,9 @@ export class PaymentService implements PaymentApi {
         }
       : walletAmount.isZero()
         ? {
-          kind: 'gateway',
-          amount
-        }
+            kind: 'gateway',
+            amount,
+          }
         : {
             kind: 'partial',
             walletAmount,

@@ -13,7 +13,7 @@ export type Payment = {
           allocation: PaymentAllocation<'wallet'>;
         }
       | {
-          method: 'wallet' | 'partial';
+          method: 'gateway' | 'partial';
           allocation: PaymentAllocation<'gateway' | 'partial'>;
           gatewayKey: string;
         }
@@ -27,7 +27,7 @@ export type Payment = {
           allocation: PaymentAllocation<'wallet'>;
         }
       | {
-          method: 'wallet' | 'partial';
+          method: 'gateway' | 'partial';
           allocation: PaymentAllocation<'gateway' | 'partial'>;
           gatewayKey: string;
         }
