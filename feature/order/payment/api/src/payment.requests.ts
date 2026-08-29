@@ -1,10 +1,9 @@
 import { LineItems, Money } from '@feature/common';
-import { WalletUsage } from './payment.types';
+import { PaymentMethod, WalletUsage } from './payment.types';
 
-export interface PaymentSessionCreationRequest {
+type x = {
   orderId: string;
-  gatewayKey: string;
-  walletUsage?: WalletUsage;
+  customerId: string;
   customerContact: {
     phoneNumber: string;
   };
@@ -15,7 +14,23 @@ export interface PaymentSessionCreationRequest {
     unitPrice: Money;
   }>;
   amount: Money;
-}
+};
+
+export type PaymentSessionCreationRequest<T extends PaymentMethod> = T extends 'wallet'
+  ? {
+      method: T;
+      walletUsage: WalletUsage;
+    } & x
+  : T extends 'gateway'
+    ? {
+        method: T;
+        gatewayKey: string;
+      } & x
+    : {
+        method: T;
+        gatewayKey: string;
+        walletUsage: WalletUsage;
+      } & x;
 
 export interface GetPaymentGatewayByOrderIdRequest {
   orderId: string;

@@ -8,9 +8,12 @@ import {
   PaymentSessionCreationResponse,
   RefundResponse,
 } from './payment.responses';
+import { PaymentMethod } from './payment.types';
 
 export interface PaymentApi {
-  createPaymentSession(req: PaymentSessionCreationRequest): Promise<PaymentSessionCreationResponse>;
+  pay<T extends PaymentMethod>(
+    req: PaymentSessionCreationRequest<T>,
+  ): Promise<PaymentSessionCreationResponse<T>>;
   getPaymentGatewayByOrderId(
     req: GetPaymentGatewayByOrderIdRequest,
   ): Promise<GetPaymentGatewayByOrderIdResponse>;

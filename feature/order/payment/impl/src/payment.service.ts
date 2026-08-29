@@ -1,8 +1,4 @@
-import {
-    Money,
-    type JobScheduler,
-    type TransactionManager
-} from '@feature/common';
+import { Money, type JobScheduler, type TransactionManager } from '@feature/common';
 import { type WalletApi } from '@feature/customer-wallet-api';
 import { type OrderApi } from '@feature/order-api';
 import {
@@ -10,13 +6,14 @@ import {
     InvalidWalletPaymentAmountError,
     Payment,
     PaymentAllocation,
+    PaymentMethod,
     PaymentSessionCreationRequest,
     PaymentSessionCreationResponse,
     RefundRequest,
     RefundResponse,
     WalletPaymentExceedsInvoiceError,
     WalletUsage,
-    type PaymentApi
+    type PaymentApi,
 } from '@feature/order-payment-api';
 import { Injectable } from '@nestjs/common';
 import { PaymentGatewayResolver } from './payment-gateway.resolver';
@@ -36,8 +33,6 @@ import { type PaymentSessionRepository } from './payment-session.repository';
 
 @Injectable()
 export class PaymentService implements PaymentApi {
-  
-
   constructor(
     private readonly wallet: WalletApi,
     private readonly repository: PaymentSessionRepository,
@@ -47,66 +42,86 @@ export class PaymentService implements PaymentApi {
     private readonly job: JobScheduler,
   ) {}
 
-  async createPaymentSession(
-    {
-      orderId,
-      gatewayKey,
-      walletUsage,
-customerContact,
-      purchasedItems, amount
-    }: PaymentSessionCreationRequest,
-  ): Promise<PaymentSessionCreationResponse> {
-
-
-    const gateway = this.gateways.resolve(gatewayKey);
-
-if (!gateway.supportsPartialPayment && walletUsage) throw new Error();
-      if (walletUsage) {
-        // [TODO]
-      }
-
-
-const expiresAt = new Date();
-    expiresAt.setMinutes(
-      expiresAt.getMinutes() + gateway.expiryInMinutes + gateway.verificationDeadlineInMinutes,
+  async pay<T extends PaymentMethod>(req
+  : PaymentSessionCreationRequest<T>): Promise<PaymentSessionCreationResponse<T>> {
+    const total = req.purchasedItems.reduce(
+      (acc, item) => acc.add(item.unitPrice.multiply(item.quantity)),
+      Money.zero(),
     );
-    const handle = await this.job.schedule(expiresAt, async () => {});
 
+    if (!total.equals(req.amount)) throw new Error();
+
+    if (req.method === 'partial')
+      // [TODO] Complete the payment api pay method and request types section
+    
+    const allocation =? await this.allocatePayment({
+      amount: req.amount,
+      customerId,
+    }) : ;
 
     return await this.tx.run(async () => {
-      // [TODO] Withdraw from customer wallet and processed
-      
-      const total = purchasedItems.reduce((acc, item) => 
-        acc.add(item.unitPrice.multiply(item.quantity))
-      , Money.zero())
+      switch (allocation.kind) {
+        case 'wallet':
+          await this.wallet.withdraw({
+            amount: allocation.amount,
+            customerId,
+            reason: 'payment',
+            referenceId: orderId,
+            idempotencyKey: `order-payment:${orderId}`,
+          });
 
-      if (!total.equals(amount))
-        throw new Error()
+          const { sessionId } = await this.repository.create({
+            orderId: orderId,
+            status: 'pending',
+            allocation,
+          });
 
-const { sessionId } = await this.repository.create({
-      orderId: orderId,
-      expiryJob: handle,
-      status: 'pending',
-      gatewayKey: gatewayKey,
-    });
+          return {};
 
-      
-      const { paymentUrl } = await gateway.createPaymentTicket({
-        providerId: sessionId,
-        customerContact,
-        purchasedItems,
-        amount,
-      });
+        case 'partial':
+          await this.wallet.withdraw({
+            amount: allocation.walletAmount,
+            customerId,
+            reason: 'payment',
+            referenceId: orderId,
+            idempotencyKey: `order-payment:${orderId}`,
+          });
 
+        case 'gateway': {
+          if (!gatewayKey) throw new Error();
 
-      return {
-        payment: {
-          status: 'pending',
-          gatewayKey,
-          sessionId
-        },
-        paymentUrl,
-      };
+          const gateway = this.gateways.resolve(gatewayKey);
+
+          if (!gateway.supportsPartialPayment && walletUsage) throw new Error();
+
+          const expiresAt = new Date();
+          expiresAt.setMinutes(
+            expiresAt.getMinutes() +
+              gateway.expiryInMinutes +
+              gateway.verificationDeadlineInMinutes,
+          );
+          const handle = await this.job.schedule(expiresAt, async () => {});
+
+          const { sessionId } = await this.repository.create({
+            orderId: orderId,
+            status: 'pending',
+            expiryJob: handle,
+            allocation: {
+              ...allocation,
+              gatewayKey,
+            },
+          });
+
+          const { paymentUrl } = await gateway.createPaymentTicket({
+            providerId: sessionId,
+            customerContact,
+            purchasedItems,
+            amount,
+          });
+
+          return {};
+        }
+      }
     });
   }
 
@@ -115,11 +130,7 @@ const { sessionId } = await this.repository.create({
    * Try first see if is the money can be reversed|refunded by the payment|credit gateway provider
    * if the operation is not available then refund the money to their(customer) wallet
    */
-  async refund({
-    sessionId,
-    customerId,
-    amount
-  }: RefundRequest): Promise<RefundResponse> {
+  async refund({ sessionId, customerId, amount }: RefundRequest): Promise<RefundResponse> {
     const session = await this.repository.findById(sessionId);
     if (!session) throw new Error();
 
@@ -128,8 +139,7 @@ const { sessionId } = await this.repository.create({
     const gateway = this.gateways.resolve(session.gatewayKey);
 
     try {
-      if (session.allocation.kind !== 'gateway')
-        throw new Error()
+      if (session.allocation.kind !== 'gateway') throw new Error();
 
       await gateway.refundPaymentTicket({
         providerId: sessionId,
@@ -141,12 +151,12 @@ const { sessionId } = await this.repository.create({
         refundedAt: new Date(),
         destination: 'gateway',
         status: 'refunded',
-      } satisfies Extract<Payment, {status: 'refunded'}>
+      } satisfies Extract<Payment, { status: 'refunded' }>;
 
-      await this.repository.updatePaymentStatusTo<'refunded'>(data)
+      await this.repository.updatePaymentStatusTo<'refunded'>(data);
 
       return {
-        payment: data
+        payment: data,
       };
     } catch (err) {
       await this.wallet.deposit({
@@ -162,8 +172,8 @@ const { sessionId } = await this.repository.create({
           ...session,
           refundedAt: new Date(),
           destination: 'wallet',
-          status: 'refunded'
-        }
+          status: 'refunded',
+        },
       };
     }
   }
@@ -173,25 +183,26 @@ const { sessionId } = await this.repository.create({
 
     if (!session) throw new Error();
 
-    const gateway = this.gateways.resolve(session.gatewayKey);
-    const { ticketId } = await gateway.getPaymentTicketId({ providerId: sessionId});
+    if (session.status !== 'pending') throw new Error();
+    if (session.allocation.kind !== 'gateway') throw new Error();
+
+    const gateway = this.gateways.resolve(session.allocation.gatewayKey);
+    const { ticketId } = await gateway.getPaymentTicketId({ providerId: sessionId });
 
     return {
       trackingCode: ticketId,
     };
   }
-  
+
   private async allocatePayment({
     amount,
     customerId,
     walletUsage,
-    gateway,
   }: {
     amount: Money;
     customerId: string;
-    walletUsage: WalletUsage;
-    gateway: string;
-  }): Promise<PaymentAllocation> {
+    walletUsage?: WalletUsage;
+  }): Promise<PaymentAllocation<PaymentMethod>> {
     const balance = await this.wallet.getBalance({ customerId });
 
     let walletAmount = Money.zero();
@@ -222,25 +233,22 @@ const { sessionId } = await this.repository.create({
 
     const remaining = amount.subtract(walletAmount);
 
-    const payment: PaymentAllocation = remaining.isZero()
+    const allocation: PaymentAllocation<PaymentMethod> = remaining.isZero()
       ? {
           kind: 'wallet',
           amount,
         }
       : walletAmount.isZero()
         ? {
-            kind: 'gateway',
-            amount,
-            gateway,
-            transactionId:
-          }
+          kind: 'gateway',
+          amount
+        }
         : {
-            kind: 'mixed',
+            kind: 'partial',
             walletAmount,
-            gateway,
             gatewayAmount: remaining,
           };
 
-    return { payment };
+    return allocation;
   }
 }

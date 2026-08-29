@@ -1,4 +1,4 @@
-import { Money } from "@feature/common";
+import { Money } from '@feature/common';
 
 export type WalletOperationRequest = {
   customerId: string;
@@ -32,17 +32,13 @@ export type RefundWalletRequest = {
 export type WalletDepositRequest = WalletOperationRequest & {
   amount: Money;
 
-  reason: "cashback" | "refund" | "manual_adjustment";
+  reason: 'cashback' | 'refund' | 'manual_adjustment';
 };
 
 export type WalletWithdrawRequest = WalletOperationRequest & {
   amount: Money;
 
-  reason:
-    | "sale_payment"
-    | "withdrawal"
-    | "cashback_reversal"
-    | "manual_adjustment";
+  reason: 'payment' | 'withdrawal' | 'cashback_reversal' | 'manual_adjustment';
 };
 
 export interface GetWalletBalanceRequest {
@@ -54,7 +50,7 @@ export interface FreezeWalletAmountRequest {
   amount: Money;
 
   referenceId: string;
-  reason: "withdrawal-request" | "manual";
+  reason: 'withdrawal-request' | 'manual';
 }
 
 export interface CommitFrozenAmountRequest {
@@ -64,5 +60,5 @@ export interface CommitFrozenAmountRequest {
 
 export interface ReleaseFrozenAmountRequest {
   freezeId: string;
-  reason: "withdrawal-request" | "manual";
+  reason: 'withdrawal-request' | 'manual';
 }
