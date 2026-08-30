@@ -1,3 +1,4 @@
+import { JobHandle } from '@feature/common';
 import { Payment } from '@feature/order-payment-api';
 import { PaymentSession } from './model/payment-session';
 
@@ -9,14 +10,15 @@ export interface PaymentSessionRepository {
 
   create(
     data: DistributiveOmit<
-      Extract<PaymentSession, { status: 'pending' }>,
+      Extract<PaymentSession, { status: 'initiated' }>,
       'sessionId' | 'createdAt'
     >,
-  ): Promise<Extract<PaymentSession, { status: 'pending' }>>;
+  ): Promise<Extract<PaymentSession, { status: 'initiated' }>>;
 
   updatePaymentStatusTo<T extends Payment['status']>(
-    data: Extract<Payment, { status: T }>,
-  ): Promise<void>;
+    data: Extract<Payment, { status: T }> &
+      (T extends 'pending' ? { expiryJob: JobHandle } : unknown),
+  ): Promise<Payment>;
   /**
    * [NOTE]
    * No Deletion for sessions because their life is related to orders

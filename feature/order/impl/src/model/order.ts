@@ -27,9 +27,13 @@ export type BaseOrder = {
 export type Order = BaseOrder &
   (
     | {
-        status: 'settlement';
+        status: 'recorded';
         recordedAt: Date;
-        payment: Extract<Payment, { status: 'pending' }>;
+        delivery: Extract<Delivery, { status: 'initiated' }>;
+      }
+    | {
+        status: 'settlement';
+        payment: Extract<Payment, { status: 'pending' | 'initiated' }>;
         delivery: Extract<Delivery, { status: 'initiated' }>;
       }
     | ({

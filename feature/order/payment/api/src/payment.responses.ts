@@ -1,15 +1,11 @@
 import { Payment } from './payment.types';
 
-export interface GetPaymentGatewayByOrderIdResponse {
-  gateway: string;
-}
-
-export type PaymentSessionCreationResponse =
+export type SettleResponse =
   | {
-      payment: Extract<Extract<Payment, { status: 'pending' }>, { method: 'wallet' }>;
+      payment: Extract<Extract<Payment, { status: 'pending' | 'paid' }>, { method: 'wallet' }>;
     }
   | {
-      payment: Exclude<Extract<Payment, { status: 'pending' }>, { method: 'wallet' }>;
+      payment: Exclude<Extract<Payment, { status: 'pending' | 'paid' }>, { method: 'wallet' }>;
       paymentUrl: string;
     };
 

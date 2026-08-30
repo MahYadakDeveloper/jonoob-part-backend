@@ -5,6 +5,9 @@ export type WalletUsage = { mode: 'full' } | { mode: 'partial'; amount: Money };
 export type Payment = {
   sessionId: number;
 } & (
+  | {
+      status: 'initiated';
+    }
   | ({
       status: 'pending';
     } & (

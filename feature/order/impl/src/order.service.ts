@@ -183,42 +183,42 @@ export class OrderService implements OrderApi {
 
     const reserve = this.calculateReserveStock(items, products);
 
-    await this.tx.run(async () => {
-      // Resolve pricing
-      const { pricedInvoice } = await this.pricing.priceInvoice({
-        items: items.transform<UnpricedInvoiceItem>(
-          (item) => {
-            const product = products.getOrThrow(item.productId);
-            if (product.kind === 'bundle')
-              return {
-                kind: 'bundle',
-                productId: item.productId,
-                description: product.displayName,
-                quantity: item.quantity,
-                items: product.items.toArray().map((_item) => ({
-                  description: _item.displayName,
-                  kind: 'leaf',
-                  productId: _item.productId,
-                  quantity: _item.quantity,
-                })),
-              };
-
+    // Resolve pricing
+    const { pricedInvoice } = await this.pricing.priceInvoice({
+      items: items.transform<UnpricedInvoiceItem>(
+        (item) => {
+          const product = products.getOrThrow(item.productId);
+          if (product.kind === 'bundle')
             return {
-              kind: 'leaf',
+              kind: 'bundle',
               productId: item.productId,
               description: product.displayName,
               quantity: item.quantity,
+              items: product.items.toArray().map((_item) => ({
+                description: _item.displayName,
+                kind: 'leaf',
+                productId: _item.productId,
+                quantity: _item.quantity,
+              })),
             };
-          },
-          (item) => item.description,
-        ),
-        customer: { id: customerId, type: customer.type },
-      });
 
-      const { cancellationFee } = await this.settings.get(OrderService.OrderSettings);
+          return {
+            kind: 'leaf',
+            productId: item.productId,
+            description: product.displayName,
+            quantity: item.quantity,
+          };
+        },
+        (item) => item.description,
+      ),
+      customer: { id: customerId, type: customer.type },
+    });
 
+    const { cancellationFee } = await this.settings.get(OrderService.OrderSettings);
+
+    return await this.tx.run(async () => {
       const orderId = await this.repository.create({
-        status: 'settlement',
+        status: 'recorded',
         recordedAt: new Date(),
         customerId,
         items: pricedInvoice.items,
@@ -232,15 +232,34 @@ export class OrderService implements OrderApi {
       // Reserve stocks
       await this.warehouse.reserveStock({ referenceId: orderId, items: reserve });
 
+      const { payment } = await this.payment.createPaymentSession({
+        orderId,
+        customerId,
+        customerContact: customer,
+        amount: pricedInvoice.summary.grandTotal,
+        purchasedItems: pricedInvoice.items.transform(
+          (item) => ({
+            productId: item.productId,
+            productName: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          }),
+          (x) => x.productId,
+        ),
+      });
+
+      await this.repository.updateOrderStatus<'recorded', 'settlement'>({
+        status: 'settlement',
+        payment,
+      });
+
       await this.outbox.save({
         type: OrderRecordedEventType,
         payload: { orderId, occurredAt: new Date() } satisfies OrderEventPayload,
       });
     });
 
-    // [NOTE] no return, just redirect the customer to settlement page
-    // the payment session is already created, so by navigating to
-    // settlement page going to see an active order ready for settlement
+    // No return, just redirect client to payment
   }
 
   /**

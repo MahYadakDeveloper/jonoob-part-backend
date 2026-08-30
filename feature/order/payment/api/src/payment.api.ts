@@ -1,11 +1,13 @@
-import { PaymentSessionCreationRequest, RefundRequest } from './payment.requests';
-import { PaymentSessionCreationResponse, RefundResponse } from './payment.responses';
-import { PaymentMethod } from './payment.types';
+import { PaymentSessionCreationRequest, RefundRequest, SettleRequest } from './payment.requests';
+import { RefundResponse, SettleResponse } from './payment.responses';
+import { Payment, PaymentMethod } from './payment.types';
 
 export interface PaymentApi {
-  pay<T extends PaymentMethod>(
-    req: PaymentSessionCreationRequest<T>,
-  ): Promise<PaymentSessionCreationResponse>;
+  createPaymentSession(
+    req: PaymentSessionCreationRequest,
+  ): Promise<{ payment: Extract<Payment, { status: 'initiated' }> }>;
+
+  settle<T extends PaymentMethod>(req: SettleRequest<T>): Promise<SettleResponse>;
 
   getTrackingCode(req: { sessionId: number }): Promise<{ trackingCode: string }>;
   refund(req: RefundRequest): Promise<RefundResponse>;

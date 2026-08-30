@@ -1,7 +1,7 @@
 import { LineItems, Money } from '@feature/common';
 import { PaymentMethod, WalletUsage } from './payment.types';
 
-type PaymentSessionCreationRequestParams = {
+export type PaymentSessionCreationRequest = {
   orderId: string;
   customerId: string;
   customerContact: {
@@ -16,19 +16,9 @@ type PaymentSessionCreationRequestParams = {
   amount: Money;
 };
 
-export type PaymentSessionCreationRequest<T extends PaymentMethod> = {
-  orderId: string;
+export type SettleRequest<T extends PaymentMethod> = {
+  sessionId: number;
   customerId: string;
-  customerContact: {
-    phoneNumber: string;
-  };
-  purchasedItems: LineItems<{
-    productId: string;
-    productName: string;
-    quantity: number;
-    unitPrice: Money;
-  }>;
-  amount: Money;
 } & (T extends 'wallet'
   ? {
       method: T;
@@ -44,10 +34,6 @@ export type PaymentSessionCreationRequest<T extends PaymentMethod> = {
         gatewayKey: string;
         walletUsage: WalletUsage;
       });
-
-export interface GetPaymentGatewayByOrderIdRequest {
-  orderId: string;
-}
 
 export interface RefundRequest {
   sessionId: number;

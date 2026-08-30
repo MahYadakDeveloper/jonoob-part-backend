@@ -8,7 +8,8 @@ import {
   PaymentAllocation,
   PaymentMethod,
   PaymentSessionCreationRequest,
-  PaymentSessionCreationResponse,
+  SettleRequest,
+  SettleResponse,
   WalletPaymentExceedsInvoiceError,
   WalletUsage,
   type PaymentApi,
@@ -39,18 +40,48 @@ export class PaymentService implements PaymentApi {
     private readonly tx: TransactionManager,
     private readonly job: JobScheduler,
   ) {}
-
-  async pay<T extends PaymentMethod>(
-    req: PaymentSessionCreationRequest<T>,
-  ): Promise<PaymentSessionCreationResponse> {
+  async createPaymentSession(
+    req: PaymentSessionCreationRequest,
+  ): Promise<{ payment: Extract<Payment, { status: 'initiated' }> }> {
     const total = req.purchasedItems.reduce(
       (acc, item) => acc.add(item.unitPrice.multiply(item.quantity)),
       Money.zero(),
     );
     if (!total.equals(req.amount)) throw new Error();
 
+    const expiresAt = new Date();
+
+    const handle = await this.job.schedule(expiresAt, async () => {
+      const session = await this.repository.findByOrderId(req.orderId);
+      if (!session) return;
+
+      if (session.status !== 'pending' && session.status !== 'initiated') return;
+
+      // [TODO]
+    });
+
+    const data = await this.repository.create({
+      ...req,
+      status: 'initiated',
+      expiryJob: handle,
+    });
+
+    return {
+      payment: data,
+    };
+  }
+
+  async settle<T extends PaymentMethod>(req: SettleRequest<T>): Promise<SettleResponse> {
+    const session = await this.repository.findById(req.sessionId);
+    if (!session) throw new Error();
+    const total = session.purchasedItems.reduce(
+      (acc, item) => acc.add(item.unitPrice.multiply(item.quantity)),
+      Money.zero(),
+    );
+    if (!total.equals(session.amount)) throw new Error();
+
     const allocation = await this.allocatePayment({
-      amount: req.amount,
+      amount: session.amount,
       customerId: req.customerId,
       walletUsage: req.method === 'wallet' ? req.walletUsage : undefined,
     });
@@ -63,23 +94,25 @@ export class PaymentService implements PaymentApi {
             amount: walletAllocation.amount,
             customerId: req.customerId,
             reason: 'payment',
-            referenceId: req.orderId,
-            idempotencyKey: `order-payment:${req.orderId}`,
+            referenceId: session.orderId,
+            idempotencyKey: `order-payment:${session.orderId}`,
           });
 
-          const { sessionId } = await this.repository.create({
-            orderId: req.orderId,
-            status: 'pending',
+          await this.repository.updatePaymentStatusTo<'paid'>({
+            sessionId: session.sessionId,
+            status: 'paid',
             method: 'wallet',
             allocation: walletAllocation,
+            paidAt: new Date(),
           });
 
           return {
             payment: {
-              sessionId,
-              status: 'pending',
+              sessionId: session.sessionId,
+              status: 'paid',
               method: 'wallet',
               allocation: walletAllocation,
+              paidAt: new Date(),
             },
           };
         });
@@ -97,8 +130,8 @@ export class PaymentService implements PaymentApi {
               amount: (allocation as PaymentAllocation<'partial'>).walletAmount,
               customerId: req.customerId,
               reason: 'payment',
-              referenceId: req.orderId,
-              idempotencyKey: `order-payment:${req.orderId}`,
+              referenceId: session.orderId,
+              idempotencyKey: `order-payment:${session.orderId}`,
             });
           }
 
@@ -110,25 +143,26 @@ export class PaymentService implements PaymentApi {
           );
           const handle = await this.job.schedule(expiresAt, async () => {});
 
-          const { sessionId } = await this.repository.create({
-            orderId: req.orderId,
-            status: 'pending',
+          await this.repository.updatePaymentStatusTo<'pending'>({
+            sessionId: session.sessionId,
             expiryJob: handle,
+            status: 'pending',
             allocation: allocation as PaymentAllocation<'partial' | 'gateway'>,
             gatewayKey: req.gatewayKey,
             method: req.method,
           });
 
           const { paymentUrl } = await gateway.createPaymentTicket({
-            providerId: sessionId,
-            customerContact: req.customerContact,
-            purchasedItems: req.purchasedItems,
-            amount: req.amount,
+            providerId: session.sessionId,
+            customerContact: session.customerContact,
+            purchasedItems: session.purchasedItems,
+            amount: allocation.kind === 'partial' ? allocation.gatewayAmount : allocation.amount,
           });
 
           return {
             payment: {
-              sessionId,
+              sessionId: session.sessionId,
+
               status: 'pending',
               allocation: allocation as PaymentAllocation<'partial' | 'gateway'>,
               gatewayKey: req.gatewayKey,
@@ -137,6 +171,7 @@ export class PaymentService implements PaymentApi {
             paymentUrl,
           };
         });
+
       default:
         throw new Error('Unhandled payment method');
     }
