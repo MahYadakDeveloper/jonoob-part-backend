@@ -1,17 +1,13 @@
 import { FindManyProductResponse } from '@feature/catalog-api';
-import { InvoiceItem, InvoiceSummary, LineItems } from '@feature/common';
-import { OrderStatus } from './order.type';
+import { LineItems } from '@feature/common';
 
 export interface OrderApi {
-  getDeliveryConfirmationCodeOfHandedPackageOver(req: {
-    orderId: string;
-  }): Promise<{ code: string }>;
-  getOrderSummary(req: { orderId: string }): Promise<{ summary: InvoiceSummary }>;
+  // getDeliveryConfirmationCodeOfHandedPackageOver(req: {
+  //   orderId: string;
+  // }): Promise<{ code: string }>;
+  // getOrderSummary(req: { orderId: string }): Promise<{ summary: InvoiceSummary }>;
 
-  getOrderItems({ orderId }: { orderId: string }): Promise<{ items: LineItems<InvoiceItem> }>;
-  getOrderStatus({ orderId }: { orderId: string }): Promise<{
-    status: OrderStatus;
-  }>;
+  // getOrderItems({ orderId }: { orderId: string }): Promise<{ items: LineItems<InvoiceItem> }>;
 
   adminCancelOrder(req: { orderId: string; reason: string }): Promise<void>;
 

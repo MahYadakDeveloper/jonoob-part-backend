@@ -1,4 +1,4 @@
-import { LineItems, PartialBy } from '@feature/common';
+import { LineItems } from '@feature/common';
 import { Order } from './model/order';
 
 export interface OrderRepository {
@@ -14,10 +14,14 @@ export interface OrderRepository {
 
   create(data: Omit<Extract<Order, { status: 'recorded' }>, 'id'>): Promise<string>;
 
-  updateOrderStatus<From extends Order['status'], To extends Order['status']>(
-    data: PartialBy<
-      Extract<Order, { status: To }>,
-      Extract<keyof Extract<Order, { status: From }>, keyof Extract<Order, { status: To }>>
-    >,
-  ): Promise<void>;
+  markAsSettlementPending(orderId: string, sessionId: number): Promise<void>;
+  markAs(orderId: string, status: Order['status']): Promise<void>;
+
+  // updateOrderStatus<From extends Order['status'], To extends Order['status']>(
+  //   id: string,
+  //   data: PartialBy<
+  //     Extract<Order, { status: To }>,
+  //     Extract<keyof Extract<Order, { status: From }>, keyof Extract<Order, { status: To }>>
+  //   >,
+  // ): Promise<void>;
 }

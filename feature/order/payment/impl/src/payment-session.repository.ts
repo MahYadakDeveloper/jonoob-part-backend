@@ -13,7 +13,7 @@ export interface PaymentSessionRepository {
       Extract<PaymentSession, { status: 'initiated' }>,
       'sessionId' | 'createdAt'
     >,
-  ): Promise<Extract<PaymentSession, { status: 'initiated' }>>;
+  ): { sessionId: number };
 
   updatePaymentStatusTo<T extends Payment['status']>(
     data: Extract<Payment, { status: T }> &

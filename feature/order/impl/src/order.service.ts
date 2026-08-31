@@ -1,7 +1,5 @@
 import { FindManyProductResponse, type CatalogApi } from '@feature/catalog-api';
 import {
-  InvoiceItem,
-  InvoiceSummary,
   LineItems,
   Money,
   SettingToken,
@@ -10,12 +8,12 @@ import {
   type TransactionManager,
 } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
+import { type WalletApi } from '@feature/customer-wallet-api';
 import {
   OrderApi,
   OrderCanceledEventType,
   OrderEventPayload,
   OrderRecordedEventType,
-  OrderStatus,
 } from '@feature/order-api';
 import { Delivery } from '@feature/order-delivery-api';
 import { type FulfillmentApi } from '@feature/order-fulfillment-api';
@@ -72,17 +70,18 @@ export class OrderService implements OrderApi {
     private readonly tx: TransactionManager,
     private readonly settings: SettingsStore,
     private readonly outbox: OutboxRepository,
+    private readonly wallet: WalletApi,
   ) {}
 
-  async getOrderSummary({ orderId }: { orderId: any }): Promise<{
-    summary: InvoiceSummary;
-  }> {
-    const order = await this.repository.find(orderId);
-    if (!order) throw new Error();
-    return {
-      summary: order.summary,
-    };
-  }
+  // async getOrderSummary({ orderId }: { orderId: any }): Promise<{
+  //   summary: InvoiceSummary;
+  // }> {
+  //   const order = await this.repository.find(orderId);
+  //   if (!order) throw new Error();
+  //   return {
+  //     summary: order.summary,
+  //   };
+  // }
 
   async adminCancelOrder({ orderId }: { orderId: string; reason: string }): Promise<void> {
     const order = await this.repository.find(orderId);
@@ -95,57 +94,44 @@ export class OrderService implements OrderApi {
       );
 
     await this.tx.run(async () => {
-      const { payment } = await this.payment.refund({
+      await this.payment.refund({
         sessionId: order.payment.sessionId,
+        customerId: order.customerId,
       });
 
-      const { fulfillment } = await this.fulfillment.cancel({ orderId: order.id });
+      await this.fulfillment.cancel({ orderId: order.id });
 
-      await this.repository.updateOrderStatusTo<'canceled_by_merchant'>({
-        ...order,
-        status: 'canceled_by_merchant',
-        payment,
-        fulfillment,
-      });
+      await this.repository.markAs(order.id, 'canceled_by_merchant');
     });
   }
 
-  async getOrderItems({ orderId }: { orderId: string }): Promise<{
-    items: LineItems<InvoiceItem>;
-  }> {
-    const order = await this.repository.find(orderId);
-    if (!order) throw new Error();
+  // async getOrderItems({ orderId }: { orderId: string }): Promise<{
+  //   items: LineItems<InvoiceItem>;
+  // }> {
+  //   const order = await this.repository.find(orderId);
+  //   if (!order) throw new Error();
 
-    return {
-      items: order.items,
-    };
-  }
+  //   return {
+  //     items: order.items,
+  //   };
+  // }
 
-  async getOrderStatus({ orderId }: { orderId: string }): Promise<{ status: OrderStatus }> {
-    const order = await this.repository.find(orderId);
-    if (!order) throw new Error();
+  // async getDeliveryConfirmationCodeOfHandedPackageOver({
+  //   orderId,
+  // }: {
+  //   orderId: string;
+  // }): Promise<{ code: string }> {
+  //   const order = await this.repository.find(orderId);
+  //   if (!order) throw new Error();
 
-    return {
-      status: order.status,
-    };
-  }
+  //   if (order.status !== 'out_for_delivery' && order.status !== 'delivered') throw new Error();
 
-  async getDeliveryConfirmationCodeOfHandedPackageOver({
-    orderId,
-  }: {
-    orderId: string;
-  }): Promise<{ code: string }> {
-    const order = await this.repository.find(orderId);
-    if (!order) throw new Error();
+  //   if (order.delivery.scope !== 'intra-city') throw new Error('');
 
-    if (order.status !== 'out_for_delivery' && order.status !== 'delivered') throw new Error();
-
-    if (order.delivery.scope !== 'intra-city') throw new Error('');
-
-    return {
-      code: order.delivery.deliveryConfirmationCode,
-    };
-  }
+  //   return {
+  //     code: order.delivery.deliveryConfirmationCode,
+  //   };
+  // }
 
   findByCustomerId({ customerId, orderId }: { customerId: string; orderId: string }) {
     return this.repository.findOrderByCustomerId(customerId, orderId);
@@ -232,10 +218,12 @@ export class OrderService implements OrderApi {
       // Reserve stocks
       await this.warehouse.reserveStock({ referenceId: orderId, items: reserve });
 
-      const { payment } = await this.payment.createPaymentSession({
+      const { sessionId } = await this.payment.createPaymentSession({
         orderId,
-        customerId,
-        customerContact: customer,
+        customer: {
+          id: customerId,
+          contact: customer,
+        },
         amount: pricedInvoice.summary.grandTotal,
         purchasedItems: pricedInvoice.items.transform(
           (item) => ({
@@ -248,10 +236,7 @@ export class OrderService implements OrderApi {
         ),
       });
 
-      await this.repository.updateOrderStatus<'recorded', 'settlement'>({
-        status: 'settlement',
-        payment,
-      });
+      await this.repository.markAsSettlementPending(orderId, sessionId);
 
       await this.outbox.save({
         type: OrderRecordedEventType,
@@ -273,27 +258,19 @@ export class OrderService implements OrderApi {
     await this.tx.run(async () => {
       switch (order.status) {
         case 'settlement':
-          await this.repository.updateOrderToCanceledStatus({
-            ...order,
-            status: 'canceled',
-            canceledAt: new Date(),
+          await this.warehouse.releaseStockByRefId({ referenceId: orderId });
+
+          break;
+        case 'process':
+          await this.payment.refund({
+            sessionId: order.payment.sessionId,
+            customerId: order.customerId,
           });
 
           await this.warehouse.releaseStockByRefId({ referenceId: orderId });
+          await this.repository.markAs(order.id, 'canceled_by_customer');
           break;
-        case 'process':
-          const { refundedTo } = await this.payment.refund({
-            paymentSessionId: order.paymentSessionId,
-          });
-          await this.repository.updateOrderToCanceledStatus({
-            ...order,
-            status: 'canceled',
-            refundedTo,
-            canceledAt: new Date(),
-          });
-          await this.warehouse.releaseStockByRefId({ referenceId: orderId });
-          break;
-        case 'courier-requested':
+        case 'courier_requested':
           // update order status
 
           // calculate the cancellation fee and deduct from paid amount
@@ -307,24 +284,17 @@ export class OrderService implements OrderApi {
           }
 
           await this.wallet.deposit({
-            customerId,
             amount: refund,
-            referenceId: orderId,
-            idempotencyKey: `order-canceled-${orderId}`,
+            customerId: customerId,
             reason: 'refund',
+            referenceId: orderId,
+            idempotencyKey: `order:refunded:${orderId}`,
           });
-
-          await this.repository.updateOrderToCanceledStatus({
-            ...order,
-            status: 'canceled',
-            refundedTo: 'wallet',
-            canceledAt: new Date(),
-          });
-
           break;
         default:
           throw new Error('Not cancelable at this stage');
       }
+      await this.repository.markAs(orderId, 'canceled_by_customer');
       await this.outbox.save({
         type: OrderCanceledEventType,
         payload: {

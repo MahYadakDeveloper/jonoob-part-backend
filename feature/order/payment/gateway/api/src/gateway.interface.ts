@@ -31,4 +31,6 @@ export interface PaymentGateway {
     ticketId: string;
     providerId: number;
   }): Promise<{ result: 'refunded' | 'failed' }>;
+
+  deleteTicket(req: { ticketId: string }): Promise<void>;
 }

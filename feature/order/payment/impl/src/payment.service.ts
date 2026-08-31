@@ -22,7 +22,6 @@ import {
   PaymentSucceededEventPayload,
   PaymentSucceededEventType,
   RefundRequest,
-  RefundResponse,
   SettleRequest,
   SettleResponse,
   WalletPaymentExceedsInvoiceError,
@@ -75,9 +74,7 @@ export class PaymentService implements PaymentApi {
     private readonly synchronizer: Synchronizer,
   ) {}
 
-  async createPaymentSession(
-    req: PaymentSessionCreationRequest,
-  ): Promise<{ payment: Extract<Payment, { status: 'initiated' }> }> {
+  async createPaymentSession(req: PaymentSessionCreationRequest): Promise<{ sessionId: number }> {
     const total = req.purchasedItems.reduce(
       (acc, item) => acc.add(item.unitPrice.multiply(item.quantity)),
       Money.zero(),
@@ -156,6 +153,7 @@ export class PaymentService implements PaymentApi {
                     } satisfies PaymentFailedEventPayload,
                   });
                 });
+                break;
               default:
                 await this.tx.run(async () => {
                   await this.repository.updatePaymentStatusTo<'expired'>({
@@ -194,20 +192,52 @@ export class PaymentService implements PaymentApi {
       });
     });
 
-    const data = await this.repository.create({
+    const { sessionId } = await this.repository.create({
       ...req,
       status: 'initiated',
       expiryJob: handle,
     });
 
-    return {
-      payment: data,
-    };
+    return { sessionId };
   }
 
-  async cancel() {
-    // [TODO] Only at pending state is cancelable
-    // [TODO] refunded if is allocated with
+  /**
+   * [TODO] Apply authorization for customer who belongs to the payment session
+   */
+  async cancel({ customerId, sessionId }: { customerId: string; sessionId: number }) {
+    const session = await this.repository.findById(sessionId);
+    if (!session) throw new Error();
+    if (session.status !== 'pending') throw new Error();
+    if (session.method === 'wallet') throw new Error();
+
+    switch (session.method) {
+      case 'partial':
+        {
+          const gateway = this.gateways.resolve(session.gatewayKey);
+          gateway.deleteTicket({ ticketId: session.trackingCode });
+          await this.repository.updatePaymentStatusTo<'initiated'>({
+            sessionId,
+            status: 'initiated',
+          });
+          await this.wallet.deposit({
+            amount: session.allocation.walletAmount,
+            customerId: session.customer.id,
+            reason: 'refund',
+            referenceId: session.orderId,
+            idempotencyKey: `payment:expiration:${session.orderId}`,
+          });
+        }
+        break;
+      case 'gateway': {
+        const gateway = this.gateways.resolve(session.gatewayKey);
+        gateway.deleteTicket({ ticketId: session.trackingCode });
+        await this.repository.updatePaymentStatusTo<'initiated'>({
+          sessionId,
+          status: 'initiated',
+        });
+        return;
+      }
+    }
   }
 
   async settle<T extends PaymentMethod>(req: SettleRequest<T>): Promise<SettleResponse> {
@@ -358,7 +388,7 @@ export class PaymentService implements PaymentApi {
     });
   }
 
-  async refund({ sessionId, customerId }: RefundRequest): Promise<RefundResponse> {
+  async refund({ sessionId, customerId }: RefundRequest): Promise<void> {
     const session = await this.repository.findById(sessionId);
     if (!session) throw new Error();
     if (session.status !== 'paid') throw new Error();
@@ -372,7 +402,7 @@ export class PaymentService implements PaymentApi {
         });
 
         if (result === 'refunded') {
-          return await this.tx.run(async () => {
+          await this.tx.run(async () => {
             await this.wallet.deposit({
               amount: session.allocation.walletAmount,
               customerId,
@@ -380,26 +410,22 @@ export class PaymentService implements PaymentApi {
               referenceId: session.orderId,
               idempotencyKey: `payment:refunded-order-payment:${session.orderId}`,
             });
-            const data = {
+            await this.repository.updatePaymentStatusTo<'refunded'>({
               ...session,
               refundedAt: new Date(),
               destination: 'partial',
               ...session.allocation,
               status: 'refunded',
-            } satisfies Extract<Payment, { status: 'refunded' }>;
-            await this.repository.updatePaymentStatusTo<'refunded'>(data);
-
-            return {
-              payment: data,
-            };
+            });
           });
+          break;
         }
       }
       /**
        * this case is also merged to partial if can be refunded the partial gatewayAmount with gateway
        */
       case 'wallet': {
-        return await this.tx.run(async () => {
+        await this.tx.run(async () => {
           await this.wallet.deposit({
             amount: session.amount, // total amount to refund into wallet
             customerId,
@@ -407,18 +433,14 @@ export class PaymentService implements PaymentApi {
             referenceId: session.orderId,
             idempotencyKey: `payment:refunded-order-payment:${session.orderId}`,
           });
-          const data = {
+          await this.repository.updatePaymentStatusTo<'refunded'>({
             ...session,
             refundedAt: new Date(),
             destination: 'wallet',
             status: 'refunded',
-          } satisfies Extract<Payment, { status: 'refunded' }>;
-          await this.repository.updatePaymentStatusTo<'refunded'>(data);
-
-          return {
-            payment: data,
-          };
+          });
         });
+        break;
       }
       case 'gateway': {
         const gateway = this.gateways.resolve(session.gatewayKey);
@@ -435,13 +457,10 @@ export class PaymentService implements PaymentApi {
             status: 'refunded',
           } satisfies Extract<Payment, { status: 'refunded' }>;
           await this.repository.updatePaymentStatusTo<'refunded'>(data);
-
-          return {
-            payment: data,
-          };
+          break;
         }
 
-        return await this.tx.run(async () => {
+        await this.tx.run(async () => {
           await this.wallet.deposit({
             amount: session.allocation.amount,
             customerId,
@@ -449,17 +468,13 @@ export class PaymentService implements PaymentApi {
             referenceId: session.orderId,
             idempotencyKey: `order-refunded:${session.orderId}`,
           });
-          const data = {
+
+          await this.repository.updatePaymentStatusTo<'refunded'>({
             ...session,
             refundedAt: new Date(),
             destination: 'wallet',
             status: 'refunded',
-          } satisfies Extract<Payment, { status: 'refunded' }>;
-
-          await this.repository.updatePaymentStatusTo<'refunded'>(data);
-          return {
-            payment: data,
-          };
+          });
         });
       }
     }
