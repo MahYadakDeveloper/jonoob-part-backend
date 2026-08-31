@@ -13,12 +13,26 @@ export type Payment = {
     } & (
       | {
           method: 'wallet';
-          allocation: PaymentAllocation<'wallet'>;
+          allocation: {
+            amount: Money;
+          };
         }
       | {
-          method: 'gateway' | 'partial';
-          allocation: PaymentAllocation<'gateway' | 'partial'>;
+          method: 'gateway';
+          allocation: {
+            amount: Money;
+          };
           gatewayKey: string;
+          trackingCode: string;
+        }
+      | {
+          method: 'partial';
+          allocation: {
+            walletAmount: Money;
+            gatewayAmount: Money;
+          };
+          gatewayKey: string;
+          trackingCode: string;
         }
     ))
   | ({
@@ -30,13 +44,28 @@ export type Payment = {
           allocation: PaymentAllocation<'wallet'>;
         }
       | {
-          method: 'gateway' | 'partial';
-          allocation: PaymentAllocation<'gateway' | 'partial'>;
+          method: 'gateway';
+          allocation: {
+            amount: Money;
+          };
           gatewayKey: string;
+          trackingCode: string;
+        }
+      | {
+          method: 'partial';
+          allocation: {
+            walletAmount: Money;
+            gatewayAmount: Money;
+          };
+          gatewayKey: string;
+          trackingCode: string;
         }
     ))
   | {
       status: 'failure';
+    }
+  | {
+      status: 'expired';
     }
   | ({
       status: 'refunded';
@@ -47,6 +76,13 @@ export type Payment = {
         }
       | {
           destination: 'gateway';
+          gatewayKey: string;
+          trackingCode: string;
+        }
+      | {
+          destination: 'partial';
+          walletAmount: Money;
+          gatewayAmount: Money;
           gatewayKey: string;
           trackingCode: string;
         }

@@ -3,10 +3,13 @@ import { PaymentMethod, WalletUsage } from './payment.types';
 
 export type PaymentSessionCreationRequest = {
   orderId: string;
-  customerId: string;
-  customerContact: {
-    phoneNumber: string;
+  customer: {
+    id: string;
+    contact: {
+      phoneNumber: string;
+    };
   };
+
   purchasedItems: LineItems<{
     productId: string;
     productName: string;
@@ -38,5 +41,4 @@ export type SettleRequest<T extends PaymentMethod> = {
 export interface RefundRequest {
   sessionId: number;
   customerId: string;
-  amount: Money;
 }

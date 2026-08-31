@@ -27,7 +27,8 @@ export interface PaymentGateway {
 
   verifyPaymentTicket(req: VerifyPaymentTicketRequest): Promise<VerifyPaymentTicketResponse>;
 
-  refundPaymentTicket(req: { ticketId: string; providerId: number }): Promise<void>;
-
-  removeTicket(req: { ticketId: string }): Promise<void>;
+  refundPaymentTicket(req: {
+    ticketId: string;
+    providerId: number;
+  }): Promise<{ result: 'refunded' | 'failed' }>;
 }

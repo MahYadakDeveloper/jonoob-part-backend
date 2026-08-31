@@ -9,6 +9,5 @@ export interface PaymentApi {
 
   settle<T extends PaymentMethod>(req: SettleRequest<T>): Promise<SettleResponse>;
 
-  getTrackingCode(req: { sessionId: number }): Promise<{ trackingCode: string }>;
   refund(req: RefundRequest): Promise<RefundResponse>;
 }

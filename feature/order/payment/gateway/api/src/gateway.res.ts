@@ -1,4 +1,4 @@
-export type CreatePaymentTicketResponse = { paymentUrl: string };
+export type CreatePaymentTicketResponse = { paymentUrl: string; ticketId: string };
 export type VerifyPaymentTicketResponse = {
   status: TicketStatus;
 };
