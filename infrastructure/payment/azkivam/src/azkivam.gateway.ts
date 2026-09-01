@@ -1,8 +1,9 @@
 import { type OutboxRepository } from '@feature/common';
-import { type OrderApi } from '@feature/order-api';
 import {
   CreatePaymentTicketRequest,
   CreatePaymentTicketResponse,
+  GetTicketStatusRequest,
+  GetTicketStatusResponse,
   PaymentGateway,
   TicketVerificationFailedEventPayload,
   TicketVerificationFailedEventType,
@@ -10,14 +11,13 @@ import {
   TicketVerifiedEventType,
   VerifyPaymentTicketRequest,
   VerifyPaymentTicketResponse,
-} from '@feature/payment-gateway-api';
+} from '@feature/order-payment-gateway-api';
 import { appConfig } from '@infra/config';
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import { AxiosInstance } from 'axios';
 import { firstValueFrom } from 'rxjs';
-import { PrismaAzkivamTicketRepository } from './azkivam-ticket.repository';
 import { PrismaAzkivamTokenRepository } from './azkivam-token.repository';
 import { azkivamConfig } from './azkivam.config';
 import {
@@ -35,7 +35,9 @@ import {
 
 @Injectable()
 export class AzkivamGateway implements PaymentGateway {
-  readonly name: string = 'azkivam' as const;
+  readonly key: string = 'azkivam' as const;
+  readonly expiryInMinutes: number = 1;
+  readonly verificationDeadlineInMinutes: number = 1;
   readonly supportsPartialPayment: boolean = false;
 
   private readonly api: AxiosInstance;
@@ -43,7 +45,6 @@ export class AzkivamGateway implements PaymentGateway {
 
   constructor(
     private readonly token: PrismaAzkivamTokenRepository,
-    private readonly tickets: PrismaAzkivamTicketRepository,
     private readonly http: HttpService,
     @Inject(azkivamConfig.KEY)
     private readonly azkivam: ConfigType<typeof azkivamConfig>,
@@ -58,8 +59,11 @@ export class AzkivamGateway implements PaymentGateway {
     this.setupApiInterceptor();
   }
 
-  async removeTicket({ ticketId }: { ticketId: string }): Promise<void> {
-    await this.tickets.delete(ticketId);
+  refundPaymentTicket(req: {
+    ticketId: string;
+    providerId: number;
+  }): Promise<{ result: 'refunded' | 'failed' }> {
+    throw new Error('Method not implemented.');
   }
 
   /**
@@ -69,28 +73,25 @@ export class AzkivamGateway implements PaymentGateway {
     providerId,
     customerContact,
     purchasedItems,
-    summary,
+    amount,
   }: CreatePaymentTicketRequest): Promise<CreatePaymentTicketResponse> {
-    const items = purchasedItems.toArray().map<CreateTicketRequest['items']['0']>(
-      (item) => ({
-        name: item.description,
-        count: item.quantity,
+    const items = purchasedItems.toArray().map<CreateTicketRequest['items']['0']>((item) => ({
+      name: item.productName,
+      count: item.quantity,
 
-        /**
-         * [NOTE]
-         * The amount is value of each single item
-         */
-        amount: item.lineTotal.divide(item.quantity).value,
-        url: `${this.app.productsUrl}/${item.productId}`,
-      }),
-      (x) => x.productId,
-    );
+      /**
+       * [NOTE]
+       * The amount is value of each single item
+       */
+      amount: item.unitPrice.value,
+      url: `${this.app.productsUrl}/${item.productId}`,
+    }));
 
     const callback = `${this.app.apiUrl}/payment/azkivam/callback?providerId=${providerId}`;
 
     const data: CreateTicketRequest = {
-      amount: summary.grandTotal.value,
-      mobile_number: customerContact.phone,
+      amount: amount.value,
+      mobile_number: customerContact.phoneNumber,
       provider_id: providerId,
       redirect_uri: callback,
       fallback_uri: callback,
@@ -100,13 +101,9 @@ export class AzkivamGateway implements PaymentGateway {
 
     const res = await this.api.post<CreateTicketResponse>(this.azkivam.createTicketEndpoint, data);
 
-    await this.tickets.create({
-      providerId,
-      ticketId: res.data.result.ticket_id,
-    });
-
     return {
       paymentUrl: res.data.result.payment_uri,
+      ticketId: res.data.result.ticket_id,
     };
   }
 
@@ -115,17 +112,14 @@ export class AzkivamGateway implements PaymentGateway {
    */
   async verifyPaymentTicket({
     providerId,
+    ticketId,
   }: VerifyPaymentTicketRequest): Promise<VerifyPaymentTicketResponse> {
-    const ticket = await this.tickets.findByProviderId(providerId);
-
-    if (!ticket) throw new Error('Ticket not found');
-
-    const { status } = await this.getTicketStatus({ ticketId: ticket.ticketId });
+    const { status } = await this._getTicketStatus({ ticketId: ticketId });
 
     switch (status) {
       case 'done': {
         const res = await this.api.post<VerifyTicketResponse>(this.azkivam.verifyTicketEndpoint, {
-          ticket_id: ticket.ticketId,
+          ticket_id: ticketId,
         } satisfies VerifyTicketRequest);
 
         switch (res.data.result.status) {
@@ -134,8 +128,6 @@ export class AzkivamGateway implements PaymentGateway {
               type: TicketVerifiedEventType,
               payload: {
                 providerId,
-                gateway: this.name,
-                ticketId: ticket.ticketId,
               } satisfies TicketVerifiedEventPayload,
             });
 
@@ -146,8 +138,6 @@ export class AzkivamGateway implements PaymentGateway {
               type: TicketVerificationFailedEventType,
               payload: {
                 providerId,
-                gateway: this.name,
-                ticketId: ticket.ticketId,
                 status: 'canceled',
               } satisfies TicketVerificationFailedEventPayload,
             });
@@ -158,12 +148,10 @@ export class AzkivamGateway implements PaymentGateway {
               type: TicketVerificationFailedEventType,
               payload: {
                 providerId,
-                gateway: this.name,
-                ticketId: ticket.ticketId,
-                status: 'failure',
+                status: 'failed',
               } satisfies TicketVerificationFailedEventPayload,
             });
-            return { status: 'failure' };
+            return { status: 'failed' };
         }
       }
       case 'canceled':
@@ -173,8 +161,6 @@ export class AzkivamGateway implements PaymentGateway {
           type: TicketVerificationFailedEventType,
           payload: {
             providerId,
-            gateway: this.name,
-            ticketId: ticket.ticketId,
             status,
           } satisfies TicketVerificationFailedEventPayload,
         });
@@ -185,8 +171,6 @@ export class AzkivamGateway implements PaymentGateway {
           type: TicketVerificationFailedEventType,
           payload: {
             providerId,
-            gateway: this.name,
-            ticketId: ticket.ticketId,
             status: 'verified-before',
           } satisfies TicketVerificationFailedEventPayload,
         });
@@ -196,16 +180,40 @@ export class AzkivamGateway implements PaymentGateway {
           type: TicketVerificationFailedEventType,
           payload: {
             providerId,
-            gateway: this.name,
-            ticketId: ticket.ticketId,
-            status: 'failure',
+            status: 'failed',
           } satisfies TicketVerificationFailedEventPayload,
         });
-        return { status: 'failure' };
+        return { status: 'failed' };
     }
   }
 
-  async getTicketStatus({ ticketId }: { ticketId: string }): Promise<{ status: TicketStatus }> {
+  async getTicketStatus({ ticketId }: GetTicketStatusRequest): Promise<GetTicketStatusResponse> {
+    const { status } = await this._getTicketStatus({ ticketId });
+
+    switch (status) {
+      case 'created':
+      case 'settleQueued':
+      case 'done':
+        return { status: 'pending' };
+      case 'canceled':
+        return { status: 'canceled' };
+      case 'settled':
+      case 'verified':
+        return { status: 'verified' };
+      case 'expired':
+        return { status: 'expired' };
+      case 'failed':
+        return { status: 'failed' };
+      case 'reversed':
+        return { status: 'reversed' };
+    }
+  }
+
+  private async _getTicketStatus({
+    ticketId,
+  }: {
+    ticketId: string;
+  }): Promise<{ status: TicketStatus }> {
     const res = await this.api.post<TicketStatusResponse>(this.azkivam.ticketStatusEndpoint, {
       ticket_id: ticketId,
     } satisfies TicketStatusRequest);

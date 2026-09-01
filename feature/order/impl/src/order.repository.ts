@@ -1,9 +1,10 @@
-import { LineItems } from '@feature/common';
+import { LineItems, PartialBy } from '@feature/common';
 import { Order } from './model/order';
 
 export interface OrderRepository {
   findOrderByCustomerId(customerId: string, orderId: string): Promise<Order | null>;
   find(id: string): Promise<Order | null>;
+  findBySessionId(sessionId: number): Promise<Extract<Order, { status: 'settlement' }>>;
   getPaymentPendingOrders(customerId: string): Promise<LineItems<Order>>;
   findOrderHandOverToCourier(
     orderId: string,
@@ -17,11 +18,14 @@ export interface OrderRepository {
   markAsSettlementPending(orderId: string, sessionId: number): Promise<void>;
   markAs(orderId: string, status: Order['status']): Promise<void>;
 
-  // updateOrderStatus<From extends Order['status'], To extends Order['status']>(
+  // markAsPaid(
   //   id: string,
   //   data: PartialBy<
-  //     Extract<Order, { status: To }>,
-  //     Extract<keyof Extract<Order, { status: From }>, keyof Extract<Order, { status: To }>>
+  //     Extract<Order, { status: 'process' }>,
+  //     Extract<
+  //       keyof Extract<Order, { status: 'settlement' }>,
+  //       keyof Extract<Order, { status: 'process' }>
+  //     >
   //   >,
   // ): Promise<void>;
 }

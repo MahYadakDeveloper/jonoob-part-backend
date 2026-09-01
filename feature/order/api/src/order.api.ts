@@ -7,7 +7,11 @@ export interface OrderApi {
   // }): Promise<{ code: string }>;
   // getOrderSummary(req: { orderId: string }): Promise<{ summary: InvoiceSummary }>;
 
-  // getOrderItems({ orderId }: { orderId: string }): Promise<{ items: LineItems<InvoiceItem> }>;
+  getReservedItems({
+    orderId,
+  }: {
+    orderId: string;
+  }): Promise<{ items: LineItems<{ goodId: string; quantity: number }> }>;
 
   adminCancelOrder(req: { orderId: string; reason: string }): Promise<void>;
 

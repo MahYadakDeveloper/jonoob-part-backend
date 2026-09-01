@@ -1,4 +1,6 @@
-export type Fulfillment =
+export type Fulfillment = {
+  id: string;
+} & (
   | {
       status: 'processing';
     }
@@ -10,4 +12,5 @@ export type Fulfillment =
       status: 'canceled';
       canceledAt: Date;
       reason: string;
-    };
+    }
+);

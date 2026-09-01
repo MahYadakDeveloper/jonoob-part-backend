@@ -1,11 +1,11 @@
 import {
   CreatePaymentTicketRequest,
-  GetPaymentTicketIdRequest,
+  GetTicketStatusRequest,
   VerifyPaymentTicketRequest,
 } from './gateway.req';
 import {
   CreatePaymentTicketResponse,
-  GetPaymentTicketIdResponse,
+  GetTicketStatusResponse,
   VerifyPaymentTicketResponse,
 } from './gateway.res';
 
@@ -21,16 +21,14 @@ export interface PaymentGateway {
    */
   verificationDeadlineInMinutes: number;
 
-  getPaymentTicketId(req: GetPaymentTicketIdRequest): Promise<GetPaymentTicketIdResponse>;
-
   createPaymentTicket(req: CreatePaymentTicketRequest): Promise<CreatePaymentTicketResponse>;
 
   verifyPaymentTicket(req: VerifyPaymentTicketRequest): Promise<VerifyPaymentTicketResponse>;
+
+  getTicketStatus(req: GetTicketStatusRequest): Promise<GetTicketStatusResponse>;
 
   refundPaymentTicket(req: {
     ticketId: string;
     providerId: number;
   }): Promise<{ result: 'refunded' | 'failed' }>;
-
-  deleteTicket(req: { ticketId: string }): Promise<void>;
 }

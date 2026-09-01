@@ -75,3 +75,7 @@ export interface StocksIncreaseRequest {
 export interface StocksDecreaseRequest {
   items: LineItems<ItemType>;
 }
+
+export interface GetReservedStocksRequest {
+  referenceId: string;
+}

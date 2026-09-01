@@ -1,12 +1,7 @@
 import { LineItems } from '@feature/common';
+import { Fulfillment } from '@feature/order-fulfillment-api';
 
-type ProcessingOrder = {
-  orderId: string;
-  queuedAt: Date;
-};
-
-export interface ProcessingOrderRepository {
+export interface FulfillmentRepository {
   enqueue(orderId: string): Promise<void>;
-  remove(orderId: string): Promise<void>;
-  listReadyForProcessing(): Promise<LineItems<ProcessingOrder>>;
+  listReadyForProcessing(): Promise<LineItems<Fulfillment>>;
 }

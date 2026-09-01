@@ -4,10 +4,7 @@ import { Payment, PaymentSessionCreationRequest } from '@feature/order-payment-a
 export type PaymentSession = {
   createdAt: Date;
   orderId: string; // equivalent to :[orderId, reservationId] - prisma: @unique
-  customer: {
-    id: string;
-    contact: PaymentSessionCreationRequest['customerContact'];
-  };
+  customer: PaymentSessionCreationRequest['customer'];
   purchasedItems: PaymentSessionCreationRequest['purchasedItems'];
   expiryJob: JobHandle;
   amount: Money;

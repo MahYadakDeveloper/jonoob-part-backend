@@ -8,7 +8,7 @@ import { OrderPaymentFailedEventPayload, OrderPaymentFailedEventType } from '@fe
 import {
   TicketVerificationFailedEventPayload,
   TicketVerificationFailedEventType,
-} from '@feature/payment-gateway-api';
+} from '@feature/order-payment-gateway-api';
 import { Injectable } from '@nestjs/common';
 import { PaymentGatewayResolver } from '../payment-gateway.resolver';
 import { type PaymentSessionRepository } from '../payment-session.repository';
@@ -26,38 +26,30 @@ export class TicketVerificationFailedEventHandler extends BaseEventHandler<Ticke
   }
 
   async handle(payload: TicketVerificationFailedEventPayload) {
-    const gateway = this.gateways.resolve(payload.gateway);
-    // [TODO] delete ticket (for delivery confirmation in the order payment ticket is preserved)
-    await this.tx.run(async () => {
-      // [TODO] delete ticket (for delivery confirmation in the order payment ticket is preserved)
-      await gateway.removeTicket({ ticketId: payload.ticketId });
+    if (payload.status === 'pending') return;
+    const session = await this.repository.findById(payload.providerId);
+    if (session?.status !== 'pending') throw new Error();
+    if (session.method === 'wallet') throw new Error();
 
-      await this.repository.updateGatewayStatus({
-        name: gateway.name,
-        status:
-          payload.status === 'expired'
-            ? 'expired'
-            : payload.status === 'canceled'
-              ? 'canceled'
-              : 'failed',
-      });
+    await this.tx.run(async () => {
+      switch (payload.status) {
+        case 'expired':
+          await this.repository.updatePaymentStatusTo<'expired'>({
+            ...session,
+            status: 'expired',
+          });
+          break;
+        default:
+          await this.repository.updatePaymentStatusTo<'failure'>({
+            ...session,
+            status: 'failure',
+          });
+      }
 
       await this.outbox.save({
         type: OrderPaymentFailedEventType,
         payload: {
-          payment: {
-            gateway: gateway.name,
-            ticketId: payload.ticketId,
-            occurredAt: new Date(),
-            status:
-              payload.status === 'canceled'
-                ? 'canceled'
-                : payload.status === 'expired'
-                  ? 'expired'
-                  : payload.status === 'reversed'
-                    ? 'reversed'
-                    : 'invalid',
-          },
+          orderId: session.orderId,
         } satisfies OrderPaymentFailedEventPayload,
       });
     });

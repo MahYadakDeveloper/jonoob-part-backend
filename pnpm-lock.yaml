@@ -505,6 +505,9 @@ importers:
       '@feature/order-api':
         specifier: workspace:*
         version: link:../../api
+      '@feature/order-fulfillment-api':
+        specifier: workspace:*
+        version: link:../api
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../../../warehouse/api

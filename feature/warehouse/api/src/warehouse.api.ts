@@ -1,5 +1,6 @@
 import {
   GetGoodDetailsRequest,
+  GetReservedStocksRequest,
   GetStockRequest,
   GetStocksRequest,
   GetWarehouseViewRequest,
@@ -17,6 +18,7 @@ import {
 } from './warehouse.requests';
 import {
   GetGoodDetailsResponse,
+  GetReservedStocksResponse,
   GetStockResponse,
   GetStocksResponse,
   GetWarehouseViewResponse,
@@ -83,6 +85,7 @@ export interface WarehouseApi {
    * unavailable until the reservation is released.
    */
   reserveStock(req: StockReservingRequest): Promise<void>;
+  getReservedStocks(req: GetReservedStocksRequest): Promise<GetReservedStocksResponse>;
 
   /**
    * Releases a previously reserved quantity, making it available for future

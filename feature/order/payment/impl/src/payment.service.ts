@@ -10,6 +10,7 @@ import {
   type TransactionManager,
 } from '@feature/common';
 import { type WalletApi } from '@feature/customer-wallet-api';
+import { OrderPaymentFailedEventPayload, OrderPaymentFailedEventType } from '@feature/order-api';
 import {
   InsufficientWalletBalanceError,
   InvalidWalletPaymentAmountError,
@@ -28,6 +29,7 @@ import {
   WalletUsage,
   type PaymentApi,
 } from '@feature/order-payment-api';
+import { TicketStatus } from '@feature/order-payment-gateway-api';
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { PaymentGatewayResolver } from './payment-gateway.resolver';
@@ -109,23 +111,11 @@ export class PaymentService implements PaymentApi {
             // verify first
             const gateway = this.gateways.resolve(session.gatewayKey);
 
-            const { status: ticketStatus } = await gateway.verifyPaymentTicket({
-              providerId: session.sessionId,
+            const { status: ticketStatus } = await gateway.getTicketStatus({
+              ticketId: session.trackingCode,
             });
+
             switch (ticketStatus) {
-              case 'verified':
-                await this.repository.updatePaymentStatusTo<'paid'>({
-                  ...session,
-                  status: 'paid',
-                  paidAt: new Date(),
-                });
-                await this.outbox.save({
-                  type: PaymentSucceededEventType,
-                  payload: {
-                    sessionId: session.sessionId,
-                  } satisfies PaymentSucceededEventPayload,
-                });
-                break;
               case 'expired':
                 await this.tx.run(async () => {
                   await this.repository.updatePaymentStatusTo<'expired'>({
@@ -133,18 +123,13 @@ export class PaymentService implements PaymentApi {
                     status: 'expired',
                   });
                   if (session.method === 'partial') {
-                    const { transaction } = await this.wallet.getTransactionByRefId({
+                    await this.wallet.deposit({
+                      amount: session.allocation.walletAmount,
+                      customerId: session.customer.id,
+                      reason: 'refund',
                       referenceId: session.orderId,
+                      idempotencyKey: `payment:expiration:${session.orderId}`,
                     });
-                    if (transaction.kind === 'withdraw') {
-                      await this.wallet.deposit({
-                        amount: transaction.amount,
-                        customerId: session.customer.id,
-                        reason: 'refund',
-                        referenceId: session.orderId,
-                        idempotencyKey: `payment:expiration:${session.orderId}`,
-                      });
-                    }
                   }
                   await this.outbox.save({
                     type: PaymentFailedEventType,
@@ -161,18 +146,13 @@ export class PaymentService implements PaymentApi {
                     status: 'expired',
                   });
                   if (session.method === 'partial') {
-                    const { transaction } = await this.wallet.getTransactionByRefId({
+                    await this.wallet.deposit({
+                      amount: session.allocation.walletAmount,
+                      customerId: session.customer.id,
+                      reason: 'refund',
                       referenceId: session.orderId,
+                      idempotencyKey: `payment:expiration:${session.orderId}`,
                     });
-                    if (transaction.kind === 'withdraw') {
-                      await this.wallet.deposit({
-                        amount: transaction.amount,
-                        customerId: session.customer.id,
-                        reason: 'refund',
-                        referenceId: session.orderId,
-                        idempotencyKey: `payment:expiration:${session.orderId}`,
-                      });
-                    }
                   }
                   await this.repository.updatePaymentStatusTo<'failure'>({
                     ...session,
@@ -201,10 +181,71 @@ export class PaymentService implements PaymentApi {
     return { sessionId };
   }
 
+  async verify({ sessionId }: { sessionId: number }): Promise<{ status: TicketStatus }> {
+    const session = await this.repository.findById(sessionId);
+    if (!session) throw new Error();
+    if (session.status !== 'pending') throw new Error();
+    if (session.method === 'wallet') throw new Error();
+
+    const gateway = this.gateways.resolve(session.gatewayKey);
+    const { status } = await gateway.verifyPaymentTicket({
+      providerId: session.sessionId,
+      ticketId: session.trackingCode,
+    });
+
+    switch (status) {
+      case 'verified':
+        await this.tx.run(async () => {
+          await this.repository.updatePaymentStatusTo<'paid'>({
+            ...session,
+            status: 'paid',
+            paidAt: new Date(),
+          });
+
+          await this.outbox.save({
+            type: PaymentSucceededEventType,
+            payload: {
+              sessionId: session.sessionId,
+            } satisfies PaymentSucceededEventPayload,
+          });
+        });
+        break;
+      case 'pending':
+        break;
+      case 'expired':
+        await this.repository.updatePaymentStatusTo<'expired'>({
+          ...session,
+          status: 'expired',
+        });
+        await this.outbox.save({
+          type: OrderPaymentFailedEventType,
+          payload: {
+            orderId: session.orderId,
+          } satisfies OrderPaymentFailedEventPayload,
+        });
+        break;
+      default:
+        await this.repository.updatePaymentStatusTo<'failure'>({
+          ...session,
+          status: 'failure',
+        });
+        await this.outbox.save({
+          type: OrderPaymentFailedEventType,
+          payload: {
+            orderId: session.orderId,
+          } satisfies OrderPaymentFailedEventPayload,
+        });
+    }
+
+    return {
+      status,
+    };
+  }
+
   /**
    * [TODO] Apply authorization for customer who belongs to the payment session
    */
-  async cancel({ customerId, sessionId }: { customerId: string; sessionId: number }) {
+  async cancel({ sessionId }: { sessionId: number }) {
     const session = await this.repository.findById(sessionId);
     if (!session) throw new Error();
     if (session.status !== 'pending') throw new Error();
@@ -213,8 +254,6 @@ export class PaymentService implements PaymentApi {
     switch (session.method) {
       case 'partial':
         {
-          const gateway = this.gateways.resolve(session.gatewayKey);
-          gateway.deleteTicket({ ticketId: session.trackingCode });
           await this.repository.updatePaymentStatusTo<'initiated'>({
             sessionId,
             status: 'initiated',
@@ -229,8 +268,6 @@ export class PaymentService implements PaymentApi {
         }
         break;
       case 'gateway': {
-        const gateway = this.gateways.resolve(session.gatewayKey);
-        gateway.deleteTicket({ ticketId: session.trackingCode });
         await this.repository.updatePaymentStatusTo<'initiated'>({
           sessionId,
           status: 'initiated',

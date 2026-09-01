@@ -73,6 +73,17 @@ export class OrderService implements OrderApi {
     private readonly wallet: WalletApi,
   ) {}
 
+  async getReservedItems({
+    orderId,
+  }: {
+    orderId: string;
+  }): Promise<{ items: LineItems<{ goodId: string; quantity: number }> }> {
+    const { stocks } = await this.warehouse.getReservedStocks({ referenceId: orderId });
+    return {
+      items: stocks,
+    };
+  }
+
   // async getOrderSummary({ orderId }: { orderId: any }): Promise<{
   //   summary: InvoiceSummary;
   // }> {
@@ -104,17 +115,6 @@ export class OrderService implements OrderApi {
       await this.repository.markAs(order.id, 'canceled_by_merchant');
     });
   }
-
-  // async getOrderItems({ orderId }: { orderId: string }): Promise<{
-  //   items: LineItems<InvoiceItem>;
-  // }> {
-  //   const order = await this.repository.find(orderId);
-  //   if (!order) throw new Error();
-
-  //   return {
-  //     items: order.items,
-  //   };
-  // }
 
   // async getDeliveryConfirmationCodeOfHandedPackageOver({
   //   orderId,

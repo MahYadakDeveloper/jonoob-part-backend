@@ -15,8 +15,11 @@ export type CreatePaymentTicketRequest = {
   amount: Money;
 };
 
-export type VerifyPaymentTicketRequest = { providerId: number };
+export type VerifyPaymentTicketRequest = { providerId: number; ticketId: string };
 
 export type GetPaymentTicketIdRequest = {
   providerId: number;
 };
+export interface GetTicketStatusRequest {
+  ticketId: string;
+}

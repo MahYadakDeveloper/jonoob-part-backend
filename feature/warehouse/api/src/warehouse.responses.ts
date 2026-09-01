@@ -13,6 +13,10 @@ export interface GetStockResponse {
   stock: number;
 }
 
+export interface GetReservedStocksResponse {
+  stocks: LineItems<{ goodId: string; quantity: number }>;
+}
+
 export interface GetStocksResponse {
   stocks: LineItems<{ goodId: string; quantity: number }>;
 }

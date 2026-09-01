@@ -20,6 +20,7 @@
     "@feature/catalog-api": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/order-api": "workspace:*",
+    "@feature/order-fulfillment-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.2.1"
   }

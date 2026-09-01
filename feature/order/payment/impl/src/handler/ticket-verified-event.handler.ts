@@ -4,10 +4,15 @@ import {
   type OutboxRepository,
   type TransactionManager,
 } from '@feature/common';
-import { OrderPaidEventPayload, OrderPaidEventType } from '@feature/order-api';
-import { TicketVerifiedEventPayload, TicketVerifiedEventType } from '@feature/payment-gateway-api';
+import {
+  PaymentSucceededEventPayload,
+  PaymentSucceededEventType,
+} from '@feature/order-payment-api';
+import {
+  TicketVerifiedEventPayload,
+  TicketVerifiedEventType,
+} from '@feature/order-payment-gateway-api';
 import { Injectable } from '@nestjs/common';
-import { PaymentGatewayResolver } from '../payment-gateway.resolver';
 import { type PaymentSessionRepository } from '../payment-session.repository';
 
 @Injectable()
@@ -15,7 +20,6 @@ export class TicketVerifiedEventHandler extends BaseEventHandler<TicketVerifiedE
   constructor(
     registry: EventHandlerRegistry,
     private readonly repository: PaymentSessionRepository,
-    private readonly gateways: PaymentGatewayResolver,
     private readonly outbox: OutboxRepository,
     private readonly tx: TransactionManager,
   ) {
@@ -23,29 +27,22 @@ export class TicketVerifiedEventHandler extends BaseEventHandler<TicketVerifiedE
   }
 
   async handle(payload: TicketVerifiedEventPayload) {
-    const gateway = this.gateways.resolve(payload.gateway);
+    const session = await this.repository.findById(payload.providerId);
+    if (session?.status !== 'pending') throw new Error();
+    if (session.method === 'wallet') throw new Error();
 
     await this.tx.run(async () => {
-      // [TODO] delete ticket (for delivery confirmation in the order payment ticket is preserved)
-      await gateway.removeTicket({ ticketId: payload.ticketId });
-
-      await this.repository.updateGatewayStatus({
-        name: gateway.name,
+      await this.repository.updatePaymentStatusTo<'paid'>({
+        ...session,
         status: 'paid',
-        transactionId: payload.ticketId,
+        paidAt: new Date(),
       });
 
       await this.outbox.save({
-        type: OrderPaidEventType,
+        type: PaymentSucceededEventType,
         payload: {
-          payment: {
-            status: 'paid',
-            ticketId: payload.ticketId,
-            gateway: gateway.name,
-            providerId: payload.providerId,
-            settledAt: new Date(),
-          },
-        } satisfies OrderPaidEventPayload,
+          sessionId: session.sessionId,
+        } satisfies PaymentSucceededEventPayload,
       });
     });
   }
