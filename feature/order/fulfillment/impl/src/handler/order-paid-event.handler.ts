@@ -4,10 +4,10 @@ import {
   type OutboxRepository,
   type TransactionManager,
 } from '@feature/common';
-import { OrderEventPayload, OrderPaidEventType } from '@feature/order-api';
+import { type OrderApi, OrderEventPayload, OrderPaidEventType } from '@feature/order-api';
 import {
-  FulfillmentEnqueuedForProcessing,
-  FulfillmentProcessingStartedEventPayload,
+  OrderFulfillmentEnqueuedEventPayload,
+  OrderFulfillmentEnqueuedEventType,
 } from '@feature/order-fulfillment-api';
 import { Injectable } from '@nestjs/common';
 import { type FulfillmentRepository } from '../fulfillment.repository';
@@ -17,6 +17,7 @@ export class OrderPaidEventHandler extends BaseEventHandler<OrderEventPayload> {
   constructor(
     registry: EventHandlerRegistry,
     private readonly repository: FulfillmentRepository,
+    private readonly order: OrderApi,
     private readonly outbox: OutboxRepository,
     private readonly tx: TransactionManager,
   ) {
@@ -25,10 +26,12 @@ export class OrderPaidEventHandler extends BaseEventHandler<OrderEventPayload> {
 
   async handle({ orderId }: OrderEventPayload) {
     await this.tx.run(async () => {
-      await this.repository.enqueue(orderId);
+      await this.repository.enqueue(orderId, { status: 'processing' });
       await this.outbox.save({
-        type: FulfillmentEnqueuedForProcessing,
-        payload: {} satisfies FulfillmentProcessingStartedEventPayload,
+        type: OrderFulfillmentEnqueuedEventType,
+        payload: {
+          orderId,
+        } satisfies OrderFulfillmentEnqueuedEventPayload,
       });
     });
   }

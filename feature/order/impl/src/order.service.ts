@@ -94,27 +94,7 @@ export class OrderService implements OrderApi {
   //   };
   // }
 
-  async adminCancelOrder({ orderId }: { orderId: string; reason: string }): Promise<void> {
-    const order = await this.repository.find(orderId);
-
-    if (!order) throw new Error();
-
-    if (order.status !== 'process')
-      throw new Error(
-        `Only at process stage can be canceled, the current stage is ${order?.status}`,
-      );
-
-    await this.tx.run(async () => {
-      await this.payment.refund({
-        sessionId: order.payment.sessionId,
-        customerId: order.customerId,
-      });
-
-      await this.fulfillment.cancel({ orderId: order.id });
-
-      await this.repository.markAs(order.id, 'canceled_by_merchant');
-    });
-  }
+  async adminCancelOrder({ orderId }: { orderId: string; reason: string }): Promise<void> {}
 
   // async getDeliveryConfirmationCodeOfHandedPackageOver({
   //   orderId,

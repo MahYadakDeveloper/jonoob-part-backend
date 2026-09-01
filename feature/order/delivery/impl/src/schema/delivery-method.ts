@@ -47,6 +47,7 @@ export const DeliveryMethodSchema = z
       z.object({
         scope: z.literal('inter-city'),
         carrier: z.object({
+          key: z.string(),
           provider: z.string(),
           shippingCostPayment: z.discriminatedUnion('variant', [
             z.object({

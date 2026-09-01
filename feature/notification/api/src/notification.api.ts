@@ -1,3 +1,3 @@
 export interface NotificationApi {
-  notifyDeliveryInProgress(req: { customerId: string; code: string }): Promise<void>;
+  notifyCustomerPackageIsOnItsWay(req: { customerId: string; code: string }): Promise<void>;
 }

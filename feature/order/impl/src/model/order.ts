@@ -66,12 +66,12 @@ export type Order = BaseOrder &
       } & (
         | {
             status: 'canceled_by_customer';
-            fulfillment: Extract<Fulfillment, { status: 'canceled' }>;
+            fulfillment: Extract<Fulfillment, { status: 'canceled_by_customer' }>;
             delivery: Extract<Delivery, { status: 'initiated' }>;
           }
         | {
             status: 'canceled_by_merchant';
-            fulfillment: Extract<Fulfillment, { status: 'canceled' }>;
+            fulfillment: Extract<Fulfillment, { status: 'canceled_by_merchant' }>;
             delivery: Extract<Delivery, { status: 'initiated' }>;
           }
         | {

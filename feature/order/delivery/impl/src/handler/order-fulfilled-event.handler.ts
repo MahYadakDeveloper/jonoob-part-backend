@@ -6,21 +6,22 @@ import {
   type SettingsStore,
   type TransactionManager,
 } from '@feature/common';
-import { type CourierApi } from '@feature/courier-api';
 import { type NotificationApi } from '@feature/notification-api';
-import { type OrderApi, OrderEventPayload, OrderProcessedEventType } from '@feature/order-api';
+import { OrderEventPayload, OrderFulfilledEventType } from '@feature/order-api';
 import {
   CourierDispatchRequestedEventPayload,
   CourierDispatchRequestedEventType,
 } from '@feature/order-delivery-api';
+import { type CourierApi } from '@feature/order-delivery-courier-api';
 import { Injectable } from '@nestjs/common';
+import { type DeliveryRepository } from '../delivery.repository';
 import { DeliverySettingsToken } from '../setting/token';
 
 @Injectable()
-export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPayload> {
+export class OrderFulfilledEventHandler extends BaseEventHandler<OrderEventPayload> {
   constructor(
     registry: EventHandlerRegistry,
-    private readonly order: OrderApi,
+    private readonly repository: DeliveryRepository,
     private readonly courier: CourierApi,
     private readonly settings: SettingsStore,
     private readonly notification: NotificationApi,
@@ -28,7 +29,7 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {
-    super(registry, OrderProcessedEventType);
+    super(registry, OrderFulfilledEventType);
   }
 
   // {
@@ -47,10 +48,8 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
   //    "id": 1616,
   //    "name": "چمران"
   // }
-  async handle({ orderId, occurredAt }: OrderEventPayload) {
-    const { customer, delivery } = await this.order.getRecipientInformation({
-      orderId,
-    });
+  async handle({ orderId }: OrderEventPayload) {
+    const delivery = await this.repository.find(orderId);
 
     await this.tx.run(async () => {
       // Make a request for shipping
@@ -59,10 +58,10 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
           orderId,
           scope: 'intra-city',
           recipient: {
-            address: delivery.address,
-            fullName: customer.fullName,
-            phone: customer.phone,
-            coordinate: delivery.coordinate,
+            address: delivery.recipient.address,
+            fullName: delivery.recipient.customer.contact.fullName,
+            phone: delivery.recipient.customer.contact.phone,
+            coordinate: delivery.recipient.coordinate,
           },
         });
 
@@ -71,15 +70,15 @@ export class OrderProcessedEventHandler extends BaseEventHandler<OrderEventPaylo
 
         // Notify costumer the delivery in progress and have to give
         // confirmation code to courier
-        await this.notification.notifyDeliveryInProgress({
-          customerId: customer.id,
+        await this.notification.notifyCustomerPackageIsOnItsWay({
+          customerId: delivery.recipient.customer.id,
           code,
         });
       } else {
         const methods = await this.settings.get(DeliverySettingsToken);
         const method = methods.find((method) =>
           method.carrier !== 'courier'
-            ? method.carrier.provider === delivery.carrier.provider
+            ? method.carrier.provider === delivery.recipient.carrierId
             : false,
         );
 
