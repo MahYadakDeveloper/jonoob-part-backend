@@ -1,20 +1,21 @@
 import { type OtpGenerator, type OutboxRepository, type TransactionManager } from '@feature/common';
 import { type NotificationApi } from '@feature/notification-api';
 import { type OrderApi } from '@feature/order-api';
-import {
-  DeliveryAttemptRequest,
-  PackageHandedOverToCourierEventPayload,
-  PackageHandedOverToCourierEventType,
-  type DeliveryApi,
-} from '@feature/order-delivery-api';
+import { type DeliveryApi } from '@feature/order-delivery-api';
 import {
   CancelPickupRequest,
+  DeliveryFailedEventPayload,
+  DeliveryFailedEventType,
+  DeliverySucceededEventPayload,
+  DeliverySucceededEventType,
+  PackageHandedOverToCourierEventPayload,
+  PackageHandedOverToCourierEventType,
   PickupRequest,
   type CourierApi,
 } from '@feature/order-delivery-courier-api';
 import { Injectable } from '@nestjs/common';
 import { type CourierRepository } from './courier.repository';
-import { ConfirmDeliveryRequest, PickingUpRequest } from './courier.req';
+import { PickingUpRequest, ReportDeliveryAttemptRequest } from './courier.req';
 
 @Injectable()
 export class CourierService implements CourierApi {
@@ -36,10 +37,6 @@ export class CourierService implements CourierApi {
   pickup(req: PickupRequest): Promise<void> {
     // Notify all courier
     throw new Error('Method not implemented.');
-  }
-
-  getDeliveryAddress({ orderId }: { orderId: string }) {
-    return this.order.getDeliveryAddress({ orderId });
   }
 
   /**
@@ -68,7 +65,7 @@ export class CourierService implements CourierApi {
           type: PackageHandedOverToCourierEventType,
           payload: {
             courierId,
-            orderId,
+            deliveryId: delivery.id,
             scope: 'intra-city',
             deliveryConfirmationCode: code,
           } satisfies PackageHandedOverToCourierEventPayload,
@@ -79,7 +76,7 @@ export class CourierService implements CourierApi {
           type: PackageHandedOverToCourierEventType,
           payload: {
             courierId,
-            orderId,
+            deliveryId: delivery.id,
             scope: 'inter-city',
           } satisfies PackageHandedOverToCourierEventPayload,
         });
@@ -89,35 +86,44 @@ export class CourierService implements CourierApi {
     });
   }
 
-  reportFailedDelivery(req: Extract<DeliveryAttemptRequest, { result: 'failed' }>) {
-    return this.delivery.reportDeliveryAttempt(req);
-  }
+  async reportDeliveryAttempt(req: ReportDeliveryAttemptRequest) {
+    const delivery = await this.courier.getDelivery(req.courierId, req.deliveryId);
+    if (delivery.status !== 'handed-over-to-courier') throw new Error();
 
-  async confirmDelivery(req: ConfirmDeliveryRequest) {
-    const { delivery } = await this.delivery.findDelivery({
-      orderId: req.orderId,
-    });
+    if (req.result === 'delivered') {
+      if (delivery.scope === 'intra-city') {
+        if (req.scope !== delivery.scope) throw new Error();
 
-    if (req.scope === 'intra-city') {
-      if (delivery.scope !== 'intra-city') throw new Error();
-      if (delivery.status !== 'handed-over-to-courier') throw new Error();
-      if (delivery.deliveryConfirmationCode !== req.confirmationCode) throw new Error();
+        if (delivery.deliveryConfirmationCode !== req.confirmationCode) throw new Error();
 
-      await this.delivery.reportDeliveryAttempt({
-        orderId: req.orderId,
-        result: 'delivered',
-        scope: 'intra-city',
-        deliveredAt: new Date(),
+        await this.outbox.save({
+          type: DeliverySucceededEventType,
+          payload: {
+            deliveryId: req.deliveryId,
+            scope: 'intra-city',
+          } satisfies DeliverySucceededEventPayload,
+        });
+        return;
+      }
+
+      if (req.scope !== delivery.scope) throw new Error();
+      await this.outbox.save({
+        type: DeliverySucceededEventType,
+        payload: {
+          deliveryId: req.deliveryId,
+          scope: 'inter-city',
+          trackingNumber: req.trackingNumber,
+        } satisfies DeliverySucceededEventPayload,
       });
+
       return;
     }
 
-    await this.delivery.reportDeliveryAttempt({
-      orderId: req.orderId,
-      result: 'delivered',
-      scope: 'inter-city',
-      trackingNumber: req.trackingCode,
-      deliveredAt: new Date(),
+    await this.outbox.save({
+      type: DeliveryFailedEventType,
+      payload: {
+        ...req,
+      } satisfies DeliveryFailedEventPayload,
     });
   }
 }

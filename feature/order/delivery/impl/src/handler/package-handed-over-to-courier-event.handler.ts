@@ -5,12 +5,15 @@ import {
   type TransactionManager,
 } from '@feature/common';
 import {
+  OrderHandedOverToCourierEventPayload,
+  OrderHandedOverToCourierEventType,
+} from '@feature/order-delivery-api';
+import {
   PackageHandedOverToCourierEventPayload,
   PackageHandedOverToCourierEventType,
-} from '@feature/order-delivery-api';
+} from '@feature/order-delivery-courier-api';
 import { Injectable } from '@nestjs/common';
 import { type DeliveryRepository } from '../delivery.repository';
-import { OrderEventPayload, OrderHandedToCourierEventType } from '@feature/order-api';
 
 @Injectable()
 export class PackageHandedOverToCourierEventHandler extends BaseEventHandler<PackageHandedOverToCourierEventPayload> {
@@ -26,17 +29,23 @@ export class PackageHandedOverToCourierEventHandler extends BaseEventHandler<Pac
   async handle(payload: PackageHandedOverToCourierEventPayload) {
     if (payload.scope === 'intra-city')
       await this.repository.markAsHandedOverToCourier(payload.deliveryId, {
+        courierId: payload.courierId,
         deliveryConfirmationCode: payload.deliveryConfirmationCode,
         handedOverAt: new Date(),
       });
     else
       await this.repository.markAsHandedOverToCourier(payload.deliveryId, {
+        courierId: payload.courierId,
         handedOverAt: new Date(),
       });
 
+    const { orderId } = await this.repository.getOrderId(payload.deliveryId);
+
     await this.outbox.save({
-      type: OrderHandedToCourierEventType,
-      payload: {} satisfies OrderEventPayload,
+      type: OrderHandedOverToCourierEventType,
+      payload: {
+        orderId,
+      } satisfies OrderHandedOverToCourierEventPayload,
     });
   }
 }

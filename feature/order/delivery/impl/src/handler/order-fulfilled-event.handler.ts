@@ -15,7 +15,6 @@ import {
 import { type CourierApi } from '@feature/order-delivery-courier-api';
 import { Injectable } from '@nestjs/common';
 import { type DeliveryRepository } from '../delivery.repository';
-import { DeliverySettingsToken } from '../setting/token';
 
 @Injectable()
 export class OrderFulfilledEventHandler extends BaseEventHandler<OrderEventPayload> {
@@ -53,54 +52,15 @@ export class OrderFulfilledEventHandler extends BaseEventHandler<OrderEventPaylo
 
     await this.tx.run(async () => {
       // Make a request for shipping
-      if (delivery.scope === 'intra-city') {
-        await this.courier.pickup({
-          orderId,
-          scope: 'intra-city',
-          recipient: {
-            address: delivery.recipient.address,
-            fullName: delivery.recipient.customer.contact.fullName,
-            phone: delivery.recipient.customer.contact.phone,
-            coordinate: delivery.recipient.coordinate,
-          },
-        });
-
-        // Generate verification code
-        const code = this.otp.generate(4);
-
-        // Notify costumer the delivery in progress and have to give
-        // confirmation code to courier
-        await this.notification.notifyCustomerPackageIsOnItsWay({
-          customerId: delivery.recipient.customer.id,
-          code,
-        });
-      } else {
-        const methods = await this.settings.get(DeliverySettingsToken);
-
-        const method = methods.find(
-          ({ scope, carrier }) =>
-            scope === 'inter-city' &&
-            typeof carrier === 'object' &&
-            carrier.key === delivery.recipient.carrierKey,
-        );
-
-        if (!method || typeof method.carrier !== 'object') {
-          throw new Error();
-        }
-
-        await this.courier.pickup({
-          orderId,
-          scope: 'inter-city',
-          carrier: method.carrier,
-        });
-      }
+      await this.courier.pickup({
+        orderId,
+      });
 
       // Dispatch event
       await this.outbox.save({
         type: CourierDispatchRequestedEventType,
         payload: {
           orderId,
-          requestedAt: new Date(),
         } satisfies CourierDispatchRequestedEventPayload,
       });
     });

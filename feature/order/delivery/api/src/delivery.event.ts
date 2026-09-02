@@ -1,41 +1,12 @@
-import { DeliveryAttemptRequest } from './delivery.req';
-
 export const CourierDispatchRequestedEventType = 'delivery:courier-dispatch-requested';
-export const PackageDeliveredEventType = 'delivery:package-delivered';
-export const PackageDeliveryFailedEventType = 'delivery:package-delivery-failed';
-export const PackageHandedOverToCourierEventType = 'courier:package-handed-over-to-courier';
+export const OrderDeliveredEventType = 'delivery:order-delivered';
+export const OrderDelivery = 'delivery:order-delivery-failed';
+export const OrderHandedOverToCourierEventType = 'delivery:order-handed-over-to-courier';
 
 export type CourierDispatchRequestedEventPayload = {
   orderId: string;
-  requestedAt: Date;
 };
 
-export type PackageDeliveredEventPayload =
-  | {
-      orderId: string;
-      scope: 'inter-city';
-      trackingNumber: string;
-      deliveredAt: Date;
-    }
-  | {
-      orderId: string;
-      scope: 'intra-city';
-      deliveredAt: Date;
-    };
+export type OrderDeliveredEventPayload = { orderId: string };
 
-export type PackageDeliveryFailedEventPayload = {
-  attempt: DeliveryAttemptRequest;
-};
-
-export type PackageHandedOverToCourierEventPayload =
-  | {
-      courierId: string;
-      deliveryId: string;
-      scope: 'intra-city';
-      deliveryConfirmationCode: string;
-    }
-  | {
-      courierId: string;
-      deliveryId: string;
-      scope: 'inter-city';
-    };
+export type OrderHandedOverToCourierEventPayload = { orderId: string };

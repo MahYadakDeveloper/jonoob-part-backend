@@ -17,7 +17,10 @@ import { Delivery } from '@feature/order-delivery-api';
  * so we don't need create method
  */
 export interface DeliveryRepository {
-  findByOrderId(orderId: string): Promise<{ id: string } & Delivery>;
+  getOrderId(deliveryId: string): Promise<{ orderId: string }>;
+  findByOrderId(orderId: string): Promise<{ id: string; orderId: string } & Delivery>;
+  findById(deliveryId: string): Promise<{ id: string; orderId: string } & Delivery>;
+
   markAsHandedOverToCourier(
     deliveryId: string,
     data: PartialBy<
@@ -25,6 +28,17 @@ export interface DeliveryRepository {
       Extract<
         keyof Extract<Delivery, { status: 'handed-over-to-courier' }>,
         keyof Extract<Delivery, { status: 'courier-requested' }>
+      >
+    >,
+  ): Promise<void>;
+
+  markAsReturnedToWarehouse(
+    deliveryId: string,
+    data: PartialBy<
+      Extract<Delivery, { status: 'returned-to-warehouse' }>,
+      Extract<
+        keyof Extract<Delivery, { status: 'returned-to-warehouse' }>,
+        keyof Extract<Delivery, { status: 'handed-over-to-courier' }>
       >
     >,
   ): Promise<void>;
