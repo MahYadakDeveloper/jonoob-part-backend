@@ -21,6 +21,7 @@
     "@feature/order-delivery-courier-api": "workspace:*",
     "@feature/order-api": "workspace:*",
     "@feature/order-delivery-api": "workspace:*",
+    "@feature/notification-api": "workspace:*",
     "@nestjs/common": "^11.2.1"
   }
 }

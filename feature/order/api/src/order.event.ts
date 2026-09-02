@@ -1,3 +1,5 @@
+import { OrderStatus } from './order.type';
+
 export const OrderRecordedEventType = 'order:order-recorded';
 export const OrderPaidEventType = 'order:order-paid';
 export const OrderPaymentFailedEventType = 'order:order-payment-failed';
@@ -8,6 +10,11 @@ export const OrderDeliveredEventType = 'order:order-delivered';
 
 export type OrderEventPayload = {
   orderId: string;
+};
+
+export type OrderCanceledEventPayload = {
+  orderId: string;
+  inStatus: OrderStatus;
 };
 
 export type OrderPaidEventPayload = {

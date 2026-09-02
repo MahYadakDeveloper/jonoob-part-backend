@@ -27,8 +27,15 @@ export type PackageDeliveryFailedEventPayload = {
   attempt: DeliveryAttemptRequest;
 };
 
-export type PackageHandedOverToCourierEventPayload = {
-  courierId: string;
-  orderId: string;
-  handedOverAt: Date;
-};
+export type PackageHandedOverToCourierEventPayload =
+  | {
+      courierId: string;
+      deliveryId: string;
+      scope: 'intra-city';
+      deliveryConfirmationCode: string;
+    }
+  | {
+      courierId: string;
+      deliveryId: string;
+      scope: 'inter-city';
+    };

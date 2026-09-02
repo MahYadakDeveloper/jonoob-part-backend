@@ -1,5 +1,6 @@
 import { type OutboxRepository, type SettingsStore } from '@feature/common';
 import {
+  Delivery,
   DeliveryApi,
   DeliveryAttemptRequest,
   PackageDeliveredEventPayload,
@@ -9,7 +10,8 @@ import {
 } from '@feature/order-delivery-api';
 import { type LocationApi } from '@feature/order-delivery-location-api';
 import { Injectable } from '@nestjs/common';
-import { DeliveryMethod } from './schema/delivery-method';
+import { type DeliveryRepository } from './delivery.repository';
+import { InterCityDeliveryMethod, IntraCityDeliveryMethod } from './schema/delivery-method';
 import { DeliverySettingsToken } from './setting/token';
 
 @Injectable()
@@ -18,7 +20,13 @@ export class DeliveryService implements DeliveryApi {
     private readonly settings: SettingsStore,
     private readonly location: LocationApi,
     private readonly outbox: OutboxRepository,
+    private readonly repository: DeliveryRepository,
   ) {}
+
+  async findDelivery(req: { orderId: string }): Promise<{ delivery: { id: string } & Delivery }> {
+    const delivery = await this.repository.findByOrderId(req.orderId);
+    return { delivery };
+  }
 
   /**
    *
@@ -43,7 +51,11 @@ export class DeliveryService implements DeliveryApi {
     });
   }
 
-  async setMethods({ methods }: { methods: DeliveryMethod[] }) {
+  async setMethods({
+    methods,
+  }: {
+    methods: [] | [IntraCityDeliveryMethod, ...InterCityDeliveryMethod[]];
+  }) {
     // [TODO] Do this parsing line below in controller endpoint
     // z.array(DeliveryMethodSchema).parse(methods);
     await this.settings.set(DeliverySettingsToken, methods);

@@ -1,11 +1,13 @@
 import { LineItems } from '@feature/common';
 import { Courier } from './model/courier';
+import { Delivery } from '@feature/order-delivery-api';
 
-export interface DeliveryRepository {
+export interface CourierRepository {
   findById(id: string): Promise<Courier>;
   findAll(): Promise<LineItems<Courier>>;
 
-  addActiveDelivery(courierId: string, orderId: string): Promise<void>;
+  addDelivery(courierId: string, deliveryId: string): Promise<void>;
+  getDelivery(courierId: string, deliveryId: string): Promise<Delivery>;
 
   create(courier: Omit<Courier, 'id'>): Promise<void>;
   update(courier: Courier): Promise<void>;

@@ -1,11 +1,9 @@
-import { LineItems } from '@feature/common';
+import { Delivery } from '@feature/order-delivery-api';
 
 export type Courier = {
   id: string;
   fullName: string;
   phone: string;
 
-  deliveries: LineItems<{
-    deliveryId: string;
-  }>;
+  deliveries: Delivery[];
 };

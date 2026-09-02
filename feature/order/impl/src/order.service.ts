@@ -11,6 +11,7 @@ import { type CustomersApi } from '@feature/customer-api';
 import { type WalletApi } from '@feature/customer-wallet-api';
 import {
   OrderApi,
+  OrderCanceledEventPayload,
   OrderCanceledEventType,
   OrderEventPayload,
   OrderRecordedEventType,
@@ -93,8 +94,6 @@ export class OrderService implements OrderApi {
   //     summary: order.summary,
   //   };
   // }
-
-  async adminCancelOrder({ orderId }: { orderId: string; reason: string }): Promise<void> {}
 
   // async getDeliveryConfirmationCodeOfHandedPackageOver({
   //   orderId,
@@ -220,7 +219,7 @@ export class OrderService implements OrderApi {
 
       await this.outbox.save({
         type: OrderRecordedEventType,
-        payload: { orderId, occurredAt: new Date() } satisfies OrderEventPayload,
+        payload: { orderId } satisfies OrderEventPayload,
       });
     });
 
@@ -237,10 +236,6 @@ export class OrderService implements OrderApi {
 
     await this.tx.run(async () => {
       switch (order.status) {
-        case 'settlement':
-          await this.warehouse.releaseStockByRefId({ referenceId: orderId });
-
-          break;
         case 'process':
           await this.payment.refund({
             sessionId: order.payment.sessionId,
@@ -248,6 +243,15 @@ export class OrderService implements OrderApi {
           });
 
           await this.warehouse.releaseStockByRefId({ referenceId: orderId });
+
+          await this.outbox.save({
+            type: OrderCanceledEventType,
+            payload: {
+              orderId,
+              inStatus: 'process',
+            } satisfies OrderCanceledEventPayload,
+          });
+
           await this.repository.markAs(order.id, 'canceled_by_customer');
           break;
         case 'courier_requested':
@@ -270,18 +274,21 @@ export class OrderService implements OrderApi {
             referenceId: orderId,
             idempotencyKey: `order:refunded:${orderId}`,
           });
+
+          await this.outbox.save({
+            type: OrderCanceledEventType,
+            payload: {
+              orderId,
+              inStatus: 'courier-requested',
+            } satisfies OrderCanceledEventPayload,
+          });
+
+          await this.repository.markAs(orderId, 'canceled_by_customer');
           break;
+
         default:
           throw new Error('Not cancelable at this stage');
       }
-      await this.repository.markAs(orderId, 'canceled_by_customer');
-      await this.outbox.save({
-        type: OrderCanceledEventType,
-        payload: {
-          orderId,
-          occurredAt: new Date(),
-        } satisfies OrderEventPayload,
-      });
     });
   }
 

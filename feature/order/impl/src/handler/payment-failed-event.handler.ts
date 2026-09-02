@@ -1,10 +1,10 @@
 import {
   BaseEventHandler,
   type EventHandlerRegistry,
-  type OutboxRepository,
   type TransactionManager,
 } from '@feature/common';
 import { PaymentFailedEventPayload, PaymentFailedEventType } from '@feature/order-payment-api';
+import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import { type OrderRepository } from '../order.repository';
 
@@ -14,7 +14,7 @@ export class PaymentFailedEventHandler extends BaseEventHandler<PaymentFailedEve
     registry: EventHandlerRegistry,
     private readonly repository: OrderRepository,
     private readonly tx: TransactionManager,
-    private readonly outbox: OutboxRepository,
+    private readonly warehouse: WarehouseApi,
   ) {
     super(registry, PaymentFailedEventType);
   }
@@ -22,6 +22,9 @@ export class PaymentFailedEventHandler extends BaseEventHandler<PaymentFailedEve
   async handle(payload: PaymentFailedEventPayload) {
     const order = await this.repository.findBySessionId(payload.sessionId);
 
-    await this.repository.markAs(order.id, 'payment_not_completed');
+    await this.tx.run(async () => {
+      await this.warehouse.releaseStockByRefId({ referenceId: order.id });
+      await this.repository.markAs(order.id, 'payment_not_completed');
+    });
   }
 }

@@ -49,7 +49,7 @@ export class OrderFulfilledEventHandler extends BaseEventHandler<OrderEventPaylo
   //    "name": "چمران"
   // }
   async handle({ orderId }: OrderEventPayload) {
-    const delivery = await this.repository.find(orderId);
+    const delivery = await this.repository.findByOrderId(orderId);
 
     await this.tx.run(async () => {
       // Make a request for shipping
@@ -76,23 +76,23 @@ export class OrderFulfilledEventHandler extends BaseEventHandler<OrderEventPaylo
         });
       } else {
         const methods = await this.settings.get(DeliverySettingsToken);
-        const method = methods.find((method) =>
-          method.carrier !== 'courier'
-            ? method.carrier.provider === delivery.recipient.carrierId
-            : false,
+
+        const method = methods.find(
+          ({ scope, carrier }) =>
+            scope === 'inter-city' &&
+            typeof carrier === 'object' &&
+            carrier.key === delivery.recipient.carrierKey,
         );
 
-        if (!method) throw new Error();
+        if (!method || typeof method.carrier !== 'object') {
+          throw new Error();
+        }
 
-        if (typeof method.carrier === 'object')
-          await this.courier.pickup({
-            orderId,
-            scope: 'inter-city',
-            carrier: {
-              ...method.carrier,
-            },
-          });
-        else throw new Error();
+        await this.courier.pickup({
+          orderId,
+          scope: 'inter-city',
+          carrier: method.carrier,
+        });
       }
 
       // Dispatch event

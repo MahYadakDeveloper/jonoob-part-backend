@@ -3,7 +3,7 @@ import { CustomerAddress, CustomerContact } from '@feature/common';
 export type IntraCityDelivery = Extract<CustomerAddress, { scope: 'intra-city' }>;
 
 export type InterCityDelivery = {
-  carrierId: string;
+  carrierKey: string;
 } & Extract<CustomerAddress, { scope: 'inter-city' }>;
 
 type InterCityRecipient = {

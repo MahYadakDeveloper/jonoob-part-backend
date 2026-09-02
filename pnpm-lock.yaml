@@ -436,6 +436,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../../common
+      '@feature/notification-api':
+        specifier: workspace:*
+        version: link:../../../../notification/api
       '@feature/order-api':
         specifier: workspace:*
         version: link:../../../api
@@ -457,9 +460,6 @@ importers:
       '@feature/media-api':
         specifier: workspace:*
         version: link:../../../media/api
-      '@feature/notification-api':
-        specifier: workspace:*
-        version: link:../../../notification/api
       '@feature/order-api':
         specifier: workspace:*
         version: link:../../api
