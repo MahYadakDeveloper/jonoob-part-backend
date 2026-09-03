@@ -9,14 +9,8 @@ import {
 } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
 import { type WalletApi } from '@feature/customer-wallet-api';
-import {
-  OrderApi,
-  OrderCanceledEventPayload,
-  OrderCanceledEventType,
-  OrderEventPayload,
-  OrderRecordedEventType,
-} from '@feature/order-api';
-import { Delivery } from '@feature/order-delivery-api';
+import { OrderApi, OrderEventPayload, OrderRecordedEventType } from '@feature/order-api';
+import { Recipient, type DeliveryApi } from '@feature/order-delivery-api';
 import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import { type PaymentApi } from '@feature/order-payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
@@ -68,6 +62,7 @@ export class OrderService implements OrderApi {
     private readonly payment: PaymentApi,
     private readonly pricing: PricingApi,
     private readonly fulfillment: FulfillmentApi,
+    private readonly delivery: DeliveryApi,
     private readonly tx: TransactionManager,
     private readonly settings: SettingsStore,
     private readonly outbox: OutboxRepository,
@@ -133,11 +128,11 @@ export class OrderService implements OrderApi {
   async recordOrder({
     customerId,
     items,
-    delivery,
+    recipient,
   }: {
     customerId: string;
     items: LineItems<{ productId: string; quantity: number }>;
-    delivery: Extract<Delivery, { status: 'initiated' }>;
+    recipient: Recipient;
   }) {
     // Check single payment pending order
     const paymentPendingOrders = await this.repository.getPaymentPendingOrders(customerId);
@@ -183,11 +178,10 @@ export class OrderService implements OrderApi {
 
     return await this.tx.run(async () => {
       const orderId = await this.repository.create({
-        status: 'recorded',
+        status: 'settlement',
         recordedAt: new Date(),
         customerId,
         items: pricedInvoice.items,
-        delivery,
         cancellationTerms: {
           fee: cancellationFee,
         },
@@ -197,7 +191,11 @@ export class OrderService implements OrderApi {
       // Reserve stocks
       await this.warehouse.reserveStock({ referenceId: orderId, items: reserve });
 
-      const { sessionId } = await this.payment.createPaymentSession({
+      // delivery
+      await this.delivery.create({ orderId, recipient });
+
+      // payment
+      await this.payment.createPaymentSession({
         orderId,
         customer: {
           id: customerId,
@@ -214,8 +212,6 @@ export class OrderService implements OrderApi {
           (x) => x.productId,
         ),
       });
-
-      await this.repository.markAsSettlementPending(orderId, sessionId);
 
       await this.outbox.save({
         type: OrderRecordedEventType,
@@ -244,14 +240,6 @@ export class OrderService implements OrderApi {
 
           await this.warehouse.releaseStockByRefId({ referenceId: orderId });
 
-          await this.outbox.save({
-            type: OrderCanceledEventType,
-            payload: {
-              orderId,
-              inStatus: 'process',
-            } satisfies OrderCanceledEventPayload,
-          });
-
           await this.repository.markAs(order.id, 'canceled_by_customer');
           break;
         case 'courier_requested':
@@ -275,14 +263,7 @@ export class OrderService implements OrderApi {
             idempotencyKey: `order:refunded:${orderId}`,
           });
 
-          await this.outbox.save({
-            type: OrderCanceledEventType,
-            payload: {
-              orderId,
-              inStatus: 'courier-requested',
-            } satisfies OrderCanceledEventPayload,
-          });
-
+          await this.delivery.cancelDelivery({ orderId });
           await this.repository.markAs(orderId, 'canceled_by_customer');
           break;
 

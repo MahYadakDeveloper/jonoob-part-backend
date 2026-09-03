@@ -1,30 +1,31 @@
 import {
   BaseEventHandler,
   type EventHandlerRegistry,
-  type OutboxRepository,
+  type TransactionManager,
 } from '@feature/common';
-import { OrderEventPayload, OrderFulfilledEventType } from '@feature/order-api';
+import { type DeliveryApi } from '@feature/order-delivery-api';
 import {
   OrderFulfillmentDoneEventPayload,
   OrderFulfillmentDoneEventType,
 } from '@feature/order-fulfillment-api';
 import { Injectable } from '@nestjs/common';
+import { type OrderRepository } from '../order.repository';
 
 @Injectable()
 export class OrderFulfillmentDoneHandler extends BaseEventHandler<OrderFulfillmentDoneEventPayload> {
   constructor(
     registry: EventHandlerRegistry,
-    private readonly outbox: OutboxRepository,
+    private readonly delivery: DeliveryApi,
+    private readonly repository: OrderRepository,
+    private readonly tx: TransactionManager,
   ) {
     super(registry, OrderFulfillmentDoneEventType);
   }
 
-  async handle(payload: OrderFulfillmentDoneEventPayload) {
-    await this.outbox.save({
-      type: OrderFulfilledEventType,
-      payload: {
-        orderId: payload.orderId,
-      } satisfies OrderEventPayload,
+  async handle({ orderId }: OrderFulfillmentDoneEventPayload) {
+    await this.tx.run(async () => {
+      await this.delivery.deliver({ orderId });
+      await this.repository.markAs(orderId, 'in_delivery');
     });
   }
 }

@@ -8,7 +8,7 @@ export type CustomerContact = {
 
 export type CustomerAddress =
   | {
-      scope: 'intra-city';
+      scope: 'intra_city';
       coordinate?: {
         longitude: number;
         latitude: number;
@@ -17,7 +17,7 @@ export type CustomerAddress =
       address: string;
     }
   | {
-      scope: 'inter-city';
+      scope: 'inter_city';
       provinceId: string;
       cityId: string;
       address: string;

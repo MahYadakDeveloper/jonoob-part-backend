@@ -1,105 +1,77 @@
 import { CustomerAddress, CustomerContact } from '@feature/common';
 
-export type IntraCityDelivery = Extract<CustomerAddress, { scope: 'intra-city' }>;
-
-export type InterCityDelivery = {
-  carrierKey: string;
-} & Extract<CustomerAddress, { scope: 'inter-city' }>;
-
 type InterCityRecipient = {
+  carrierKey: string;
   customer: {
     id: string;
     contact: CustomerContact;
   };
-} & InterCityDelivery;
+} & Extract<CustomerAddress, { scope: 'inter_city' }>;
 
 type IntraCityRecipient = {
   customer: {
     id: string;
     contact: CustomerContact;
   };
-} & IntraCityDelivery;
+} & Extract<CustomerAddress, { scope: 'intra_city' }>;
+
+export type Recipient = IntraCityRecipient | InterCityRecipient;
 
 export type Delivery =
   | {
-      scope: 'inter-city';
-      status: 'initiated';
-      initiatedAt: Date;
-      recipient: InterCityRecipient;
-    }
-  | {
-      scope: 'intra-city';
-      status: 'initiated';
-      initiatedAt: Date;
-      recipient: IntraCityRecipient;
-    }
-  | {
-      scope: 'inter-city';
-      status: 'courier-requested';
+      status: 'created';
       requestedAt: Date;
-      recipient: InterCityRecipient;
+      recipient: Recipient;
     }
   | {
-      scope: 'intra-city';
-      status: 'courier-requested';
+      status: 'courier_requested';
       requestedAt: Date;
-      recipient: IntraCityRecipient;
+      recipient: Recipient;
     }
   | {
-      scope: 'intra-city';
-      status: 'handed-over-to-courier';
+      status: 'handed_over_to_courier';
       courierId: string;
       handedOverAt: Date;
-      deliveryConfirmationCode: string;
-      recipient: IntraCityRecipient;
+      recipient:
+        | (IntraCityRecipient & {
+            deliveryConfirmationCode: string;
+          })
+        | InterCityRecipient;
     }
   | {
-      scope: 'inter-city';
-      status: 'handed-over-to-courier';
-      courierId: string;
-      handedOverAt: Date;
-      recipient: InterCityRecipient;
-    }
-  | {
-      scope: 'inter-city';
       status: 'delivered';
       courierId: string;
       deliveredAt: Date;
-      trackingNumber: number;
-      recipient: InterCityRecipient;
+      recipient:
+        | (IntraCityRecipient & {
+            deliveryConfirmationCode: string;
+          })
+        | (InterCityRecipient & {
+            trackingNumber: number;
+          });
     }
   | {
-      scope: 'intra-city';
-      status: 'delivered';
-      courierId: string;
-      deliveredAt: Date;
-      deliveryConfirmationCode: string;
-      recipient: IntraCityRecipient;
-    }
-  | {
-      scope: 'inter-city';
       status: 'returned_to_warehouse';
       courierId: string;
       returnedAt: Date;
-      message: string;
-      recipient: InterCityRecipient;
-    }
-  | ({
-      scope: 'intra-city';
-      status: 'returned_to_warehouse';
-      courierId: string;
-      returnedAt: Date;
-      recipient: IntraCityRecipient;
-    } & (
-      | {
-          reason:
-            | 'recipient-absent'
-            | 'recipient-unreachable'
-            | 'invalid-address'
-            | 'recipient-refused';
-        }
-      | {
-          reason: 'other';
-          message: string;
-        }
-    ));
+      recipient:
+        | (IntraCityRecipient & {
+            deliveryConfirmationCode: string;
+          } & (
+              | {
+                  reason:
+                    | 'recipient_absent'
+                    | 'recipient_unreachable'
+                    | 'invalid_address'
+                    | 'recipient_refused';
+                }
+              | {
+                  reason: 'other';
+                  message: string;
+                }
+            ))
+        | (InterCityRecipient & {
+            trackingNumber: number;
+            reasonMessage: string;
+          });
+    };

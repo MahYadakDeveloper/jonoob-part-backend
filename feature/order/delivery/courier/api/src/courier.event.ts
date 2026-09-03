@@ -29,18 +29,10 @@ export const DeliveryFailedEventType = 'courier:delivery-failed';
 export type DeliveryFailedEventPayload = {
   deliveryId: string;
 } & (
-  | ({
+  | {
       scope: 'inter-city';
-      reason: 'invalid-address';
-    } & (
-      | {
-          reason: 'invalid-address';
-        }
-      | {
-          reason: 'other';
-          message: string;
-        }
-    ))
+      reasonMessage: string;
+    }
   | ({
       scope: 'intra-city';
     } & (

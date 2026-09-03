@@ -1,4 +1,4 @@
-import { CustomerType, Payment, ProductBundleKind, ProductLeafKind } from '../types';
+import { CustomerType, ProductBundleKind, ProductLeafKind } from '../types';
 import { LineItems } from './line-items';
 import { Money } from './money';
 
@@ -44,8 +44,6 @@ export type BundleInvoiceItem = InvoiceItemBase &
 
 export type InvoiceItem = ProductInvoiceItem | BundleInvoiceItem;
 
-export type InvoicePayment = Payment;
-
 export type InvoiceSummary = {
   readonly cashback?: GrantedCashback;
   readonly subtotal: Money;
@@ -58,5 +56,4 @@ export type InvoiceSnapshot = {
   readonly header: InvoiceHeader;
   readonly items: LineItems<InvoiceItem>;
   readonly summary: InvoiceSummary;
-  readonly payment: InvoicePayment;
 };

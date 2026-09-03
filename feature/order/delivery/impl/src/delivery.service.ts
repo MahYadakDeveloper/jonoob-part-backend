@@ -8,6 +8,7 @@ import {
   PackageDeliveryFailedEventPayload,
   PackageDeliveryFailedEventType,
 } from '@feature/order-delivery-api';
+import { type CourierApi } from '@feature/order-delivery-courier-api';
 import { type LocationApi } from '@feature/order-delivery-location-api';
 import { Injectable } from '@nestjs/common';
 import { type DeliveryRepository } from './delivery.repository';
@@ -21,7 +22,19 @@ export class DeliveryService implements DeliveryApi {
     private readonly location: LocationApi,
     private readonly outbox: OutboxRepository,
     private readonly repository: DeliveryRepository,
+    private readonly courier: CourierApi,
   ) {}
+
+  async cancelDelivery(req: { orderId: string }): Promise<void> {
+    const delivery = await this.repository.findByOrderId(req.orderId);
+    switch (delivery.status) {
+      case 'courier-requested':
+        await this.courier.cancelPickupRequest({ deliveryId: delivery.id });
+        return;
+      default:
+        throw new Error('This feature not implemented yet!');
+    }
+  }
 
   async findDelivery(req: { orderId: string }): Promise<{ delivery: { id: string } & Delivery }> {
     const delivery = await this.repository.findByOrderId(req.orderId);

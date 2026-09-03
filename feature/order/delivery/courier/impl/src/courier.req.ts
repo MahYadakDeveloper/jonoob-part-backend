@@ -25,7 +25,7 @@ export type ReportDeliveryAttemptRequest = {
     } & (
       | {
           scope: 'inter-city';
-          message: string;
+          reasonMessage: string;
         }
       | ({
           scope: 'intra-city';

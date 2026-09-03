@@ -1,4 +1,4 @@
-import { LineItems, PartialBy } from '@feature/common';
+import { LineItems } from '@feature/common';
 import { Order } from './model/order';
 
 export interface OrderRepository {
@@ -13,9 +13,10 @@ export interface OrderRepository {
     { status: 'handed-over-to-courier'; delivery: { scope: 'intra-city' } }
   > | null>;
 
-  create(data: Omit<Extract<Order, { status: 'recorded' }>, 'id'>): Promise<string>;
+  create(
+    data: Omit<Extract<Order, { status: 'settlement' }>, 'id' | 'payment' | 'delivery'>,
+  ): Promise<string>;
 
-  markAsSettlementPending(orderId: string, sessionId: number): Promise<void>;
   markAs(orderId: string, status: Order['status']): Promise<void>;
 
   // markAsPaid(
