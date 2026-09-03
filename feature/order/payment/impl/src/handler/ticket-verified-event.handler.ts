@@ -41,7 +41,7 @@ export class TicketVerifiedEventHandler extends BaseEventHandler<TicketVerifiedE
       await this.outbox.save({
         type: PaymentSucceededEventType,
         payload: {
-          sessionId: session.sessionId,
+          orderId: session.orderId,
         } satisfies PaymentSucceededEventPayload,
       });
     });

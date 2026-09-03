@@ -1,12 +1,16 @@
 import { LineItems } from '@feature/common';
 
-export type Fulfillment =
+export type Fulfillment = {
+  items: LineItems<{ goodId: string; quantity: number }>;
+} & (
+  | {
+      status: 'initial';
+    }
   | {
       status: 'processing';
     }
   | {
-      status: 'processed';
-      items: LineItems<{ goodId: string; quantity: number }>;
+      status: 'fulfilled';
       fulfilledAt: Date;
     }
   | {
@@ -16,4 +20,5 @@ export type Fulfillment =
       status: 'canceled_by_merchant';
       canceledAt: Date;
       reason: string;
-    };
+    }
+);

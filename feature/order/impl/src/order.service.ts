@@ -1,4 +1,4 @@
-import { FindManyProductResponse, type CatalogApi } from '@feature/catalog-api';
+import { type CatalogApi } from '@feature/catalog-api';
 import {
   LineItems,
   Money,
@@ -9,7 +9,7 @@ import {
 } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
 import { type WalletApi } from '@feature/customer-wallet-api';
-import { OrderApi, OrderEventPayload, OrderRecordedEventType } from '@feature/order-api';
+import { OrderApi } from '@feature/order-api';
 import { Recipient, type DeliveryApi } from '@feature/order-delivery-api';
 import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import { type PaymentApi } from '@feature/order-payment-api';
@@ -69,41 +69,14 @@ export class OrderService implements OrderApi {
     private readonly wallet: WalletApi,
   ) {}
 
-  async getReservedItems({
-    orderId,
-  }: {
-    orderId: string;
-  }): Promise<{ items: LineItems<{ goodId: string; quantity: number }> }> {
-    const { stocks } = await this.warehouse.getReservedStocks({ referenceId: orderId });
-    return {
-      items: stocks,
-    };
-  }
-
-  // async getOrderSummary({ orderId }: { orderId: any }): Promise<{
-  //   summary: InvoiceSummary;
-  // }> {
-  //   const order = await this.repository.find(orderId);
-  //   if (!order) throw new Error();
-  //   return {
-  //     summary: order.summary,
-  //   };
-  // }
-
-  // async getDeliveryConfirmationCodeOfHandedPackageOver({
+  // async getReservedItems({
   //   orderId,
   // }: {
   //   orderId: string;
-  // }): Promise<{ code: string }> {
-  //   const order = await this.repository.find(orderId);
-  //   if (!order) throw new Error();
-
-  //   if (order.status !== 'out_for_delivery' && order.status !== 'delivered') throw new Error();
-
-  //   if (order.delivery.scope !== 'intra-city') throw new Error('');
-
+  // }): Promise<{ items: LineItems<{ goodId: string; quantity: number }> }> {
+  //   const { stocks } = await this.warehouse.getReservedStocks({ referenceId: orderId });
   //   return {
-  //     code: order.delivery.deliveryConfirmationCode,
+  //     items: stocks,
   //   };
   // }
 
@@ -141,8 +114,6 @@ export class OrderService implements OrderApi {
     const { customer } = await this.customers.findById({ customerId });
     const { products } = await this.catalog.findMany({ productIds: [...items.keys()] });
 
-    const reserve = this.calculateReserveStock(items, products);
-
     // Resolve pricing
     const { pricedInvoice } = await this.pricing.priceInvoice({
       items: items.transform<UnpricedInvoiceItem>(
@@ -179,7 +150,6 @@ export class OrderService implements OrderApi {
     return await this.tx.run(async () => {
       const orderId = await this.repository.create({
         status: 'settlement',
-        recordedAt: new Date(),
         customerId,
         items: pricedInvoice.items,
         cancellationTerms: {
@@ -188,14 +158,14 @@ export class OrderService implements OrderApi {
         summary: pricedInvoice.summary,
       });
 
-      // Reserve stocks
-      await this.warehouse.reserveStock({ referenceId: orderId, items: reserve });
+      // fulfillment
+      await this.fulfillment.initialize({ orderId, items });
 
       // delivery
-      await this.delivery.create({ orderId, recipient });
+      await this.delivery.initialize({ orderId, recipient });
 
       // payment
-      await this.payment.createPaymentSession({
+      await this.payment.initialize({
         orderId,
         customer: {
           id: customerId,
@@ -211,11 +181,6 @@ export class OrderService implements OrderApi {
           }),
           (x) => x.productId,
         ),
-      });
-
-      await this.outbox.save({
-        type: OrderRecordedEventType,
-        payload: { orderId } satisfies OrderEventPayload,
       });
     });
 
@@ -242,31 +207,34 @@ export class OrderService implements OrderApi {
 
           await this.repository.markAs(order.id, 'canceled_by_customer');
           break;
-        case 'courier_requested':
-          // update order status
+        case 'in_delivery':
+          switch (order.delivery.status) {
+            case 'courier_requested':
+              const fee = order.cancellationTerms.fee;
+              let refund = Money.zero();
+              if (fee.type === 'fixed')
+                refund = order.summary.grandTotal.subtract(Money.create(fee.amount.value));
+              else {
+                refund = order.summary.grandTotal.subtract(
+                  order.summary.grandTotal.multiply(fee.rate),
+                );
+              }
 
-          // calculate the cancellation fee and deduct from paid amount
-          // and then charge the customer wallet.
-          const fee = order.cancellationTerms.fee;
-          let refund = Money.zero();
-          if (fee.type === 'fixed')
-            refund = order.summary.grandTotal.subtract(Money.create(fee.amount.value));
-          else {
-            refund = order.summary.grandTotal.subtract(order.summary.grandTotal.multiply(fee.rate));
+              await this.wallet.deposit({
+                amount: refund,
+                customerId: customerId,
+                reason: 'refund',
+                referenceId: orderId,
+                idempotencyKey: `order:refunded:${orderId}`,
+              });
+
+              await this.delivery.cancelDelivery({ orderId });
+              await this.repository.markAs(orderId, 'canceled_by_customer');
+              break;
+            default:
+              throw new Error('Cancel at this stage of delivery is not possible');
           }
-
-          await this.wallet.deposit({
-            amount: refund,
-            customerId: customerId,
-            reason: 'refund',
-            referenceId: orderId,
-            idempotencyKey: `order:refunded:${orderId}`,
-          });
-
-          await this.delivery.cancelDelivery({ orderId });
-          await this.repository.markAs(orderId, 'canceled_by_customer');
           break;
-
         default:
           throw new Error('Not cancelable at this stage');
       }
@@ -279,40 +247,5 @@ export class OrderService implements OrderApi {
     newSettings: (typeof OrderService.OrderSettings)['defaultValue'];
   }) {
     await this.settings.set(OrderService.OrderSettings, newSettings);
-  }
-
-  calculateReserveStock(
-    items: LineItems<{ productId: string; quantity: number }>,
-    products: FindManyProductResponse['products'],
-  ): LineItems<{ goodId: string; quantity: number }> {
-    const reserve = new LineItems<{ goodId: string; quantity: number }>((s) => s.goodId);
-    for (const item of items) {
-      const product = products.getOrThrow(item.productId);
-      if (product.kind === 'leaf') {
-        const alreadyAdded = reserve.get(item.productId);
-        if (alreadyAdded)
-          reserve.set({
-            goodId: product.goodId,
-            quantity: alreadyAdded.quantity + item.quantity,
-          });
-        else reserve.set({ goodId: product.goodId, quantity: item.quantity });
-        continue;
-      }
-
-      for (const bundleItem of product.items) {
-        const alreadyAdded = reserve.get(bundleItem.productId);
-        if (alreadyAdded)
-          reserve.set({
-            goodId: bundleItem.goodId,
-            quantity: alreadyAdded.quantity + bundleItem.quantity * item.quantity,
-          });
-        else
-          reserve.set({
-            goodId: bundleItem.goodId,
-            quantity: bundleItem.quantity * item.quantity,
-          });
-      }
-    }
-    return reserve;
   }
 }

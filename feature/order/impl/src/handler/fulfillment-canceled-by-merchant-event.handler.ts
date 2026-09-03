@@ -1,23 +1,23 @@
 import { BaseEventHandler, type EventHandlerRegistry } from '@feature/common';
 import {
-  OrderFulfillmentCanceledEventPayload,
-  OrderFulfillmentCanceledEventType,
+  FulfillmentCanceledByMerchantEventPayload,
+  FulfillmentCanceledByMerchantEventType,
 } from '@feature/order-fulfillment-api';
 import { type PaymentApi } from '@feature/order-payment-api';
 import { Injectable } from '@nestjs/common';
 import { type OrderRepository } from '../order.repository';
 
 @Injectable()
-export class OrderFulfillmentCanceledEventHandler extends BaseEventHandler<OrderFulfillmentCanceledEventPayload> {
+export class FulfillmentCanceledByMerchantEventHandler extends BaseEventHandler<FulfillmentCanceledByMerchantEventPayload> {
   constructor(
     registry: EventHandlerRegistry,
     private readonly payment: PaymentApi,
     private readonly repository: OrderRepository,
   ) {
-    super(registry, OrderFulfillmentCanceledEventType);
+    super(registry, FulfillmentCanceledByMerchantEventType);
   }
 
-  async handle(payload: OrderFulfillmentCanceledEventPayload) {
+  async handle(payload: FulfillmentCanceledByMerchantEventPayload) {
     const order = await this.repository.find(payload.orderId);
 
     if (!order) throw new Error();

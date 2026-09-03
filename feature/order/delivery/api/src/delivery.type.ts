@@ -19,8 +19,7 @@ export type Recipient = IntraCityRecipient | InterCityRecipient;
 
 export type Delivery =
   | {
-      status: 'created';
-      requestedAt: Date;
+      status: 'initial';
       recipient: Recipient;
     }
   | {

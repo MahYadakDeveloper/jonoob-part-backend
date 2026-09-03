@@ -10,10 +10,10 @@ export interface PaymentSessionRepository {
 
   create(
     data: DistributiveOmit<
-      Extract<PaymentSession, { status: 'initiated' }>,
+      Extract<PaymentSession, { status: 'initial' }>,
       'sessionId' | 'createdAt'
     >,
-  ): { sessionId: number };
+  ): Promise<void>;
 
   updatePaymentStatusTo<T extends Payment['status']>(
     data: Extract<Payment, { status: T }> &

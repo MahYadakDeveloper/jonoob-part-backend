@@ -1,14 +1,10 @@
-export const OrderFulfillmentEnqueuedEventType = 'order-fulfillment-enqueued';
-export type OrderFulfillmentEnqueuedEventPayload = {
+export const FulfillmentDoneEventType = 'fulfillment:order-fulfillment-done';
+export type FulfillmentDoneEventPayload = {
   orderId: string;
 };
 
-export const OrderFulfillmentDoneEventType = 'order-fulfillment-done';
-export type OrderFulfillmentDoneEventPayload = {
-  orderId: string;
-};
-
-export const OrderFulfillmentCanceledEventType = 'order-fulfillment-canceled';
-export type OrderFulfillmentCanceledEventPayload = {
+export const FulfillmentCanceledByMerchantEventType =
+  'fulfillment:order-fulfillment-canceled-by-merchant';
+export type FulfillmentCanceledByMerchantEventPayload = {
   orderId: string;
 };

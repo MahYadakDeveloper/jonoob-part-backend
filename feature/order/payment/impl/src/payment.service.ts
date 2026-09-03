@@ -10,7 +10,6 @@ import {
   type TransactionManager,
 } from '@feature/common';
 import { type WalletApi } from '@feature/customer-wallet-api';
-import { OrderPaymentFailedEventPayload, OrderPaymentFailedEventType } from '@feature/order-api';
 import {
   InsufficientWalletBalanceError,
   InvalidWalletPaymentAmountError,
@@ -76,7 +75,7 @@ export class PaymentService implements PaymentApi {
     private readonly synchronizer: Synchronizer,
   ) {}
 
-  async createPaymentSession(req: PaymentSessionCreationRequest): Promise<{ sessionId: number }> {
+  async initialize(req: PaymentSessionCreationRequest): Promise<void> {
     const total = req.purchasedItems.reduce(
       (acc, item) => acc.add(item.unitPrice.multiply(item.quantity)),
       Money.zero(),
@@ -92,7 +91,7 @@ export class PaymentService implements PaymentApi {
 
       await this.tx.run(async () => {
         switch (session.status) {
-          case 'initiated':
+          case 'initial':
             await this.repository.updatePaymentStatusTo<'expired'>({
               ...session,
               status: 'expired',
@@ -100,7 +99,7 @@ export class PaymentService implements PaymentApi {
             await this.outbox.save({
               type: PaymentFailedEventType,
               payload: {
-                sessionId: session.sessionId,
+                orderId: session.orderId,
               } satisfies PaymentFailedEventPayload,
             });
             break;
@@ -134,7 +133,7 @@ export class PaymentService implements PaymentApi {
                   await this.outbox.save({
                     type: PaymentFailedEventType,
                     payload: {
-                      sessionId: session.sessionId,
+                      orderId: session.orderId,
                     } satisfies PaymentFailedEventPayload,
                   });
                 });
@@ -161,7 +160,7 @@ export class PaymentService implements PaymentApi {
                   await this.outbox.save({
                     type: PaymentFailedEventType,
                     payload: {
-                      sessionId: session.sessionId,
+                      orderId: session.orderId,
                     } satisfies PaymentFailedEventPayload,
                   });
                 });
@@ -172,13 +171,11 @@ export class PaymentService implements PaymentApi {
       });
     });
 
-    const { sessionId } = await this.repository.create({
+    await this.repository.create({
       ...req,
-      status: 'initiated',
+      status: 'initial',
       expiryJob: handle,
     });
-
-    return { sessionId };
   }
 
   async verify({ sessionId }: { sessionId: number }): Promise<{ status: TicketStatus }> {
@@ -205,7 +202,7 @@ export class PaymentService implements PaymentApi {
           await this.outbox.save({
             type: PaymentSucceededEventType,
             payload: {
-              sessionId: session.sessionId,
+              orderId: session.orderId,
             } satisfies PaymentSucceededEventPayload,
           });
         });
@@ -218,10 +215,10 @@ export class PaymentService implements PaymentApi {
           status: 'expired',
         });
         await this.outbox.save({
-          type: OrderPaymentFailedEventType,
+          type: PaymentFailedEventType,
           payload: {
             orderId: session.orderId,
-          } satisfies OrderPaymentFailedEventPayload,
+          } satisfies PaymentFailedEventPayload,
         });
         break;
       default:
@@ -230,10 +227,10 @@ export class PaymentService implements PaymentApi {
           status: 'failure',
         });
         await this.outbox.save({
-          type: OrderPaymentFailedEventType,
+          type: PaymentFailedEventType,
           payload: {
             orderId: session.orderId,
-          } satisfies OrderPaymentFailedEventPayload,
+          } satisfies PaymentFailedEventPayload,
         });
     }
 
@@ -254,9 +251,9 @@ export class PaymentService implements PaymentApi {
     switch (session.method) {
       case 'partial':
         {
-          await this.repository.updatePaymentStatusTo<'initiated'>({
+          await this.repository.updatePaymentStatusTo<'initial'>({
             sessionId,
-            status: 'initiated',
+            status: 'initial',
           });
           await this.wallet.deposit({
             amount: session.allocation.walletAmount,
@@ -268,9 +265,9 @@ export class PaymentService implements PaymentApi {
         }
         break;
       case 'gateway': {
-        await this.repository.updatePaymentStatusTo<'initiated'>({
+        await this.repository.updatePaymentStatusTo<'initial'>({
           sessionId,
-          status: 'initiated',
+          status: 'initial',
         });
         return;
       }
@@ -281,7 +278,7 @@ export class PaymentService implements PaymentApi {
     return await this.synchronizer.executeExclusive(`payment:settle:${req.sessionId}`, async () => {
       const session = await this.repository.findById(req.sessionId);
       if (!session) throw new Error();
-      if (session.status !== 'initiated') throw new Error();
+      if (session.status !== 'initial') throw new Error();
 
       const total = session.purchasedItems.reduce(
         (acc, item) => acc.add(item.unitPrice.multiply(item.quantity)),

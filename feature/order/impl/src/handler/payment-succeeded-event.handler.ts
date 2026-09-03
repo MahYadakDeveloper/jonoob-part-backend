@@ -4,7 +4,7 @@ import {
   type OutboxRepository,
   type TransactionManager,
 } from '@feature/common';
-import { OrderPaidEventPayload, OrderPaidEventType } from '@feature/order-api';
+import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import {
   PaymentSucceededEventPayload,
   PaymentSucceededEventType,
@@ -19,18 +19,16 @@ export class PaymentSucceededEventHandler extends BaseEventHandler<PaymentSuccee
     private readonly repository: OrderRepository,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
+    private readonly fulfillment: FulfillmentApi,
   ) {
     super(registry, PaymentSucceededEventType);
   }
 
   async handle(payload: PaymentSucceededEventPayload) {
-    const order = await this.repository.findBySessionId(payload.sessionId);
+    await this.tx.run(async () => {
+      await this.fulfillment.fulfill({ orderId: payload.orderId });
 
-    await this.outbox.save({
-      type: OrderPaidEventType,
-      payload: {
-        orderId: order.id,
-      } satisfies OrderPaidEventPayload,
+      await this.repository.markAs(payload.orderId, 'process');
     });
   }
 }

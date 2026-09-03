@@ -4,7 +4,7 @@ import {
   type OutboxRepository,
   type TransactionManager,
 } from '@feature/common';
-import { OrderPaymentFailedEventPayload, OrderPaymentFailedEventType } from '@feature/order-api';
+import { PaymentFailedEventPayload, PaymentFailedEventType } from '@feature/order-payment-api';
 import {
   TicketVerificationFailedEventPayload,
   TicketVerificationFailedEventType,
@@ -47,10 +47,10 @@ export class TicketVerificationFailedEventHandler extends BaseEventHandler<Ticke
       }
 
       await this.outbox.save({
-        type: OrderPaymentFailedEventType,
+        type: PaymentFailedEventType,
         payload: {
           orderId: session.orderId,
-        } satisfies OrderPaymentFailedEventPayload,
+        } satisfies PaymentFailedEventPayload,
       });
     });
   }

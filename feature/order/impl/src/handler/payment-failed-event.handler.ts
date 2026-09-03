@@ -3,8 +3,8 @@ import {
   type EventHandlerRegistry,
   type TransactionManager,
 } from '@feature/common';
+import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import { PaymentFailedEventPayload, PaymentFailedEventType } from '@feature/order-payment-api';
-import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import { type OrderRepository } from '../order.repository';
 
@@ -14,17 +14,15 @@ export class PaymentFailedEventHandler extends BaseEventHandler<PaymentFailedEve
     registry: EventHandlerRegistry,
     private readonly repository: OrderRepository,
     private readonly tx: TransactionManager,
-    private readonly warehouse: WarehouseApi,
+    private readonly fulfillment: FulfillmentApi,
   ) {
     super(registry, PaymentFailedEventType);
   }
 
   async handle(payload: PaymentFailedEventPayload) {
-    const order = await this.repository.findBySessionId(payload.sessionId);
-
     await this.tx.run(async () => {
-      await this.warehouse.releaseStockByRefId({ referenceId: order.id });
-      await this.repository.markAs(order.id, 'payment_not_completed');
+      await this.fulfillment.cancel({ orderId: payload.orderId });
+      await this.repository.markAs(payload.orderId, 'unsuccessful_pay');
     });
   }
 }

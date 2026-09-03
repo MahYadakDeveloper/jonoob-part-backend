@@ -14,7 +14,10 @@ export interface OrderRepository {
   > | null>;
 
   create(
-    data: Omit<Extract<Order, { status: 'settlement' }>, 'id' | 'payment' | 'delivery'>,
+    data: Omit<
+      Extract<Order, { status: 'settlement' }>,
+      'id' | 'fulfillment' | 'payment' | 'delivery'
+    >,
   ): Promise<string>;
 
   markAs(orderId: string, status: Order['status']): Promise<void>;

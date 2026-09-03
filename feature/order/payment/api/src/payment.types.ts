@@ -6,7 +6,7 @@ export type Payment = {
   sessionId: number;
 } & (
   | {
-      status: 'initiated';
+      status: 'initial';
     }
   | ({
       status: 'pending';

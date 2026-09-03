@@ -6,7 +6,6 @@ import { Payment } from '@feature/order-payment-api';
 export type BaseOrder = {
   id: string;
   customerId: string;
-  recordedAt: Date;
   items: LineItems<InvoiceItem>;
   cancellationTerms: {
     fee:
@@ -22,7 +21,6 @@ export type BaseOrder = {
           rate: number;
         };
   };
-
   summary: InvoiceSummary;
 };
 
@@ -30,6 +28,8 @@ export type Order = BaseOrder &
   (
     | {
         status: 'settlement';
+        delivery: Extract<Delivery, { status: 'initiated' }>;
+        fulfillment: Extract<Delivery, { status: 'items_reserved' }>;
         payment: Extract<Payment, { status: 'pending' | 'initiated' }>;
       }
     | ({
@@ -38,6 +38,7 @@ export type Order = BaseOrder &
         | {
             status: 'process';
             fulfillment: Extract<Fulfillment, { status: 'processing' }>;
+            delivery: Extract<Delivery, { status: 'initiated' }>;
           }
         | ({
             fulfillment: Extract<Fulfillment, { status: 'processed' }>;
@@ -46,7 +47,7 @@ export type Order = BaseOrder &
                 status: 'in_delivery';
                 delivery: Extract<
                   Delivery,
-                  { status: 'courier_requested' | 'package_handed_over_to_courier' }
+                  { status: 'courier_requested' | 'handed_over_to_courier' }
                 >;
               }
             | {

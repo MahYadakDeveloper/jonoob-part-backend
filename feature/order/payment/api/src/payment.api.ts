@@ -3,7 +3,7 @@ import { SettleResponse } from './payment.responses';
 import { PaymentMethod } from './payment.types';
 
 export interface PaymentApi {
-  createPaymentSession(req: PaymentSessionCreationRequest): Promise<void>;
+  initialize(req: PaymentSessionCreationRequest): Promise<void>;
 
   settle<T extends PaymentMethod>(req: SettleRequest<T>): Promise<SettleResponse>;
 
