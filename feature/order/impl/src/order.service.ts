@@ -3,18 +3,15 @@ import {
   LineItems,
   Money,
   SettingToken,
-  type OutboxRepository,
   type SettingsStore,
   type TransactionManager,
 } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
-import { type WalletApi } from '@feature/customer-wallet-api';
 import { OrderApi } from '@feature/order-api';
 import { Recipient, type DeliveryApi } from '@feature/order-delivery-api';
 import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import { type PaymentApi } from '@feature/order-payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
-import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { type OrderRepository } from './order.repository';
@@ -58,27 +55,13 @@ export class OrderService implements OrderApi {
     private readonly repository: OrderRepository,
     private readonly customers: CustomersApi,
     private readonly catalog: CatalogApi,
-    private readonly warehouse: WarehouseApi,
     private readonly payment: PaymentApi,
     private readonly pricing: PricingApi,
     private readonly fulfillment: FulfillmentApi,
     private readonly delivery: DeliveryApi,
     private readonly tx: TransactionManager,
     private readonly settings: SettingsStore,
-    private readonly outbox: OutboxRepository,
-    private readonly wallet: WalletApi,
   ) {}
-
-  // async getReservedItems({
-  //   orderId,
-  // }: {
-  //   orderId: string;
-  // }): Promise<{ items: LineItems<{ goodId: string; quantity: number }> }> {
-  //   const { stocks } = await this.warehouse.getReservedStocks({ referenceId: orderId });
-  //   return {
-  //     items: stocks,
-  //   };
-  // }
 
   findByCustomerId({ customerId, orderId }: { customerId: string; orderId: string }) {
     return this.repository.findOrderByCustomerId(customerId, orderId);
@@ -199,6 +182,7 @@ export class OrderService implements OrderApi {
       switch (order.status) {
         case 'process':
           await this.payment.refund({
+            type: 'full',
             sessionId: order.payment.sessionId,
             customerId: order.customerId,
           });
@@ -222,11 +206,10 @@ export class OrderService implements OrderApi {
 
               // [TODO] make payment refund segmented
               await this.payment.refund({
+                type: 'partial',
                 amount: refund,
+                sessionId: order.payment.sessionId,
                 customerId: customerId,
-                reason: 'refund',
-                referenceId: orderId,
-                idempotencyKey: `order:refunded:${orderId}`,
               });
 
               await this.delivery.cancelDelivery({ orderId });

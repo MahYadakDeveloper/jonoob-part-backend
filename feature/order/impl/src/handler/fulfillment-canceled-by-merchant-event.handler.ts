@@ -32,6 +32,7 @@ export class FulfillmentCanceledByMerchantEventHandler extends BaseEventHandler<
 
     await this.tx.run(async () => {
       await this.payment.refund({
+        type: 'full',
         sessionId: order.payment.sessionId,
         customerId: order.customerId,
       });

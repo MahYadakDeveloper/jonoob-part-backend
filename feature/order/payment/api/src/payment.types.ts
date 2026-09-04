@@ -70,6 +70,7 @@ export type Payment = {
   | ({
       status: 'refunded';
       refundedAt: Date;
+      type: 'full';
     } & (
       | {
           destination: 'wallet';
@@ -87,6 +88,13 @@ export type Payment = {
           trackingCode: string;
         }
     ))
+  | {
+      status: 'refunded';
+      refundedAt: Date;
+      type: 'partial';
+      refundedAmount: Money;
+      destination: 'wallet';
+    }
 );
 
 export type PaymentMethod = 'wallet' | 'gateway' | 'partial';

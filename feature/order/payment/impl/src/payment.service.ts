@@ -422,10 +422,33 @@ export class PaymentService implements PaymentApi {
     });
   }
 
-  async refund({ sessionId, customerId }: RefundRequest): Promise<void> {
+  async refund(req: RefundRequest): Promise<void> {
+    const { sessionId, customerId } = req;
     const session = await this.repository.findById(sessionId);
     if (!session) throw new Error();
     if (session.status !== 'paid') throw new Error();
+
+    // None full refund amount
+    if (req.type === 'partial') {
+      await this.tx.run(async () => {
+        await this.wallet.deposit({
+          amount: req.amount, // total amount to refund into wallet
+          customerId,
+          reason: 'refund',
+          referenceId: session.orderId,
+          idempotencyKey: `payment:refunded-order-payment:${session.orderId}`,
+        });
+        await this.repository.updatePaymentStatusTo<'refunded'>({
+          ...session,
+          type: 'partial',
+          refundedAt: new Date(),
+          destination: 'wallet',
+          refundedAmount: req.amount,
+          status: 'refunded',
+        });
+      });
+      return;
+    }
 
     switch (session.method) {
       case 'partial': {
@@ -447,6 +470,7 @@ export class PaymentService implements PaymentApi {
             await this.repository.updatePaymentStatusTo<'refunded'>({
               ...session,
               refundedAt: new Date(),
+              type: 'full',
               destination: 'partial',
               ...session.allocation,
               status: 'refunded',
@@ -470,6 +494,7 @@ export class PaymentService implements PaymentApi {
           await this.repository.updatePaymentStatusTo<'refunded'>({
             ...session,
             refundedAt: new Date(),
+            type: 'full',
             destination: 'wallet',
             status: 'refunded',
           });
@@ -487,6 +512,7 @@ export class PaymentService implements PaymentApi {
           const data = {
             ...session,
             refundedAt: new Date(),
+            type: 'full',
             destination: 'gateway',
             status: 'refunded',
           } satisfies Extract<Payment, { status: 'refunded' }>;
@@ -506,6 +532,7 @@ export class PaymentService implements PaymentApi {
           await this.repository.updatePaymentStatusTo<'refunded'>({
             ...session,
             refundedAt: new Date(),
+            type: 'full',
             destination: 'wallet',
             status: 'refunded',
           });

@@ -38,7 +38,15 @@ export type SettleRequest<T extends PaymentMethod> = {
         walletUsage: WalletUsage;
       });
 
-export interface RefundRequest {
-  sessionId: number;
-  customerId: string;
-}
+export type RefundRequest =
+  | {
+      type: 'full';
+      sessionId: number;
+      customerId: string;
+    }
+  | {
+      type: 'partial';
+      amount: Money;
+      sessionId: number;
+      customerId: string;
+    };
