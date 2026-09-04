@@ -1,12 +1,5 @@
-export const CourierDispatchRequestedEventType = 'delivery:courier-dispatch-requested';
-export const OrderDeliveredEventType = 'delivery:order-delivered';
-export const OrderDelivery = 'delivery:order-delivery-failed';
-export const OrderHandedOverToCourierEventType = 'delivery:order-handed-over-to-courier';
+export const OrderDeliveryFailedEventType = 'delivery:order-delivery-failed';
+export type OrderDeliverySucceededEventPayload = { orderId: string };
 
-export type CourierDispatchRequestedEventPayload = {
-  orderId: string;
-};
-
-export type OrderDeliveredEventPayload = { orderId: string };
-
-export type OrderHandedOverToCourierEventPayload = { orderId: string };
+export const OrderDeliverySucceededEventType = 'delivery:order-delivery-succeeded';
+export type OrderDeliveryFailedEventPayload = { orderId: string };

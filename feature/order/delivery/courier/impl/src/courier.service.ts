@@ -45,11 +45,14 @@ export class CourierService implements CourierApi {
    * @param req.courierId is from auth guard resolved
    * @param req.orderId is get form the who is playing the role
    */
-  async pickedUp({ courierId, orderId }: PickingUpRequest): Promise<void> {
-    const { delivery } = await this.delivery.findDelivery({ orderId });
+  async pickedUp({ courierId, deliveryId }: PickingUpRequest): Promise<void> {
+    const { delivery } = await this.delivery.findOne({ deliveryId });
+
+    if (delivery.status !== 'courier_requested') throw new Error();
+
     await this.tx.run(async () => {
       // Make a request for shipping
-      if (delivery.scope === 'intra-city') {
+      if (delivery.recipient.scope === 'intra_city') {
         // Generate verification code
         const code = this.otp.generate(4);
 
@@ -66,7 +69,7 @@ export class CourierService implements CourierApi {
           payload: {
             courierId,
             deliveryId: delivery.id,
-            scope: 'intra-city',
+            scope: 'intra_city',
             deliveryConfirmationCode: code,
           } satisfies PackageHandedOverToCourierEventPayload,
         });
@@ -77,7 +80,7 @@ export class CourierService implements CourierApi {
           payload: {
             courierId,
             deliveryId: delivery.id,
-            scope: 'inter-city',
+            scope: 'inter_city',
           } satisfies PackageHandedOverToCourierEventPayload,
         });
       }
@@ -88,30 +91,30 @@ export class CourierService implements CourierApi {
 
   async reportDeliveryAttempt(req: ReportDeliveryAttemptRequest) {
     const delivery = await this.courier.getDelivery(req.courierId, req.deliveryId);
-    if (delivery.status !== 'handed-over-to-courier') throw new Error();
+    if (delivery.status !== 'handed_over_to_courier') throw new Error();
 
     if (req.result === 'delivered') {
-      if (delivery.scope === 'intra-city') {
-        if (req.scope !== delivery.scope) throw new Error();
+      if (delivery.recipient.scope === 'intra_city') {
+        if (req.scope !== delivery.recipient.scope) throw new Error();
 
-        if (delivery.deliveryConfirmationCode !== req.confirmationCode) throw new Error();
+        if (delivery.recipient.deliveryConfirmationCode !== req.confirmationCode) throw new Error();
 
         await this.outbox.save({
           type: DeliverySucceededEventType,
           payload: {
             deliveryId: req.deliveryId,
-            scope: 'intra-city',
+            scope: 'intra_city',
           } satisfies DeliverySucceededEventPayload,
         });
         return;
       }
 
-      if (req.scope !== delivery.scope) throw new Error();
+      if (req.scope !== delivery.recipient.scope) throw new Error();
       await this.outbox.save({
         type: DeliverySucceededEventType,
         payload: {
           deliveryId: req.deliveryId,
-          scope: 'inter-city',
+          scope: 'inter_city',
           trackingNumber: req.trackingNumber,
         } satisfies DeliverySucceededEventPayload,
       });

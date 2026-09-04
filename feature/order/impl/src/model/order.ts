@@ -28,8 +28,8 @@ export type Order = BaseOrder &
   (
     | {
         status: 'settlement';
-        delivery: Extract<Delivery, { status: 'initiated' }>;
-        fulfillment: Extract<Delivery, { status: 'items_reserved' }>;
+        delivery: Extract<Delivery, { status: 'initial' }>;
+        fulfillment: Extract<Delivery, { status: 'initial' }>;
         payment: Extract<Payment, { status: 'pending' | 'initiated' }>;
       }
     | ({
@@ -38,7 +38,7 @@ export type Order = BaseOrder &
         | {
             status: 'process';
             fulfillment: Extract<Fulfillment, { status: 'processing' }>;
-            delivery: Extract<Delivery, { status: 'initiated' }>;
+            delivery: Extract<Delivery, { status: 'initial' }>;
           }
         | ({
             fulfillment: Extract<Fulfillment, { status: 'processed' }>;
@@ -62,21 +62,23 @@ export type Order = BaseOrder &
         | {
             status: 'canceled_by_customer';
             fulfillment: Extract<Fulfillment, { status: 'canceled_by_customer' }>;
-            delivery: Extract<Delivery, { status: 'initiated' }>;
+            delivery: Extract<Delivery, { status: 'initial' }>;
           }
         | {
             status: 'canceled_by_merchant';
             fulfillment: Extract<Fulfillment, { status: 'canceled_by_merchant' }>;
-            delivery: Extract<Delivery, { status: 'initiated' }>;
+            delivery: Extract<Delivery, { status: 'initial' }>;
           }
         | {
             status: 'returned_to_warehouse';
             delivery: Extract<Delivery, { status: 'returned_to_warehouse' }>;
+            fulfillment: Extract<Fulfillment, { status: 'fulfilled' }>;
           }
       ))
     | {
         status: 'unsuccessful_pay';
         payment: Extract<Payment, { status: 'failure' | 'expired' | 'canceled' }>;
-        delivery: Extract<Delivery, { status: 'initiated' }>;
+        fulfillment: Extract<Fulfillment, { status: 'initial' }>;
+        delivery: Extract<Delivery, { status: 'initial' }>;
       }
   );

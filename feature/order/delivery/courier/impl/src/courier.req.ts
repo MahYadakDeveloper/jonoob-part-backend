@@ -1,6 +1,6 @@
 export interface PickingUpRequest {
   courierId: string;
-  orderId: string;
+  deliveryId: string;
 }
 
 export type ReportDeliveryAttemptRequest = {
@@ -11,11 +11,11 @@ export type ReportDeliveryAttemptRequest = {
       result: 'delivered';
     } & (
       | {
-          scope: 'inter-city';
+          scope: 'inter_city';
           trackingNumber: string;
         }
       | {
-          scope: 'intra-city';
+          scope: 'intra_city';
           confirmationCode: string;
         }
     ))
@@ -24,18 +24,18 @@ export type ReportDeliveryAttemptRequest = {
       result: 'failed';
     } & (
       | {
-          scope: 'inter-city';
+          scope: 'inter_city';
           reasonMessage: string;
         }
       | ({
-          scope: 'intra-city';
+          scope: 'intra_city';
         } & (
           | {
               reason:
-                | 'recipient-absent'
-                | 'recipient-unreachable'
-                | 'invalid-address'
-                | 'recipient-refused';
+                | 'recipient_absent'
+                | 'recipient_unreachable'
+                | 'invalid_address'
+                | 'recipient_refused';
             }
           | {
               reason: 'other';

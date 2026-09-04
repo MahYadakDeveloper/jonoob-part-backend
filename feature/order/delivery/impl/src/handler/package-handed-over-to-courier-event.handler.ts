@@ -1,13 +1,4 @@
-import {
-  BaseEventHandler,
-  type EventHandlerRegistry,
-  type OutboxRepository,
-  type TransactionManager,
-} from '@feature/common';
-import {
-  OrderHandedOverToCourierEventPayload,
-  OrderHandedOverToCourierEventType,
-} from '@feature/order-delivery-api';
+import { BaseEventHandler, type EventHandlerRegistry } from '@feature/common';
 import {
   PackageHandedOverToCourierEventPayload,
   PackageHandedOverToCourierEventType,
@@ -20,32 +11,32 @@ export class PackageHandedOverToCourierEventHandler extends BaseEventHandler<Pac
   constructor(
     registry: EventHandlerRegistry,
     private readonly repository: DeliveryRepository,
-    private readonly tx: TransactionManager,
-    private readonly outbox: OutboxRepository,
   ) {
     super(registry, PackageHandedOverToCourierEventType);
   }
 
   async handle(payload: PackageHandedOverToCourierEventPayload) {
-    if (payload.scope === 'intra-city')
+    const delivery = await this.repository.findById(payload.deliveryId);
+    if (payload.scope === 'intra_city') {
+      if (delivery.recipient.scope !== payload.scope) throw new Error();
       await this.repository.markAsHandedOverToCourier(payload.deliveryId, {
         courierId: payload.courierId,
-        deliveryConfirmationCode: payload.deliveryConfirmationCode,
+        recipient: {
+          ...delivery.recipient,
+          deliveryConfirmationCode: payload.deliveryConfirmationCode,
+        },
         handedOverAt: new Date(),
       });
-    else
+    } else {
+      if (delivery.recipient.scope !== payload.scope) throw new Error();
       await this.repository.markAsHandedOverToCourier(payload.deliveryId, {
         courierId: payload.courierId,
         handedOverAt: new Date(),
+        status: 'handed_over_to_courier',
+        recipient: {
+          ...delivery.recipient,
+        },
       });
-
-    const { orderId } = await this.repository.getOrderId(payload.deliveryId);
-
-    await this.outbox.save({
-      type: OrderHandedOverToCourierEventType,
-      payload: {
-        orderId,
-      } satisfies OrderHandedOverToCourierEventPayload,
-    });
+    }
   }
 }

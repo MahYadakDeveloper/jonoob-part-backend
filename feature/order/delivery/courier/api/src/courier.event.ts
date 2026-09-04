@@ -3,12 +3,12 @@ export type PackageHandedOverToCourierEventPayload =
   | {
       deliveryId: string;
       courierId: string;
-      scope: 'inter-city';
+      scope: 'inter_city';
     }
   | {
       deliveryId: string;
       courierId: string;
-      scope: 'intra-city';
+      scope: 'intra_city';
       deliveryConfirmationCode: string;
     };
 
@@ -17,11 +17,11 @@ export type DeliverySucceededEventPayload = {
   deliveryId: string;
 } & (
   | {
-      scope: 'inter-city';
+      scope: 'inter_city';
       trackingNumber: string;
     }
   | {
-      scope: 'intra-city';
+      scope: 'intra_city';
     }
 );
 
@@ -30,18 +30,18 @@ export type DeliveryFailedEventPayload = {
   deliveryId: string;
 } & (
   | {
-      scope: 'inter-city';
+      scope: 'inter_city';
       reasonMessage: string;
     }
   | ({
-      scope: 'intra-city';
+      scope: 'intra_city';
     } & (
       | {
           reason:
-            | 'recipient-absent'
-            | 'recipient-unreachable'
-            | 'invalid-address'
-            | 'recipient-refused';
+            | 'recipient_absent'
+            | 'recipient_unreachable'
+            | 'invalid_address'
+            | 'recipient_refused';
         }
       | {
           reason: 'other';

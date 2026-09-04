@@ -28,6 +28,11 @@ export type Delivery =
       recipient: Recipient;
     }
   | {
+      status: 'canceled';
+      canceledAt: Date;
+      recipient: Recipient;
+    }
+  | {
       status: 'handed_over_to_courier';
       courierId: string;
       handedOverAt: Date;
@@ -46,7 +51,7 @@ export type Delivery =
             deliveryConfirmationCode: string;
           })
         | (InterCityRecipient & {
-            trackingNumber: number;
+            trackingNumber: string;
           });
     }
   | {
@@ -70,7 +75,19 @@ export type Delivery =
                 }
             ))
         | (InterCityRecipient & {
-            trackingNumber: number;
             reasonMessage: string;
           });
+    };
+
+export type IntraCityDeliveryFailureReasonType =
+  | {
+      reason:
+        | 'recipient_absent'
+        | 'recipient_unreachable'
+        | 'invalid_address'
+        | 'recipient_refused';
+    }
+  | {
+      reason: 'other';
+      message: string;
     };

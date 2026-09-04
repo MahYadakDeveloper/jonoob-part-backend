@@ -1,13 +1,5 @@
 import { type OutboxRepository, type SettingsStore } from '@feature/common';
-import {
-  Delivery,
-  DeliveryApi,
-  DeliveryAttemptRequest,
-  PackageDeliveredEventPayload,
-  PackageDeliveredEventType,
-  PackageDeliveryFailedEventPayload,
-  PackageDeliveryFailedEventType,
-} from '@feature/order-delivery-api';
+import { Delivery, DeliveryApi, Recipient } from '@feature/order-delivery-api';
 import { type CourierApi } from '@feature/order-delivery-courier-api';
 import { type LocationApi } from '@feature/order-delivery-location-api';
 import { Injectable } from '@nestjs/common';
@@ -25,43 +17,41 @@ export class DeliveryService implements DeliveryApi {
     private readonly courier: CourierApi,
   ) {}
 
+  async findOne(req: { deliveryId: string }): Promise<{ delivery: { id: string } & Delivery }> {
+    const delivery = await this.repository.findById(req.deliveryId);
+    return { delivery };
+  }
+
+  async initialize({
+    orderId,
+    recipient,
+  }: {
+    orderId: string;
+    recipient: Recipient;
+  }): Promise<void> {
+    await this.repository.create(orderId, recipient);
+  }
+
+  async deliver({ orderId }: { orderId: string }): Promise<void> {
+    const delivery = await this.repository.findByOrderId(orderId);
+    await this.courier.pickup({ deliveryId: delivery.id });
+    await this.repository.markAsCourierRequested(orderId, {
+      requestedAt: new Date(),
+    });
+  }
+
   async cancelDelivery(req: { orderId: string }): Promise<void> {
     const delivery = await this.repository.findByOrderId(req.orderId);
     switch (delivery.status) {
-      case 'courier-requested':
+      case 'courier_requested':
         await this.courier.cancelPickupRequest({ deliveryId: delivery.id });
+        await this.repository.markAsCanceled(delivery.id, {
+          canceledAt: new Date(),
+        });
         return;
       default:
         throw new Error('This feature not implemented yet!');
     }
-  }
-
-  async findDelivery(req: { orderId: string }): Promise<{ delivery: { id: string } & Delivery }> {
-    const delivery = await this.repository.findByOrderId(req.orderId);
-    return { delivery };
-  }
-
-  /**
-   *
-   */
-  async reportDeliveryAttempt(req: DeliveryAttemptRequest): Promise<void> {
-    if (req.result === 'delivered') {
-      await this.outbox.save({
-        type: PackageDeliveredEventType,
-        payload: {
-          ...req,
-        } satisfies PackageDeliveredEventPayload,
-      });
-
-      return;
-    }
-
-    await this.outbox.save({
-      type: PackageDeliveryFailedEventType,
-      payload: {
-        attempt: req,
-      } satisfies PackageDeliveryFailedEventPayload,
-    });
   }
 
   async setMethods({

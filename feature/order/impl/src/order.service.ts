@@ -203,7 +203,7 @@ export class OrderService implements OrderApi {
             customerId: order.customerId,
           });
 
-          await this.warehouse.releaseStockByRefId({ referenceId: orderId });
+          await this.fulfillment.cancel({ orderId });
 
           await this.repository.markAs(order.id, 'canceled_by_customer');
           break;
