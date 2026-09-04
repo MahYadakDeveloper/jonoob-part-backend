@@ -1,9 +1,7 @@
 import { type OtpGenerator, type OutboxRepository, type TransactionManager } from '@feature/common';
 import { type NotificationApi } from '@feature/notification-api';
-import { type OrderApi } from '@feature/order-api';
 import { type DeliveryApi } from '@feature/order-delivery-api';
 import {
-  CancelPickupRequest,
   DeliveryFailedEventPayload,
   DeliveryFailedEventType,
   DeliverySucceededEventPayload,
@@ -21,7 +19,6 @@ import { PickingUpRequest, ReportDeliveryAttemptRequest } from './courier.req';
 export class CourierService implements CourierApi {
   constructor(
     private readonly courier: CourierRepository,
-    private readonly order: OrderApi,
     private readonly delivery: DeliveryApi,
     private readonly notification: NotificationApi,
     private readonly otp: OtpGenerator,
@@ -29,14 +26,11 @@ export class CourierService implements CourierApi {
     private readonly tx: TransactionManager,
   ) {}
 
-  cancelPickupRequest({ orderId }: CancelPickupRequest): Promise<void> {}
-
   /**
    * role: system
    */
-  pickup(req: PickupRequest): Promise<void> {
-    // Notify all courier
-    throw new Error('Method not implemented.');
+  async pickup(req: PickupRequest): Promise<void> {
+    await this.notification.notifyCouriersOfPickupRequested();
   }
 
   /**

@@ -108,13 +108,19 @@ export class FulfillmentService implements FulfillmentApi {
     const fulfill = await this.repository.find(orderId);
     if (!fulfill) throw new Error();
 
-    await this.tx.run(async () => {
-      await this.repository.dequeue(orderId, {
-        status: 'canceled_by_customer',
-      });
+    switch (fulfill.status) {
+      case 'initial':
+      case 'processing':
+      case 'fulfilled':
+        await this.tx.run(async () => {
+          await this.repository.dequeue(orderId, {
+            status: 'canceled_by_customer',
+          });
 
-      await this.warehouse.releaseStock({ referenceId: orderId, items: fulfill.items });
-    });
+          await this.warehouse.releaseStock({ referenceId: orderId, items: fulfill.items });
+        });
+        break;
+    }
   }
 
   private calculateReserveStock(

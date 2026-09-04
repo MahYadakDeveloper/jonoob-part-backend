@@ -62,12 +62,12 @@ export type Order = BaseOrder &
         | {
             status: 'canceled_by_customer';
             fulfillment: Extract<Fulfillment, { status: 'canceled_by_customer' }>;
-            delivery: Extract<Delivery, { status: 'initial' }>;
+            delivery: Extract<Delivery, { status: 'canceled' }>;
           }
         | {
             status: 'canceled_by_merchant';
             fulfillment: Extract<Fulfillment, { status: 'canceled_by_merchant' }>;
-            delivery: Extract<Delivery, { status: 'initial' }>;
+            delivery: Extract<Delivery, { status: 'canceled' }>;
           }
         | {
             status: 'returned_to_warehouse';
@@ -78,7 +78,7 @@ export type Order = BaseOrder &
     | {
         status: 'unsuccessful_pay';
         payment: Extract<Payment, { status: 'failure' | 'expired' | 'canceled' }>;
-        fulfillment: Extract<Fulfillment, { status: 'initial' }>;
-        delivery: Extract<Delivery, { status: 'initial' }>;
+        fulfillment: Extract<Fulfillment, { status: 'canceled' }>;
+        delivery: Extract<Delivery, { status: 'canceled' }>;
       }
   );

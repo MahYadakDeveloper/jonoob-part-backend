@@ -408,6 +408,8 @@ importers:
 
   feature/notification/api: {}
 
+  feature/notification/impl: {}
+
   feature/order/api:
     dependencies:
       '@feature/catalog-api':

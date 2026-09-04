@@ -202,8 +202,8 @@ export class OrderService implements OrderApi {
             sessionId: order.payment.sessionId,
             customerId: order.customerId,
           });
-
           await this.fulfillment.cancel({ orderId });
+          await this.delivery.cancelDelivery({ orderId });
 
           await this.repository.markAs(order.id, 'canceled_by_customer');
           break;
@@ -220,7 +220,8 @@ export class OrderService implements OrderApi {
                 );
               }
 
-              await this.wallet.deposit({
+              // [TODO] make payment refund segmented
+              await this.payment.refund({
                 amount: refund,
                 customerId: customerId,
                 reason: 'refund',

@@ -43,6 +43,7 @@ export class DeliveryService implements DeliveryApi {
   async cancelDelivery(req: { orderId: string }): Promise<void> {
     const delivery = await this.repository.findByOrderId(req.orderId);
     switch (delivery.status) {
+      case 'initial':
       case 'courier_requested':
         await this.courier.cancelPickupRequest({ deliveryId: delivery.id });
         await this.repository.markAsCanceled(delivery.id, {

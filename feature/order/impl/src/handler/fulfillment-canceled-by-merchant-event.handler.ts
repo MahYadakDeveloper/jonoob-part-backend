@@ -1,4 +1,9 @@
-import { BaseEventHandler, type EventHandlerRegistry } from '@feature/common';
+import {
+  BaseEventHandler,
+  type EventHandlerRegistry,
+  type TransactionManager,
+} from '@feature/common';
+import { type DeliveryApi } from '@feature/order-delivery-api';
 import {
   FulfillmentCanceledByMerchantEventPayload,
   FulfillmentCanceledByMerchantEventType,
@@ -12,7 +17,9 @@ export class FulfillmentCanceledByMerchantEventHandler extends BaseEventHandler<
   constructor(
     registry: EventHandlerRegistry,
     private readonly payment: PaymentApi,
+    private readonly delivery: DeliveryApi,
     private readonly repository: OrderRepository,
+    private readonly tx: TransactionManager,
   ) {
     super(registry, FulfillmentCanceledByMerchantEventType);
   }
@@ -23,11 +30,15 @@ export class FulfillmentCanceledByMerchantEventHandler extends BaseEventHandler<
     if (!order) throw new Error();
     if (order.status !== 'process') throw new Error();
 
-    await this.payment.refund({
-      sessionId: order.payment.sessionId,
-      customerId: order.customerId,
-    });
+    await this.tx.run(async () => {
+      await this.payment.refund({
+        sessionId: order.payment.sessionId,
+        customerId: order.customerId,
+      });
 
-    await this.repository.markAs(order.id, 'canceled_by_merchant');
+      await this.delivery.cancelDelivery({ orderId: order.id });
+
+      await this.repository.markAs(order.id, 'canceled_by_merchant');
+    });
   }
 }
