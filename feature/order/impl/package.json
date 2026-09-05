@@ -17,6 +17,7 @@
   },
   "private": true,
   "dependencies": {
+    "@feature/cashback-api": "workspace:*",
     "@feature/catalog-api": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/customer-api": "workspace:*",

@@ -1,11 +1,5 @@
 import { type CatalogApi } from '@feature/catalog-api';
-import {
-  LineItems,
-  Money,
-  SettingToken,
-  type SettingsStore,
-  type TransactionManager,
-} from '@feature/common';
+import { LineItems, Money, type SettingsStore, type TransactionManager } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
 import { OrderApi } from '@feature/order-api';
 import { Recipient, type DeliveryApi } from '@feature/order-delivery-api';
@@ -13,44 +7,11 @@ import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import { type PaymentApi } from '@feature/order-payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
 import { Injectable } from '@nestjs/common';
-import { z } from 'zod';
 import { type OrderRepository } from './order.repository';
-import { CancellationFee } from './order.type';
+import orderSettings from './order.settings';
 
 @Injectable()
 export class OrderService implements OrderApi {
-  static readonly OrderSettings: SettingToken<{
-    cancellationFee: CancellationFee;
-  }> = {
-    key: 'order-settings',
-
-    defaultValue: {
-      cancellationFee: {
-        type: 'fixed',
-        amount: {
-          value: 0,
-          unit: 'toman',
-        },
-      },
-    },
-
-    schema: z.object({
-      cancellationFee: z.discriminatedUnion('type', [
-        z.object({
-          type: z.literal('fixed'),
-          amount: z.object({
-            value: z.number().nonnegative(),
-            unit: z.literal('toman'),
-          }),
-        }),
-        z.object({
-          type: z.literal('rate'),
-          rate: z.number().min(0).max(100),
-        }),
-      ]),
-    }),
-  };
-
   constructor(
     private readonly repository: OrderRepository,
     private readonly customers: CustomersApi,
@@ -128,7 +89,7 @@ export class OrderService implements OrderApi {
       customer: { id: customerId, type: customer.type },
     });
 
-    const { cancellationFee } = await this.settings.get(OrderService.OrderSettings);
+    const { cancellationFee } = await this.settings.get(orderSettings);
 
     return await this.tx.run(async () => {
       const orderId = await this.repository.create({
@@ -225,11 +186,7 @@ export class OrderService implements OrderApi {
     });
   }
 
-  async setSettings({
-    newSettings,
-  }: {
-    newSettings: (typeof OrderService.OrderSettings)['defaultValue'];
-  }) {
-    await this.settings.set(OrderService.OrderSettings, newSettings);
+  async setSettings({ newSettings }: { newSettings: (typeof orderSettings)['defaultValue'] }) {
+    await this.settings.set(orderSettings, newSettings);
   }
 }
