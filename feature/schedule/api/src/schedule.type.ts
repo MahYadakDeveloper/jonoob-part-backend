@@ -12,24 +12,22 @@ export type BusinessHoursInterval = {
   closesAt: string;
 };
 
-export type WeeklyBusinessDay = {
-  weekday: Weekday;
-  enabled: boolean;
-  intervals: BusinessHoursInterval[];
-};
-
-export type BusinessHoursException =
+export type WeeklyBusinessDay =
   | {
-      date: Date;
-      type: 'closed';
-      reason?: string;
+      weekday: Weekday;
+      open: false;
     }
   | {
-      date: Date;
-      type: 'custom';
+      weekday: Weekday;
+      open: true;
       intervals: BusinessHoursInterval[];
-      reason?: string;
     };
+
+export type BusinessHoursException = {
+  date: { start: Date; end: Date };
+  type: 'closed';
+  reason?: string;
+};
 
 export type BusinessHours = {
   timezone: string;

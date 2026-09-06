@@ -17,6 +17,9 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*"
+    "@feature/common": "workspace:*",
+    "@feature/schedule-api": "workspace:*",
+    "@nestjs/common": "^12.0.1",
+    "zod": "^4.4.3"
   }
 }
