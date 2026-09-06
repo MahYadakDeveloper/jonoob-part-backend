@@ -2,7 +2,7 @@ import { type SettingsStore, SettingToken } from '@feature/common';
 import { BusinessHoursException, IsOpenResponse, ScheduleApi } from '@feature/schedule-api';
 import { Injectable } from '@nestjs/common';
 import { businessHoursSchema, BusinessHoursType } from './schedule.schema';
-import { isTimeInInterval } from './utils';
+import { isTimeGreaterThanOrEqualTo, isTimeInInterval } from './utils';
 
 @Injectable()
 export class ScheduleService implements ScheduleApi {
@@ -127,7 +127,7 @@ export class ScheduleService implements ScheduleApi {
 
     for (const interval of weekday.intervals) {
       // padStart ensures hours and minutes are always two digits (HH:mm)
-      const timeNow = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const timeNow = this.formatDateToDayTime(now);
 
       if (isTimeInInterval(timeNow, interval.opensAt, interval.closesAt))
         return {
@@ -141,12 +141,82 @@ export class ScheduleService implements ScheduleApi {
     };
   }
 
+  async getNextBusinessHours() {
+    const businessHours = await this.settings.get(ScheduleService.scheduleSettings);
+
+    const exceptions = (businessHours.exceptions ?? [])
+      .map((exception) => {
+        const start = new Date(exception.date.start);
+        const end = new Date(exception.date.end);
+
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+          return null;
+        }
+
+        // Exceptions are considered full-day closures.
+        end.setHours(23, 59, 59, 999);
+
+        return {
+          start: start.getTime(),
+          end: end.getTime(),
+        };
+      })
+      .filter((exception): exception is { start: number; end: number } => exception !== null);
+
+    const currentAnchor = new Date();
+
+    for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+      const candidateDate = new Date(currentAnchor);
+
+      candidateDate.setDate(candidateDate.getDate() + dayOffset);
+
+      if (dayOffset > 0) {
+        candidateDate.setHours(0, 0, 0, 0);
+      }
+
+      const weekday = businessHours.weeklySchedule?.[candidateDate.getDay()];
+
+      if (!weekday?.open) {
+        continue;
+      }
+
+      const currentDayTime = this.formatDateToDayTime(candidateDate);
+
+      for (const interval of weekday.intervals ?? []) {
+        if (!isTimeGreaterThanOrEqualTo(interval.opensAt, currentDayTime)) {
+          continue;
+        }
+
+        const [hours, minutes] = interval.opensAt.split(':').map(Number);
+
+        const proposedOpenDate = new Date(candidateDate);
+
+        proposedOpenDate.setHours(hours, minutes, 0, 0);
+
+        const proposedOpenTimestamp = proposedOpenDate.getTime();
+
+        const isBlocked = exceptions.some(
+          (exception) =>
+            proposedOpenTimestamp >= exception.start && proposedOpenTimestamp <= exception.end,
+        );
+
+        if (isBlocked) {
+          continue;
+        }
+
+        return {
+          opensAt: proposedOpenDate,
+        };
+      }
+    }
+
+    return undefined;
+  }
+
   /**
-   * [TODO]
-   * This method return the next schedule business time
-   * Example: the friday is holiday and store is closed then the next
-   * business hour is saturday 8 AM and for delivery is going to delayed
-   * to next business hours
+   * padStart ensures hours and minutes are always two digits (HH:mm)
    */
-  async getNextBusinessHours() {}
+  private formatDateToDayTime(date: Date) {
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  }
 }
