@@ -6,6 +6,7 @@ import { Recipient, type DeliveryApi } from '@feature/order-delivery-api';
 import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import { type PaymentApi } from '@feature/order-payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
+import { type ScheduleApi } from '@feature/schedule-api';
 import { Injectable } from '@nestjs/common';
 import { type OrderRepository } from './order.repository';
 import orderSettings from './order.settings';
@@ -22,6 +23,7 @@ export class OrderService implements OrderApi {
     private readonly delivery: DeliveryApi,
     private readonly tx: TransactionManager,
     private readonly settings: SettingsStore,
+    private readonly schedule: ScheduleApi,
   ) {}
 
   findByCustomerId({ customerId, orderId }: { customerId: string; orderId: string }) {
@@ -51,11 +53,17 @@ export class OrderService implements OrderApi {
     items: LineItems<{ productId: string; quantity: number }>;
     recipient: Recipient;
   }) {
+    // [NOTE]
+    // Order can be happens at any time without exception but the process
+    // and the delivery is scheduled based on business hours the only is
+    // needed before order to warning customer that processing order happens
+    // only in next business hours
+
     // Check single payment pending order
     const paymentPendingOrders = await this.repository.getPaymentPendingOrders(customerId);
     if (paymentPendingOrders.size) throw new Error(`Customer has none active none settled order`);
 
-    const { customer } = await this.customers.findById({ customerId });
+    const { customer } = await this.customers.getCustomerContact({ customerId });
     const { products } = await this.catalog.findMany({ productIds: [...items.keys()] });
 
     // Resolve pricing

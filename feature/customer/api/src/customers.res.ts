@@ -1,7 +1,7 @@
 import { CustomerAddress, CustomerContact, LineItems } from '@feature/common';
 
 export interface GetAllCustomerAddressesResponse {
-  addresses: LineItems<CustomerAddress>;
+  addresses: CustomerAddress[];
 }
 
 export interface GetCustomerContactResponse {

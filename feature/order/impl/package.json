@@ -27,6 +27,7 @@
     "@feature/order-fulfillment-api": "workspace:*",
     "@feature/order-payment-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
+    "@feature/schedule-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.2.1",
     "zod": "^4.4.3"

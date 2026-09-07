@@ -1,9 +1,9 @@
 import { CustomerType } from '@feature/common';
 
 export type CustomerContact = {
-  fullName: string;
   type: CustomerType;
-  phone: string;
+  fullName: string;
+  phoneNumber: string;
 };
 
 export type CustomerAddress =
@@ -13,13 +13,13 @@ export type CustomerAddress =
         longitude: number;
         latitude: number;
       };
-      cityId: string;
+      cityId: number;
       address: string;
     }
   | {
       scope: 'inter_city';
-      provinceId: string;
-      cityId: string;
+      provinceId: number;
+      cityId: number;
       address: string;
       postalCode: string;
     };

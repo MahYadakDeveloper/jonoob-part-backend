@@ -1,8 +1,10 @@
-import { type OutboxRepository, type SettingsStore } from '@feature/common';
+import { type SettingsStore } from '@feature/common';
 import { Delivery, DeliveryApi, Recipient } from '@feature/order-delivery-api';
 import { type CourierApi } from '@feature/order-delivery-courier-api';
 import { type LocationApi } from '@feature/order-delivery-location-api';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { type ConfigType } from '@nestjs/config';
+import deliveryConfigs from './delivery.config';
 import { type DeliveryRepository } from './delivery.repository';
 import { InterCityDeliveryMethod, IntraCityDeliveryMethod } from './schema/delivery-method';
 import { DeliverySettingsToken } from './setting/token';
@@ -12,9 +14,10 @@ export class DeliveryService implements DeliveryApi {
   constructor(
     private readonly settings: SettingsStore,
     private readonly location: LocationApi,
-    private readonly outbox: OutboxRepository,
     private readonly repository: DeliveryRepository,
     private readonly courier: CourierApi,
+    @Inject(deliveryConfigs.KEY)
+    private readonly configs: ConfigType<typeof deliveryConfigs>,
   ) {}
 
   async findOne(req: { deliveryId: string }): Promise<{ delivery: { id: string } & Delivery }> {
@@ -45,7 +48,6 @@ export class DeliveryService implements DeliveryApi {
     switch (delivery.status) {
       case 'initial':
       case 'courier_requested':
-        await this.courier.cancelPickupRequest({ deliveryId: delivery.id });
         await this.repository.markAsCanceled(delivery.id, {
           canceledAt: new Date(),
         });
@@ -73,11 +75,20 @@ export class DeliveryService implements DeliveryApi {
     return this.location.listProvince();
   }
 
-  // {
-  //   "id": 1616,
-  //   "name": "چمران"
-  // },
   async findCitiesByProvinces({ provinceId }: { provinceId: number }) {
     return this.location.findCitiesByProvince({ provinceId });
+  }
+
+  resolveScope({ provinceId, cityId }: { provinceId: number; cityId: number }): {
+    scope: 'inter_city' | 'intra_city';
+  } {
+    if (provinceId !== this.configs.intraCityProvinceId)
+      // Khuzestan
+      return { scope: 'inter_city' };
+
+    if (this.configs.intraCityIds.some((intraCityId) => intraCityId === cityId))
+      return { scope: 'intra_city' };
+
+    return { scope: 'inter_city' };
   }
 }
