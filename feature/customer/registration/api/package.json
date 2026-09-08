@@ -1,5 +1,5 @@
 {
-  "name": "@feature/customer",
+  "name": "@feature/customer-registration-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,9 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*",
-    "@feature/customer-address-api": "workspace:*",
-    "@feature/customer-api": "workspace:*",
-    "@nestjs/common": "^11.1.27"
+    "@feature/common": "workspace:*"
   }
 }

@@ -1,7 +1,6 @@
 import { CustomerAddress, CustomerType } from '@feature/common';
 
 export type Customer = {
-  id: string;
   fullName: string;
   phoneNumber: string;
 } & (

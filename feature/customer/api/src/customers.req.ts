@@ -3,6 +3,9 @@
 //   address: CustomerAddress;
 // }
 
+import { PartialBy } from '@feature/common';
+import { Customer } from './customer.type';
+
 export interface GetCustomerAddressRequest {
   customerId: string;
   addressId: string;
@@ -20,3 +23,5 @@ export interface RemoveCustomerAddressRequest {
 export interface GetCustomerContactRequest {
   customerId: string;
 }
+
+export type CustomerCreationRequest = PartialBy<Customer, 'addresses'>;

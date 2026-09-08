@@ -1,5 +1,5 @@
 {
-  "name": "@feature/customer",
+  "name": "@feature/auth",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,9 +17,10 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*",
-    "@feature/customer-address-api": "workspace:*",
+    "@feature/auth-api": "workspace:*",
+    "@feature/auth-hashing": "workspace:*",
+    "@feature/auth-token": "workspace:*",
     "@feature/customer-api": "workspace:*",
-    "@nestjs/common": "^11.1.27"
+    "@nestjs/common": "^12.0.1"
   }
 }

@@ -148,6 +148,51 @@ importers:
         specifier: ^8.20.0
         version: 8.61.0(eslint@9.39.4(jiti@2.7.0))(typescript@7.0.2)
 
+  feature/auth/api:
+    dependencies:
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../../customer/api
+      '@nestjs/common':
+        specifier: ^12.0.1
+        version: 12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/auth/hash:
+    dependencies:
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../../customer/api
+      '@nestjs/common':
+        specifier: ^12.0.1
+        version: 12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/auth/impl:
+    dependencies:
+      '@feature/auth-api':
+        specifier: workspace:*
+        version: link:../api
+      '@feature/auth-hashing':
+        specifier: workspace:*
+        version: link:../hash
+      '@feature/auth-token':
+        specifier: workspace:*
+        version: link:../token
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../../customer/api
+      '@nestjs/common':
+        specifier: ^12.0.1
+        version: 12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/auth/token:
+    dependencies:
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../../customer/api
+      '@nestjs/common':
+        specifier: ^12.0.1
+        version: 12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
   feature/cashback/api:
     dependencies:
       '@feature/common':
@@ -376,12 +421,30 @@ importers:
       '@feature/customer-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/order-delivery-api':
-        specifier: workspace:*
-        version: link:../../order/delivery/api
       '@nestjs/common':
         specifier: ^11.1.27
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/customer/registration/api:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+
+  feature/customer/registration/impl:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../../api
+      '@feature/customer-registration-api':
+        specifier: workspace:*
+        version: link:../api
+      '@feature/order-delivery-api':
+        specifier: workspace:*
+        version: link:../../../order/delivery/api
 
   feature/customer/wallet/api:
     dependencies:
@@ -1341,6 +1404,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../feature/common
+      '@feature/customer-registration-api':
+        specifier: workspace:*
+        version: link:../../../feature/customer/registration/api
       '@feature/pricing-markup-api':
         specifier: workspace:*
         version: link:../../../feature/pricing/markup/api

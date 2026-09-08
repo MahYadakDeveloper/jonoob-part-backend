@@ -1,5 +1,6 @@
 import { type AddressApi } from '@feature/customer-address-api';
 import {
+  CustomerCreationRequest,
   GetAllCustomerAddressesRequest,
   GetAllCustomerAddressesResponse,
   GetCustomerAddressRequest,
@@ -17,6 +18,14 @@ export class CustomersService implements CustomersApi {
     private readonly repository: CustomerRepository,
     private readonly addresses: AddressApi,
   ) {}
+
+  create(req: CustomerCreationRequest): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  existsByPhoneNumber(req: { phoneNumber: string }): Promise<{ exists: boolean }> {
+    throw new Error('Method not implemented.');
+  }
 
   getCustomerContact(req: GetCustomerContactRequest): Promise<GetCustomerContactResponse> {
     return this.repository.find(req.customerId).then((customer) => {
@@ -49,4 +58,6 @@ export class CustomersService implements CustomersApi {
       };
     });
   }
+
+  createConsumerTypeCustomer({}: { fullName: string; phoneNumber: string }) {}
 }

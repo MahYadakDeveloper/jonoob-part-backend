@@ -18,6 +18,7 @@
   "dependencies": {
     "@feature/catalog-api": "workspace:*",
     "@feature/common": "workspace:*",
+    "@feature/customer-registration-api": "workspace:*",
     "@feature/pricing-markup-api": "workspace:*",
     "@feature/procurement-supply-purchase-api": "workspace:*",
     "@jonoob-part/contracts": "workspace:*",
