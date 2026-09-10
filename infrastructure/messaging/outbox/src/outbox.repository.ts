@@ -1,10 +1,6 @@
-import {
-  OutboxRepository,
-  NewOutboxEvent,
-  OutboxEvent,
-} from "@feature/common";
-import { Injectable } from "@nestjs/common";
-import { type OutboxDatasource } from "./outbox-datasource";
+import { OutboxRepository, NewOutboxEvent, OutboxEvent } from '@feature/common';
+import { Injectable } from '@nestjs/common';
+import { type OutboxDatasource } from './datasource/outbox-datasource';
 
 @Injectable()
 export class OutboxRepositoryImpl implements OutboxRepository {
@@ -32,7 +28,7 @@ export class OutboxRepositoryImpl implements OutboxRepository {
         publishedAt: null,
       },
       orderBy: {
-        occurredAt: "asc",
+        occurredAt: 'asc',
       },
       take: limit,
     });

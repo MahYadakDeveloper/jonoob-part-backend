@@ -6,7 +6,7 @@ import {
     type WarehouseRepository,
 } from "@feature/warehouse";
 import { BaseRepository } from "@infra/common-persistent";
-import { PrismaDbClient } from "@infra/prisma-db";
+import { PrismaDbClient } from "@infra/db-prisma";
 import { Injectable } from "@nestjs/common";
 import { type StockCache } from "./cache/stock.cache";
 import { planStockChanges } from "./stock-planner";
