@@ -174,6 +174,27 @@ importers:
       '@feature/auth-hashing':
         specifier: workspace:*
         version: link:../hash
+      '@feature/auth-rate-limit':
+        specifier: workspace:*
+        version: link:../rate-limit
+      '@feature/auth-token':
+        specifier: workspace:*
+        version: link:../token
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../../customer/api
+      '@nestjs/common':
+        specifier: ^12.0.1
+        version: 12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+
+  feature/auth/rate-limit:
+    dependencies:
+      '@feature/auth-api':
+        specifier: workspace:*
+        version: link:../api
+      '@feature/auth-hashing':
+        specifier: workspace:*
+        version: link:../hash
       '@feature/auth-token':
         specifier: workspace:*
         version: link:../token
@@ -1628,6 +1649,31 @@ importers:
       redis:
         specifier: ^6.0.1
         version: 6.0.1
+    devDependencies:
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
+  infrastructure/rate-limit:
+    dependencies:
+      '@feature/auth-rate-limit':
+        specifier: workspace:*
+        version: link:../../feature/auth/rate-limit
+      '@feature/warehouse':
+        specifier: workspace:*
+        version: link:../../feature/warehouse/impl
+      '@nestjs/common':
+        specifier: ^11.1.27
+        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/config':
+        specifier: ^4.0.4
+        version: 4.0.4(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+      ioredis:
+        specifier: ^5.11.1
+        version: 5.11.1
+      redlock:
+        specifier: 5.0.0-beta.2
+        version: 5.0.0-beta.2
     devDependencies:
       typescript:
         specifier: ^6.0.3

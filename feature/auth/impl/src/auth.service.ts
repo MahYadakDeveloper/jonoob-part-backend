@@ -3,6 +3,7 @@ import { type TokenService } from '@feature/auth-token';
 import { type CustomersApi } from '@feature/customer-api';
 import { Injectable } from '@nestjs/common';
 import { type OtpStore } from './port/otp.store';
+import { type RateLimitService, TokenBucketConfig } from '@feature/auth-rate-limit';
 
 /**
  * [NOTE]
@@ -22,14 +23,26 @@ import { type OtpStore } from './port/otp.store';
  */
 @Injectable()
 export class AuthService {
+  private readonly otpRateLimitConfig: TokenBucketConfig = {
+    maxTokens: 1,
+    refillRate: 8.33e-3, // refill a token in 2 min
+  };
   constructor(
     private readonly customers: CustomersApi,
     private readonly otpStore: OtpStore,
     private readonly tokenService: TokenService,
     private readonly hashService: HashService,
+    private readonly rateLimit: RateLimitService,
   ) {}
 
-  async requestOtp() {}
+  async requestOtp() {
+    const optKey = `opt-${phoneNumber}`;
+    const result = await this.rateLimit.consume(optKey, this.otpRateLimitConfig);
+
+    if (result.delay) {
+      if (result.retryAfter) return result.retryAfter;
+    }
+  }
 
   /**
    *
@@ -82,7 +95,7 @@ export class AuthService {
       throw new Error('OTP not found or expired');
     }
 
-    if (record.attempts > record.maxAttempts) throw new Error();
+    // if (record.attempts > record.maxAttempts) throw new Error();
 
     const valid = await this.hashService.verify(otp, record.hash);
 
