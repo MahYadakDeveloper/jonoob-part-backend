@@ -1,9 +1,11 @@
 import { type HashService } from '@feature/auth-hashing';
+import { type RateLimitService, TokenBucketConfig } from '@feature/auth-rate-limit';
+import { type SmsService } from '@feature/auth-sms';
 import { type TokenService } from '@feature/auth-token';
+import { type OtpGenerator } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
 import { Injectable } from '@nestjs/common';
 import { type OtpStore } from './port/otp.store';
-import { type RateLimitService, TokenBucketConfig } from '@feature/auth-rate-limit';
 
 /**
  * [NOTE]
@@ -23,25 +25,75 @@ import { type RateLimitService, TokenBucketConfig } from '@feature/auth-rate-lim
  */
 @Injectable()
 export class AuthService {
+  // otp
   private readonly otpRateLimitConfig: TokenBucketConfig = {
     maxTokens: 1,
-    refillRate: 8.33e-3, // refill a token in 2 min
+    refillRate: 8.333e-3, // refill a token in 2 min
   };
+  private readonly otpTtl = 5000; // in millisecond
+  private readonly otpLength = 4;
+
+  private readonly phoneNumberRateLimitConfig: TokenBucketConfig = {
+    maxTokens: 3,
+    refillRate: 3.333e-3, // refill a token in 5 min
+  };
+
+  private readonly ipRateLimitConfig: TokenBucketConfig = {
+    maxTokens: 10,
+    refillRate: 3.333e-3, // refill a token in 5 min
+  };
+
   constructor(
     private readonly customers: CustomersApi,
     private readonly otpStore: OtpStore,
     private readonly tokenService: TokenService,
     private readonly hashService: HashService,
     private readonly rateLimit: RateLimitService,
+    private readonly sms: SmsService,
+    private readonly otpGenerator: OtpGenerator,
   ) {}
 
-  async requestOtp() {
-    const optKey = `opt-${phoneNumber}`;
-    const result = await this.rateLimit.consume(optKey, this.otpRateLimitConfig);
+  /**
+   * [NOTE]
+   * This is responsible too for `Able to re-request and check` functionality
+   * so there no need for separated method for check requirement(otp-resending)
+   *
+   * [TODO] Add phone number validation inside the endpoint controller
+   */
+  async request({ phoneNumber, ip }: { phoneNumber: string; ip: string }) {
+    const result = await this.rateLimit.attempt([
+      {
+        key: `otp-${phoneNumber}`,
+        config: this.otpRateLimitConfig,
+      },
+      {
+        key: `phone-${phoneNumber}`,
+        config: this.phoneNumberRateLimitConfig,
+      },
+      {
+        key: `ip-${ip}`,
+        config: this.ipRateLimitConfig,
+      },
+    ]);
 
-    if (result.delay) {
-      if (result.retryAfter) return result.retryAfter;
+    if (!result.allowed) {
+      const { retryAfter } = result;
+      return {
+        retryAfter,
+      };
     }
+
+    const otp = this.otpGenerator.generate(this.otpLength);
+
+    await this.otpStore.set(
+      phoneNumber,
+      {
+        hash: await this.hashService.hash(otp),
+      },
+      this.otpTtl,
+    );
+
+    await this.sms.sendOtpTo(phoneNumber, otp);
   }
 
   /**

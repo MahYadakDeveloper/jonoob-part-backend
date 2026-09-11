@@ -1,5 +1,5 @@
 {
-  "name": "@feature/auth",
+  "name": "@feature/auth-sms",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -19,10 +19,7 @@
   "dependencies": {
     "@feature/auth-api": "workspace:*",
     "@feature/auth-hashing": "workspace:*",
-    "@feature/auth-rate-limit": "workspace:*",
-    "@feature/auth-sms": "workspace:*",
     "@feature/auth-token": "workspace:*",
-    "@feature/common": "workspace:*",
     "@feature/customer-api": "workspace:*",
     "@nestjs/common": "^12.0.1"
   }
