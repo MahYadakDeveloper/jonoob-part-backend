@@ -9,6 +9,18 @@ export type RateLimitResult =
       retryAfter: number; // seconds until the client should retry (null if allowed)
     };
 
+export type RateLimitResults =
+  | {
+      allowed: true;
+    }
+  | {
+      allowed: false;
+      bucketKey: string;
+      remaining: number; // how many requests are left in the current bucket
+      limit: number; // the configured maximum
+      retryAfter: number; // seconds until the client should retry
+    };
+
 export interface TokenBucketConfig {
   /**
    * Maximum number of requests allowed
@@ -23,7 +35,7 @@ export interface TokenBucketConfig {
 }
 
 export interface RateLimitService {
-  attempt(limits: { key: string; config: TokenBucketConfig }[]): Promise<RateLimitResult>;
+  attempt(buckets: { key: string; config: TokenBucketConfig }[]): Promise<RateLimitResults>;
 
   consume(key: string, options: TokenBucketConfig): Promise<RateLimitResult>;
 

@@ -1,2 +1,2 @@
 export * from './otp.store';
-export * from './verification.store';
+export * from './token.store';

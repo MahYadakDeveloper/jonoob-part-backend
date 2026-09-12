@@ -1,6 +1,7 @@
-export type TokenType = 'access' | 'refresh';
+export type TokenType = 'access' | 'refresh' | 'verification';
 
 export interface TokenPayload {
+  jti: string;
   sub: string;
   type: TokenType;
 
@@ -36,11 +37,6 @@ export interface IssueTokenOptions {
   expiresIn?: number;
 
   /**
-   * Session identifier.
-   */
-  sessionId?: string;
-
-  /**
    * Additional claims.
    */
   claims?: Record<string, unknown>;
@@ -50,7 +46,7 @@ export interface TokenService {
   /**
    * Issue a new access/refresh token.
    */
-  issue(options: IssueTokenOptions): Promise<string>;
+  issue(options: IssueTokenOptions): Promise<{ token: string; jti: string }>;
 
   /**
    * Decode token without validating its signature.
@@ -65,15 +61,12 @@ export interface TokenService {
    *
    * Throws or returns null depending on implementation.
    */
-  verify(token: string, type?: TokenType): Promise<TokenPayload>;
+  verify(token: string, type?: TokenType): Promise<TokenPayload | null>;
 
   /**
-   * Check whether token is valid.
+   * Consume a one-time token.
+   *
+   * Throw an error if the token has already been consumed.
    */
-  isValid(token: string, type?: TokenType): Promise<boolean>;
-
-  /**
-   * Check whether token is expired.
-   */
-  isExpired(token: string): boolean;
+  consume(token: string): Promise<void>;
 }

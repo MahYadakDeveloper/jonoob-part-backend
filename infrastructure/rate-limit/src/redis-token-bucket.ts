@@ -1,8 +1,13 @@
-import { RateLimitResult, RateLimitService, TokenBucketConfig } from '@feature/auth-rate-limit';
+import {
+  RateLimitResult,
+  RateLimitResults,
+  RateLimitService,
+  TokenBucketConfig,
+} from '@feature/auth-rate-limit';
 import { REDIS_CLIENT } from '@infra/db-redis';
 import { Inject } from '@nestjs/common';
 import { type RedisClientType } from 'redis';
-import { CHECK_LUA_SCRIPT, CONSUME_TOKEN_LUA_SCRIPT } from './lua-script.constant';
+import { ATTEMPT_SCRIPT, CHECK_LUA_SCRIPT, CONSUME_LUA_SCRIPT } from './lua-scripts.constant';
 
 export class RedisTokenBucketBasedRateLimitService implements RateLimitService {
   constructor(
@@ -10,11 +15,30 @@ export class RedisTokenBucketBasedRateLimitService implements RateLimitService {
     private readonly redis: RedisClientType,
   ) {}
 
-  attempt(
-    limits: { key: string; options: TokenBucketConfig }[],
-  ): Promise<Record<string, RateLimitResult>> {
-    // [TODO]
-    throw new Error('Method not implemented.');
+  async attempt(buckets: { key: string; config: TokenBucketConfig }[]): Promise<RateLimitResults> {
+    const now = Date.now() / 1000; // seconds with fractional precision
+
+    const result = (await this.redis.eval(ATTEMPT_SCRIPT, {
+      keys: buckets.map((b) => b.key),
+      arguments: [
+        now.toString(),
+        ...buckets.flatMap((b) => [b.config.maxTokens.toString(), b.config.refillRate.toString()]),
+      ],
+    })) as [1, number] | [0, string, number, number, number];
+
+    if (result[0] === 1) {
+      return {
+        allowed: true,
+      };
+    }
+
+    return {
+      allowed: false,
+      bucketKey: result[1],
+      remaining: result[2],
+      limit: result[3],
+      retryAfter: result[4],
+    };
   }
 
   async consume(key: string, config: TokenBucketConfig): Promise<RateLimitResult> {
@@ -22,7 +46,7 @@ export class RedisTokenBucketBasedRateLimitService implements RateLimitService {
 
     const now = Date.now() / 1000; // seconds with fractional precision
 
-    const result = (await this.redis.eval(CONSUME_TOKEN_LUA_SCRIPT, {
+    const result = (await this.redis.eval(CONSUME_LUA_SCRIPT, {
       keys: [key],
       arguments: [maxTokens.toString(), refillRate.toString(), now.toString()],
     })) as number[];
