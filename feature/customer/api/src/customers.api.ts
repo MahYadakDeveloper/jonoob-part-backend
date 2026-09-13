@@ -12,6 +12,7 @@ import {
 } from './customers.res';
 
 export interface CustomersApi {
+  findById(req: { customerId: string }): Promise<{ customer: { id: string } & Customer }>;
   findByPhoneNumber(req: { phoneNumber: string }): Promise<{ customer: { id: string } & Customer }>;
 
   getCustomerContact(req: GetCustomerContactRequest): Promise<GetCustomerContactResponse>;
@@ -24,4 +25,5 @@ export interface CustomersApi {
   create(req: CustomerCreationRequest): Promise<{ id: string }>;
 
   existsByPhoneNumber(req: { phoneNumber: string }): Promise<{ exists: boolean }>;
+  existsById(req: { customerId: string }): Promise<{ exists: boolean }>;
 }

@@ -1,4 +1,4 @@
-export type TokenType = 'access' | 'refresh' | 'verification';
+export type TokenType = 'access' | 'refresh' | 'verify';
 
 export interface TokenPayload {
   jti: string;
@@ -46,7 +46,7 @@ export interface TokenService {
   /**
    * Issue a new access/refresh token.
    */
-  issue(options: IssueTokenOptions): Promise<{ token: string; jti: string }>;
+  issue(options: IssueTokenOptions): Promise<string>;
 
   /**
    * Decode token without validating its signature.
@@ -61,12 +61,7 @@ export interface TokenService {
    *
    * Throws or returns null depending on implementation.
    */
-  verify(token: string, type?: TokenType): Promise<TokenPayload | null>;
+  verify(token: string, type: TokenType): Promise<TokenPayload | null>;
 
-  /**
-   * Consume a one-time token.
-   *
-   * Throw an error if the token has already been consumed.
-   */
-  consume(token: string): Promise<void>;
+  revoke(token: string, type: TokenType): Promise<void>;
 }

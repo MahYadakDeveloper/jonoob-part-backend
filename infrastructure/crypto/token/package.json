@@ -1,0 +1,27 @@
+{
+  "name": "@infra/crypto-token",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@feature/auth-token": "workspace:*",
+    "@feature/common": "workspace:*",
+    "@nestjs/common": "^11.2.1",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/jwt": "^12.0.1",
+    "redis": "^6.0.1",
+    "zod": "^4.4.3"
+  }
+}

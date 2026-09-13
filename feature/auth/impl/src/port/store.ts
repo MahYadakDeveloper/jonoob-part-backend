@@ -9,7 +9,7 @@ export interface Store<T = unknown> {
   get(key: string): Promise<T | null>;
 
   /**
-   * Get and delete a value atomically.
+   * Get and delete a value atomicity.
    */
   getDelete(key: string): Promise<T | null>;
 

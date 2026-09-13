@@ -7,7 +7,6 @@ import { type CustomersApi } from '@feature/customer-api';
 import { Injectable } from '@nestjs/common';
 import { AuthClaimsType } from './auth.types';
 import { type OtpStore } from './port/otp.store';
-import { type TokenStore } from './port/token.store';
 
 /**
  * [NOTE]
@@ -53,13 +52,15 @@ export class AuthService {
     maxTokens: 5,
     refillRate: 1.111e-3,
   };
-  private readonly verificationExpiresIn = 300; // 5 min
+
+  private readonly verifyTokenExpiresIn = 300; // 5 min
+  private readonly accessTokenExpiresIn = 1800; // 30 min
+  private readonly refreshTokenExpiresIn = 604800; // 7 days
 
   constructor(
     private readonly customers: CustomersApi,
     private readonly otps: OtpStore,
     private readonly tokenService: TokenService,
-    private readonly tokens: TokenStore,
     private readonly hashService: HashService,
     private readonly rateLimit: RateLimitService,
     private readonly sms: SmsService,
@@ -76,7 +77,7 @@ export class AuthService {
    */
   async request({ phoneNumber, ip }: { phoneNumber: string; ip: string }) {
     const verificationRateLimit = await this.rateLimit.check(
-      `verification:${phoneNumber}`,
+      `verification:phone:${phoneNumber}`,
       this.verificationRateLimitConfig,
     );
 
@@ -164,13 +165,11 @@ export class AuthService {
 
     await this.otps.delete(phoneNumber);
 
-    const { token: verifyToken, jti } = await this.tokenService.issue({
-      type: 'verification',
+    const verifyToken = await this.tokenService.issue({
+      type: 'verify',
       subject: phoneNumber,
-      expiresIn: this.verificationExpiresIn,
+      expiresIn: this.verifyTokenExpiresIn,
     });
-
-    await this.tokens.set(jti, this.verificationExpiresIn);
 
     return {
       succeed: true,
@@ -182,45 +181,66 @@ export class AuthService {
    *
    */
   async signIn({ verifyToken }: { verifyToken: string }) {
-    const payload = await this.tokenService.verify(verifyToken, 'verification');
+    const payload = this.tokenService.decode(verifyToken);
     if (!payload) throw new Error();
 
-    await this.tokens.consume(payload.jti);
+    return await this.synchronizer.executeExclusive(
+      `${AuthService.name}:sign-in:${payload.jti}`,
+      async () => {
+        const payload = await this.tokenService.verify(verifyToken, 'verify');
+        if (!payload) throw new Error();
 
-    // [NOTE] if customer not found it would throw an error
-    const { customer } = await this.customers.findByPhoneNumber({ phoneNumber: payload.sub });
+        // payload.sub is a phone number, because it comes from verify token
+        const { customer } = await this.customers.findByPhoneNumber({ phoneNumber: payload.sub });
 
-    const { token: accessToken } = await this.tokenService.issue({
-      type: 'access',
-      subject: customer.id,
-      claims: {
-        customer: {
-          id: customer.id,
-          phoneNumber: customer.phoneNumber,
-          type: customer.type,
-        },
-      } satisfies AuthClaimsType,
-    });
+        const accessToken = await this.tokenService.issue({
+          type: 'access',
+          subject: customer.id,
+          expiresIn: this.accessTokenExpiresIn,
+          claims: {
+            customer: {
+              id: customer.id,
+              phoneNumber: customer.phoneNumber,
+              type: customer.type,
+            },
+          } satisfies AuthClaimsType,
+        });
 
-    return {
-      accessToken,
-    };
+        const refreshToken = await this.tokenService.issue({
+          type: 'refresh',
+          subject: customer.id,
+          expiresIn: this.refreshTokenExpiresIn,
+        });
+
+        await this.tokenService.revoke(verifyToken, 'verify');
+
+        return {
+          accessToken,
+          refreshToken,
+        };
+      },
+    );
   }
 
   /**
    *
    */
   async signUp({ fullName, verifyToken }: { fullName: string; verifyToken: string }) {
-    const payload = await this.tokenService.verify(verifyToken, 'verification');
+    const payload = this.tokenService.decode(verifyToken);
     if (!payload) throw new Error();
 
     return this.synchronizer.executeExclusive(
-      `${AuthService.name}:sign-up:${payload.sub}`,
+      `${AuthService.name}:sign-up:${payload.jti}`,
       async () => {
-        await this.tokens.consume(payload.jti);
+        const payload = await this.tokenService.verify(verifyToken, 'verify');
+        if (!payload) throw new Error();
 
-        const { exists } = await this.customers.existsByPhoneNumber({ phoneNumber: payload.sub });
-        if (exists) throw new Error();
+        // payload.sub is a phone number, because it comes from verify token
+        const { exists: customerExists } = await this.customers.existsByPhoneNumber({
+          phoneNumber: payload.sub,
+        });
+
+        if (customerExists) throw new Error();
 
         const customerType: CustomerType = 'consumer';
         const { id: customerId } = await this.customers.create({
@@ -229,31 +249,74 @@ export class AuthService {
           phoneNumber: payload.sub,
         });
 
-        const { token: accessToken } = await this.tokenService.issue({
+        const accessToken = await this.tokenService.issue({
           type: 'access',
           subject: customerId,
+          expiresIn: this.accessTokenExpiresIn,
           claims: {
             customer: {
               id: customerId,
               phoneNumber: payload.sub,
               type: customerType,
             },
-          },
+          } satisfies AuthClaimsType,
         });
+
+        const refreshToken = await this.tokenService.issue({
+          type: 'refresh',
+          subject: customerId,
+          expiresIn: this.refreshTokenExpiresIn,
+        });
+
+        await this.tokenService.revoke(verifyToken, 'verify');
 
         return {
           accessToken,
+          refreshToken,
         };
       },
     );
   }
 
-  /**
-   * Generate new token
-   *
-   * [NOTE]
-   * Useful for client side app that if customer is active and app
-   * check if token is n hours left to expire then app can refresh
-   */
-  refresh() {}
+  async refresh({ oldRefreshToken }: { oldRefreshToken: string }) {
+    const payload = this.tokenService.decode(oldRefreshToken);
+    if (!payload) throw new Error();
+
+    return await this.synchronizer.executeExclusive(
+      `${AuthService.name}:refresh:${payload.jti}`,
+      async () => {
+        const payload = await this.tokenService.verify(oldRefreshToken, 'refresh');
+        if (!payload) throw new Error();
+
+        // sub here is customer id, because it comes from refresh token
+        const { customer } = await this.customers.findById({ customerId: payload.sub });
+
+        const accessToken = await this.tokenService.issue({
+          type: 'access',
+          subject: customer.id,
+          expiresIn: this.accessTokenExpiresIn,
+          claims: {
+            customer: {
+              id: customer.id,
+              phoneNumber: customer.phoneNumber,
+              type: customer.type,
+            },
+          } satisfies AuthClaimsType,
+        });
+
+        const refreshToken = await this.tokenService.issue({
+          type: 'refresh',
+          subject: customer.id,
+          expiresIn: this.refreshTokenExpiresIn,
+        });
+
+        await this.tokenService.revoke(oldRefreshToken, 'refresh');
+
+        return {
+          accessToken,
+          refreshToken,
+        };
+      },
+    );
+  }
 }
