@@ -18,7 +18,7 @@ export class TokenServiceImpl implements TokenService {
   async issue(options: IssueTokenOptions): Promise<string> {
     return this.jwt.sign(options.claims ?? {}, {
       jwtid: randomUUID(),
-      expiresIn: options.expiresIn,
+      expiresIn: `${options.expiresIn || '604800'}s`,
       subject: options.subject,
       secret: this.config[`${options.type}Secret`],
     });
