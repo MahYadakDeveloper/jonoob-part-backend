@@ -1,5 +1,5 @@
 {
-  "name": "@feature/auth-hashing",
+  "name": "@feature/authentication-sms",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -16,8 +16,5 @@
     }
   },
   "private": true,
-  "dependencies": {
-    "@feature/customer-api": "workspace:*",
-    "@nestjs/common": "^12.0.1"
-  }
+  "dependencies": {}
 }

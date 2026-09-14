@@ -1,5 +1,5 @@
 {
-  "name": "@feature/auth-token",
+  "name": "@feature/authentication",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,6 +17,12 @@
   },
   "private": true,
   "dependencies": {
+    "@feature/authentication-api": "workspace:*",
+    "@feature/authentication-hashing": "workspace:*",
+    "@feature/authentication-rate-limit": "workspace:*",
+    "@feature/authentication-sms": "workspace:*",
+    "@feature/authentication-token": "workspace:*",
+    "@feature/common": "workspace:*",
     "@feature/customer-api": "workspace:*",
     "@nestjs/common": "^12.0.1"
   }

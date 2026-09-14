@@ -1,5 +1,5 @@
 {
-  "name": "@feature/auth-api",
+  "name": "@feature/authentication-hashing",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",

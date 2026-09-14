@@ -16,7 +16,7 @@
     }
   },
   "dependencies": {
-    "@feature/auth-hashing": "workspace:*",
+    "@feature/authentication-hashing": "workspace:*",
     "@feature/common": "workspace:*",
     "@nestjs/common": "^11.2.1",
     "@nestjs/config": "^4.0.4",

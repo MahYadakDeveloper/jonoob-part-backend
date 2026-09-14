@@ -16,7 +16,7 @@
     }
   },
   "dependencies": {
-    "@feature/auth-rate-limit": "workspace:*",
+    "@feature/authentication-rate-limit": "workspace:*",
     "@feature/warehouse": "workspace:*",
     "@infra/db-redis": "workspace:*",
     "@nestjs/common": "^11.1.27",
