@@ -201,6 +201,14 @@ export class AuthService {
           type: 'refresh',
           subject: customer.id,
           expiresIn: this.refreshTokenExpiresIn,
+          claims: {
+            principal: 'customer',
+            customer: {
+              id: customer.id,
+              phoneNumber: customer.phoneNumber,
+              type: customer.type,
+            },
+          } satisfies AuthClaims,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -213,6 +221,9 @@ export class AuthService {
     );
   }
 
+  /**
+   *
+   */
   async managerSignIn({ verifyToken, secretKey }: { verifyToken: string; secretKey: string }) {
     const payload = this.tokenService.decode(verifyToken);
     if (!payload) throw new Error();
@@ -242,6 +253,12 @@ export class AuthService {
           type: 'refresh',
           subject: manager.id,
           expiresIn: this.refreshTokenExpiresIn,
+          claims: {
+            principal: 'manager',
+            manager: {
+              id: manager.id,
+            },
+          } satisfies AuthClaims,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -283,6 +300,9 @@ export class AuthService {
           type: 'refresh',
           subject: 'admin',
           expiresIn: this.refreshTokenExpiresIn,
+          claims: {
+            principal: 'admin',
+          } satisfies AuthClaims,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -340,6 +360,14 @@ export class AuthService {
           type: 'refresh',
           subject: customerId,
           expiresIn: this.refreshTokenExpiresIn,
+          claims: {
+            principal: 'customer',
+            customer: {
+              id: customerId,
+              phoneNumber: payload.sub,
+              type: customerType,
+            },
+          } satisfies AuthClaims,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -362,6 +390,7 @@ export class AuthService {
         const payload = (await this.tokenService.verify(oldRefreshToken, 'refresh')) as
           | (TokenPayload & AuthClaims)
           | null;
+
         if (!payload) throw new Error();
 
         let accessToken: string;
@@ -381,6 +410,9 @@ export class AuthService {
               type: 'refresh',
               subject: 'admin',
               expiresIn: this.refreshTokenExpiresIn,
+              claims: {
+                principal: 'admin',
+              } satisfies AuthClaims,
             });
             break;
           case 'manager':
@@ -390,7 +422,7 @@ export class AuthService {
 
             accessToken = await this.tokenService.issue({
               type: 'access',
-              subject: 'manager',
+              subject: manager.id,
               expiresIn: this.accessTokenExpiresIn,
               claims: {
                 principal: 'manager',
@@ -402,9 +434,13 @@ export class AuthService {
               type: 'refresh',
               subject: manager.id,
               expiresIn: this.refreshTokenExpiresIn,
+              claims: {
+                principal: 'manager',
+                manager: { id: manager.id },
+              } satisfies AuthClaims,
             });
             break;
-          default:
+          case 'customer':
             // sub here is customer id, because it comes from refresh token
             const { customer } = await this.customers.findById({ customerId: payload.sub });
 
@@ -426,6 +462,14 @@ export class AuthService {
               type: 'refresh',
               subject: customer.id,
               expiresIn: this.refreshTokenExpiresIn,
+              claims: {
+                principal: 'customer',
+                customer: {
+                  id: customer.id,
+                  phoneNumber: customer.phoneNumber,
+                  type: customer.type,
+                },
+              } satisfies AuthClaims,
             });
         }
 
