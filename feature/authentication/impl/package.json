@@ -24,6 +24,9 @@
     "@feature/authentication-token": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/customer-api": "workspace:*",
-    "@nestjs/common": "^12.0.1"
+    "@feature/manager-api": "workspace:*",
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/config": "^4.0.4",
+    "zod": "^4.4.3"
   }
 }

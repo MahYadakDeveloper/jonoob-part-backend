@@ -1,29 +1,16 @@
 import { type HashService } from '@feature/auth-hashing';
 import { type RateLimitService, TokenBucketConfig } from '@feature/auth-rate-limit';
 import { type SmsService } from '@feature/auth-sms';
-import { type TokenService } from '@feature/auth-token';
+import { TokenPayload, type TokenService } from '@feature/auth-token';
 import { CustomerType, type OtpGenerator, type Synchronizer } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
-import { Injectable } from '@nestjs/common';
-import { AuthClaimsType } from './auth.types';
+import { type ManagerApi } from '@feature/manager-api';
+import { Inject, Injectable } from '@nestjs/common';
+import { type ConfigType } from '@nestjs/config';
+import authConfig from './auth.config';
+import { AuthClaims } from './auth.types';
 import { type OtpStore } from './port/otp.store';
 
-/**
- * [NOTE]
- * For opt store implementation use redis
- *
- * [NOTE]
- * Flow of singUp/singIn:
- * - client app need to check customer is already singed up:
- *  # [already singed up]:
- *    - request otp
- *    - sing in
- *  # [required to sing up]:
- *    - gets required data from user (fullName)
- *    - then request otp
- *    - sing in
- * - then customer has would achieve a token
- */
 @Injectable()
 export class AuthService {
   // otp
@@ -59,6 +46,7 @@ export class AuthService {
 
   constructor(
     private readonly customers: CustomersApi,
+    private readonly manager: ManagerApi,
     private readonly otps: OtpStore,
     private readonly tokenService: TokenService,
     private readonly hashService: HashService,
@@ -66,6 +54,8 @@ export class AuthService {
     private readonly sms: SmsService,
     private readonly otpGenerator: OtpGenerator,
     private readonly synchronizer: Synchronizer,
+    @Inject(authConfig.KEY)
+    private readonly config: ConfigType<typeof authConfig>,
   ) {}
 
   /**
@@ -198,17 +188,100 @@ export class AuthService {
           subject: customer.id,
           expiresIn: this.accessTokenExpiresIn,
           claims: {
+            principal: 'customer',
             customer: {
               id: customer.id,
               phoneNumber: customer.phoneNumber,
               type: customer.type,
             },
-          } satisfies AuthClaimsType,
+          } satisfies AuthClaims,
         });
 
         const refreshToken = await this.tokenService.issue({
           type: 'refresh',
           subject: customer.id,
+          expiresIn: this.refreshTokenExpiresIn,
+        });
+
+        await this.tokenService.revoke(verifyToken, 'verify');
+
+        return {
+          accessToken,
+          refreshToken,
+        };
+      },
+    );
+  }
+
+  async managerSignIn({ verifyToken, secretKey }: { verifyToken: string; secretKey: string }) {
+    const payload = this.tokenService.decode(verifyToken);
+    if (!payload) throw new Error();
+
+    return await this.synchronizer.executeExclusive(
+      `${AuthService.name}:manager-sign-in:${payload.jti}`,
+      async () => {
+        const payload = await this.tokenService.verify(verifyToken, 'verify');
+        if (!payload) throw new Error();
+
+        const { manager } = await this.manager.findByPhoneNumber({ phoneNumber: payload.sub });
+
+        const verified = secretKey === this.config.managerSecretKey;
+        if (!verified) throw new Error();
+
+        const accessToken = await this.tokenService.issue({
+          type: 'access',
+          subject: manager.id,
+          expiresIn: this.accessTokenExpiresIn,
+          claims: {
+            principal: 'manager',
+            manager: { id: manager.id },
+          } satisfies AuthClaims,
+        });
+
+        const refreshToken = await this.tokenService.issue({
+          type: 'refresh',
+          subject: manager.id,
+          expiresIn: this.refreshTokenExpiresIn,
+        });
+
+        await this.tokenService.revoke(verifyToken, 'verify');
+
+        return {
+          accessToken,
+          refreshToken,
+        };
+      },
+    );
+  }
+
+  async adminSignIn({ verifyToken, secretKey }: { verifyToken: string; secretKey: string }) {
+    const payload = this.tokenService.decode(verifyToken);
+    if (!payload) throw new Error();
+
+    return await this.synchronizer.executeExclusive(
+      `${AuthService.name}:admin-sign-in:${payload.jti}`,
+      async () => {
+        const payload = await this.tokenService.verify(verifyToken, 'verify');
+        if (!payload) throw new Error();
+
+        const isAdmin = this.config.adminPhoneNumbers.includes(payload.sub);
+        if (!isAdmin) throw new Error();
+
+        const verified = secretKey === this.config.adminSecretKey;
+        if (!verified) throw new Error();
+
+        const accessToken = await this.tokenService.issue({
+          type: 'access',
+          subject: 'admin',
+          expiresIn: this.accessTokenExpiresIn,
+          claims: {
+            principal: 'admin',
+          } satisfies AuthClaims,
+        });
+
+        const refreshToken = await this.tokenService.issue({
+          type: 'refresh',
+          subject: 'admin',
           expiresIn: this.refreshTokenExpiresIn,
         });
 
@@ -254,12 +327,13 @@ export class AuthService {
           subject: customerId,
           expiresIn: this.accessTokenExpiresIn,
           claims: {
+            principal: 'customer',
             customer: {
               id: customerId,
               phoneNumber: payload.sub,
               type: customerType,
             },
-          } satisfies AuthClaimsType,
+          } satisfies AuthClaims,
         });
 
         const refreshToken = await this.tokenService.issue({
@@ -285,30 +359,75 @@ export class AuthService {
     return await this.synchronizer.executeExclusive(
       `${AuthService.name}:refresh:${payload.jti}`,
       async () => {
-        const payload = await this.tokenService.verify(oldRefreshToken, 'refresh');
+        const payload = (await this.tokenService.verify(oldRefreshToken, 'refresh')) as
+          | (TokenPayload & AuthClaims)
+          | null;
         if (!payload) throw new Error();
 
-        // sub here is customer id, because it comes from refresh token
-        const { customer } = await this.customers.findById({ customerId: payload.sub });
+        let accessToken: string;
+        let refreshToken: string;
+        switch (payload.principal) {
+          case 'admin':
+            accessToken = await this.tokenService.issue({
+              type: 'access',
+              subject: 'admin',
+              expiresIn: this.accessTokenExpiresIn,
+              claims: {
+                principal: 'admin',
+              } satisfies AuthClaims,
+            });
 
-        const accessToken = await this.tokenService.issue({
-          type: 'access',
-          subject: customer.id,
-          expiresIn: this.accessTokenExpiresIn,
-          claims: {
-            customer: {
-              id: customer.id,
-              phoneNumber: customer.phoneNumber,
-              type: customer.type,
-            },
-          } satisfies AuthClaimsType,
-        });
+            refreshToken = await this.tokenService.issue({
+              type: 'refresh',
+              subject: 'admin',
+              expiresIn: this.refreshTokenExpiresIn,
+            });
+            break;
+          case 'manager':
+            const { manager } = await this.manager.findById({
+              managerId: payload.manager.id,
+            });
 
-        const refreshToken = await this.tokenService.issue({
-          type: 'refresh',
-          subject: customer.id,
-          expiresIn: this.refreshTokenExpiresIn,
-        });
+            accessToken = await this.tokenService.issue({
+              type: 'access',
+              subject: 'manager',
+              expiresIn: this.accessTokenExpiresIn,
+              claims: {
+                principal: 'manager',
+                manager: { id: manager.id },
+              } satisfies AuthClaims,
+            });
+
+            refreshToken = await this.tokenService.issue({
+              type: 'refresh',
+              subject: manager.id,
+              expiresIn: this.refreshTokenExpiresIn,
+            });
+            break;
+          default:
+            // sub here is customer id, because it comes from refresh token
+            const { customer } = await this.customers.findById({ customerId: payload.sub });
+
+            accessToken = await this.tokenService.issue({
+              type: 'access',
+              subject: customer.id,
+              expiresIn: this.accessTokenExpiresIn,
+              claims: {
+                principal: 'customer',
+                customer: {
+                  id: customer.id,
+                  phoneNumber: customer.phoneNumber,
+                  type: customer.type,
+                },
+              } satisfies AuthClaims,
+            });
+
+            refreshToken = await this.tokenService.issue({
+              type: 'refresh',
+              subject: customer.id,
+              expiresIn: this.refreshTokenExpiresIn,
+            });
+        }
 
         await this.tokenService.revoke(oldRefreshToken, 'refresh');
 
