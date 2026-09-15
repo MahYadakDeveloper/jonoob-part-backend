@@ -2,7 +2,7 @@ import { CustomerType } from '@feature/common';
 
 export type AuthClaims =
   | {
-      principal: 'customer';
+      role: 'customer';
       customer: {
         id: string;
         phoneNumber: string;
@@ -10,11 +10,17 @@ export type AuthClaims =
       };
     }
   | {
-      principal: 'manager';
+      role: 'courier';
+      courier: {
+        id: string;
+      };
+    }
+  | {
+      role: 'manager';
       manager: {
         id: string;
       };
     }
   | {
-      principal: 'admin';
+      role: 'admin';
     };

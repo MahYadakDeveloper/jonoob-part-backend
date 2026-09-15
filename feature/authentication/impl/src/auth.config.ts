@@ -8,8 +8,6 @@ const envSchema = z.object({
     .string()
     .transform((value) => value.split(',').map((phone) => phone.trim()))
     .pipe(z.array(z.string().regex(/^09\d{9}$/, 'Invalid Iranian phone number'))),
-
-  MANAGER_SECRET_KEY: z.string().min(32),
 });
 
 export default registerAs('authentication', () => {
@@ -17,6 +15,5 @@ export default registerAs('authentication', () => {
   return {
     adminSecretKey: env.ADMIN_SECRET_KEY,
     adminPhoneNumbers: env.ADMIN_PHONE_NUMBERS,
-    managerSecretKey: env.MANAGER_SECRET_KEY,
   };
 });

@@ -25,6 +25,7 @@
     "@feature/common": "workspace:*",
     "@feature/customer-api": "workspace:*",
     "@feature/manager-api": "workspace:*",
+    "@feature/order-delivery-courier-api": "workspace:*",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^4.0.4",
     "zod": "^4.4.3"

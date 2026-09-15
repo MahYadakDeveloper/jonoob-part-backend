@@ -8,6 +8,7 @@ import { type PaymentApi } from '@feature/order-payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
 import { type ScheduleApi } from '@feature/schedule-api';
 import { Injectable } from '@nestjs/common';
+import { Order } from './model/order';
 import { type OrderRepository } from './order.repository';
 import orderSettings from './order.settings';
 
@@ -25,6 +26,13 @@ export class OrderService implements OrderApi {
     private readonly settings: SettingsStore,
     private readonly schedule: ScheduleApi,
   ) {}
+
+  async findById({ orderId }): Promise<{ order: Order }> {
+    const order = await this.repository.find(orderId);
+    if (!order) throw new Error();
+
+    return { order };
+  }
 
   findByCustomerId({ customerId, orderId }: { customerId: string; orderId: string }) {
     return this.repository.findOrderByCustomerId(customerId, orderId);

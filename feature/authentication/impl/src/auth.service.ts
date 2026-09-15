@@ -5,6 +5,7 @@ import { TokenPayload, type TokenService } from '@feature/auth-token';
 import { CustomerType, type OtpGenerator, type Synchronizer } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
 import { type ManagerApi } from '@feature/manager-api';
+import { type CourierApi } from '@feature/order-delivery-courier-api';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import authConfig from './auth.config';
@@ -47,6 +48,7 @@ export class AuthService {
   constructor(
     private readonly customers: CustomersApi,
     private readonly manager: ManagerApi,
+    private readonly courier: CourierApi,
     private readonly otps: OtpStore,
     private readonly tokenService: TokenService,
     private readonly hashService: HashService,
@@ -188,7 +190,7 @@ export class AuthService {
           subject: customer.id,
           expiresIn: this.accessTokenExpiresIn,
           claims: {
-            principal: 'customer',
+            role: 'customer',
             customer: {
               id: customer.id,
               phoneNumber: customer.phoneNumber,
@@ -202,7 +204,7 @@ export class AuthService {
           subject: customer.id,
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
-            principal: 'customer',
+            role: 'customer',
             customer: {
               id: customer.id,
               phoneNumber: customer.phoneNumber,
@@ -221,10 +223,54 @@ export class AuthService {
     );
   }
 
+  async courierSingIn({ verifyToken, password }: { verifyToken: string; password: string }) {
+    const payload = this.tokenService.decode(verifyToken);
+    if (!payload) throw new Error();
+    return await this.synchronizer.executeExclusive(
+      `${AuthService.name}:courier-sign-in:${payload.jti}`,
+      async () => {
+        const payload = await this.tokenService.verify(verifyToken, 'verify');
+        if (!payload) throw new Error();
+
+        const { courier } = await this.courier.findByPhoneNumber({ phoneNumber: payload.sub });
+
+        const verified = this.hashService.verify(password, courier.password);
+        if (!verified) throw new Error();
+
+        const accessToken = await this.tokenService.issue({
+          type: 'access',
+          subject: courier.id,
+          expiresIn: this.accessTokenExpiresIn,
+          claims: {
+            role: 'courier',
+            courier: { id: courier.id },
+          } satisfies AuthClaims,
+        });
+
+        const refreshToken = await this.tokenService.issue({
+          type: 'refresh',
+          subject: courier.id,
+          expiresIn: this.refreshTokenExpiresIn,
+          claims: {
+            role: 'courier',
+            courier: { id: courier.id },
+          } satisfies AuthClaims,
+        });
+
+        await this.tokenService.revoke(verifyToken, 'verify');
+
+        return {
+          accessToken,
+          refreshToken,
+        };
+      },
+    );
+  }
+
   /**
    *
    */
-  async managerSignIn({ verifyToken, secretKey }: { verifyToken: string; secretKey: string }) {
+  async managerSignIn({ verifyToken, password }: { verifyToken: string; password: string }) {
     const payload = this.tokenService.decode(verifyToken);
     if (!payload) throw new Error();
 
@@ -236,7 +282,7 @@ export class AuthService {
 
         const { manager } = await this.manager.findByPhoneNumber({ phoneNumber: payload.sub });
 
-        const verified = secretKey === this.config.managerSecretKey;
+        const verified = this.hashService.verify(password, manager.password);
         if (!verified) throw new Error();
 
         const accessToken = await this.tokenService.issue({
@@ -244,7 +290,7 @@ export class AuthService {
           subject: manager.id,
           expiresIn: this.accessTokenExpiresIn,
           claims: {
-            principal: 'manager',
+            role: 'manager',
             manager: { id: manager.id },
           } satisfies AuthClaims,
         });
@@ -254,7 +300,7 @@ export class AuthService {
           subject: manager.id,
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
-            principal: 'manager',
+            role: 'manager',
             manager: {
               id: manager.id,
             },
@@ -284,7 +330,7 @@ export class AuthService {
         const isAdmin = this.config.adminPhoneNumbers.includes(payload.sub);
         if (!isAdmin) throw new Error();
 
-        const verified = secretKey === this.config.adminSecretKey;
+        const verified = await this.hashService.verify(secretKey, this.config.adminSecretKey);
         if (!verified) throw new Error();
 
         const accessToken = await this.tokenService.issue({
@@ -292,7 +338,7 @@ export class AuthService {
           subject: 'admin',
           expiresIn: this.accessTokenExpiresIn,
           claims: {
-            principal: 'admin',
+            role: 'admin',
           } satisfies AuthClaims,
         });
 
@@ -301,7 +347,7 @@ export class AuthService {
           subject: 'admin',
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
-            principal: 'admin',
+            role: 'admin',
           } satisfies AuthClaims,
         });
 
@@ -347,7 +393,7 @@ export class AuthService {
           subject: customerId,
           expiresIn: this.accessTokenExpiresIn,
           claims: {
-            principal: 'customer',
+            role: 'customer',
             customer: {
               id: customerId,
               phoneNumber: payload.sub,
@@ -361,7 +407,7 @@ export class AuthService {
           subject: customerId,
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
-            principal: 'customer',
+            role: 'customer',
             customer: {
               id: customerId,
               phoneNumber: payload.sub,
@@ -395,14 +441,14 @@ export class AuthService {
 
         let accessToken: string;
         let refreshToken: string;
-        switch (payload.principal) {
+        switch (payload.role) {
           case 'admin':
             accessToken = await this.tokenService.issue({
               type: 'access',
               subject: 'admin',
               expiresIn: this.accessTokenExpiresIn,
               claims: {
-                principal: 'admin',
+                role: 'admin',
               } satisfies AuthClaims,
             });
 
@@ -411,7 +457,7 @@ export class AuthService {
               subject: 'admin',
               expiresIn: this.refreshTokenExpiresIn,
               claims: {
-                principal: 'admin',
+                role: 'admin',
               } satisfies AuthClaims,
             });
             break;
@@ -425,7 +471,7 @@ export class AuthService {
               subject: manager.id,
               expiresIn: this.accessTokenExpiresIn,
               claims: {
-                principal: 'manager',
+                role: 'manager',
                 manager: { id: manager.id },
               } satisfies AuthClaims,
             });
@@ -435,8 +481,33 @@ export class AuthService {
               subject: manager.id,
               expiresIn: this.refreshTokenExpiresIn,
               claims: {
-                principal: 'manager',
+                role: 'manager',
                 manager: { id: manager.id },
+              } satisfies AuthClaims,
+            });
+            break;
+          case 'courier':
+            const { courier } = await this.courier.findById({
+              courierId: payload.courier.id,
+            });
+
+            accessToken = await this.tokenService.issue({
+              type: 'access',
+              subject: courier.id,
+              expiresIn: this.accessTokenExpiresIn,
+              claims: {
+                role: 'courier',
+                courier: { id: courier.id },
+              } satisfies AuthClaims,
+            });
+
+            refreshToken = await this.tokenService.issue({
+              type: 'refresh',
+              subject: courier.id,
+              expiresIn: this.refreshTokenExpiresIn,
+              claims: {
+                role: 'courier',
+                courier: { id: courier.id },
               } satisfies AuthClaims,
             });
             break;
@@ -449,7 +520,7 @@ export class AuthService {
               subject: customer.id,
               expiresIn: this.accessTokenExpiresIn,
               claims: {
-                principal: 'customer',
+                role: 'customer',
                 customer: {
                   id: customer.id,
                   phoneNumber: customer.phoneNumber,
@@ -463,7 +534,7 @@ export class AuthService {
               subject: customer.id,
               expiresIn: this.refreshTokenExpiresIn,
               claims: {
-                principal: 'customer',
+                role: 'customer',
                 customer: {
                   id: customer.id,
                   phoneNumber: customer.phoneNumber,
