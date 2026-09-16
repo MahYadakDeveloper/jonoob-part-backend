@@ -2,6 +2,11 @@ import { type HashService } from '@feature/auth-hashing';
 import { type RateLimitService, TokenBucketConfig } from '@feature/auth-rate-limit';
 import { type SmsService } from '@feature/auth-sms';
 import { TokenPayload, type TokenService } from '@feature/auth-token';
+import {
+  AuthenticatedUser,
+  AuthenticationApi,
+  AuthenticationResult,
+} from '@feature/authentication-api';
 import { CustomerType, type OtpGenerator, type Synchronizer } from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
 import { type ManagerApi } from '@feature/manager-api';
@@ -9,11 +14,10 @@ import { type CourierApi } from '@feature/order-delivery-courier-api';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import authConfig from './auth.config';
-import { AuthClaims } from './auth.types';
 import { type OtpStore } from './port/otp.store';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements AuthenticationApi {
   // otp
   private readonly otpRateLimitConfig: TokenBucketConfig = {
     maxTokens: 1,
@@ -59,6 +63,12 @@ export class AuthService {
     @Inject(authConfig.KEY)
     private readonly config: ConfigType<typeof authConfig>,
   ) {}
+  async authenticate({ token }: { token: string }): Promise<AuthenticationResult | null> {
+    const payload = await this.tokenService.verify(token, 'access');
+    if (!payload) return null;
+
+    return { user: payload as unknown as AuthenticatedUser };
+  }
 
   /**
    * [NOTE]
@@ -193,10 +203,9 @@ export class AuthService {
             role: 'customer',
             customer: {
               id: customer.id,
-              phoneNumber: customer.phoneNumber,
               type: customer.type,
             },
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         const refreshToken = await this.tokenService.issue({
@@ -207,10 +216,9 @@ export class AuthService {
             role: 'customer',
             customer: {
               id: customer.id,
-              phoneNumber: customer.phoneNumber,
               type: customer.type,
             },
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -244,7 +252,7 @@ export class AuthService {
           claims: {
             role: 'courier',
             courier: { id: courier.id },
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         const refreshToken = await this.tokenService.issue({
@@ -254,7 +262,7 @@ export class AuthService {
           claims: {
             role: 'courier',
             courier: { id: courier.id },
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -292,7 +300,7 @@ export class AuthService {
           claims: {
             role: 'manager',
             manager: { id: manager.id },
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         const refreshToken = await this.tokenService.issue({
@@ -304,7 +312,7 @@ export class AuthService {
             manager: {
               id: manager.id,
             },
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -339,7 +347,7 @@ export class AuthService {
           expiresIn: this.accessTokenExpiresIn,
           claims: {
             role: 'admin',
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         const refreshToken = await this.tokenService.issue({
@@ -348,7 +356,7 @@ export class AuthService {
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
             role: 'admin',
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -396,10 +404,9 @@ export class AuthService {
             role: 'customer',
             customer: {
               id: customerId,
-              phoneNumber: payload.sub,
               type: customerType,
             },
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         const refreshToken = await this.tokenService.issue({
@@ -410,10 +417,9 @@ export class AuthService {
             role: 'customer',
             customer: {
               id: customerId,
-              phoneNumber: payload.sub,
               type: customerType,
             },
-          } satisfies AuthClaims,
+          } satisfies AuthenticatedUser,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -434,7 +440,7 @@ export class AuthService {
       `${AuthService.name}:refresh:${payload.jti}`,
       async () => {
         const payload = (await this.tokenService.verify(oldRefreshToken, 'refresh')) as
-          | (TokenPayload & AuthClaims)
+          | (TokenPayload & AuthenticatedUser)
           | null;
 
         if (!payload) throw new Error();
@@ -449,7 +455,7 @@ export class AuthService {
               expiresIn: this.accessTokenExpiresIn,
               claims: {
                 role: 'admin',
-              } satisfies AuthClaims,
+              } satisfies AuthenticatedUser,
             });
 
             refreshToken = await this.tokenService.issue({
@@ -458,7 +464,7 @@ export class AuthService {
               expiresIn: this.refreshTokenExpiresIn,
               claims: {
                 role: 'admin',
-              } satisfies AuthClaims,
+              } satisfies AuthenticatedUser,
             });
             break;
           case 'manager':
@@ -473,7 +479,7 @@ export class AuthService {
               claims: {
                 role: 'manager',
                 manager: { id: manager.id },
-              } satisfies AuthClaims,
+              } satisfies AuthenticatedUser,
             });
 
             refreshToken = await this.tokenService.issue({
@@ -483,7 +489,7 @@ export class AuthService {
               claims: {
                 role: 'manager',
                 manager: { id: manager.id },
-              } satisfies AuthClaims,
+              } satisfies AuthenticatedUser,
             });
             break;
           case 'courier':
@@ -498,7 +504,7 @@ export class AuthService {
               claims: {
                 role: 'courier',
                 courier: { id: courier.id },
-              } satisfies AuthClaims,
+              } satisfies AuthenticatedUser,
             });
 
             refreshToken = await this.tokenService.issue({
@@ -508,7 +514,7 @@ export class AuthService {
               claims: {
                 role: 'courier',
                 courier: { id: courier.id },
-              } satisfies AuthClaims,
+              } satisfies AuthenticatedUser,
             });
             break;
           case 'customer':
@@ -523,10 +529,9 @@ export class AuthService {
                 role: 'customer',
                 customer: {
                   id: customer.id,
-                  phoneNumber: customer.phoneNumber,
                   type: customer.type,
                 },
-              } satisfies AuthClaims,
+              } satisfies AuthenticatedUser,
             });
 
             refreshToken = await this.tokenService.issue({
@@ -537,10 +542,9 @@ export class AuthService {
                 role: 'customer',
                 customer: {
                   id: customer.id,
-                  phoneNumber: customer.phoneNumber,
                   type: customer.type,
                 },
-              } satisfies AuthClaims,
+              } satisfies AuthenticatedUser,
             });
         }
 

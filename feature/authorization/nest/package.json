@@ -1,5 +1,5 @@
 {
-  "name": "@feature/authentication-api",
+  "name": "@feature/authorization-nest",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,7 +17,13 @@
   },
   "private": true,
   "dependencies": {
+    "@casl/ability": "^7.0.1",
+    "@feature/authentication-api": "workspace:*",
+    "@feature/authentication-nest": "workspace:*",
+    "@feature/authorization-api": "workspace:*",
     "@feature/common": "workspace:*",
-    "@nestjs/common": "^12.0.1"
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/core": "^12.0.3",
+    "fastify": "^5.12.1"
   }
 }

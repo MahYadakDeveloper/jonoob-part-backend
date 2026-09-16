@@ -1,11 +1,10 @@
-import { CustomerType } from '@feature/common';
+import { CustomerType } from './types';
 
-export type AuthClaims =
+export type AuthenticatedUser =
   | {
       role: 'customer';
       customer: {
         id: string;
-        phoneNumber: string;
         type: CustomerType;
       };
     }

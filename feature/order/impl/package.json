@@ -18,6 +18,8 @@
   "private": true,
   "dependencies": {
     "@casl/ability": "^7.0.1",
+    "@feature/authentication-api": "workspace:*",
+    "@feature/authentication-token": "workspace:*",
     "@feature/cashback-api": "workspace:*",
     "@feature/catalog-api": "workspace:*",
     "@feature/common": "workspace:*",
@@ -31,6 +33,8 @@
     "@feature/schedule-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "^11.2.1",
+    "@nestjs/core": "^11.1.26",
+    "fastify": "^5.12.1",
     "zod": "^4.4.3"
   }
 }
