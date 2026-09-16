@@ -1,4 +1,4 @@
-import { AuthenticatedUser } from '@feature/common';
+import { AuthenticatedUser } from './auth.type';
 
 export interface AuthenticationResult {
   user: AuthenticatedUser;

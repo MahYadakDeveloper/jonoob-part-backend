@@ -1,4 +1,4 @@
-import { CustomerType } from './types';
+import { CustomerType } from '@feature/common';
 
 export type AuthenticatedUser =
   | {

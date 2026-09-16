@@ -1,3 +1,4 @@
+export * from './customer.type';
 export * from './database/db-provider';
 export * from './job-scheduler';
 export * from './model/barcode';
@@ -13,6 +14,4 @@ export * from './transaction/transaction-context';
 export * from './transaction/transaction-manager';
 export * from './types';
 export * from './utils';
-export * from './customer.type';
-export * from './auth';
 import './extensions';

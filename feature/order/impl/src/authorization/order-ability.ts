@@ -1,0 +1,51 @@
+import {
+  AbilityBuilder,
+  createMongoAbility,
+  type MongoAbility,
+  type MongoQuery,
+} from '@casl/ability';
+
+import type { AuthenticatedUser } from '@feature/authentication-api';
+import type { AbilityFactory } from '@feature/authorization-api';
+
+export type OrderAction = 'read' | 'cancel';
+
+export interface OrderSubjectType {
+  id: string;
+  customerId: string;
+}
+
+export type OrderSubject = 'Order' | OrderSubjectType;
+
+export type OrderAbilityTuple = [OrderAction, OrderSubject];
+
+export type OrderAbility = MongoAbility<OrderAbilityTuple, MongoQuery>;
+
+export class OrderAbilityFactory implements AbilityFactory<OrderAbility> {
+  createFor(user: AuthenticatedUser): OrderAbility {
+    const { can, build } = new AbilityBuilder(createMongoAbility<OrderAbilityTuple, MongoQuery>);
+
+    switch (user.role) {
+      case 'admin':
+      case 'manager':
+        can('read', 'Order');
+        can('cancel', 'Order');
+        break;
+
+      case 'customer':
+        can('read', 'Order', {
+          customerId: user.customer.id,
+        });
+
+        can('cancel', 'Order', {
+          customerId: user.customer.id,
+        });
+        break;
+
+      case 'courier':
+        break;
+    }
+
+    return build();
+  }
+}

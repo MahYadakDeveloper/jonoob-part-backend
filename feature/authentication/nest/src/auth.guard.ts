@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
+import '@feature/common';
 import { type AuthenticationApi } from '@feature/authentication-api';
 
 @Injectable()

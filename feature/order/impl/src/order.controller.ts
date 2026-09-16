@@ -1,22 +1,21 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import createAbilityFor from './casl.ability';
+import { AuthenticationGuard } from '@feature/authentication-nest';
+import { CheckPolicies, PoliciesGuard } from '@feature/authorization-nest';
+import { Controller, Post, UseGuards } from '@nestjs/common';
+import { OrderAbilityFactory } from './authorization/order-ability';
+import { ReadOrderPolicy } from './authorization/read-order-policy.handler';
 import { OrderService } from './order.service';
-import { CheckPolicies } from './check-policies.metadata';
-import { PoliciesGuard } from './policies.guard';
 
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  @Get(':id')
-  @UseGuards(PoliciesGuard)
-  @CheckPolicies(new GetOrderPolicyHandler())
-  async order(@Param() id: string) {
-    const ability = createAbilityFor({ role: 'customer', id: '1' });
-
-    const order = await this.orderService.findById({ orderId: id });
-    ability.can('read', order);
-  }
+  /*
+   * NOTE: Register the ability factory and policy handlers as providers.
+   * PoliciesGuard resolves them through ModuleRef.
+   **/
+  @UseGuards(AuthenticationGuard, PoliciesGuard)
+  @CheckPolicies({ abilityFactory: OrderAbilityFactory, handlers: [ReadOrderPolicy] })
+  async order(/*...*/) {}
 
   @Post()
   record() {}

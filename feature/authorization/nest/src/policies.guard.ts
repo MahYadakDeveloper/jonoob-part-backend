@@ -1,4 +1,5 @@
 import { MongoAbility } from '@casl/ability';
+import '@feature/authentication-api';
 import { PolicyContext, PolicyDefinition } from '@feature/authorization-api';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
