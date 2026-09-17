@@ -9,11 +9,11 @@ import type { AuthenticatedUser } from '@feature/authentication-api';
 import type { AbilityFactory } from '@feature/authorization-api';
 import { Order } from '../model/order';
 
-export type OrderAction = 'read' | 'cancel' | 'record';
+export type OrderAction = 'manage' | 'read' | 'cancel' | 'record';
 
 export type OrderSubjectType = Order & { __typename: 'Order' };
 
-export type OrderSubject = 'Order' | OrderSubjectType;
+export type OrderSubject = 'Order' | OrderSubjectType | 'Settings';
 
 export type OrderAbilityTuple = [OrderAction, OrderSubject];
 
@@ -27,7 +27,8 @@ export class OrderAbilityFactory implements AbilityFactory<OrderAbility> {
       case 'admin':
       case 'manager':
         can('read', 'Order');
-        can('cancel', 'Order');
+        can('manage', 'Settings');
+
         break;
 
       case 'customer':

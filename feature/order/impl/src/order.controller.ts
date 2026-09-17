@@ -4,7 +4,9 @@ import { CheckPolicies, PoliciesGuard } from '@feature/authorization-nest';
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { OrderService } from './order.service';
+import { orderSettingsSchema, type OrderSettings } from './order.settings';
 import { CancelOrderPolicy } from './policies/cancel-order-policy.handler';
+import { ManageOrderSettingsPolicy } from './policies/manage-settings-policy.handler';
 import { OrderAbilityFactory } from './policies/order-ability';
 import { ReadOrderPolicy } from './policies/read-order-policy.handler';
 import { RecordOrderPolicy } from './policies/record-order-policy.handler';
@@ -61,5 +63,12 @@ export class OrderController {
   @Post(':id')
   cancel(@Param('id', { schema: z.uuid() }) orderId: string) {
     return this.orderService.cancelOrder({ orderId });
+  }
+
+  @UseGuards(AuthenticationGuard, PoliciesGuard)
+  @CheckPolicies({ abilityFactory: OrderAbilityFactory, handlers: [ManageOrderSettingsPolicy] })
+  @Post()
+  setSetting(@Body({ schema: orderSettingsSchema }) settings: OrderSettings) {
+    this.orderService.setSettings({ settings });
   }
 }

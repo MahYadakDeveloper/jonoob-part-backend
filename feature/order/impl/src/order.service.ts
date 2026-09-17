@@ -6,11 +6,10 @@ import { Recipient, type DeliveryApi } from '@feature/order-delivery-api';
 import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import { type PaymentApi } from '@feature/order-payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
-import { type ScheduleApi } from '@feature/schedule-api';
 import { Injectable } from '@nestjs/common';
 import { Order } from './model/order';
 import { type OrderRepository } from './order.repository';
-import orderSettings from './order.settings';
+import { OrderSettings, orderSettings } from './order.settings';
 
 @Injectable()
 export class OrderService implements OrderApi {
@@ -24,7 +23,6 @@ export class OrderService implements OrderApi {
     private readonly delivery: DeliveryApi,
     private readonly tx: TransactionManager,
     private readonly settings: SettingsStore,
-    private readonly schedule: ScheduleApi,
   ) {}
 
   async findById({ orderId }): Promise<{ order: Order }> {
@@ -202,7 +200,7 @@ export class OrderService implements OrderApi {
     });
   }
 
-  async setSettings({ newSettings }: { newSettings: (typeof orderSettings)['defaultValue'] }) {
-    await this.settings.set(orderSettings, newSettings);
+  async setSettings({ settings }: { settings: OrderSettings }) {
+    await this.settings.set(orderSettings, settings);
   }
 }
