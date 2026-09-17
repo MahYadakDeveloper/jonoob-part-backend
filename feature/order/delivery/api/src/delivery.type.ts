@@ -1,6 +1,6 @@
 import { CustomerAddress, CustomerContact } from '@feature/common';
 
-type InterCityRecipient = {
+export type InterCityRecipient = {
   carrierKey: string;
   customer: {
     id: string;
@@ -8,7 +8,7 @@ type InterCityRecipient = {
   };
 } & Extract<CustomerAddress, { scope: 'inter_city' }>;
 
-type IntraCityRecipient = {
+export type IntraCityRecipient = {
   customer: {
     id: string;
     contact: CustomerContact;

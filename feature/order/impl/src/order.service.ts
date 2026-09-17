@@ -150,8 +150,8 @@ export class OrderService implements OrderApi {
   /**
    *
    */
-  async cancelOrder({ customerId, orderId }: { customerId: string; orderId: string }) {
-    const order = await this.repository.findOrderByCustomerId(customerId, orderId);
+  async cancelOrder({ orderId }: { orderId: string }) {
+    const order = await this.repository.find(orderId);
 
     if (!order) throw new Error();
 
@@ -186,7 +186,7 @@ export class OrderService implements OrderApi {
                 type: 'partial',
                 amount: refund,
                 sessionId: order.payment.sessionId,
-                customerId: customerId,
+                customerId: order.customerId,
               });
 
               await this.delivery.cancelDelivery({ orderId });

@@ -34,7 +34,7 @@
     "@feature/pricing-api": "workspace:*",
     "@feature/schedule-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "^11.2.1",
+    "@nestjs/common": "^12.0.3",
     "zod": "^4.4.3"
   }
 }

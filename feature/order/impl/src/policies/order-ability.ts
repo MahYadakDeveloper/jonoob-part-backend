@@ -7,13 +7,11 @@ import {
 
 import type { AuthenticatedUser } from '@feature/authentication-api';
 import type { AbilityFactory } from '@feature/authorization-api';
+import { Order } from '../model/order';
 
-export type OrderAction = 'read' | 'cancel';
+export type OrderAction = 'read' | 'cancel' | 'record';
 
-export interface OrderSubjectType {
-  id: string;
-  customerId: string;
-}
+export type OrderSubjectType = Order & { __typename: 'Order' };
 
 export type OrderSubject = 'Order' | OrderSubjectType;
 
@@ -40,12 +38,14 @@ export class OrderAbilityFactory implements AbilityFactory<OrderAbility> {
         can('cancel', 'Order', {
           customerId: user.customer.id,
         });
+
+        can('record', 'Order');
         break;
 
       case 'courier':
         break;
     }
 
-    return build();
+    return build({ detectSubjectType: (object) => object.__typename });
   }
 }
