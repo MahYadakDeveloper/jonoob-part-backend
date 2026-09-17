@@ -1,5 +1,4 @@
-import { phoneNumberSchema } from '@feature/common';
-import { IntraCityRecipient } from '@feature/order-delivery-api';
+import { InterCityRecipient, IntraCityRecipient } from '@feature/order-delivery-api';
 import { z } from 'zod';
 
 export const recordOrderSchema = z.object({
@@ -15,8 +14,7 @@ export const recordOrderSchema = z.object({
       cityId: z.coerce.number(),
       provinceId: z.coerce.number(),
       postalCode: z.coerce.string(),
-      customerPhoneNumber: phoneNumberSchema,
-    }),
+    }) satisfies z.ZodType<Omit<InterCityRecipient, 'customer'>>,
     z.object({
       scope: z.literal('intra_city'),
       cityId: z.coerce.number(),
@@ -27,12 +25,7 @@ export const recordOrderSchema = z.object({
           longitude: z.number(),
         }) satisfies z.ZodType<IntraCityRecipient['coordinate']>
       ).optional(),
-      customerPhoneNumber: phoneNumberSchema,
-    }) satisfies z.ZodType<
-      Omit<IntraCityRecipient, 'customer'> & {
-        customerPhoneNumber: string;
-      }
-    >,
+    }) satisfies z.ZodType<Omit<IntraCityRecipient, 'customer'>>,
   ]),
 });
 

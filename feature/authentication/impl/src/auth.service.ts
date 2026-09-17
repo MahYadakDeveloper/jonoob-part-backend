@@ -14,6 +14,7 @@ import { type CourierApi } from '@feature/order-delivery-courier-api';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import authConfig from './auth.config';
+import { RefreshClaim } from './auth.type';
 import { type OtpStore } from './port/otp.store';
 
 @Injectable()
@@ -63,6 +64,7 @@ export class AuthService implements AuthenticationApi {
     @Inject(authConfig.KEY)
     private readonly config: ConfigType<typeof authConfig>,
   ) {}
+
   async authenticate({ token }: { token: string }): Promise<AuthenticationResult | null> {
     const payload = await this.tokenService.verify(token, 'access');
     if (!payload) return null;
@@ -201,10 +203,10 @@ export class AuthService implements AuthenticationApi {
           expiresIn: this.accessTokenExpiresIn,
           claims: {
             role: 'customer',
-            customer: {
-              id: customer.id,
-              type: customer.type,
-            },
+            id: customer.id,
+            type: customer.type,
+            fullName: customer.fullName,
+            phoneNumber: customer.phoneNumber,
           } satisfies AuthenticatedUser,
         });
 
@@ -214,11 +216,8 @@ export class AuthService implements AuthenticationApi {
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
             role: 'customer',
-            customer: {
-              id: customer.id,
-              type: customer.type,
-            },
-          } satisfies AuthenticatedUser,
+            id: customer.id,
+          } satisfies RefreshClaim,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -251,7 +250,7 @@ export class AuthService implements AuthenticationApi {
           expiresIn: this.accessTokenExpiresIn,
           claims: {
             role: 'courier',
-            courier: { id: courier.id },
+            ...courier,
           } satisfies AuthenticatedUser,
         });
 
@@ -261,8 +260,8 @@ export class AuthService implements AuthenticationApi {
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
             role: 'courier',
-            courier: { id: courier.id },
-          } satisfies AuthenticatedUser,
+            id: courier.id,
+          } satisfies RefreshClaim,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -299,7 +298,7 @@ export class AuthService implements AuthenticationApi {
           expiresIn: this.accessTokenExpiresIn,
           claims: {
             role: 'manager',
-            manager: { id: manager.id },
+            ...manager,
           } satisfies AuthenticatedUser,
         });
 
@@ -309,10 +308,8 @@ export class AuthService implements AuthenticationApi {
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
             role: 'manager',
-            manager: {
-              id: manager.id,
-            },
-          } satisfies AuthenticatedUser,
+            id: manager.id,
+          } satisfies RefreshClaim,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -356,7 +353,7 @@ export class AuthService implements AuthenticationApi {
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
             role: 'admin',
-          } satisfies AuthenticatedUser,
+          } satisfies RefreshClaim,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -402,10 +399,10 @@ export class AuthService implements AuthenticationApi {
           expiresIn: this.accessTokenExpiresIn,
           claims: {
             role: 'customer',
-            customer: {
-              id: customerId,
-              type: customerType,
-            },
+            id: customerId,
+            fullName,
+            phoneNumber: payload.sub,
+            type: customerType,
           } satisfies AuthenticatedUser,
         });
 
@@ -415,11 +412,8 @@ export class AuthService implements AuthenticationApi {
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
             role: 'customer',
-            customer: {
-              id: customerId,
-              type: customerType,
-            },
-          } satisfies AuthenticatedUser,
+            id: customerId,
+          } satisfies RefreshClaim,
         });
 
         await this.tokenService.revoke(verifyToken, 'verify');
@@ -440,7 +434,7 @@ export class AuthService implements AuthenticationApi {
       `${AuthService.name}:refresh:${payload.jti}`,
       async () => {
         const payload = (await this.tokenService.verify(oldRefreshToken, 'refresh')) as
-          | (TokenPayload & AuthenticatedUser)
+          | (TokenPayload & RefreshClaim)
           | null;
 
         if (!payload) throw new Error();
@@ -469,7 +463,7 @@ export class AuthService implements AuthenticationApi {
             break;
           case 'manager':
             const { manager } = await this.manager.findById({
-              managerId: payload.manager.id,
+              managerId: payload.id,
             });
 
             accessToken = await this.tokenService.issue({
@@ -478,7 +472,7 @@ export class AuthService implements AuthenticationApi {
               expiresIn: this.accessTokenExpiresIn,
               claims: {
                 role: 'manager',
-                manager: { id: manager.id },
+                ...manager,
               } satisfies AuthenticatedUser,
             });
 
@@ -488,13 +482,13 @@ export class AuthService implements AuthenticationApi {
               expiresIn: this.refreshTokenExpiresIn,
               claims: {
                 role: 'manager',
-                manager: { id: manager.id },
-              } satisfies AuthenticatedUser,
+                id: manager.id,
+              } satisfies RefreshClaim,
             });
             break;
           case 'courier':
             const { courier } = await this.courier.findById({
-              courierId: payload.courier.id,
+              courierId: payload.id,
             });
 
             accessToken = await this.tokenService.issue({
@@ -503,7 +497,7 @@ export class AuthService implements AuthenticationApi {
               expiresIn: this.accessTokenExpiresIn,
               claims: {
                 role: 'courier',
-                courier: { id: courier.id },
+                ...courier,
               } satisfies AuthenticatedUser,
             });
 
@@ -513,8 +507,8 @@ export class AuthService implements AuthenticationApi {
               expiresIn: this.refreshTokenExpiresIn,
               claims: {
                 role: 'courier',
-                courier: { id: courier.id },
-              } satisfies AuthenticatedUser,
+                id: courier.id,
+              } satisfies RefreshClaim,
             });
             break;
           case 'customer':
@@ -527,10 +521,7 @@ export class AuthService implements AuthenticationApi {
               expiresIn: this.accessTokenExpiresIn,
               claims: {
                 role: 'customer',
-                customer: {
-                  id: customer.id,
-                  type: customer.type,
-                },
+                ...customer,
               } satisfies AuthenticatedUser,
             });
 
@@ -540,11 +531,8 @@ export class AuthService implements AuthenticationApi {
               expiresIn: this.refreshTokenExpiresIn,
               claims: {
                 role: 'customer',
-                customer: {
-                  id: customer.id,
-                  type: customer.type,
-                },
-              } satisfies AuthenticatedUser,
+                id: customer.id,
+              } satisfies RefreshClaim,
             });
         }
 

@@ -1,25 +1,22 @@
 import { CustomerType } from '@feature/common';
 
 export type AuthenticatedUser =
-  | {
-      role: 'customer';
-      customer: {
-        id: string;
-        type: CustomerType;
-      };
-    }
-  | {
-      role: 'courier';
-      courier: {
-        id: string;
-      };
-    }
-  | {
-      role: 'manager';
-      manager: {
-        id: string;
-      };
-    }
+  | ({
+      id: string;
+      fullName: string;
+      phoneNumber: string;
+    } & (
+      | {
+          role: 'customer';
+          type: CustomerType;
+        }
+      | {
+          role: 'courier';
+        }
+      | {
+          role: 'manager';
+        }
+    ))
   | {
       role: 'admin';
     };

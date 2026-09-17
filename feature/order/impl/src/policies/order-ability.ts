@@ -32,11 +32,11 @@ export class OrderAbilityFactory implements AbilityFactory<OrderAbility> {
 
       case 'customer':
         can('read', 'Order', {
-          customerId: user.customer.id,
+          customerId: user.id,
         });
 
         can('cancel', 'Order', {
-          customerId: user.customer.id,
+          customerId: user.id,
         });
 
         can('record', 'Order');
