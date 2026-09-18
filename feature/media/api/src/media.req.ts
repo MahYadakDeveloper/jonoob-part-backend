@@ -1,3 +1,5 @@
+import { Readable } from 'node:stream';
+
 /**
  * Upload input.
  */
@@ -10,7 +12,7 @@ export type UploadFileRequest = {
   size: number;
 
   /** File content (Buffer, stream, etc.). */
-  body: Buffer | NodeJS.ReadableStream;
+  body: Buffer | Readable;
 };
 
 /**

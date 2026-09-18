@@ -4,10 +4,6 @@
 export type UploadFileResponse = {
   /** Stable identifier used by MediaRef. */
   fileId: string;
-
-  fileName: string;
-  mimeType: string;
-  size: number;
 };
 
 /**
