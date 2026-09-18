@@ -1,9 +1,11 @@
-import { type MediaApi } from '@feature/media-api';
-import { Controller, Delete, Get, Post, Put, Query, Req } from '@nestjs/common';
+import type { MediaApi, UploadManyFilesRequest } from '@feature/media-api';
+import { UploadedMediaFiles } from '@feature/media-nest';
+import { Body, Controller, Delete, Get, Post, Put, Query } from '@nestjs/common';
 import { CatalogService } from 'catalog.service';
 import { type CatalogContext, type CatalogContextProvider } from 'context/catalog.context';
 import { CatalogContextParam } from 'decorator/catalog-context.decorator';
 import { SearchProductParamsDto } from 'dto/search-params.dto';
+import { type CreateProduct, createProductSchema } from 'schema/create-product.schema';
 
 /**
  * Exposes endpoints for managing catalog products.
@@ -50,7 +52,10 @@ export class CatalogController {
    * typings. Refer to the Fastify Request documentation for the available APIs.
    */
   @Post()
-  createOne(@Req() req: any) {
+  createOne(
+    @Body({ schema: createProductSchema }) data: CreateProduct,
+    @UploadedMediaFiles('products') files: UploadManyFilesRequest,
+  ) {
     /**
      * TODO(media):
      *

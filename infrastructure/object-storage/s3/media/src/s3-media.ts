@@ -9,6 +9,8 @@ import {
   MediaApi,
   UploadFileRequest,
   UploadFileResponse,
+  UploadManyFilesRequest,
+  UploadManyFilesResponse,
 } from '@feature/media-api';
 import { S3_CLIENT } from '@infra/object-storage-s3-client';
 import { Inject } from '@nestjs/common';
@@ -40,6 +42,10 @@ export class S3Media implements MediaApi {
     return {
       fileId,
     };
+  }
+
+  uploadMany(request: UploadManyFilesRequest): Promise<UploadManyFilesResponse> {
+    throw new Error('Method not implemented.');
   }
 
   delete(request: DeleteMediaRequest): Promise<void> {

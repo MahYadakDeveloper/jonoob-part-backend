@@ -9,10 +9,14 @@ export type UploadFileRequest = {
 
   fileName: string;
   mimeType: string;
-  size: number;
+  size?: number;
 
   /** File content (Buffer, stream, etc.). */
   body: Buffer | Readable;
+};
+
+export type UploadManyFilesRequest = {
+  files: UploadFileRequest[];
 };
 
 /**

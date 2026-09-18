@@ -1,3 +1,4 @@
+import multipart from '@fastify/multipart';
 import { StandardSchemaValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
@@ -21,10 +22,11 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
       querystringParser: (str) => qs.parse(str),
     }),
   );
+
+  app.register(multipart);
 
   app.useGlobalPipes(
     new StandardSchemaValidationPipe({
@@ -57,5 +59,4 @@ async function bootstrap() {
   await app.listen(3000, '0.0.0.0');
 }
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap();

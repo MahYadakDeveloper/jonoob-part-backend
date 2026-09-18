@@ -24,7 +24,9 @@
     "@feature/catalog-fitment-node-api": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/media-api": "workspace:*",
+    "@feature/media-nest": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "^11.1.28"
+    "@nestjs/common": "^12.0.3",
+    "zod": "catalog:"
   }
 }

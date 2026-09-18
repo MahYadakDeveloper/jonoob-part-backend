@@ -4,8 +4,14 @@ import {
   GetMediaUrlRequest,
   GetSignedMediaUrlRequest,
   UploadFileRequest,
+  UploadManyFilesRequest,
 } from './media.req';
-import { GetMediaUrlResponse, GetSignedMediaUrlResponse, UploadFileResponse } from './media.res';
+import {
+  GetMediaUrlResponse,
+  GetSignedMediaUrlResponse,
+  UploadFileResponse,
+  UploadManyFilesResponse,
+} from './media.res';
 
 /**
  * Public contract used by other modules (Catalog, Brand, etc.).
@@ -20,6 +26,13 @@ export interface MediaApi {
    * Returns a stable fileId that should be stored by domain models.
    */
   upload(request: UploadFileRequest): Promise<UploadFileResponse>;
+
+  /**
+   * Upload multiple files to media storage.
+   *
+   * Returns stable fileIds that should be stored by domain models.
+   */
+  uploadMany(request: UploadManyFilesRequest): Promise<UploadManyFilesResponse>;
 
   /**
    * Delete a file by its stable identifier.

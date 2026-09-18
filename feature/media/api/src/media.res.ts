@@ -6,6 +6,10 @@ export type UploadFileResponse = {
   fileId: string;
 };
 
+export type UploadManyFilesResponse = {
+  files: UploadFileResponse[];
+};
+
 /**
  * Public URL response.
  */
