@@ -1,4 +1,10 @@
-import type { MediaApi, UploadManyFilesRequest } from '@feature/media-api';
+import type {
+  MediaApi,
+  MediaRef,
+  UploadFileRequest,
+  UploadManyFilesRequest,
+} from '@feature/media-api';
+import type { ImageProcessor } from '@feature/media-image';
 import { UploadedMediaFiles } from '@feature/media-nest';
 import { Body, Controller, Delete, Get, Post, Put, Query } from '@nestjs/common';
 import { CatalogService } from 'catalog.service';
@@ -20,6 +26,7 @@ export class CatalogController {
   constructor(
     private readonly catalog: CatalogService,
     private readonly media: MediaApi,
+    private readonly imageProcessor: ImageProcessor,
     private readonly contextProvider: CatalogContextProvider,
   ) {}
   @Get(':id')
@@ -52,10 +59,50 @@ export class CatalogController {
    * typings. Refer to the Fastify Request documentation for the available APIs.
    */
   @Post()
-  createOne(
+  async createOne(
     @Body({ schema: createProductSchema }) data: CreateProduct,
-    @UploadedMediaFiles('products') files: UploadManyFilesRequest,
+    @UploadedMediaFiles({
+      output: 'buffer',
+      maxSize: 10 * 1024 * 1024,
+      accept: ['image'],
+    })
+    { files: images }: UploadManyFilesRequest<'buffer'>,
   ) {
+    const processedImages = await this.processImages(images);
+
+    const uploadedMedia: MediaRef[] = [];
+
+    try {
+      for (const image of processedImages) {
+        const { fileId } = await this.media.upload({
+          fileName: image.fileName,
+          file: image.file,
+          mimeType: image.mimeType,
+          size: image.size,
+        });
+
+        uploadedMedia.push({
+          fileId,
+          fileName: image.fileName,
+          mimeType: image.mimeType,
+          size: image.size,
+        });
+      }
+
+      // [TODO]
+      const product = await this.catalog.define({
+        definitions: {},
+      });
+
+      return product;
+    } catch (error) {
+      await this.media.deleteMany({
+        fileIds: uploadedMedia.map((f) => f.fileId),
+      });
+
+      throw error;
+    }
+
     /**
      * TODO(media):
      *
@@ -132,5 +179,28 @@ export class CatalogController {
      * Consider whether media should be deleted only when it is no longer
      * referenced by any other resource.
      */
+  }
+
+  async processImages(images: UploadFileRequest<'buffer'>[]) {
+    return Promise.all(
+      images.map(async (image) => {
+        const compressed = await this.imageProcessor.compress(image.file, {
+          format: 'webp',
+          quality: 85,
+        });
+
+        const processed = await this.imageProcessor.resize(compressed.file, {
+          width: 1200,
+          height: 1200,
+          fit: 'inside',
+          withoutEnlargement: true,
+        });
+
+        return {
+          fileName: image.fileName,
+          ...processed,
+        };
+      }),
+    );
   }
 }

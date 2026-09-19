@@ -1,22 +1,23 @@
 import { Readable } from 'node:stream';
+import { MediaFileType } from './media.types';
 
 /**
  * Upload input.
  */
-export type UploadFileRequest = {
+export type UploadFileRequest<T extends MediaFileType> = {
   /** Logical storage path, not a physical bucket key. */
-  path: string;
+  path?: string;
 
   fileName: string;
   mimeType: string;
   size?: number;
 
   /** File content (Buffer, stream, etc.). */
-  body: Buffer | Readable;
+  file: T extends 'buffer' ? Buffer : Readable;
 };
 
-export type UploadManyFilesRequest = {
-  files: UploadFileRequest[];
+export type UploadManyFilesRequest<T extends MediaFileType> = {
+  files: UploadFileRequest<T>[];
 };
 
 /**

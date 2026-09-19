@@ -7,10 +7,9 @@ import {
   GetSignedMediaUrlRequest,
   GetSignedMediaUrlResponse,
   MediaApi,
+  MediaFileType,
   UploadFileRequest,
   UploadFileResponse,
-  UploadManyFilesRequest,
-  UploadManyFilesResponse,
 } from '@feature/media-api';
 import { S3_CLIENT } from '@infra/object-storage-s3-client';
 import { Inject } from '@nestjs/common';
@@ -25,7 +24,9 @@ export class S3Media implements MediaApi {
     private readonly client: S3Client,
   ) {}
 
-  async upload(request: UploadFileRequest): Promise<UploadFileResponse> {
+  async upload<T extends MediaFileType>(
+    request: UploadFileRequest<T>,
+  ): Promise<UploadFileResponse> {
     const fileId = crypto.randomUUID();
     const key = `${request.path}/${fileId}-${request.fileName}`;
 
@@ -33,7 +34,7 @@ export class S3Media implements MediaApi {
       new PutObjectCommand({
         Bucket: this.config.bucket,
         Key: key,
-        Body: request.body,
+        Body: request.file,
         ContentType: request.mimeType,
         ContentLength: request.size,
       }),
@@ -42,10 +43,6 @@ export class S3Media implements MediaApi {
     return {
       fileId,
     };
-  }
-
-  uploadMany(request: UploadManyFilesRequest): Promise<UploadManyFilesResponse> {
-    throw new Error('Method not implemented.');
   }
 
   delete(request: DeleteMediaRequest): Promise<void> {

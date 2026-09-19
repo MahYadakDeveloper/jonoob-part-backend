@@ -1,0 +1,24 @@
+{
+  "name": "@infra/media-image-processor",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc"
+  },
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@feature/media-api": "workspace:*",
+    "@feature/media-image": "workspace:*",
+    "@nestjs/common": "^11.1.28",
+    "sharp": "^0.35.4"
+  }
+}

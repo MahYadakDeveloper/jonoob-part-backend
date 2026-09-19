@@ -1,5 +1,9 @@
 type MediaMimeType = ImageMimeType | VideoMimeType;
 
+export type MediaType = 'image' | 'video'; // | 'audio' | 'document';
+
+export type MediaFileType = 'buffer' | 'stream';
+
 export type MediaRef<TMime extends string = MediaMimeType> = {
   /** Stable identifier */
   fileId: string;
