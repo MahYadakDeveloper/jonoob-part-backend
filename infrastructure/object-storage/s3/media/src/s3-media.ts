@@ -1,6 +1,5 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import {
-  DeleteManyMediaRequest,
   DeleteMediaRequest,
   GetMediaUrlRequest,
   GetMediaUrlResponse,
@@ -28,7 +27,7 @@ export class S3Media implements MediaApi {
     request: UploadFileRequest<T>,
   ): Promise<UploadFileResponse> {
     const fileId = crypto.randomUUID();
-    const key = `${request.path}/${fileId}-${request.fileName}`;
+    const key = `${request.path}/${fileId}`;
 
     await this.client.send(
       new PutObjectCommand({
@@ -48,9 +47,7 @@ export class S3Media implements MediaApi {
   delete(request: DeleteMediaRequest): Promise<void> {
     throw new Error('Method not implemented.');
   }
-  deleteMany(request: DeleteManyMediaRequest): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
+
   getPublicUrl(request: GetMediaUrlRequest): Promise<GetMediaUrlResponse> {
     throw new Error('Method not implemented.');
   }

@@ -17,6 +17,11 @@
   },
   "private": true,
   "dependencies": {
+    "@casl/ability": "catalog:",
+    "@feature/authentication-api": "workspace:*",
+    "@feature/authentication-nest": "workspace:*",
+    "@feature/authorization-api": "workspace:*",
+    "@feature/authorization-nest": "workspace:*",
     "@feature/catalog-api": "workspace:*",
     "@feature/catalog-brand-api": "workspace:*",
     "@feature/catalog-category-api": "workspace:*",

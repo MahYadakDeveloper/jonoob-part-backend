@@ -1,7 +1,13 @@
 import {
   CatalogApi,
+  FindManyProductByGoodIdRequest,
+  FindManyProductByGoodIdResponse,
   FindManyProductRequest as FindManyProductRequestApi,
   FindManyProductResponse as FindManyProductResponseApi,
+  FindProductByBrandRequest,
+  FindProductByBrandResponse,
+  FindProductByCategoryRequest,
+  FindProductByCategoryResponse,
   FindProductRequest as FindProductRequestApi,
   FindProductResponse as FindProductResponseApi,
   ProductDeletedEventPayload,
@@ -162,6 +168,10 @@ export class CatalogService implements CatalogApi {
       (products: LineItems<Product>) => Promise<ProductPopulatePatch>
     >;
   }
+
+  findManyByGoodId(req: FindManyProductByGoodIdRequest): Promise<FindManyProductByGoodIdResponse> {}
+  findByBrand(req: FindProductByBrandRequest): Promise<FindProductByBrandResponse> {}
+  findByCategory(req: FindProductByCategoryRequest): Promise<FindProductByCategoryResponse> {}
 
   /**
    * [NOTE] This is api method implementation
@@ -364,7 +374,7 @@ export class CatalogService implements CatalogApi {
       if (product.kind !== 'leaf') throw new Error('Only leaf product allowed!');
 
       // stock check
-      if (bundleItem.quantity > stocks.getOrThrow(bundleItem.goodId).stock)
+      if (bundleItem.quantity > stocks.getOrThrow(bundleItem.goodId).quantity)
         throw new Error(
           `Insufficient stock to create one bundle at least!, ProductId: ${bundleItem.productId}`,
         );

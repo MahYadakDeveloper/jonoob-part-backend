@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@casl/ability':
+      specifier: ^7.0.1
+      version: 7.0.1
     '@fastify/multipart':
       specifier: 10.1.1
       version: 10.1.1
@@ -474,6 +477,21 @@ importers:
 
   feature/catalog/impl:
     dependencies:
+      '@casl/ability':
+        specifier: 'catalog:'
+        version: 7.0.1
+      '@feature/authentication-api':
+        specifier: workspace:*
+        version: link:../../authentication/api
+      '@feature/authentication-nest':
+        specifier: workspace:*
+        version: link:../../authentication/nest
+      '@feature/authorization-api':
+        specifier: workspace:*
+        version: link:../../authorization/api
+      '@feature/authorization-nest':
+        specifier: workspace:*
+        version: link:../../authorization/nest
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../api

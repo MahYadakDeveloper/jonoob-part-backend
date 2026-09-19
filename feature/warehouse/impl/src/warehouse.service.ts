@@ -2,6 +2,8 @@ import { type OutboxRepository, type TransactionManager } from '@feature/common'
 import {
   GetGoodDetailsRequest,
   GetGoodDetailsResponse,
+  GetReservedStocksRequest,
+  GetReservedStocksResponse,
   GetStockRequest,
   GetStockResponse,
   GetStocksRequest,
@@ -21,6 +23,7 @@ import {
   ReceiveReturnedRequest,
   StockExistenceRequest,
   StockExistenceResponse,
+  StockReleasingByRefIdRequest,
   StockReleasingRequest,
   StockReservingRequest,
   StocksDecreaseRequest,
@@ -56,7 +59,14 @@ export class WarehouseService implements WarehouseApi {
     private readonly outbox: OutboxRepository,
   ) {}
 
-  // [TODO] Move this inside its module
+  getReservedStocks(req: GetReservedStocksRequest): Promise<GetReservedStocksResponse> {
+    throw new Error('Method not implemented.');
+  }
+
+  releaseStockByRefId(req: StockReleasingByRefIdRequest): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
   async declareGood({ good }: { good: Omit<Good, 'goodId'> }): Promise<{ goodId: string }> {
     const { good: g } = await this.declaration.findByBarcode({ barcode: good.barcode });
 

@@ -1,5 +1,4 @@
 import {
-  DeleteManyMediaRequest,
   DeleteMediaRequest,
   GetMediaUrlRequest,
   GetSignedMediaUrlRequest,
@@ -21,7 +20,6 @@ export interface MediaApi {
    * Returns a stable fileId that should be stored by domain models.
    */
   upload<T extends MediaFileType>(request: UploadFileRequest<T>): Promise<UploadFileResponse>;
-
   /**
    * Delete a file by its stable identifier.
    *
@@ -29,7 +27,6 @@ export interface MediaApi {
    * is still referenced by other entities. [I don't think so, each file uniquely referenced by its mediaRef]
    */
   delete(request: DeleteMediaRequest): Promise<void>;
-  deleteMany(request: DeleteManyMediaRequest): Promise<void>;
 
   /**
    * Resolve a public URL for a stored file.

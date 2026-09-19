@@ -7,7 +7,7 @@ export type UploadFileResponse = {
 };
 
 export type UploadManyFilesResponse = {
-  files: UploadFileResponse[];
+  fileIds: string[];
 };
 
 /**

@@ -9,6 +9,7 @@ export interface CatalogRepository {
   findById(id: string): Promise<Product | null>;
   findManyById(ids: string[]): Promise<LineItems<Product>>;
   findByGoodId(id: string): Promise<Product | null>;
+  findManyByGoodId(goodIds: string[]): Promise<LineItems<Product>>;
   search(criteria: ProductSearchCriteria): Promise<ProductSearchResult>;
 
   create(data: CreateProduct): Promise<{ id: string }>;
