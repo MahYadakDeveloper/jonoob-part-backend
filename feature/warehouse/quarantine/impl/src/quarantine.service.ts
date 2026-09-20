@@ -1,13 +1,9 @@
 import { type TransactionManager } from '@feature/common';
 import { type ProcurementApi } from '@feature/procurement-api';
-import {
-  QuarantineStockRequest,
-  ReleaseStockRequest,
-  StockQuarantineApi,
-} from '@feature/warehouse-quarantine-api';
+import { QuarantineStockRequest, StockQuarantineApi } from '@feature/warehouse-quarantine-api';
 import { Injectable } from '@nestjs/common';
 import { type StockQuarantineRepository } from './quarantine.repository';
-import { ReturnToSupplierRequest } from './quarantine.req';
+import { ReleaseStockRequest, ReturnToSupplierRequest } from './quarantine.req';
 
 @Injectable()
 export class StockQuarantine implements StockQuarantineApi {
@@ -16,11 +12,12 @@ export class StockQuarantine implements StockQuarantineApi {
     private readonly repository: StockQuarantineRepository,
     private readonly tx: TransactionManager,
   ) {}
-  async quarantine(req: QuarantineStockRequest): Promise<void> {
-    await this.repository.quarantineMany(
-      req.items.transform(
-        (q) => ({ referenceId: req.referenceId, reason: req.reason, ...q }),
-        (q) => q.goodId,
+
+  quarantine({ items, reason, referenceId }: QuarantineStockRequest): Promise<void> {
+    return this.repository.quarantine(
+      items.transform(
+        (q) => ({ referenceId: referenceId, reason: reason, ...q }),
+        (q) => q.stockId,
       ),
     );
   }
@@ -28,8 +25,8 @@ export class StockQuarantine implements StockQuarantineApi {
   /**
    * Release to return to the warehouse
    */
-  async release(req: ReleaseStockRequest): Promise<void> {
-    await this.repository.releaseMany(req.items);
+  async release({ items }: ReleaseStockRequest): Promise<void> {
+    await this.repository.release(items);
   }
 
   /**
@@ -37,9 +34,9 @@ export class StockQuarantine implements StockQuarantineApi {
    */
   async returnToSupplier(req: ReturnToSupplierRequest): Promise<{ returnId: string }> {
     return await this.tx.run(async () => {
-      await this.repository.releaseMany(req.items);
+      await this.repository.release(req.items);
 
-      return this.procurement.returnSupply(req);
+      return this.procurement.returnSupply({ items });
     });
   }
 }

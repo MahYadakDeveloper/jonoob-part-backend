@@ -1,7 +1,7 @@
 import { LineItems } from '@feature/common';
 
 export interface QuarantineStockRequest {
-  referenceId?: string;
+  referenceId: string;
   reason: 'customer_return';
-  items: LineItems<{ goodId: string; quantity: number }>;
+  items: LineItems<{ stockId: string; qty: number }>;
 }

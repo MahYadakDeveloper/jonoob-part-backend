@@ -1,5 +1,4 @@
 import { LineItems } from '@feature/common';
-import { StockReleasingRequest, StockReservingRequest } from './reserver.req';
 
 export interface StockReserverApi {
   /**
@@ -9,7 +8,13 @@ export interface StockReserverApi {
    * The reserved quantity is not deducted from inventory. It is only marked as
    * unavailable until the reservation is released.
    */
-  reserveStock(req: StockReservingRequest): Promise<void>;
+  reserve(req: {
+    referenceId: string;
+    stocks: LineItems<{
+      stockId: string;
+      qty: number;
+    }>;
+  }): Promise<void>;
 
   /**
    * Releases a previously reserved quantity, making it available for future
@@ -18,10 +23,13 @@ export interface StockReserverApi {
    * Call this when the operation is cancelled or immediately before issuing the
    * reserved stock.
    */
-  releaseStock(req: StockReleasingRequest): Promise<void>;
-  releaseStocksByRef(req: { reference: string }): Promise<void>;
-
-  getReservedStocks(req: {
+  release(req: {
     referenceId: string;
-  }): Promise<LineItems<{ goodId: string; quantity: number }>>;
+    reserved: LineItems<{
+      stockId: string;
+      qty: number;
+    }>;
+  }): Promise<void>;
+
+  checkReserved(req: { referenceId: string }): Promise<LineItems<{ stockId: string; qty: number }>>;
 }

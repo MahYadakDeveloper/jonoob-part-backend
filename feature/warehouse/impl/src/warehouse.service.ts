@@ -5,17 +5,11 @@ import {
   type TransactionManager,
 } from '@feature/common';
 import {
-  GetReservedStocksRequest,
-  GetReservedStocksResponse,
   GoodsIssuedEventPayload,
   GoodsIssuedEventType,
-  GoodsIssuingRequest,
   GoodsReceiptedEventPayload,
   GoodsReceiptedEventType,
-  GoodsReceptionRequest,
-  ReceiveReturnedRequest,
   Stock,
-  StockReleasingByRefIdRequest,
   WarehouseApi,
 } from '@feature/warehouse-api';
 import { type StockQuarantineApi } from '@feature/warehouse-quarantine-api';
@@ -34,6 +28,7 @@ export class WarehouseService implements WarehouseApi {
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}
+
   check({
     stockId,
   }: {
@@ -78,11 +73,18 @@ export class WarehouseService implements WarehouseApi {
     });
   }
 
-  quarantine(req: {
+  quarantine({
+    items,
+    returnId,
+  }: {
     returnId: string;
     items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void> {
-    throw new Error('Method not implemented.');
+    return this.quarantineManager.quarantine({
+      items,
+      reason: 'customer_return',
+      referenceId: returnId,
+    });
   }
 
   findById({ stockId }: { stockId: string }): Promise<{
@@ -109,39 +111,86 @@ export class WarehouseService implements WarehouseApi {
     });
   }
 
-  issue(req: {
+  async issue({
+    items,
+    reference,
+  }: {
     reference: { id: string; source: string };
     items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void> {
-    throw new Error('Method not implemented.');
+    await this.tx.run(async () => {
+      await this.repository.decrease(
+        items.transform(
+          (s) => ({ id: s.stockId, qty: s.qty }),
+          (s) => s.id,
+        ),
+      );
+
+      // [TODO] Move it inside event handler no need the recorder be here
+      await this.recorder.record({
+        type: 'outbound',
+        items,
+        reference,
+      });
+
+      await this.outbox.save({
+        type: GoodsIssuedEventType,
+        payload: {
+          goodIds: [...items.keys()],
+        } satisfies GoodsIssuedEventPayload,
+      });
+    });
   }
-  receipt(req: { items: LineItems<{ stockId: string; qty: number }> }): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-  reserve(req: {
-    referenceId: string;
+
+  async receipt({
+    reference,
+    items,
+  }: {
+    reference: { id: string; source: string };
     items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void> {
-    throw new Error('Method not implemented.');
+    await this.tx.run(async () => {
+      await this.repository.increase(
+        items.transform(
+          (s) => ({ id: s.stockId, qty: s.qty }),
+          (s) => s.id,
+        ),
+      );
+
+      // [TODO] Move it inside event handler no need the recorder be here
+      await this.recorder.record({
+        type: 'inbound',
+        items,
+        reference,
+      });
+
+      await this.outbox.save({
+        type: GoodsReceiptedEventType,
+        payload: {
+          goodIds: [...items.keys()],
+        } satisfies GoodsReceiptedEventPayload,
+      });
+    });
   }
+
+  reserve(req: {
+    referenceId: string;
+    stocks: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void> {
+    return this.reserver.reserve(req);
+  }
+
   checkReserved(req: { referenceId: string }): Promise<{
     reserved: LineItems<{ stockId: string; qty: number }>;
   }> {
     throw new Error('Method not implemented.');
   }
+
   release(req: {
     referenceId: string;
-    reversed: LineItems<{ stockId: string; qty: number }>;
+    reserved: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-
-  getReservedStocks({ referenceId }: GetReservedStocksRequest): Promise<GetReservedStocksResponse> {
-    return this.reserver.getReservedStocks({ referenceId }).then((stocks) => ({ stocks }));
-  }
-
-  releaseStockByRefId({ referenceId }: StockReleasingByRefIdRequest): Promise<void> {
-    return this.reserver.releaseStocksByRef({ reference: referenceId });
+    return this.reserver.release(req);
   }
 
   async define({ definition }: { definition: StockDefinitionData }): Promise<{ stockId: string }> {
@@ -170,73 +219,5 @@ export class WarehouseService implements WarehouseApi {
     }
 
     await this.repository.redefine(stockId, definition);
-  }
-
-  /**
-   * Records the receipt of goods into the warehouse and updates stock levels.
-   *
-   * After the stock has been successfully updated, a `warehouse.goods-receipted`
-   * event is published so other modules can react to the completed inventory
-   * change.
-   *
-   * The Procurement module listens for this event to re-evaluate reorder points.
-   * An event is used instead of a direct service call to keep Warehouse
-   * decoupled from Procurement, since inventory changes may originate from
-   * different modules (e.g. purchase receipts, sales returns, inventory
-   * adjustments, or other warehouse operations).
-   *
-   * The `warehouse.goods-receipted` is emitted as an event because stock changes can originate from
-   * multiple modules (e.g. POS sales, sales returns, manual warehouse operations).
-   * Procurement should react only to the completed stock movement, without
-   * depending on which module initiated it.
-   *
-   * @param req The goods receipt request containing the items to receive.
-   */
-  async receiptGoods({ items, reference }: GoodsReceptionRequest): Promise<void> {
-    await this.tx.run(async () => {
-      await this.repository.increase(items);
-
-      // [TODO] Move it inside event handler no need the recorder be here
-      await this.recorder.record({
-        type: 'inbound',
-        items,
-        reference,
-      });
-
-      await this.outbox.save({
-        type: GoodsReceiptedEventType,
-        payload: {
-          goodIds: [...items.keys()],
-        } satisfies GoodsReceiptedEventPayload,
-      });
-    });
-  }
-
-  async receiveCustomerReturn(req: ReceiveReturnedRequest): Promise<void> {
-    await this.stockQuarantine.quarantine({
-      items: req.items,
-      reason: 'customer_return',
-      referenceId: req.returnId,
-    });
-  }
-
-  async issueGoods({ items, reference }: GoodsIssuingRequest): Promise<void> {
-    await this.tx.run(async () => {
-      await this.repository.issue(items);
-
-      // [TODO] Move it inside event handler no need the recorder be here
-      await this.recorder.record({
-        type: 'outbound',
-        items,
-        reference,
-      });
-
-      await this.outbox.save({
-        type: GoodsIssuedEventType,
-        payload: {
-          goodIds: [...items.keys()],
-        } satisfies GoodsIssuedEventPayload,
-      });
-    });
   }
 }

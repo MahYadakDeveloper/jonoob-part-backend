@@ -49,7 +49,13 @@ export interface WarehouseApi {
   /**
    *
    */
-  receipt(req: { items: LineItems<{ stockId: string; qty: number }> }): Promise<void>;
+  receipt(req: {
+    reference: {
+      id: string;
+      source: string;
+    };
+    items: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void>;
 
   /**
    *
@@ -68,8 +74,9 @@ export interface WarehouseApi {
    */
   reserve(req: {
     referenceId: string;
-    items: LineItems<{ stockId: string; qty: number }>;
+    stocks: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void>;
+
   checkReserved(req: {
     referenceId: string;
   }): Promise<{ reserved: LineItems<{ stockId: string; qty: number }> }>;
@@ -83,6 +90,6 @@ export interface WarehouseApi {
    */
   release(req: {
     referenceId: string;
-    reversed: LineItems<{ stockId: string; qty: number }>;
+    reserved: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void>;
 }
