@@ -173,24 +173,42 @@ export class WarehouseService implements WarehouseApi {
     });
   }
 
-  reserve(req: {
+  async reserve(req: {
     referenceId: string;
-    stocks: LineItems<{ stockId: string; qty: number }>;
+    items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void> {
-    return this.reserver.reserve(req);
+    await this.tx.run(async () => {
+      await this.repository.decrease(
+        req.items.transform(
+          (s) => ({ id: s.stockId, qty: s.qty }),
+          (s) => s.id,
+        ),
+      );
+
+      await this.reserver.reserve(req);
+    });
   }
 
-  checkReserved(req: { referenceId: string }): Promise<{
+  getReservedStocks(req: { referenceId: string }): Promise<{
     reserved: LineItems<{ stockId: string; qty: number }>;
   }> {
-    throw new Error('Method not implemented.');
+    return this.reserver.getReservedStocks(req);
   }
 
-  release(req: {
+  async release(req: {
     referenceId: string;
-    reserved: LineItems<{ stockId: string; qty: number }>;
+    items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void> {
-    return this.reserver.release(req);
+    await this.tx.run(async () => {
+      await this.repository.increase(
+        req.items.transform(
+          (r) => ({ id: r.stockId, qty: r.qty }),
+          (r) => r.id,
+        ),
+      );
+
+      await this.reserver.release(req);
+    });
   }
 
   async define({ definition }: { definition: StockDefinitionData }): Promise<{ stockId: string }> {

@@ -10,7 +10,7 @@ export interface StockReserverApi {
    */
   reserve(req: {
     referenceId: string;
-    stocks: LineItems<{
+    items: LineItems<{
       stockId: string;
       qty: number;
     }>;
@@ -25,11 +25,13 @@ export interface StockReserverApi {
    */
   release(req: {
     referenceId: string;
-    reserved: LineItems<{
+    items: LineItems<{
       stockId: string;
       qty: number;
     }>;
   }): Promise<void>;
 
-  checkReserved(req: { referenceId: string }): Promise<LineItems<{ stockId: string; qty: number }>>;
+  getReservedStocks(req: {
+    referenceId: string;
+  }): Promise<{ reserved: LineItems<{ stockId: string; qty: number }> }>;
 }

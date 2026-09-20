@@ -1,5 +1,71 @@
-model Good {
-  id     Int    @id @default(autoincrement())
-  goodId String @unique
-  stock  Int    @default(1)
+enum BarcodeType {
+  UPC_A
+  UPC_E
+  EAN_13
+  EAN_8
+  Code39
+  Code93
+  Code128
+  Codabar
+}
+
+enum UnitOfMeasure {
+  piece
+  pair
+  set
+}
+
+model Stock {
+  id              String        @id @default(uuid())
+  barcodeValue    String
+  barcodeType     BarcodeType
+  qty             Int           @default(0)
+  unitOfMeasure   UnitOfMeasure
+  storageLocation String?
+  quarantines     Quarantine[]
+  reserves        Reserve[]
+
+  @@unique([barcodeType, barcodeValue])
+}
+
+model Quarantine {
+  id          String @id @default(uuid())
+  stockId     String
+  stock       Stock  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  referenceId String
+  reason      String
+  qty         Int
+}
+
+model Reserve {
+  stockId     String
+  stock       Stock  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  referenceId String
+  qty         Int
+
+  @@unique([stockId, referenceId])
+}
+
+enum WarehouseTransactionType {
+  inbound
+  outbound
+}
+
+model WarehouseTransaction {
+  id              String                   @id @default(uuid())
+  type            WarehouseTransactionType
+  referenceSource String
+  referenceId     String
+
+  items WarehouseTransactionItem[]
+}
+
+model WarehouseTransactionItem {
+  transactionId String
+  transaction   WarehouseTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  stockId String
+  qty     Int
+
+  @@unique([transactionId, stockId])
 }

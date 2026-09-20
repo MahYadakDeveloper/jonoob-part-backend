@@ -1,5 +1,12 @@
-import { StockTransaction } from './model/transaction';
+import { PageCriteria, PageResult } from '@feature/common';
+import { RecordTransactionRequest } from '@feature/warehouse-transaction-api';
+
+export type WarehouseTransaction = {
+  id: string;
+  recordedAt: Date;
+} & RecordTransactionRequest;
 
 export interface StockTransactionRepository {
-  create(transaction: Omit<StockTransaction, 'id'>): Promise<void>;
+  create(transaction: Omit<WarehouseTransaction, 'id'>): Promise<void>;
+  list(criteria: PageCriteria): Promise<PageResult<WarehouseTransaction>>;
 }

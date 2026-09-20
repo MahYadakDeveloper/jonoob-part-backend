@@ -4,6 +4,6 @@ export type Stock = {
   id: string;
   qty: number;
   barcode: Barcode;
-  unitOfMeasure?: UnitOfMeasure;
+  unitOfMeasure: UnitOfMeasure;
   storageLocation?: string;
 };

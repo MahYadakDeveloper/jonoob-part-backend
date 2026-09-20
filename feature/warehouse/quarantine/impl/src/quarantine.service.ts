@@ -32,11 +32,22 @@ export class StockQuarantine implements StockQuarantineApi {
   /**
    * Return the goods to supplier
    */
-  async returnToSupplier(req: ReturnToSupplierRequest): Promise<{ returnId: string }> {
+  async returnToSupplier({
+    items,
+    specialistId,
+    supplierId,
+  }: ReturnToSupplierRequest): Promise<{ returnId: string }> {
     return await this.tx.run(async () => {
-      await this.repository.release(req.items);
+      await this.repository.release(items);
 
-      return this.procurement.returnSupply({ items });
+      return this.procurement.returnSupply({
+        specialistId,
+        supplierId,
+        items: items.transform(
+          (s) => ({ goodId: s.stockId, quantity: s.qty }),
+          (g) => g.goodId,
+        ),
+      });
     });
   }
 }

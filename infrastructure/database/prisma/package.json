@@ -18,11 +18,11 @@
   "dependencies": {
     "@feature/common": "workspace:*",
     "@infra/transaction": "workspace:*",
-    "@nestjs/common": "^11.1.26",
-    "@nestjs/config": "^4.0.4",
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
-    "pg": "^8.21.0"
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "@prisma/adapter-pg": "catalog:",
+    "@prisma/client": "catalog:",
+    "pg": "catalog:"
   },
   "devDependencies": {
     "dotenv": "^17.4.2",

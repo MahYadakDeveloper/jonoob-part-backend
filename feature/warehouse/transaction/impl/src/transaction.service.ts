@@ -4,10 +4,8 @@ import {
   type TransactionRecorderApi,
 } from '@feature/warehouse-transaction-api';
 import { Injectable } from '@nestjs/common';
-import { type StockTransactionRepository } from './transaction.repository';
-import { StockTransaction } from './model/transaction';
+import { WarehouseTransaction, type StockTransactionRepository } from './transaction.repository';
 
-// [TODO] Complete this service...
 @Injectable()
 export class TransactionService implements TransactionRecorderApi {
   constructor(private readonly repository: StockTransactionRepository) {}
@@ -16,6 +14,7 @@ export class TransactionService implements TransactionRecorderApi {
     await this.repository.create({ ...req, recordedAt: new Date() });
   }
 
-  list(req: PageCriteria): Promise<PageResult<StockTransaction>> {}
-  // findById(req: FindTransactionRequest): Promise<FindTransactionResponse>;
+  list(req: PageCriteria): Promise<PageResult<WarehouseTransaction>> {
+    return this.repository.list(req);
+  }
 }

@@ -1,14 +1,14 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 type BarcodeType =
-  | "UPC_A"
-  | "UPC_E"
-  | "EAN_13"
-  | "EAN_8"
-  | "Code39"
-  | "Code93"
-  | "Code128"
-  | "Codebar";
+  | 'UPC_A'
+  | 'UPC_E'
+  | 'EAN_13'
+  | 'EAN_8'
+  | 'Code39'
+  | 'Code93'
+  | 'Code128'
+  | 'Codabar';
 
 const BarcodeSchemas: Record<BarcodeType, z.ZodType<string>> = {
   UPC_A: z.string().regex(/^\d{12}$/),
@@ -18,7 +18,7 @@ const BarcodeSchemas: Record<BarcodeType, z.ZodType<string>> = {
   Code39: z.string().regex(/^[0-9A-Z\-.\ $/+%]+$/),
   Code93: z.string().min(1),
   Code128: z.string().min(1),
-  Codebar: z.string().regex(/^[A-D][0-9\-\$:/.+]+[A-D]$/),
+  Codabar: z.string().regex(/^[A-D][0-9\-\$:/.+]+[A-D]$/),
 };
 
 export class Barcode {

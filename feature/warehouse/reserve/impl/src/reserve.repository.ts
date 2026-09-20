@@ -1,7 +1,14 @@
 import { LineItems } from '@feature/common';
-import { Stock } from './model/reserve';
+
+export type ReserveData = {
+  referenceId: string;
+  stockId: string;
+  qty: number;
+};
 
 export interface ReserveRepository {
-  reserve(stock: LineItems<Stock>);
-  release(stock: LineItems<Stock>);
+  findByReferenceId(referenceId: string): Promise<LineItems<ReserveData>>;
+  upsertMany(reservation: LineItems<ReserveData>): Promise<void>;
+  delete(referenceId: string, stockId: string): Promise<void>;
+  deleteMany(items: LineItems<{ referenceId: string; stockId: string }>): Promise<void>;
 }

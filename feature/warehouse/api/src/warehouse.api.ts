@@ -74,10 +74,10 @@ export interface WarehouseApi {
    */
   reserve(req: {
     referenceId: string;
-    stocks: LineItems<{ stockId: string; qty: number }>;
+    items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void>;
 
-  checkReserved(req: {
+  getReservedStocks(req: {
     referenceId: string;
   }): Promise<{ reserved: LineItems<{ stockId: string; qty: number }> }>;
 
@@ -90,6 +90,6 @@ export interface WarehouseApi {
    */
   release(req: {
     referenceId: string;
-    reserved: LineItems<{ stockId: string; qty: number }>;
+    items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void>;
 }

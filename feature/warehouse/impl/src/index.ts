@@ -1,4 +1,3 @@
-export * from "./warehouse.module";
-export * from "./port/synchronizer";
-export * from "./repository/warehouse.repository";
-export * from "./errors";
+export * from './errors';
+export * from './repository/stock.repository';
+export * from './warehouse.module';
