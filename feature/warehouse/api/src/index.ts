@@ -1,5 +1,3 @@
 export * from './warehouse.api';
-export * from './warehouse.requests';
-export * from './warehouse.responses';
 export * from './warehouse.events';
-export * from './warehouse.types';
+export * from './warehouse.type';

@@ -1,81 +1,63 @@
-import {
-  GetGoodDetailsRequest,
-  GetReservedStocksRequest,
-  GetStockRequest,
-  GetStocksRequest,
-  GetWarehouseViewRequest,
-  GetWarehouseViewsRequest,
-  GoodIdResolvingRequest,
-  GoodsIssuingRequest,
-  GoodsReceptionRequest,
-  ReceiveReturnedRequest,
-  StockExistenceRequest,
-  StockReleasingByRefIdRequest,
-  StockReleasingRequest,
-  StockReservingRequest,
-  StocksDecreaseRequest,
-  StocksIncreaseRequest,
-} from './warehouse.requests';
-import {
-  GetGoodDetailsResponse,
-  GetReservedStocksResponse,
-  GetStockResponse,
-  GetStocksResponse,
-  GetWarehouseViewResponse,
-  GetWarehouseViewsResponse,
-  GoodIdResolvingResponse,
-  StockExistenceResponse,
-} from './warehouse.responses';
+import { Barcode, LineItems } from '@feature/common';
+import { Stock } from './warehouse.type';
 
 export interface WarehouseApi {
   /**
    *
    */
-  checkStockExistence(req: StockExistenceRequest): Promise<StockExistenceResponse>;
+  findById(req: { stockId: string }): Promise<{ stock: Stock }>;
+  findManyById(req: { stockIds: string[] }): Promise<{ stocks: LineItems<Stock> }>;
+  findByBarcode(req: { barcode: Barcode }): Promise<{ stock: Stock }>;
 
   /**
    *
    */
-  getGoodStock(req: GetStockRequest): Promise<GetStockResponse>;
+  check(req: { stockId: string }): Promise<
+    | {
+        available: false;
+      }
+    | {
+        available: true;
+        qty: number;
+      }
+  >;
+  checkMany(req: { stockIds: string[] }): Promise<{
+    results: LineItems<
+      { stockId: string } & (
+        | {
+            available: false;
+          }
+        | {
+            available: true;
+            qty: number;
+          }
+      )
+    >;
+  }>;
 
   /**
    *
    */
-  getGoodStocks(req: GetStocksRequest): Promise<GetStocksResponse>;
+  issue(req: {
+    reference: {
+      id: string;
+      source: string;
+    };
+    items: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void>;
 
   /**
    *
    */
-  getGoodDetails(req: GetGoodDetailsRequest): Promise<GetGoodDetailsResponse>;
+  receipt(req: { items: LineItems<{ stockId: string; qty: number }> }): Promise<void>;
 
   /**
    *
    */
-  getWarehouseView(req: GetWarehouseViewRequest): Promise<GetWarehouseViewResponse>;
-
-  /**
-   *
-   */
-  getWarehouseViews(req: GetWarehouseViewsRequest): Promise<GetWarehouseViewsResponse>;
-
-  /**
-   *
-   */
-  resolveGoodId(req: GoodIdResolvingRequest): Promise<GoodIdResolvingResponse>;
-  /**
-   *
-   */
-  issueGoods(req: GoodsIssuingRequest): Promise<void>;
-
-  /**
-   *
-   */
-  receiptGoods(req: GoodsReceptionRequest): Promise<void>;
-
-  /**
-   *
-   */
-  receiveCustomerReturn(req: ReceiveReturnedRequest): Promise<void>;
+  quarantine(req: {
+    returnId: string;
+    items: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void>;
 
   /**
    * Reserves stock for an operation (e.g. order creation or checkout) to
@@ -84,8 +66,13 @@ export interface WarehouseApi {
    * The reserved quantity is not deducted from inventory. It is only marked as
    * unavailable until the reservation is released.
    */
-  reserveStock(req: StockReservingRequest): Promise<void>;
-  getReservedStocks(req: GetReservedStocksRequest): Promise<GetReservedStocksResponse>;
+  reserve(req: {
+    referenceId: string;
+    items: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void>;
+  checkReserved(req: {
+    referenceId: string;
+  }): Promise<{ reserved: LineItems<{ stockId: string; qty: number }> }>;
 
   /**
    * Releases a previously reserved quantity, making it available for future
@@ -94,9 +81,8 @@ export interface WarehouseApi {
    * Call this when the operation is cancelled or immediately before issuing the
    * reserved stock.
    */
-  releaseStock(req: StockReleasingRequest): Promise<void>;
-  releaseStockByRefId(req: StockReleasingByRefIdRequest): Promise<void>;
-
-  increaseStocks(req: StocksIncreaseRequest): Promise<void>;
-  decreaseStocks(req: StocksDecreaseRequest): Promise<void>;
+  release(req: {
+    referenceId: string;
+    reversed: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void>;
 }

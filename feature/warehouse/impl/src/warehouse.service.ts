@@ -1,19 +1,12 @@
-import { type OutboxRepository, type TransactionManager } from '@feature/common';
 import {
-  GetGoodDetailsRequest,
-  GetGoodDetailsResponse,
+  Barcode,
+  LineItems,
+  type OutboxRepository,
+  type TransactionManager,
+} from '@feature/common';
+import {
   GetReservedStocksRequest,
   GetReservedStocksResponse,
-  GetStockRequest,
-  GetStockResponse,
-  GetStocksRequest,
-  GetStocksResponse,
-  GetWarehouseViewRequest,
-  GetWarehouseViewResponse,
-  GetWarehouseViewsRequest,
-  GetWarehouseViewsResponse,
-  GoodIdResolvingRequest,
-  GoodIdResolvingResponse,
   GoodsIssuedEventPayload,
   GoodsIssuedEventType,
   GoodsIssuingRequest,
@@ -21,148 +14,162 @@ import {
   GoodsReceiptedEventType,
   GoodsReceptionRequest,
   ReceiveReturnedRequest,
-  StockExistenceRequest,
-  StockExistenceResponse,
+  Stock,
   StockReleasingByRefIdRequest,
-  StockReleasingRequest,
-  StockReservingRequest,
-  StocksDecreaseRequest,
-  StocksIncreaseRequest,
   WarehouseApi,
 } from '@feature/warehouse-api';
-import { Good, type WarehouseGoodApi } from '@feature/warehouse-good-api';
 import { type StockQuarantineApi } from '@feature/warehouse-quarantine-api';
 import { type StockReserverApi } from '@feature/warehouse-reserve-api';
 import { type TransactionRecorderApi } from '@feature/warehouse-transaction-api';
 import { Injectable } from '@nestjs/common';
-import { type StockRepository } from './repository/stock.repository';
-import {
-  AvailableStockRequest,
-  AvailableStocksRequest,
-  FindStockByBarcodeRequest,
-} from './warehouse.requests';
-import {
-  AvailableStockResponse,
-  AvailableStocksResponse,
-  FindStockByBarcodeResponse,
-} from './warehouse.responses';
+import { StockDefinitionData, type StockRepository } from './repository/stock.repository';
 
 @Injectable()
 export class WarehouseService implements WarehouseApi {
   constructor(
     private readonly repository: StockRepository,
-    private readonly stockQuarantine: StockQuarantineApi,
+    private readonly quarantineManager: StockQuarantineApi,
     private readonly reserver: StockReserverApi,
-    private readonly declaration: WarehouseGoodApi,
     private readonly recorder: TransactionRecorderApi,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}
-
-  getReservedStocks(req: GetReservedStocksRequest): Promise<GetReservedStocksResponse> {
-    throw new Error('Method not implemented.');
-  }
-
-  releaseStockByRefId(req: StockReleasingByRefIdRequest): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-
-  async declareGood({ good }: { good: Omit<Good, 'goodId'> }): Promise<{ goodId: string }> {
-    const { good: g } = await this.declaration.findByBarcode({ barcode: good.barcode });
-
-    if (!g) return this.declaration.create({ good });
-
-    const {
-      good: { goodId },
-    } = await this.declaration.findByBarcode({ barcode: good.barcode });
-
-    await this.declaration.update({ good: { goodId, ...good } });
-
-    return { goodId: goodId };
-  }
-
-  async increaseStocks(req: StocksIncreaseRequest): Promise<void> {
-    await this.repository.adjustMany(req.items);
-  }
-
-  async decreaseStocks(req: StocksDecreaseRequest): Promise<void> {
-    const stocks = await this.repository.getAvailableStocks([...req.items.keys()]);
-
-    req.items.forEach((item) => {
-      const available =
-        item.quantity >=
-        stocks.getOrThrow(item.goodId, (goodId) => new Error(`Stock not found: ${goodId}`))
-          .quantity;
-      if (!available) throw new Error(`Not available stock: ${item.goodId}`);
+  check({
+    stockId,
+  }: {
+    stockId: string;
+  }): Promise<{ available: false } | { available: true; qty: number }> {
+    return this.repository.findById(stockId).then((stock) => {
+      if (!stock) throw new Error();
+      return stock.qty > 0
+        ? {
+            available: true,
+            qty: stock.qty,
+          }
+        : { available: false };
     });
-
-    await this.repository.adjustMany(req.items);
   }
 
-  async checkStockExistence(req: StockExistenceRequest): Promise<StockExistenceResponse> {
-    const stocks = await this.repository.getAvailableStocks(req.goodIds);
-    const existence = req.goodIds
-      .map((goodId) => ({
-        goodId,
-        exists: !!stocks.get(goodId),
-      }))
-      .toLineItems((s) => s.goodId);
-    return { stocks: existence };
+  checkMany({ stockIds }: { stockIds: string[] }): Promise<{
+    results: LineItems<
+      { stockId: string } & ({ available: false } | { available: true; qty: number })
+    >;
+  }> {
+    return this.repository.findManyById(stockIds).then((stocks) => {
+      const hasMissing = stockIds.every((id) => !stocks.has(id));
+      if (hasMissing) throw new Error();
+
+      return {
+        results: stocks.transform(
+          (stock) =>
+            stock.qty > 0
+              ? {
+                  stockId: stock.id,
+                  available: true,
+                  qty: stock.qty,
+                }
+              : {
+                  stockId: stock.id,
+                  available: false,
+                },
+          (s) => s.stockId,
+        ),
+      };
+    });
   }
 
-  async getGoodStock(req: GetStockRequest): Promise<GetStockResponse> {
-    const stocks = await this.repository.getAvailableStocks([req.goodId]);
-    const quantity = stocks.getOrThrow(req.goodId).quantity;
-    return { stock: quantity };
+  quarantine(req: {
+    returnId: string;
+    items: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void> {
+    throw new Error('Method not implemented.');
   }
 
-  async getGoodStocks(req: GetStocksRequest): Promise<GetStocksResponse> {
-    const stocks = await this.repository.getAvailableStocks(req.goodIds);
-
-    if (req.onNotFound !== 'ignore')
-      req.goodIds.forEach((goodId) =>
-        stocks.getOrThrow(goodId, (goodId) => new Error(`Stock not found: ${goodId}`)),
-      );
-
-    return {
-      stocks: stocks.transform(
-        (s) => ({ goodId: s.goodId, quantity: s.quantity }),
-        (s) => s.goodId,
-      ),
-    };
+  findById({ stockId }: { stockId: string }): Promise<{
+    stock: Stock;
+  }> {
+    return this.repository.findById(stockId).then((stock) => {
+      if (!stock) throw new Error();
+      return { stock };
+    });
   }
 
-  async getGoodDetails(req: GetGoodDetailsRequest): Promise<GetGoodDetailsResponse> {
-    const { good } = await this.declaration.find({ goodId: req.goodId });
-    return {
-      details: good,
-    };
+  findManyById({ stockIds }: { stockIds: string[] }): Promise<{
+    stocks: LineItems<Stock>;
+  }> {
+    return this.repository.findManyById(stockIds).then((stocks) => ({ stocks }));
   }
 
-  async getWarehouseView(req: GetWarehouseViewRequest): Promise<GetWarehouseViewResponse> {
-    const { good } = await this.declaration.find({ goodId: req.goodId });
-    const stocks = await this.repository.getAvailableStocks([req.goodId]);
-    return {
-      stock: {
-        quantity: stocks.get(req.goodId)?.quantity ?? 0,
-        ...good,
-      },
-    };
+  findByBarcode({ barcode }: { barcode: Barcode }): Promise<{
+    stock: Stock;
+  }> {
+    return this.repository.findByBarcode(barcode).then((stock) => {
+      if (!stock) throw new Error();
+      return { stock };
+    });
   }
 
-  async getWarehouseViews({
-    goodIds,
-  }: GetWarehouseViewsRequest): Promise<GetWarehouseViewsResponse> {
-    const { goods } = await this.declaration.findMany({ goodIds });
-    const stocks = await this.repository.getAvailableStocks(goodIds);
-    return {
-      stocks: goodIds
-        .map((goodId) => ({
-          quantity: stocks.get(goodId)?.quantity ?? 0,
-          ...goods.getOrThrow(goodId),
-        }))
-        .toLineItems((s) => s.goodId),
-    };
+  issue(req: {
+    reference: { id: string; source: string };
+    items: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  receipt(req: { items: LineItems<{ stockId: string; qty: number }> }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  reserve(req: {
+    referenceId: string;
+    items: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  checkReserved(req: { referenceId: string }): Promise<{
+    reserved: LineItems<{ stockId: string; qty: number }>;
+  }> {
+    throw new Error('Method not implemented.');
+  }
+  release(req: {
+    referenceId: string;
+    reversed: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  getReservedStocks({ referenceId }: GetReservedStocksRequest): Promise<GetReservedStocksResponse> {
+    return this.reserver.getReservedStocks({ referenceId }).then((stocks) => ({ stocks }));
+  }
+
+  releaseStockByRefId({ referenceId }: StockReleasingByRefIdRequest): Promise<void> {
+    return this.reserver.releaseStocksByRef({ reference: referenceId });
+  }
+
+  async define({ definition }: { definition: StockDefinitionData }): Promise<{ stockId: string }> {
+    const exists = !!(await this.repository.findByBarcode(definition.barcode));
+
+    if (exists) {
+      throw new Error('Already defined a stock with given barcode');
+    }
+
+    const { id } = await this.repository.define(definition);
+
+    return { stockId: id };
+  }
+
+  async redefine({
+    stockId,
+    definition,
+  }: {
+    stockId: string;
+    definition: StockDefinitionData;
+  }): Promise<void> {
+    const exists = await this.repository.findById(stockId);
+
+    if (!exists) {
+      throw new Error('Stock is not defined with given id');
+    }
+
+    await this.repository.redefine(stockId, definition);
   }
 
   /**
@@ -187,8 +194,9 @@ export class WarehouseService implements WarehouseApi {
    */
   async receiptGoods({ items, reference }: GoodsReceptionRequest): Promise<void> {
     await this.tx.run(async () => {
-      await this.repository.receipt(items);
+      await this.repository.increase(items);
 
+      // [TODO] Move it inside event handler no need the recorder be here
       await this.recorder.record({
         type: 'inbound',
         items,
@@ -216,6 +224,7 @@ export class WarehouseService implements WarehouseApi {
     await this.tx.run(async () => {
       await this.repository.issue(items);
 
+      // [TODO] Move it inside event handler no need the recorder be here
       await this.recorder.record({
         type: 'outbound',
         items,
@@ -229,49 +238,5 @@ export class WarehouseService implements WarehouseApi {
         } satisfies GoodsIssuedEventPayload,
       });
     });
-  }
-
-  resolveGoodId(req: GoodIdResolvingRequest): Promise<GoodIdResolvingResponse> {
-    throw new Error('Method not implemented.');
-  }
-
-  reserveStock(req: StockReservingRequest): Promise<void> {
-    return this.reserver.reserveStock(req);
-  }
-
-  releaseStock(req: StockReleasingRequest): Promise<void> {
-    return this.reserver.releaseStock(req);
-  }
-  /**
-   * Adjusts the stock quantity of an inventory item by its ID.
-   *
-   * @param id - The unique identifier of the goods to update.
-   * @param newQty - The new quantity to set. Must be greater than zero.
-   *
-   * @throws {InvalidStockAdjustmentException} If `newQty` is zero or negative.
-   * @throws {WarehouseStockRecordNotFoundError} If no item with the given `id` exists.
-   */
-  // async adjustWarehouseStock(req: AdjustWarehouseRequest) {}
-  // or
-  // async adjustStock(req: StockAdjustmentRequest) {}
-
-  /**
-   *
-   * @throws {WarehouseStockRecordNotFoundError} If no item with the given `id` exists.
-   */
-  getAvailableStocks(req: AvailableStocksRequest): Promise<AvailableStocksResponse> {
-    return this.repository.getAvailableStocks(req.goodIds).then((stocks) => ({ stocks }));
-  }
-
-  getAvailableStock(req: AvailableStockRequest): Promise<AvailableStockResponse> {
-    return this.repository
-      .getAvailableStocks([req.goodId])
-      .then((stocks) => ({ stock: stocks[req.goodId] }));
-  }
-
-  async findStockByBarcode(req: FindStockByBarcodeRequest): Promise<FindStockByBarcodeResponse> {
-    const stock = await this.repository.findStockByBarcode(req.barcode);
-    if (!stock) throw new Error('Stock not found');
-    return { stock };
   }
 }

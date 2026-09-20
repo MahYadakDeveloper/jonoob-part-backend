@@ -1,13 +1,16 @@
 import { Barcode, LineItems } from '@feature/common';
-import { Stock } from '../model/stock';
+import { Stock } from '@feature/warehouse-api';
 
-type StockItem = { goodId: string; quantity: number };
+export type StockDefinitionData = Omit<Stock, 'id' | 'qty'>;
+
 export interface StockRepository {
-  issue(stocks: LineItems<StockItem>): Promise<void>;
-  receipt(stocks: LineItems<StockItem>): Promise<void>;
-  reserve(stocks: LineItems<StockItem>): Promise<void>;
-  release(stocks: LineItems<StockItem>): Promise<void>;
-  adjustMany(stocks: LineItems<StockItem>): Promise<void>;
-  findStockByBarcode(barcode: Barcode): Promise<Stock | null>;
-  getAvailableStocks(goodIds: string[]): Promise<LineItems<Stock>>;
+  findById(id: string): Promise<Stock | null>;
+  findManyById(ids: string[]): Promise<LineItems<Stock>>;
+  findByBarcode(barcode: Barcode): Promise<Stock | null>;
+  increase(stocks: LineItems<{ id: string; qty: number }>): Promise<void>;
+  decrease(stocks: LineItems<{ id: string; qty: number }>): Promise<void>;
+  adjust(stocks: LineItems<{ id: string; qty: number }>): Promise<void>;
+  available(id: string[]): Promise<LineItems<{ id: string; qty: number }>>;
+  define(stock: StockDefinitionData): Promise<{ id: string }>;
+  redefine(id: string, stock: StockDefinitionData): Promise<void>;
 }

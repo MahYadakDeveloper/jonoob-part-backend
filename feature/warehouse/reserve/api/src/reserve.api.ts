@@ -1,3 +1,4 @@
+import { LineItems } from '@feature/common';
 import { StockReleasingRequest, StockReservingRequest } from './reserver.req';
 
 export interface StockReserverApi {
@@ -18,4 +19,9 @@ export interface StockReserverApi {
    * reserved stock.
    */
   releaseStock(req: StockReleasingRequest): Promise<void>;
+  releaseStocksByRef(req: { reference: string }): Promise<void>;
+
+  getReservedStocks(req: {
+    referenceId: string;
+  }): Promise<LineItems<{ goodId: string; quantity: number }>>;
 }
