@@ -1,13 +1,15 @@
-import { TransactionManager } from "@feature/common";
-import { AsyncLocalTransactionContext } from "@infra/transaction";
-import { Injectable } from "@nestjs/common";
-import { Prisma, PrismaClient } from "./generated/prisma/client";
+import { TransactionManager } from '@feature/common';
+import { AsyncLocalTransactionContext } from '@infra/transaction';
+import { Inject, Injectable } from '@nestjs/common';
+import { PRISMA_DB } from './prisma.tokens';
+import type { PrismaDbClient, PrismaTransaction } from './prisma.types';
 
 @Injectable()
 export class PrismaTransactionManager implements TransactionManager {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly txContext: AsyncLocalTransactionContext<Prisma.TransactionClient>,
+    @Inject(PRISMA_DB)
+    private readonly db: PrismaDbClient,
+    private readonly txContext: AsyncLocalTransactionContext<PrismaTransaction>,
   ) {}
 
   async run<T>(fn: () => Promise<T>): Promise<T> {
@@ -16,15 +18,8 @@ export class PrismaTransactionManager implements TransactionManager {
       return fn();
     }
 
-    return this.prisma.$transaction(
-      async (tx) => {
-        return this.txContext.run(tx, fn);
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        timeout: 10_000,
-        maxWait: 5_000,
-      },
-    );
+    return this.db.transaction(async (tx) => {
+      return this.txContext.run(tx, fn);
+    });
   }
 }

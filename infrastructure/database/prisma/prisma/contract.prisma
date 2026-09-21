@@ -1,0 +1,144 @@
+// ----------------- WAREHOUSE ----------------
+enum BarcodeType {
+  UPC_A
+  UPC_E
+  EAN_13
+  EAN_8
+  Code39
+  Code93
+  Code128
+  Codabar
+}
+
+enum UnitOfMeasure {
+  piece
+  pair
+  set
+}
+
+model Stock {
+  id              String        @id @default(uuid())
+  barcodeValue    String
+  barcodeType     BarcodeType
+  qty             Int           @default(0)
+  unitOfMeasure   UnitOfMeasure
+  storageLocation String?
+  quarantines     Quarantine[]
+  reserves        Reserve[]
+
+  @@unique([barcodeType, barcodeValue])
+}
+
+model Quarantine {
+  id          String @id @default(uuid())
+  stockId     String
+  stock       Stock  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  referenceId String
+  reason      String
+  qty         Int
+}
+
+model Reserve {
+  stockId     String
+  stock       Stock  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  referenceId String
+  qty         Int
+
+  @@unique([stockId, referenceId])
+}
+
+enum WarehouseTransactionType {
+  inbound
+  outbound
+}
+
+model WarehouseTransaction {
+  id              String                   @id @default(uuid())
+  type            WarehouseTransactionType
+  referenceSource String
+  referenceId     String
+
+  items WarehouseTransactionItem[]
+}
+
+model WarehouseTransactionItem {
+  transactionId String
+  transaction   WarehouseTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  stockId String
+  qty     Int
+
+  @@unique([transactionId, stockId])
+}
+
+// ----------------- END OF WAREHOUSE ----------------
+
+// ------------------- ORDER -------------------------
+model Province {
+  id             Int    @id
+  name           String
+  normalizedName String
+
+  cities City[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([name])
+  @@index([normalizedName])
+}
+
+model City {
+  id             Int    @id
+  name           String
+  normalizedName String
+
+  provinceId Int
+  province   Province @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@unique([provinceId])
+  @@index([name])
+  @@index([normalizedName])
+  @@index([provinceId])
+}
+
+model Order {
+  id      String          @id @default(uuid())
+  payment PaymentSession?
+}
+
+model PaymentSession {
+  providerId Int @id @default(autoincrement())
+
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model AzkivamToken {
+  key          String @id @default("default")
+  accessToken  String
+  refreshToken String
+}
+
+model AzkivamTicket {
+  ticketId   String   @id
+  providerId Int      @unique
+  createdAt  DateTime @default(now())
+}
+
+// ------------------ END OF ORDER ---------------
+
+// ------------------- SETTINGS -----------------
+
+model Setting {
+  key   String @id
+  value Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+// ------------------- END OF SETTINGS --------------

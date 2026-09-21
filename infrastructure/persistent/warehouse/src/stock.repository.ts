@@ -5,6 +5,7 @@ import { BaseRepository } from '@infra/common-persistent';
 import { PrismaDbClient } from '@infra/db-prisma';
 import { Injectable } from '@nestjs/common';
 import { type StockCache } from './cache/stock.cache';
+import { toStock } from './mapper';
 
 @Injectable()
 export class StockRepositoryImpl extends BaseRepository<PrismaDbClient> implements StockRepository {
@@ -14,18 +15,57 @@ export class StockRepositoryImpl extends BaseRepository<PrismaDbClient> implemen
   ) {
     super(dbProvider);
   }
+
   findById(id: string): Promise<Stock | null> {
-    throw new Error('Method not implemented.');
+    return this.db.
+      .findUnique({
+        where: {
+          id,
+        },
+      })
+      .then((stock) => (stock ? toStock(stock) : null));
   }
+
   findManyById(ids: string[]): Promise<LineItems<Stock>> {
-    throw new Error('Method not implemented.');
+    return this.db.stock
+      .findMany({
+        where: {
+          id: {
+            in: ids,
+          },
+        },
+      })
+      .then((stocks) => stocks.map(toStock).toLineItems((s) => s.id));
   }
+
   findByBarcode(barcode: Barcode): Promise<Stock | null> {
-    throw new Error('Method not implemented.');
+    return this.db.stock
+      .findUnique({
+        where: {
+          barcodeType_barcodeValue: {
+            barcodeType: barcode.type,
+            barcodeValue: barcode.value,
+          },
+        },
+      })
+      .then((stock) => (stock ? toStock(stock) : null));
   }
-  increase(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
-    throw new Error('Method not implemented.');
+
+  async increase(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
+    this.db.$transaction(
+      for (const {} of stocks.values()){
+        this.db.stock.update({
+          where: { id },
+          data: {
+            quantity: {
+              increment: qty,
+            },
+          },
+        }),
+      },
+    );
   }
+
   decrease(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
     throw new Error('Method not implemented.');
   }
