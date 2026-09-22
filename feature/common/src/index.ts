@@ -1,6 +1,7 @@
 export * from './customer.type';
 export * from './database/db-provider';
 export * from './job-scheduler';
+export * from './lockable-repository';
 export * from './model/barcode';
 export * from './model/invoice-snapshot';
 export * from './model/line-items';

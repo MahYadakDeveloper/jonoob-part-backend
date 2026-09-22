@@ -21,7 +21,7 @@
   "dependencies": {
     "@feature/common": "workspace:*",
     "@feature/order-delivery-location-api": "workspace:*",
-    "@infra/common-persistent": "workspace:*",
+    "@infra/persistent-common": "workspace:*",
     "@infra/db-prisma": "workspace:*",
     "@nestjs/common": "^11.1.26",
     "zod": "^4.4.3"

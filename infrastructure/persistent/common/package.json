@@ -1,5 +1,5 @@
 {
-  "name": "@infra/common-persistent",
+  "name": "@infra/persistent-common",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",

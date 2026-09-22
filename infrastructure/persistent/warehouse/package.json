@@ -22,7 +22,7 @@
     "@feature/common": "workspace:*",
     "@feature/warehouse": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
-    "@infra/common-persistent": "workspace:*",
+    "@infra/persistent-common": "workspace:*",
     "@nestjs/common": "catalog:",
     "drizzle-orm": "catalog:",
     "redis": "^6.0.1"
