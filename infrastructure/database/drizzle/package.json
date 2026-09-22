@@ -1,5 +1,5 @@
 {
-  "name": "@infra/db-redis",
+  "name": "@infra/db-drizzle",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -17,8 +17,17 @@
   },
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@nestjs/common": "^11.1.26",
-    "@nestjs/config": "^4.0.4",
-    "redis": "^6.0.1"
+    "@infra/local-context": "workspace:*",
+    "@infra/persistent-warehouse": "workspace:*",
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "dotenv": "catalog:",
+    "drizzle-kit": "1.0.0-rc.4"
   }
 }

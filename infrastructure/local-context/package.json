@@ -1,5 +1,5 @@
 {
-  "name": "@infra/transaction",
+  "name": "@infra/local-context",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",

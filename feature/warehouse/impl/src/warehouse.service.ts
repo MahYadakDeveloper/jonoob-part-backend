@@ -15,7 +15,7 @@ import {
 import { type StockQuarantineApi } from '@feature/warehouse-quarantine-api';
 import { type StockReserverApi } from '@feature/warehouse-reserve-api';
 import { type TransactionRecorderApi } from '@feature/warehouse-transaction-api';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { StockDefinitionData, type StockRepository } from './repository/stock.repository';
 
 @Injectable()
@@ -25,6 +25,7 @@ export class WarehouseService implements WarehouseApi {
     private readonly quarantineManager: StockQuarantineApi,
     private readonly reserver: StockReserverApi,
     private readonly recorder: TransactionRecorderApi,
+    @Inject('TransactionManager')
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}

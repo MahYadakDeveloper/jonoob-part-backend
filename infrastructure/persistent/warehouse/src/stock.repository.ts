@@ -2,70 +2,37 @@ import { Barcode, LineItems, type DbProvider } from '@feature/common';
 import { StockDefinitionData, StockRepository } from '@feature/warehouse';
 import { Stock } from '@feature/warehouse-api';
 import { BaseRepository } from '@infra/common-persistent';
-import { PrismaDbClient } from '@infra/db-prisma';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { type StockCache } from './cache/stock.cache';
-import { toStock } from './mapper';
+import { stockTable } from './schema/stock';
 
 @Injectable()
-export class StockRepositoryImpl extends BaseRepository<PrismaDbClient> implements StockRepository {
+export class StockRepositoryImpl extends BaseRepository<NodePgDatabase> implements StockRepository {
   constructor(
-    dbProvider: DbProvider<PrismaDbClient>,
+    @Inject('DbProvider')
+    dbProvider: DbProvider<NodePgDatabase>,
     private readonly cache: StockCache,
   ) {
     super(dbProvider);
   }
-
   findById(id: string): Promise<Stock | null> {
-    return this.db.
-      .findUnique({
-        where: {
-          id,
-        },
-      })
-      .then((stock) => (stock ? toStock(stock) : null));
+    this.db
+      .select()
+      .from(stockTable)
+      .where((s) => eq(s.id, 2));
+    throw new Error('Method not implemented.');
   }
-
   findManyById(ids: string[]): Promise<LineItems<Stock>> {
-    return this.db.stock
-      .findMany({
-        where: {
-          id: {
-            in: ids,
-          },
-        },
-      })
-      .then((stocks) => stocks.map(toStock).toLineItems((s) => s.id));
+    throw new Error('Method not implemented.');
   }
-
   findByBarcode(barcode: Barcode): Promise<Stock | null> {
-    return this.db.stock
-      .findUnique({
-        where: {
-          barcodeType_barcodeValue: {
-            barcodeType: barcode.type,
-            barcodeValue: barcode.value,
-          },
-        },
-      })
-      .then((stock) => (stock ? toStock(stock) : null));
+    throw new Error('Method not implemented.');
   }
-
-  async increase(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
-    this.db.$transaction(
-      for (const {} of stocks.values()){
-        this.db.stock.update({
-          where: { id },
-          data: {
-            quantity: {
-              increment: qty,
-            },
-          },
-        }),
-      },
-    );
+  increase(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
+    throw new Error('Method not implemented.');
   }
-
   decrease(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
     throw new Error('Method not implemented.');
   }

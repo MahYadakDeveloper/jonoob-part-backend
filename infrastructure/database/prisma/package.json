@@ -17,18 +17,17 @@
   },
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@infra/transaction": "workspace:*",
+    "@infra/local-context": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@prisma/adapter-pg": "catalog:",
     "@prisma/client": "catalog:",
-    "@prisma/orm-postgres": "8.0.0-rc.11",
+    "@prisma/orm-postgres": "catalog:",
     "pg": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "dotenv": "^17.4.2",
-    "prisma": "8.0.0-rc.15",
-    "typescript": "^6.0.3"
+    "prisma": "8.0.0-rc.15"
   }
 }

@@ -17,6 +17,9 @@ catalog:
   pg: ^8.23.0
   '@prisma/adapter-pg': ^7.10.0
   '@prisma/client': ^7.10.0
+  '@prisma/orm-postgres': 8.0.0-rc.11
+  drizzle-orm: 1.0.0-rc.4
+  dotenv: ^17.4.2
 
 overrides:
   fastify: "catalog:"

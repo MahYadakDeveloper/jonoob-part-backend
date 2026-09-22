@@ -2,10 +2,7 @@ import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
 
 const prismaEnvSchema = z.object({
-  DATABASE_URL: z
-    .string()
-    .min(1, 'DATABASE_URL must not be empty')
-    .url('DATABASE_URL must be a valid URL'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL must not be empty'),
 });
 
 export default registerAs('prisma', () => {

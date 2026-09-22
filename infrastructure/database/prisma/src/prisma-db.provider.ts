@@ -1,13 +1,12 @@
 import { DbProvider } from '@feature/common';
-import { AsyncLocalTransactionContext } from '@infra/transaction';
+import { AsyncLocalTransactionContext } from '@infra/local-context';
 import { Inject, Injectable } from '@nestjs/common';
-import { PRISMA_DB } from './prisma.tokens';
 import type { PrismaDbClient, PrismaDbContext, PrismaTransaction } from './prisma.types';
 
 @Injectable()
 export class PrismaDbProvider implements DbProvider<PrismaDbClient> {
   constructor(
-    @Inject(PRISMA_DB)
+    @Inject('PrismaDbClient')
     private readonly db: PrismaDbClient,
     private readonly txContext: AsyncLocalTransactionContext<PrismaTransaction>,
   ) {}

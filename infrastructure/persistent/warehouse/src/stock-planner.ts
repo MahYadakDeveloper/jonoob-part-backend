@@ -1,4 +1,4 @@
-import { InsufficientStockError, StockNotFoundError } from "@feature/warehouse";
+import { InsufficientStockError, StockNotFoundError } from '@feature/warehouse';
 
 export type StockChangePlan = {
   updates: Map<string, number>;
@@ -15,7 +15,7 @@ export function planStockChanges(
   for (const [id, quantity] of requested) {
     const stock = stocks.get(id);
 
-    if (stock === undefined) throw new StockNotFoundError(id);
+    if (stock === undefined) throw new StockNotFoundError({ goodId: '' });
 
     checkSufficientStock(stock, quantity);
 
@@ -29,14 +29,11 @@ export function planStockChanges(
   return { updates, deletions };
 }
 
-export function checkSufficientStocks(
-  stocks: Map<string, number>,
-  requested: Map<string, number>,
-) {
+export function checkSufficientStocks(stocks: Map<string, number>, requested: Map<string, number>) {
   for (const [id, quantity] of requested) {
     const stock = stocks.get(id);
 
-    if (!stock) throw new StockNotFoundError(id);
+    if (!stock) throw new StockNotFoundError({ goodId: '' });
 
     checkSufficientStock(quantity, stock);
   }
