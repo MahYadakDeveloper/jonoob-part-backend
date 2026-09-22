@@ -3,10 +3,11 @@ import { StockDefinitionData, StockRepository } from '@feature/warehouse';
 import { Stock } from '@feature/warehouse-api';
 import { BaseRepository } from '@infra/common-persistent';
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { type StockCache } from './cache/stock.cache';
-import { stockTable } from './schema/stock';
+import { stock } from './schema';
+import { toStock, toStocks } from './stock.mapper';
 
 @Injectable()
 export class StockRepositoryImpl extends BaseRepository<NodePgDatabase> implements StockRepository {
@@ -18,21 +19,42 @@ export class StockRepositoryImpl extends BaseRepository<NodePgDatabase> implemen
     super(dbProvider);
   }
   findById(id: string): Promise<Stock | null> {
-    this.db
-      .select()
-      .from(stockTable)
-      .where((s) => eq(s.id, 2));
-    throw new Error('Method not implemented.');
+    return this.db.select().from(stock).where(eq(stock.id, id)).then(toStock);
   }
   findManyById(ids: string[]): Promise<LineItems<Stock>> {
-    throw new Error('Method not implemented.');
+    return this.db.select().from(stock).where(inArray(stock.id, ids)).then(toStocks);
   }
-  findByBarcode(barcode: Barcode): Promise<Stock | null> {
-    throw new Error('Method not implemented.');
+
+  async findByBarcode(barcode: Barcode): Promise<Stock | null> {
+    return this.db
+      .select()
+      .from(stock)
+      .where(and(eq(stock.barcodeType, barcode.type), eq(stock.barcodeValue, barcode.value)))
+      .then(toStock);
   }
-  increase(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
-    throw new Error('Method not implemented.');
+
+  async increase(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
+    if (stocks.size === 0) return;
+
+    const items = [...stocks.values()];
+
+    const qty = sql<number>`
+      CASE ${sql.join(
+        items.map(({ id, qty }) => sql`WHEN ${stock.id} = ${id} THEN ${qty}`),
+        sql` `,
+      )}
+      ELSE 0
+      END
+    `;
+
+    await this.db
+      .update(stock)
+      .set({
+        qty: sql`${stock.qty} + ${qty}`,
+      })
+      .where(inArray(stock.id, [...stocks.keys()]));
   }
+
   decrease(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
     throw new Error('Method not implemented.');
   }
