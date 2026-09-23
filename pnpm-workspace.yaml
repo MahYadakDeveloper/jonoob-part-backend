@@ -5,7 +5,7 @@ packages:
   - packages/*
 
 catalog:
-  typescript: ^7.0.2
+  typescript: ^6.0.3
   "@nestjs/common": ^12.0.3
   "@nestjs/core": ^12.0.3
   "@nestjs/config": ^12.0.0
@@ -13,13 +13,14 @@ catalog:
   fastify: 5.12.5
   "@fastify/multipart": 10.1.1
   zod: ^4.6.5
-  '@casl/ability': ^7.0.1
+  "@casl/ability": ^7.0.1
   pg: ^8.23.0
-  '@prisma/adapter-pg': ^7.10.0
-  '@prisma/client': ^7.10.0
-  '@prisma/orm-postgres': 8.0.0-rc.11
+  "@prisma/adapter-pg": ^7.10.0
+  "@prisma/client": ^7.10.0
+  "@prisma/orm-postgres": 8.0.0-rc.11
   drizzle-orm: 1.0.0-rc.4
   dotenv: ^17.4.2
+  "@nestjs/cli": ^12.0.3
 
 overrides:
   fastify: "catalog:"

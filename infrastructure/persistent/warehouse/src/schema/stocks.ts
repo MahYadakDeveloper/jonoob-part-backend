@@ -11,10 +11,14 @@ export const barcodeType = p.pgEnum('barcode_type', [
   'Codabar',
 ]);
 
-export const unitOfMeasure = p.pgEnum('unit_of_measure', ['piece', 'pair', 'set']);
+export const unitOfMeasure = p.pgEnum('unit_of_measure', [
+  'piece',
+  'pair',
+  'set',
+]);
 
-export const stock = p.pgTable(
-  'stock',
+export const stocks = p.pgTable(
+  'stocks',
   {
     id: p.uuid().defaultRandom().primaryKey(),
     barcodeValue: p.text().notNull(),

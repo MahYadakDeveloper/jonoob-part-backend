@@ -1,8 +1,9 @@
 import { LineItems } from '@feature/common';
+import { StockDefinitionData } from '@feature/warehouse';
 import { Stock } from '@feature/warehouse-api';
-import { stock } from './schema';
+import { stocks } from './schema/stocks';
 
-type StockRow = typeof stock.$inferSelect;
+type StockRow = typeof stocks.$inferSelect;
 
 const toStockItem = (row: StockRow): Stock => ({
   id: row.id,
@@ -23,3 +24,12 @@ export const toStock = (rows: StockRow[]): Stock | null => {
 
 export const toStocks = (rows: StockRow[]): LineItems<Stock> =>
   rows.map(toStockItem).toLineItems((s) => s.id);
+
+export const toStockInsert = ({
+  barcode,
+  ...rest
+}: StockDefinitionData): typeof stocks.$inferInsert => ({
+  ...rest,
+  barcodeType: barcode.type,
+  barcodeValue: barcode.value,
+});

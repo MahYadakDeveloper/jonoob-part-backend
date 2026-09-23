@@ -12,7 +12,7 @@ import {
 } from '@nestjs/swagger';
 import qs from 'qs';
 import { createSchema } from 'zod-openapi';
-import { AppModule } from './app.module';
+import { AppModule } from './modules/app.module';
 
 /**
  * [NOTE] @fastify/static is required for openapi/swagger

@@ -3,14 +3,18 @@ import { StockDefinitionData, StockRepository } from '@feature/warehouse';
 import { Stock } from '@feature/warehouse-api';
 import { BaseRepository, type DbLockContext } from '@infra/common-persistent';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, inArray, sql } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { stock } from './schema';
-import { toStock, toStocks } from './stock.mapper';
+import { and, EmptyRelations, eq, inArray, sql } from 'drizzle-orm';
+import type {
+  NodePgDatabase,
+  NodePgTransaction,
+} from 'drizzle-orm/node-postgres';
+import { stocks } from './schema/stocks';
+import { toStock, toStockInsert, toStocks } from './stock.mapper';
+import { sqlCase } from './utils';
 
 @Injectable()
 export class StockRepositoryImpl
-  extends BaseRepository<NodePgDatabase>
+  extends BaseRepository<NodePgDatabase | NodePgTransaction<EmptyRelations>>
   implements StockRepository
 {
   constructor(
@@ -28,7 +32,7 @@ export class StockRepositoryImpl
   }
 
   findById(id: string): Promise<Stock | null> {
-    const query = this.db.select().from(stock).where(eq(stock.id, id));
+    const query = this.db.select().from(stocks).where(eq(stocks.id, id));
 
     return (
       this.lock.current() === 'for_update' ? query.for('update') : query
@@ -38,72 +42,94 @@ export class StockRepositoryImpl
   findManyById(ids: string[]): Promise<LineItems<Stock>> {
     return this.db
       .select()
-      .from(stock)
-      .where(inArray(stock.id, ids))
+      .from(stocks)
+      .where(inArray(stocks.id, ids))
       .then(toStocks);
   }
 
   async findByBarcode(barcode: Barcode): Promise<Stock | null> {
     return this.db
       .select()
-      .from(stock)
+      .from(stocks)
       .where(
         and(
-          eq(stock.barcodeType, barcode.type),
-          eq(stock.barcodeValue, barcode.value),
+          eq(stocks.barcodeType, barcode.type),
+          eq(stocks.barcodeValue, barcode.value),
         ),
       )
       .then(toStock);
   }
 
-  increase(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
-    return this.db
-      .update(stock)
+  async increase(items: LineItems<{ id: string; qty: number }>): Promise<void> {
+    await this.db
+      .update(stocks)
       .set({
-        qty: sql`${stock.qty} + ${sql<number>`
-          CASE 
-            ${sql.join(
-              [...stocks.values()].map(
-                ({ id, qty }) => sql`WHEN ${stock.id} = ${id} THEN ${qty}`,
-              ),
-              sql` `,
-            )}
-          ELSE 0
-          END
-        `}`,
+        qty: sql`${stocks.qty} + ${sqlCase<number>(
+          [...items.values()].map((s) => ({
+            when: eq(stocks.id, s.id),
+            then: s.qty,
+          })),
+          0,
+        )}`,
       })
-      .where(inArray(stock.id, [...stocks.keys()]))
-      .then();
+      .where(inArray(stocks.id, [...items.keys()]));
   }
 
-  decrease(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {
-    return this.db
-      .update(stock)
+  async decrease(items: LineItems<{ id: string; qty: number }>): Promise<void> {
+    await this.db
+      .update(stocks)
       .set({
-        qty: sql`${stock.qty} - ${sql<number>`
-          CASE 
-            ${sql.join(
-              [...stocks.values()].map(
-                ({ id, qty }) => sql`WHEN ${stock.id} = ${id} THEN ${qty}`,
-              ),
-              sql` `,
-            )}
-          ELSE 0
-          END
-        `}`,
+        qty: sql`${stocks.qty} - ${sqlCase<number>(
+          [...items.values()].map((s) => ({
+            when: eq(stocks.id, s.id),
+            then: s.qty,
+          })),
+          0,
+        )}`,
       })
-      .where(inArray(stock.id, [...stocks.keys()]))
-      .then();
+      .where(inArray(stocks.id, [...items.keys()]));
   }
 
-  adjust(stocks: LineItems<{ id: string; qty: number }>): Promise<void> {}
-  available(id: string[]): Promise<LineItems<{ id: string; qty: number }>> {
-    throw new Error('Method not implemented.');
+  async adjust(items: LineItems<{ id: string; qty: number }>): Promise<void> {
+    await this.db
+      .update(stocks)
+      .set({
+        qty: sqlCase<number>(
+          [...items.values()].map((s) => ({
+            when: eq(stocks.id, s.id),
+            then: s.qty,
+          })),
+          0,
+        ),
+      })
+      .where(inArray(stocks.id, [...items.keys()]));
   }
+
+  available(ids: string[]): Promise<LineItems<{ id: string; qty: number }>> {
+    return this.db
+      .select({
+        id: stocks.id,
+        qty: stocks.qty,
+      })
+      .from(stocks)
+      .where(inArray(stocks.id, ids))
+      .then((rows) => rows.toLineItems((x) => x.id));
+  }
+
   define(stock: StockDefinitionData): Promise<{ id: string }> {
-    throw new Error('Method not implemented.');
+    return this.db
+      .insert(stocks)
+      .values(toStockInsert(stock))
+      .returning({
+        id: stocks.id,
+      })
+      .then(([r]) => r);
   }
-  redefine(id: string, stock: StockDefinitionData): Promise<void> {
-    throw new Error('Method not implemented.');
+
+  async redefine(id: string, stock: StockDefinitionData): Promise<void> {
+    await this.db
+      .update(stocks)
+      .set(toStockInsert(stock))
+      .where(eq(stocks.id, id));
   }
 }

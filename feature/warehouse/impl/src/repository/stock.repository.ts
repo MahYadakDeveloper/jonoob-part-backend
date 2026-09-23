@@ -7,7 +7,7 @@ export interface StockRepository extends LockableRepository {
   findById(id: string): Promise<Stock | null>;
   findManyById(ids: string[]): Promise<LineItems<Stock>>;
   findByBarcode(barcode: Barcode): Promise<Stock | null>;
-  available(id: string[]): Promise<LineItems<{ id: string; qty: number }>>;
+  available(ids: string[]): Promise<LineItems<{ id: string; qty: number }>>;
 
   increase(stocks: LineItems<{ id: string; qty: number }>): Promise<void>;
   decrease(stocks: LineItems<{ id: string; qty: number }>): Promise<void>;

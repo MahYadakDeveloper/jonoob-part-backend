@@ -18,7 +18,6 @@
   "dependencies": {
     "@feature/common": "workspace:*",
     "@infra/local-context": "workspace:*",
-    "@infra/persistent-warehouse": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "drizzle-orm": "catalog:",
@@ -27,7 +26,6 @@
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
-    "dotenv": "catalog:",
-    "drizzle-kit": "1.0.0-rc.4"
+    "dotenv": "catalog:"
   }
 }

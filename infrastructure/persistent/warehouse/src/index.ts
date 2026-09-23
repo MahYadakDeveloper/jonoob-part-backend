@@ -1,1 +1,1 @@
-export * from './schema';
+export * from './warehouse.module';

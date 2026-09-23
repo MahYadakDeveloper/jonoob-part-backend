@@ -1,4 +1,4 @@
-import { AsyncLocalTransactionContext } from '@infra/local-context';
+import { LocalContextModule } from '@infra/local-context';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigType } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -9,8 +9,7 @@ import drizzleConfig from './drizzle.config';
 
 @Global()
 @Module({
-  imports: [ConfigModule],
-
+  imports: [ConfigModule, LocalContextModule],
   providers: [
     {
       provide: 'DrizzleDbClient',
@@ -25,7 +24,6 @@ import drizzleConfig from './drizzle.config';
         });
       },
     },
-    AsyncLocalTransactionContext,
     DrizzleDbProvider,
     DrizzleTransactionManager,
     {
@@ -40,4 +38,4 @@ import drizzleConfig from './drizzle.config';
 
   exports: ['TransactionManager', 'DbProvider'],
 })
-export class DrizzleModule {}
+export class DrizzleDbModule {}

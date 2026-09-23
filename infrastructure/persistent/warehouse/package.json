@@ -22,6 +22,8 @@
     "@feature/common": "workspace:*",
     "@feature/warehouse": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
+    "@infra/db-drizzle": "workspace:*",
+    "@infra/local-context": "workspace:*",
     "@infra/persistent-common": "workspace:*",
     "@nestjs/common": "catalog:",
     "drizzle-orm": "catalog:",
