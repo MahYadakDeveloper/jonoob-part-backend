@@ -9,7 +9,7 @@ import drizzleConfig from './drizzle.config';
 
 @Global()
 @Module({
-  imports: [ConfigModule, LocalContextModule],
+  imports: [ConfigModule.forFeature(drizzleConfig), LocalContextModule],
   providers: [
     {
       provide: 'DrizzleDbClient',

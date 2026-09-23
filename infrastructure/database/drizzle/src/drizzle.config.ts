@@ -5,7 +5,7 @@ const drizzleEnvSchema = z.object({
   PG_DATABASE_URL: z.string().min(1, 'DATABASE_URL must not be empty'),
 });
 
-export default registerAs('prisma', () => {
+export default registerAs('drizzle', () => {
   const data = drizzleEnvSchema.parse({
     PG_DATABASE_URL: process.env.PG_DATABASE_URL,
   });

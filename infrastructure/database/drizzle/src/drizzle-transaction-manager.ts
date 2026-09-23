@@ -11,6 +11,7 @@ export class DrizzleTransactionManager implements TransactionManager {
   constructor(
     @Inject('DrizzleDbClient')
     private readonly db: NodePgDatabase,
+    @Inject('TransactionContext')
     private readonly txContext: TransactionContext<
       NodePgTransaction<EmptyRelations>
     >,

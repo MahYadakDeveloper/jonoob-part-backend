@@ -1,10 +1,10 @@
-import { WarehouseController, WarehouseService } from '@feature/warehouse';
+import { WarehouseController } from '@feature/warehouse';
 import { WarehousePersistentModule } from '@infra/persistent-warehouse';
 import { Module } from '@nestjs/common';
 
 @Module({
   imports: [WarehousePersistentModule],
-  providers: [WarehouseService],
+  // providers: [WarehouseService],
   controllers: [WarehouseController],
 })
 export class WarehouseModule {}

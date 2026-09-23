@@ -6,8 +6,9 @@ import { NodePgDatabase, NodePgTransaction } from 'drizzle-orm/node-postgres';
 @Injectable()
 export class DrizzleDbProvider implements DbProvider<NodePgDatabase> {
   constructor(
-    @Inject('NodePgDatabase')
+    @Inject('DrizzleDbClient')
     private readonly db: NodePgDatabase,
+    @Inject('TransactionContext')
     private readonly txContext: TransactionContext<
       NodePgTransaction<EmptyRelations>
     >,

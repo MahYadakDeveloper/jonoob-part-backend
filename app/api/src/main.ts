@@ -17,12 +17,13 @@ import { AppModule } from './modules/app.module';
 /**
  * [NOTE] @fastify/static is required for openapi/swagger
  */
-
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
-      querystringParser: (str) => qs.parse(str),
+      routerOptions: {
+        querystringParser: (str) => qs.parse(str),
+      },
     }),
   );
 
