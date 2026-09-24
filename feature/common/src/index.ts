@@ -1,4 +1,3 @@
-export * from './customer.type';
 export * from './database/db-provider';
 export * from './job-scheduler';
 export * from './lockable-repository';

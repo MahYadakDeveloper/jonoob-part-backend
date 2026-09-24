@@ -1,12 +1,10 @@
-import { type AddressApi } from '@feature/customer-address-api';
+import type {
+  CustomerAddress,
+  CustomerAddressApi,
+} from '@feature/customer-address-api';
 import {
-  CustomerCreationRequest,
-  GetAllCustomerAddressesRequest,
-  GetAllCustomerAddressesResponse,
-  GetCustomerAddressRequest,
-  GetCustomerAddressResponse,
-  GetCustomerContactRequest,
-  GetCustomerContactResponse,
+  Customer,
+  CustomerType,
   type CustomersApi,
 } from '@feature/customer-api';
 import { Injectable } from '@nestjs/common';
@@ -16,48 +14,79 @@ import { type CustomerRepository } from './customer.repository';
 export class CustomersService implements CustomersApi {
   constructor(
     private readonly repository: CustomerRepository,
-    private readonly addresses: AddressApi,
+    private readonly addresses: CustomerAddressApi,
   ) {}
 
-  create(req: CustomerCreationRequest): Promise<void> {
-    throw new Error('Method not implemented.');
+  async findById({ customerId }: { customerId: string }): Promise<{
+    customer: Customer;
+  }> {
+    return this.repository.findById(customerId).then((customer) => {
+      if (!customer) throw new Error('Customer not found!');
+      return { customer };
+    });
   }
 
-  existsByPhoneNumber(req: { phoneNumber: string }): Promise<{ exists: boolean }> {
-    throw new Error('Method not implemented.');
+  findByPhoneNumber({ phoneNumber }: { phoneNumber: string }): Promise<{
+    customer: Customer;
+  }> {
+    return this.repository.findByPhoneNumber(phoneNumber).then((customer) => {
+      if (!customer) throw new Error('Customer not found!');
+      return { customer };
+    });
   }
 
-  getCustomerContact(req: GetCustomerContactRequest): Promise<GetCustomerContactResponse> {
-    return this.repository.find(req.customerId).then((customer) => {
-      if (!customer) throw new Error();
-
+  getContact({ customerId }: { customerId: string }): Promise<{
+    customerContract: {
+      type: CustomerType;
+      phoneNumber: string;
+      fullName: string;
+    };
+  }> {
+    return this.repository.findById(customerId).then((customer) => {
+      if (!customer) throw new Error('Customer not found!');
       return {
-        customer,
+        customerContract: {
+          fullName: customer.fullName,
+          phoneNumber: customer.phoneNumber,
+          type: customer.type,
+        },
       };
     });
   }
 
-  getCustomerAddress(req: GetCustomerAddressRequest): Promise<GetCustomerAddressResponse> {
-    return this.repository.find(req.customerId).then((customer) => {
-      if (!customer) throw new Error();
-      const address = customer.addresses.find((a) => a.id === req.addressId);
-      if (!address) throw new Error();
-      return {
-        address,
-      };
+  getAddresses({ customerId }: { customerId: string }): Promise<{
+    addresses: CustomerAddress[];
+  }> {
+    return this.addresses.findManyByCustomerId({ customerId });
+  }
+
+  createConsumerTypeCustomer({
+    fullName,
+    phoneNumber,
+  }: {
+    phoneNumber: string;
+    fullName: string;
+  }): Promise<{ id: string }> {
+    return this.repository.create({
+      fullName,
+      phoneNumber,
+      type: 'consumer',
     });
   }
 
-  getAllCustomerAddresses(
-    req: GetAllCustomerAddressesRequest,
-  ): Promise<GetAllCustomerAddressesResponse> {
-    return this.repository.find(req.customerId).then((customer) => {
-      if (!customer) throw new Error();
-      return {
-        addresses: customer.addresses,
-      };
-    });
+  existsById({
+    customerId,
+  }: {
+    customerId: string;
+  }): Promise<{ exists: boolean }> {
+    return this.repository.existsById(customerId);
   }
 
-  createConsumerTypeCustomer({}: { fullName: string; phoneNumber: string }) {}
+  existsByPhoneNumber({
+    phoneNumber,
+  }: {
+    phoneNumber: string;
+  }): Promise<{ exists: boolean }> {
+    return this.repository.existsByPhoneNumber(phoneNumber);
+  }
 }

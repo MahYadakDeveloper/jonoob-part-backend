@@ -1,29 +1,32 @@
-import { Customer } from './customer.type';
-import {
-  CustomerCreationRequest,
-  GetAllCustomerAddressesRequest,
-  GetCustomerAddressRequest,
-  GetCustomerContactRequest,
-} from './customers.req';
-import {
-  GetAllCustomerAddressesResponse,
-  GetCustomerAddressResponse,
-  GetCustomerContactResponse,
-} from './customers.res';
+import { CustomerAddress } from '@feature/customer-address-api';
+import { Customer, CustomerType } from './customer.type';
 
 export interface CustomersApi {
-  findById(req: { customerId: string }): Promise<{ customer: { id: string } & Customer }>;
-  findByPhoneNumber(req: { phoneNumber: string }): Promise<{ customer: { id: string } & Customer }>;
+  findById(req: { customerId: string }): Promise<{ customer: Customer }>;
 
-  getCustomerContact(req: GetCustomerContactRequest): Promise<GetCustomerContactResponse>;
+  findByPhoneNumber(req: {
+    phoneNumber: string;
+  }): Promise<{ customer: Customer }>;
 
-  getCustomerAddress(req: GetCustomerAddressRequest): Promise<GetCustomerAddressResponse>;
-  getAllCustomerAddresses(
-    req: GetAllCustomerAddressesRequest,
-  ): Promise<GetAllCustomerAddressesResponse>;
+  getContact(req: { customerId: string }): Promise<{
+    customerContract: {
+      type: CustomerType;
+      phoneNumber: string;
+      fullName: string;
+    };
+  }>;
 
-  create(req: CustomerCreationRequest): Promise<{ id: string }>;
+  getAddresses(req: {
+    customerId: string;
+  }): Promise<{ addresses: CustomerAddress[] }>;
 
-  existsByPhoneNumber(req: { phoneNumber: string }): Promise<{ exists: boolean }>;
+  createConsumerTypeCustomer(req: {
+    phoneNumber: string;
+    fullName: string;
+  }): Promise<{ id: string }>;
+
   existsById(req: { customerId: string }): Promise<{ exists: boolean }>;
+  existsByPhoneNumber(req: {
+    phoneNumber: string;
+  }): Promise<{ exists: boolean }>;
 }

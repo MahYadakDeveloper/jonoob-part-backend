@@ -1,5 +1,8 @@
 import { type HashService } from '@feature/auth-hashing';
-import { type RateLimitService, TokenBucketConfig } from '@feature/auth-rate-limit';
+import {
+  type RateLimitService,
+  TokenBucketConfig,
+} from '@feature/auth-rate-limit';
 import { type SmsService } from '@feature/auth-sms';
 import { TokenPayload, type TokenService } from '@feature/auth-token';
 import {
@@ -7,10 +10,10 @@ import {
   AuthenticationApi,
   AuthenticationResult,
 } from '@feature/authentication-api';
-import { CustomerType, type OtpGenerator, type Synchronizer } from '@feature/common';
-import { type CustomersApi } from '@feature/customer-api';
-import { type ManagerApi } from '@feature/manager-api';
-import { type CourierApi } from '@feature/order-delivery-courier-api';
+import { type OtpGenerator, type Synchronizer } from '@feature/common';
+import type { CustomersApi } from '@feature/customer-api';
+import type { ManagerApi } from '@feature/manager-api';
+import type { CourierApi } from '@feature/order-delivery-courier-api';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import authConfig from './auth.config';
@@ -65,7 +68,11 @@ export class AuthService implements AuthenticationApi {
     private readonly config: ConfigType<typeof authConfig>,
   ) {}
 
-  async authenticate({ token }: { token: string }): Promise<AuthenticationResult | null> {
+  async authenticate({
+    token,
+  }: {
+    token: string;
+  }): Promise<AuthenticationResult | null> {
     const payload = await this.tokenService.verify(token, 'access');
     if (!payload) return null;
 
@@ -129,7 +136,15 @@ export class AuthService implements AuthenticationApi {
     await this.sms.sendOtpTo(phoneNumber, otp);
   }
 
-  async verify({ phoneNumber, ip, otp }: { phoneNumber: string; ip: string; otp: string }) {
+  async verify({
+    phoneNumber,
+    ip,
+    otp,
+  }: {
+    phoneNumber: string;
+    ip: string;
+    otp: string;
+  }) {
     const result = await this.rateLimit.attempt([
       {
         key: `verification:phone:${phoneNumber}`,
@@ -195,7 +210,9 @@ export class AuthService implements AuthenticationApi {
         if (!payload) throw new Error();
 
         // payload.sub is a phone number, because it comes from verify token
-        const { customer } = await this.customers.findByPhoneNumber({ phoneNumber: payload.sub });
+        const { customer } = await this.customers.findByPhoneNumber({
+          phoneNumber: payload.sub,
+        });
 
         const accessToken = await this.tokenService.issue({
           type: 'access',
@@ -230,7 +247,13 @@ export class AuthService implements AuthenticationApi {
     );
   }
 
-  async courierSingIn({ verifyToken, password }: { verifyToken: string; password: string }) {
+  async courierSingIn({
+    verifyToken,
+    password,
+  }: {
+    verifyToken: string;
+    password: string;
+  }) {
     const payload = this.tokenService.decode(verifyToken);
     if (!payload) throw new Error();
     return await this.synchronizer.executeExclusive(
@@ -239,7 +262,9 @@ export class AuthService implements AuthenticationApi {
         const payload = await this.tokenService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
 
-        const { courier } = await this.courier.findByPhoneNumber({ phoneNumber: payload.sub });
+        const { courier } = await this.courier.findByPhoneNumber({
+          phoneNumber: payload.sub,
+        });
 
         const verified = this.hashService.verify(password, courier.password);
         if (!verified) throw new Error();
@@ -277,7 +302,13 @@ export class AuthService implements AuthenticationApi {
   /**
    *
    */
-  async managerSignIn({ verifyToken, password }: { verifyToken: string; password: string }) {
+  async managerSignIn({
+    verifyToken,
+    password,
+  }: {
+    verifyToken: string;
+    password: string;
+  }) {
     const payload = this.tokenService.decode(verifyToken);
     if (!payload) throw new Error();
 
@@ -287,7 +318,9 @@ export class AuthService implements AuthenticationApi {
         const payload = await this.tokenService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
 
-        const { manager } = await this.manager.findByPhoneNumber({ phoneNumber: payload.sub });
+        const { manager } = await this.manager.findByPhoneNumber({
+          phoneNumber: payload.sub,
+        });
 
         const verified = this.hashService.verify(password, manager.password);
         if (!verified) throw new Error();
@@ -322,7 +355,13 @@ export class AuthService implements AuthenticationApi {
     );
   }
 
-  async adminSignIn({ verifyToken, secretKey }: { verifyToken: string; secretKey: string }) {
+  async adminSignIn({
+    verifyToken,
+    secretKey,
+  }: {
+    verifyToken: string;
+    secretKey: string;
+  }) {
     const payload = this.tokenService.decode(verifyToken);
     if (!payload) throw new Error();
 
@@ -335,7 +374,10 @@ export class AuthService implements AuthenticationApi {
         const isAdmin = this.config.adminPhoneNumbers.includes(payload.sub);
         if (!isAdmin) throw new Error();
 
-        const verified = await this.hashService.verify(secretKey, this.config.adminSecretKey);
+        const verified = await this.hashService.verify(
+          secretKey,
+          this.config.adminSecretKey,
+        );
         if (!verified) throw new Error();
 
         const accessToken = await this.tokenService.issue({
@@ -369,7 +411,13 @@ export class AuthService implements AuthenticationApi {
   /**
    *
    */
-  async signUp({ fullName, verifyToken }: { fullName: string; verifyToken: string }) {
+  async signUp({
+    fullName,
+    verifyToken,
+  }: {
+    fullName: string;
+    verifyToken: string;
+  }) {
     const payload = this.tokenService.decode(verifyToken);
     if (!payload) throw new Error();
 
@@ -380,9 +428,10 @@ export class AuthService implements AuthenticationApi {
         if (!payload) throw new Error();
 
         // payload.sub is a phone number, because it comes from verify token
-        const { exists: customerExists } = await this.customers.existsByPhoneNumber({
-          phoneNumber: payload.sub,
-        });
+        const { exists: customerExists } =
+          await this.customers.existsByPhoneNumber({
+            phoneNumber: payload.sub,
+          });
 
         if (customerExists) throw new Error();
 
@@ -433,9 +482,10 @@ export class AuthService implements AuthenticationApi {
     return await this.synchronizer.executeExclusive(
       `${AuthService.name}:refresh:${payload.jti}`,
       async () => {
-        const payload = (await this.tokenService.verify(oldRefreshToken, 'refresh')) as
-          | (TokenPayload & RefreshClaim)
-          | null;
+        const payload = (await this.tokenService.verify(
+          oldRefreshToken,
+          'refresh',
+        )) as (TokenPayload & RefreshClaim) | null;
 
         if (!payload) throw new Error();
 
@@ -513,7 +563,9 @@ export class AuthService implements AuthenticationApi {
             break;
           case 'customer':
             // sub here is customer id, because it comes from refresh token
-            const { customer } = await this.customers.findById({ customerId: payload.sub });
+            const { customer } = await this.customers.findById({
+              customerId: payload.sub,
+            });
 
             accessToken = await this.tokenService.issue({
               type: 'access',

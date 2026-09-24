@@ -594,6 +594,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
+      '@feature/customer-address-api':
+        specifier: workspace:*
+        version: link:../address/api
 
   feature/customer/impl:
     dependencies:

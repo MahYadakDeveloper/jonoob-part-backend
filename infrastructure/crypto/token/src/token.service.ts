@@ -1,4 +1,9 @@
-import { IssueTokenOptions, TokenPayload, TokenService, TokenType } from '@feature/auth-token';
+import {
+  IssueTokenOptions,
+  TokenPayload,
+  TokenService,
+  TokenType,
+} from '@feature/authentication-token';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';

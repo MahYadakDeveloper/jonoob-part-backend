@@ -1,4 +1,4 @@
-import { CustomerType, ProductBundleKind, ProductLeafKind } from '../types';
+import { ProductBundleKind, ProductLeafKind } from '../types';
 import { LineItems } from './line-items';
 import { Money } from './money';
 
@@ -7,7 +7,6 @@ export type InvoiceHeader = {
   readonly issuedAt: Date;
   readonly customer?: {
     id: string;
-    type: CustomerType;
   };
 };
 

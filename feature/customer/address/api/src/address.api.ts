@@ -1,10 +1,15 @@
-import { AddressType } from './address.type';
+import { CustomerAddress } from './address.type';
 
-export interface AddressApi {
-  findById({ addressId }: { addressId: string }): Promise<{ address: AddressType }>;
-  findAddressesByCustomerId({
+export interface CustomerAddressApi {
+  findById({
+    addressId,
+  }: {
+    addressId: string;
+  }): Promise<{ address: CustomerAddress }>;
+
+  findManyByCustomerId({
     customerId,
   }: {
     customerId: string;
-  }): Promise<{ addresses: AddressType[] }>;
+  }): Promise<{ addresses: CustomerAddress[] }>;
 }

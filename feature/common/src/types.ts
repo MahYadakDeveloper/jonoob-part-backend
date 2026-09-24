@@ -1,9 +1,7 @@
 import { LineItems } from './model/line-items';
-import { Money } from './model/money';
 
 export type UnitOfMeasure = 'piece' | 'pair' | 'set';
 
-export type CustomerType = 'merchant' | 'consumer' | 'technician';
 export type PricingPolicy = 'wholesale' | 'retail';
 
 export type BankDestination = {
