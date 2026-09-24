@@ -642,6 +642,9 @@ importers:
 
   feature/customer/wallet/impl:
     dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
       '@feature/customer-wallet-api':
         specifier: workspace:*
         version: link:../api

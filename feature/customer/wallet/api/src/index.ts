@@ -1,3 +1,3 @@
-export * from "./wallet.api";
-export * from "./wallet.requests";
-export * from "./wallet.responses";
+export * from './wallet.api';
+export * from './wallet.req';
+export * from './wallet.res';

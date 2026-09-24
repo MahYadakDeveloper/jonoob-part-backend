@@ -1,14 +1,37 @@
 import {
+  CommitFrozenAmountRequest,
+  FreezeWalletAmountRequest,
+  FrozenBalanceResponse,
   GetWalletBalanceRequest,
   GetWalletBalanceResponse,
-} from "@feature/wallet-api";
+  ReleaseFrozenAmountRequest,
+  WalletApi,
+  WalletDepositRequest,
+  WalletTransactionResponse,
+  WalletWithdrawRequest,
+} from '@feature/customer-wallet-api';
 
-export class WalletService {
+export class WalletService implements WalletApi {
   constructor() {}
+  getBalance(req: GetWalletBalanceRequest): Promise<GetWalletBalanceResponse> {
+    throw new Error('Method not implemented.');
+  }
+  deposit(req: WalletDepositRequest): Promise<WalletTransactionResponse> {
+    throw new Error('Method not implemented.');
+  }
+  withdraw(req: WalletWithdrawRequest): Promise<WalletTransactionResponse> {
+    throw new Error('Method not implemented.');
+  }
 
-  async getBalance(
-    req: GetWalletBalanceRequest,
-  ): Promise<GetWalletBalanceResponse> {
-    throw new Error("Not implemented yet!");
+  freeze(req: FreezeWalletAmountRequest): Promise<FrozenBalanceResponse> {
+    throw new Error('Method not implemented.');
+  }
+  commitFrozen(
+    req: CommitFrozenAmountRequest,
+  ): Promise<WalletTransactionResponse> {
+    throw new Error('Method not implemented.');
+  }
+  releaseFrozen(req: ReleaseFrozenAmountRequest): Promise<void> {
+    throw new Error('Method not implemented.');
   }
 }
