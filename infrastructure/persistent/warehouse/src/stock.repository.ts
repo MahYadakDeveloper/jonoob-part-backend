@@ -2,7 +2,7 @@ import { Barcode, LineItems, type DbProvider } from '@feature/common';
 import { StockDefinitionData, StockRepository } from '@feature/warehouse';
 import { Stock } from '@feature/warehouse-api';
 import { BaseRepository, type DbLockContext } from '@infra/common-persistent';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, EmptyRelations, eq, inArray, sql } from 'drizzle-orm';
 import type {
   NodePgDatabase,
@@ -17,6 +17,7 @@ export class StockRepositoryImpl
   extends BaseRepository<NodePgDatabase | NodePgTransaction<EmptyRelations>>
   implements StockRepository
 {
+  private readonly logger = new Logger(StockRepositoryImpl.name);
   constructor(
     @Inject('DbProvider')
     dbProvider: DbProvider<NodePgDatabase>,
@@ -33,6 +34,8 @@ export class StockRepositoryImpl
 
   findById(id: string): Promise<Stock | null> {
     const query = this.db.select().from(stocks).where(eq(stocks.id, id));
+
+    this.logger.log('Query with:', this.lock.current());
 
     return (
       this.lock.current() === 'for_update' ? query.for('update') : query
@@ -67,9 +70,9 @@ export class StockRepositoryImpl
         qty: sql`${stocks.qty} + ${sqlCase<number>(
           [...items.values()].map((s) => ({
             when: eq(stocks.id, s.id),
-            then: s.qty,
+            then: sql`${s.qty}`,
           })),
-          0,
+          sql`0`,
         )}`,
       })
       .where(inArray(stocks.id, [...items.keys()]));
@@ -82,9 +85,9 @@ export class StockRepositoryImpl
         qty: sql`${stocks.qty} - ${sqlCase<number>(
           [...items.values()].map((s) => ({
             when: eq(stocks.id, s.id),
-            then: s.qty,
+            then: sql`${s.qty}`,
           })),
-          0,
+          sql`0`,
         )}`,
       })
       .where(inArray(stocks.id, [...items.keys()]));
@@ -97,9 +100,9 @@ export class StockRepositoryImpl
         qty: sqlCase<number>(
           [...items.values()].map((s) => ({
             when: eq(stocks.id, s.id),
-            then: s.qty,
+            then: sql`${s.qty}`,
           })),
-          0,
+          sql`0`,
         ),
       })
       .where(inArray(stocks.id, [...items.keys()]));

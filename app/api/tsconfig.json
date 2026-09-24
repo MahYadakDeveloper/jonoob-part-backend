@@ -6,7 +6,7 @@
     "outDir": "./dist"
   },
   "watchOptions": {
-    "fallbackPolling": "dynamicPriority",
+    "fallbackPolling": "dynamicPriority"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]

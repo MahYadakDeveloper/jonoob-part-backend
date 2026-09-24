@@ -17,20 +17,18 @@
   },
   "private": true,
   "dependencies": {
+    "@casl/ability": "catalog:",
+    "@feature/authentication-api": "workspace:*",
+    "@feature/authentication-nest": "workspace:*",
+    "@feature/authorization-api": "workspace:*",
+    "@feature/authorization-nest": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@feature/warehouse-quarantine-api": "workspace:*",
     "@feature/warehouse-reserve-api": "workspace:*",
     "@feature/warehouse-transaction-api": "workspace:*",
-    "@nestjs/common": "^11.1.26",
-    "@nestjs/config": "^4.0.4",
-    "redis": "^6.0.1"
-  },
-  "devDependencies": {
-    "@nestjs/testing": "^11.1.26",
-    "@types/jest": "^30.0.0",
-    "jest": "^30.4.2",
-    "ts-jest": "^29.4.11",
-    "typescript": "^6.0.3"
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "zod": "catalog:"
   }
 }

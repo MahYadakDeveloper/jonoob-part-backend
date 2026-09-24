@@ -3,9 +3,9 @@ import { sql, type SQL } from 'drizzle-orm';
 export function sqlCase<T>(
   cases: Array<{
     when: SQL;
-    then: T;
+    then: SQL<T>;
   }>,
-  otherwise: T,
+  otherwise: SQL<T>,
 ): SQL<T> {
   return sql`
     CASE

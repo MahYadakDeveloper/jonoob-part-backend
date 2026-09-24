@@ -1,2 +1,3 @@
-import './array-assert-unique-by.extension'
-import './array-to-line-items.extension'
+import './array-assert-unique-by.extension';
+import './array-to-line-items.extension';
+export * from './array-to-line-items.extension';

@@ -17,3 +17,4 @@ export * from './types';
 export * from './utils';
 export * from './zod';
 import './extensions';
+export * from './extensions';

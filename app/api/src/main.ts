@@ -18,6 +18,7 @@ import { AppModule } from './modules/app.module';
  * [NOTE] @fastify/static is required for openapi/swagger
  */
 async function bootstrap() {
+  const production = process.env.NODE_ENV === 'production';
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
@@ -25,6 +26,11 @@ async function bootstrap() {
         querystringParser: (str) => qs.parse(str),
       },
     }),
+    {
+      logger: production
+        ? ['error', 'warn']
+        : ['log', 'error', 'warn', 'debug', 'verbose'],
+    },
   );
 
   app.register(multipart);
@@ -35,7 +41,7 @@ async function bootstrap() {
     }),
   );
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (production) {
     const config = new DocumentBuilder()
       .setTitle('Jonoob Part API')
       .setDescription('Jonoob Part backend API')
