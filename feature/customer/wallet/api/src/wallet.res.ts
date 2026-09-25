@@ -1,4 +1,4 @@
-import { Money } from "@feature/common";
+import { Money } from '@feature/common';
 
 export interface GetWalletBalanceResponse {
   total: Money;
@@ -8,7 +8,6 @@ export interface GetWalletBalanceResponse {
 
 export type WalletTransactionResponse = {
   transactionId: string;
-  walletId: string;
 
   amount: Money;
 
@@ -20,7 +19,6 @@ export type WalletTransactionResponse = {
 
 export interface FrozenBalanceResponse {
   freezeId: string;
-  customerId: string;
   amount: Money;
   expiresAt?: Date;
 }

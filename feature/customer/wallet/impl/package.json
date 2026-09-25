@@ -18,6 +18,8 @@
   "private": true,
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@feature/customer-wallet-api": "workspace:*"
+    "@feature/customer-wallet-api": "workspace:*",
+    "@nestjs/common": "catalog:",
+    "zod": "catalog:"
   }
 }

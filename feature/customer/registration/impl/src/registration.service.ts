@@ -1,4 +1,7 @@
-import { type OutboxRepository, type TransactionManager } from '@feature/common';
+import {
+  type OutboxRepository,
+  type TransactionManager,
+} from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
 import {
   RegistrationRequestConfirmedEventPayload,
@@ -7,7 +10,7 @@ import {
   RegistrationRequestRejectedEventType,
 } from '@feature/customer-registration-api';
 import { type DeliveryApi } from '@feature/order-delivery-api';
-import { RegistrationRequest } from './model/registration-request';
+import { RegistrationRequest } from './registration-request';
 import { RegistrationRequestRepository } from './registration-requests.repository';
 
 export class RegistrationRequestsManagement {
@@ -19,17 +22,10 @@ export class RegistrationRequestsManagement {
     private readonly tx: TransactionManager,
   ) {}
 
-  async record(req: Omit<RegistrationRequest, 'id'>) {
-    if (req.address.scope === 'inter_city') throw new Error();
-
-    const { scope } = this.delivery.resolveScope({
-      provinceId: req.address.provinceId,
-      cityId: req.address.cityId,
+  async record(req: RegistrationRequest) {
+    const { exists } = await this.customers.existsByPhoneNumber({
+      phoneNumber: req.phoneNumber,
     });
-
-    if (scope === 'inter_city') throw new Error();
-
-    const { exists } = await this.customers.existsByPhoneNumber({ phoneNumber: req.phoneNumber });
 
     if (exists) throw new Error();
 
@@ -45,14 +41,19 @@ export class RegistrationRequestsManagement {
     return this.repository.list();
   }
 
-  confirm({ request }: { request: string }) {
-    return this.repository.find(request).then(async (request) => {
+  confirm({ requestId }: { requestId: string }) {
+    return this.repository.findById(requestId).then(async (request) => {
       if (!request) throw new Error();
 
       await this.tx.run(async () => {
-        await this.customers.create({
-          ...request,
-        });
+        switch (request.type) {
+          case 'merchant':
+            await this.customers.createMerchantTypeCustomer(request);
+            break;
+          case 'technician':
+            await this.customers.createTechnicianTypeCustomer(request);
+            break;
+        }
 
         await this.outbox.save({
           type: RegistrationRequestConfirmedEventType,
@@ -65,7 +66,7 @@ export class RegistrationRequestsManagement {
   }
 
   reject({ requestId, message }: { requestId: string; message: string }) {
-    return this.repository.find(requestId).then(async (request) => {
+    return this.repository.findById(requestId).then(async (request) => {
       if (!request) throw new Error();
 
       // [TODO] Add handler for this in infra/integrations/sms

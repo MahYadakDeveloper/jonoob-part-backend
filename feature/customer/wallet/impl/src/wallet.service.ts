@@ -2,27 +2,28 @@ import {
   CommitFrozenAmountRequest,
   FreezeWalletAmountRequest,
   FrozenBalanceResponse,
-  GetWalletBalanceRequest,
-  GetWalletBalanceResponse,
   ReleaseFrozenAmountRequest,
   WalletApi,
   WalletDepositRequest,
   WalletTransactionResponse,
   WalletWithdrawRequest,
 } from '@feature/customer-wallet-api';
+import { Inject, Injectable } from '@nestjs/common';
+import type { WalletRepository } from './wallet.repository';
 
+@Injectable()
 export class WalletService implements WalletApi {
-  constructor() {}
-  getBalance(req: GetWalletBalanceRequest): Promise<GetWalletBalanceResponse> {
-    throw new Error('Method not implemented.');
-  }
+  constructor(
+    @Inject('WalletRepository')
+    private readonly repository: WalletRepository,
+  ) {}
+
   deposit(req: WalletDepositRequest): Promise<WalletTransactionResponse> {
     throw new Error('Method not implemented.');
   }
   withdraw(req: WalletWithdrawRequest): Promise<WalletTransactionResponse> {
     throw new Error('Method not implemented.');
   }
-
   freeze(req: FreezeWalletAmountRequest): Promise<FrozenBalanceResponse> {
     throw new Error('Method not implemented.');
   }

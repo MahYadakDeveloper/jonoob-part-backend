@@ -1,3 +1,4 @@
+import type { TransactionManager } from '@feature/common';
 import type {
   CustomerAddress,
   CustomerAddressApi,
@@ -5,6 +6,7 @@ import type {
 import {
   Customer,
   CustomerType,
+  TechnicianSpecialty,
   type CustomersApi,
 } from '@feature/customer-api';
 import { Injectable } from '@nestjs/common';
@@ -15,6 +17,7 @@ export class CustomersService implements CustomersApi {
   constructor(
     private readonly repository: CustomerRepository,
     private readonly addresses: CustomerAddressApi,
+    private readonly tx: TransactionManager,
   ) {}
 
   async findById({ customerId }: { customerId: string }): Promise<{
@@ -36,7 +39,7 @@ export class CustomersService implements CustomersApi {
   }
 
   getContact({ customerId }: { customerId: string }): Promise<{
-    customerContract: {
+    customerContact: {
       type: CustomerType;
       phoneNumber: string;
       fullName: string;
@@ -45,19 +48,13 @@ export class CustomersService implements CustomersApi {
     return this.repository.findById(customerId).then((customer) => {
       if (!customer) throw new Error('Customer not found!');
       return {
-        customerContract: {
+        customerContact: {
           fullName: customer.fullName,
           phoneNumber: customer.phoneNumber,
           type: customer.type,
         },
       };
     });
-  }
-
-  getAddresses({ customerId }: { customerId: string }): Promise<{
-    addresses: CustomerAddress[];
-  }> {
-    return this.addresses.findManyByCustomerId({ customerId });
   }
 
   createConsumerTypeCustomer({
@@ -74,12 +71,41 @@ export class CustomersService implements CustomersApi {
     });
   }
 
-  existsById({
-    customerId,
+  createMerchantTypeCustomer({
+    fullName,
+    phoneNumber,
+    address,
   }: {
-    customerId: string;
-  }): Promise<{ exists: boolean }> {
-    return this.repository.existsById(customerId);
+    phoneNumber: string;
+    fullName: string;
+    address: Extract<CustomerAddress, { scope: 'intra_city' }>;
+  }): Promise<{ id: string }> {
+    return this.repository.create({
+      type: 'merchant',
+      fullName,
+      phoneNumber,
+      addresses: [address],
+    });
+  }
+
+  createTechnicianTypeCustomer({
+    fullName,
+    phoneNumber,
+    specialty,
+    address,
+  }: {
+    phoneNumber: string;
+    fullName: string;
+    address: Extract<CustomerAddress, { scope: 'intra_city' }>;
+    specialty: TechnicianSpecialty;
+  }): Promise<{ id: string }> {
+    return this.repository.create({
+      type: 'technician',
+      fullName,
+      phoneNumber,
+      specialty,
+      addresses: [address],
+    });
   }
 
   existsByPhoneNumber({
@@ -87,6 +113,6 @@ export class CustomersService implements CustomersApi {
   }: {
     phoneNumber: string;
   }): Promise<{ exists: boolean }> {
-    return this.repository.existsByPhoneNumber(phoneNumber);
+    return this.repository.findById(phoneNumber).then((c) => ({ exists: !!c }));
   }
 }

@@ -1,4 +1,5 @@
 import { LineItems, type TransactionManager } from '@feature/common';
+import type { WarehouseApi } from '@feature/warehouse-api';
 import { type StockReserverApi } from '@feature/warehouse-reserve-api';
 import { Injectable } from '@nestjs/common';
 import { ReserveData, type ReserveRepository } from './reserve.repository';
@@ -6,6 +7,7 @@ import { ReserveData, type ReserveRepository } from './reserve.repository';
 @Injectable()
 export class StockReserverService implements StockReserverApi {
   constructor(
+    private readonly warehouse: WarehouseApi,
     private readonly repository: ReserveRepository,
     private readonly tx: TransactionManager,
   ) {}
@@ -17,22 +19,28 @@ export class StockReserverService implements StockReserverApi {
     referenceId: string;
     items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void> {
-    const reserved = await this.repository.findByReferenceId(referenceId);
+    await this.tx.run(async () => {
+      await this.warehouse.decrease({ items });
 
-    await this.repository.upsertMany(
-      items.transform(
-        (item) => {
-          const reservedItem = reserved.get(item.stockId);
+      await this.repository.withLock(async () => {
+        const reserved = await this.repository.findByReferenceId(referenceId);
 
-          return {
-            ...item,
-            referenceId,
-            qty: item.qty + (reservedItem?.qty ?? 0),
-          } satisfies ReserveData;
-        },
-        (r) => r.stockId,
-      ),
-    );
+        await this.repository.upsertMany(
+          items.transform(
+            (item) => {
+              const reservedItem = reserved.get(item.stockId);
+
+              return {
+                ...item,
+                referenceId,
+                qty: item.qty + (reservedItem?.qty ?? 0),
+              } satisfies ReserveData;
+            },
+            (r) => r.stockId,
+          ),
+        );
+      });
+    });
   }
 
   async release({
@@ -43,47 +51,54 @@ export class StockReserverService implements StockReserverApi {
     items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void> {
     await this.tx.run(async () => {
-      const reserved = await this.repository.findByReferenceId(referenceId);
+      await this.repository.withLock(async () => {
+        const reserved = await this.repository.findByReferenceId(referenceId);
 
-      const toDelete = new LineItems<{ referenceId: string; stockId: string }>((x) => x.stockId);
-      const toUpsert = new LineItems<ReserveData>((x) => x.stockId);
+        const toDelete = new LineItems<{
+          referenceId: string;
+          stockId: string;
+        }>((x) => x.stockId);
+        const toUpsert = new LineItems<ReserveData>((x) => x.stockId);
 
-      items.forEach((item) => {
-        const reservedItem = reserved.get(item.stockId);
+        items.forEach((item) => {
+          const reservedItem = reserved.get(item.stockId);
 
-        // Nothing is reserved for this stock.
-        if (!reservedItem) return;
+          // Nothing is reserved for this stock.
+          if (!reservedItem) return;
 
-        // Release the whole reservation.
-        if (item.qty === reservedItem.qty) {
-          toDelete.set({
-            ...reservedItem,
-          });
-          return;
+          // Release the whole reservation.
+          if (item.qty === reservedItem.qty) {
+            toDelete.set({
+              ...reservedItem,
+            });
+            return;
+          }
+
+          // Release part of the reservation.
+          if (item.qty < reservedItem.qty) {
+            toUpsert.set({
+              ...reservedItem,
+              qty: reservedItem.qty - item.qty,
+            });
+            return;
+          }
+
+          // Trying to release more than what is reserved.
+          throw new Error(
+            `Cannot release ${item.qty} units of stock ${item.stockId}; only ${reservedItem.qty} units are reserved.`,
+          );
+        });
+
+        if (toUpsert.size > 0) {
+          await this.repository.upsertMany(toUpsert);
         }
 
-        // Release part of the reservation.
-        if (item.qty < reservedItem.qty) {
-          toUpsert.set({
-            ...reservedItem,
-            qty: reservedItem.qty - item.qty,
-          });
-          return;
+        if (toDelete.size > 0) {
+          await this.repository.deleteMany(toDelete);
         }
-
-        // Trying to release more than what is reserved.
-        throw new Error(
-          `Cannot release ${item.qty} units of stock ${item.stockId}; only ${reservedItem.qty} units are reserved.`,
-        );
       });
 
-      if (toUpsert.size > 0) {
-        await this.repository.upsertMany(toUpsert);
-      }
-
-      if (toDelete.size > 0) {
-        await this.repository.deleteMany(toDelete);
-      }
+      await this.warehouse.increase({ items });
     });
   }
 
@@ -92,6 +107,8 @@ export class StockReserverService implements StockReserverApi {
   }: {
     referenceId: string;
   }): Promise<{ reserved: LineItems<{ stockId: string; qty: number }> }> {
-    return this.repository.findByReferenceId(referenceId).then((reserved) => ({ reserved }));
+    return this.repository
+      .findByReferenceId(referenceId)
+      .then((reserved) => ({ reserved }));
   }
 }

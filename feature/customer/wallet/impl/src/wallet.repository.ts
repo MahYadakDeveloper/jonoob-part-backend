@@ -1,11 +1,5 @@
 import { Money } from '@feature/common';
 
-export type Wallet = {
-  id: string;
-  total: Money;
-  frozen: Money;
-};
-
 export interface WalletRepository {
   create(customerId: string): Promise<{ id: string }>;
 
@@ -13,4 +7,6 @@ export interface WalletRepository {
     id: string,
     balance: { total: Money; frozen: Money },
   ): Promise<void>;
+
+  getBalance(id: string): Promise<{ total: Money; frozen: Money }>;
 }

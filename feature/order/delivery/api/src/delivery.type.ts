@@ -1,23 +1,20 @@
-import { CustomerAddress, CustomerContact } from '@feature/common';
+import { CustomerAddress } from '@feature/customer-address-api';
+import { Customer } from '@feature/customer-api';
 
 export type InterCityRecipient = {
   carrierKey: string;
-  customer: {
-    id: string;
-    contact: CustomerContact;
-  };
 } & Extract<CustomerAddress, { scope: 'inter_city' }>;
 
-export type IntraCityRecipient = {
-  customer: {
-    id: string;
-    contact: CustomerContact;
-  };
-} & Extract<CustomerAddress, { scope: 'intra_city' }>;
+export type IntraCityRecipient = Extract<
+  CustomerAddress,
+  { scope: 'intra_city' }
+>;
 
-export type Recipient = IntraCityRecipient | InterCityRecipient;
+export type Recipient = {
+  customerContact: Pick<Customer, 'fullName' | 'phoneNumber' | 'type'>;
+} & (IntraCityRecipient | InterCityRecipient);
 
-export type Delivery =
+export type Delivery = { id: string } & (
   | {
       status: 'initial';
       recipient: Recipient;
@@ -77,7 +74,8 @@ export type Delivery =
         | (InterCityRecipient & {
             reasonMessage: string;
           });
-    };
+    }
+);
 
 export type IntraCityDeliveryFailureReasonType =
   | {

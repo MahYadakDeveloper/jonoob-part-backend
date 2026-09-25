@@ -1,5 +1,3 @@
-import { LineItems } from '@feature/common';
-
 export const GoodsIssuedEventType = 'warehouse.goods-issued';
 export const GoodsReceiptedEventType = 'warehouse.goods-receipted';
 

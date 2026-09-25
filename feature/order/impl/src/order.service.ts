@@ -1,8 +1,13 @@
 import { type CatalogApi } from '@feature/catalog-api';
-import { LineItems, Money, type SettingsStore, type TransactionManager } from '@feature/common';
+import {
+  LineItems,
+  Money,
+  type SettingsStore,
+  type TransactionManager,
+} from '@feature/common';
 import { type CustomersApi } from '@feature/customer-api';
 import { OrderApi } from '@feature/order-api';
-import { Recipient, type DeliveryApi } from '@feature/order-delivery-api';
+import { type DeliveryApi } from '@feature/order-delivery-api';
 import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import { type PaymentApi } from '@feature/order-payment-api';
 import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
@@ -32,7 +37,13 @@ export class OrderService implements OrderApi {
     return { order };
   }
 
-  findByCustomerId({ customerId, orderId }: { customerId: string; orderId: string }) {
+  findByCustomerId({
+    customerId,
+    orderId,
+  }: {
+    customerId: string;
+    orderId: string;
+  }) {
     return this.repository.findOrderByCustomerId(customerId, orderId);
   }
 
@@ -52,12 +63,15 @@ export class OrderService implements OrderApi {
    */
   async recordOrder({
     customerId,
-    items,
     recipient,
+    items,
   }: {
     customerId: string;
+    recipient: {
+      addressId: string;
+      carrierKey: string;
+    };
     items: LineItems<{ productId: string; quantity: number }>;
-    recipient: Recipient;
   }) {
     // [NOTE]
     // Order can be happens at any time without exception but the process
@@ -66,11 +80,18 @@ export class OrderService implements OrderApi {
     // only in next business hours
 
     // Check single payment pending order
-    const paymentPendingOrders = await this.repository.getPaymentPendingOrders(customerId);
-    if (paymentPendingOrders.size) throw new Error(`Customer has none active none settled order`);
+    const paymentPendingOrders =
+      await this.repository.getPaymentPendingOrders(customerId);
+    if (paymentPendingOrders.size)
+      throw new Error(`Customer has none active none settled order`);
 
-    const { customer } = await this.customers.getCustomerContact({ customerId });
-    const { products } = await this.catalog.findMany({ productIds: [...items.keys()] });
+    const { customer } = await this.customers.findById({
+      customerId,
+    });
+
+    const { products } = await this.catalog.findMany({
+      productIds: [...items.keys()],
+    });
 
     // Resolve pricing
     const { pricedInvoice } = await this.pricing.priceInvoice({
@@ -117,13 +138,36 @@ export class OrderService implements OrderApi {
       });
 
       // fulfillment
-      await this.fulfillment.initialize({ orderId, items });
+      await this.fulfillment.create({ orderId, items });
 
       // delivery
-      await this.delivery.initialize({ orderId, recipient });
+      const address = customer.addresses.find(
+        (a) => a.id === recipient.addressId,
+      );
+      if (!address) throw new Error();
+      if (address.scope === 'inter_city' && !recipient.carrierKey)
+        throw new Error();
+      await this.delivery.create({
+        orderId,
+        recipient: {
+          customerContact: {
+            fullName: customer.fullName,
+            phoneNumber: customer.phoneNumber,
+            type: customer.type,
+          },
+          ...(address.scope === 'inter_city'
+            ? {
+                ...address,
+                carrierKey: recipient.carrierKey,
+              }
+            : {
+                ...address,
+              }),
+        },
+      });
 
       // payment
-      await this.payment.initialize({
+      await this.payment.create({
         orderId,
         customer: {
           id: customerId,
@@ -172,7 +216,9 @@ export class OrderService implements OrderApi {
               const fee = order.cancellationTerms.fee;
               let refund = Money.zero();
               if (fee.type === 'fixed')
-                refund = order.summary.grandTotal.subtract(Money.create(fee.amount.value));
+                refund = order.summary.grandTotal.subtract(
+                  Money.create(fee.amount.value),
+                );
               else {
                 refund = order.summary.grandTotal.subtract(
                   order.summary.grandTotal.multiply(fee.rate),
@@ -191,7 +237,9 @@ export class OrderService implements OrderApi {
               await this.repository.markAs(orderId, 'canceled_by_customer');
               break;
             default:
-              throw new Error('Cancel at this stage of delivery is not possible');
+              throw new Error(
+                'Cancel at this stage of delivery is not possible',
+              );
           }
           break;
         default:

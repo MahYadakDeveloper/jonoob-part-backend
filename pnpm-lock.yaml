@@ -597,6 +597,9 @@ importers:
       '@feature/customer-address-api':
         specifier: workspace:*
         version: link:../address/api
+      '@feature/customer-wallet-api':
+        specifier: workspace:*
+        version: link:../wallet/api
 
   feature/customer/impl:
     dependencies:
@@ -624,6 +627,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
+      '@feature/customer-address-api':
+        specifier: workspace:*
+        version: link:../../address/api
       '@feature/customer-api':
         specifier: workspace:*
         version: link:../../api
@@ -648,6 +654,18 @@ importers:
       '@feature/customer-wallet-api':
         specifier: workspace:*
         version: link:../api
+      '@nestjs/common':
+        specifier: 'catalog:'
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
+
+  feature/customer/wallet/transaction:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../common
 
   feature/discount/api:
     dependencies:
@@ -728,9 +746,12 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
-      '@feature/order-api':
+      '@feature/customer-address-api':
         specifier: workspace:*
-        version: link:../../api
+        version: link:../../../customer/address/api
+      '@feature/customer-api':
+        specifier: workspace:*
+        version: link:../../../customer/api
 
   feature/order/delivery/courier/api: {}
 

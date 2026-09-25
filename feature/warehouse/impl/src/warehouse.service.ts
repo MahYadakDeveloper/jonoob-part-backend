@@ -16,7 +16,11 @@ import { type StockQuarantineApi } from '@feature/warehouse-quarantine-api';
 import { type StockReserverApi } from '@feature/warehouse-reserve-api';
 import { type TransactionRecorderApi } from '@feature/warehouse-transaction-api';
 import { Inject, Injectable } from '@nestjs/common';
-import { StockDefinitionData, type StockRepository } from './repository/stock.repository';
+import { InsufficientStockError, StockNotFoundError } from './errors';
+import {
+  StockDefinitionData,
+  type StockRepository,
+} from './repository/stock.repository';
 
 @Injectable()
 export class WarehouseService implements WarehouseApi {
@@ -29,6 +33,60 @@ export class WarehouseService implements WarehouseApi {
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}
+
+  decrease({
+    items,
+  }: {
+    items: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void> {
+    return this.tx.run(async () => {
+      await this.repository.withLock(async () => {
+        const stocks = await this.repository.findManyById([...items.keys()]);
+
+        if (stocks.size !== items.size) throw new Error();
+
+        for (const s of stocks) {
+          const i = items.getOrThrow(s.id);
+
+          if (s.qty >= i.qty) continue;
+
+          throw new InsufficientStockError(s.id);
+        }
+      });
+
+      await this.repository.decrease(
+        items.transform(
+          (s) => ({
+            id: s.stockId,
+            qty: s.qty,
+          }),
+          (s) => s.id,
+        ),
+      );
+    });
+  }
+
+  async increase({
+    items,
+  }: {
+    items: LineItems<{ stockId: string; qty: number }>;
+  }): Promise<void> {
+    const stocks = await this.repository.findManyById([...items.keys()]);
+
+    for (const i of items) {
+      stocks.getOrThrow(i.stockId, (id) => new StockNotFoundError(id));
+    }
+
+    await this.repository.increase(
+      items.transform(
+        (s) => ({
+          id: s.stockId,
+          qty: s.qty,
+        }),
+        (s) => s.id,
+      ),
+    );
+  }
 
   check({
     stockId,
@@ -48,7 +106,10 @@ export class WarehouseService implements WarehouseApi {
 
   checkMany({ stockIds }: { stockIds: string[] }): Promise<{
     results: LineItems<
-      { stockId: string } & ({ available: false } | { available: true; qty: number })
+      { stockId: string } & (
+        | { available: false }
+        | { available: true; qty: number }
+      )
     >;
   }> {
     return this.repository.findManyById(stockIds).then((stocks) => {
@@ -74,20 +135,6 @@ export class WarehouseService implements WarehouseApi {
     });
   }
 
-  quarantine({
-    items,
-    returnId,
-  }: {
-    returnId: string;
-    items: LineItems<{ stockId: string; qty: number }>;
-  }): Promise<void> {
-    return this.quarantineManager.quarantine({
-      items,
-      reason: 'customer_return',
-      referenceId: returnId,
-    });
-  }
-
   findById({ stockId }: { stockId: string }): Promise<{
     stock: Stock;
   }> {
@@ -100,7 +147,9 @@ export class WarehouseService implements WarehouseApi {
   findManyById({ stockIds }: { stockIds: string[] }): Promise<{
     stocks: LineItems<Stock>;
   }> {
-    return this.repository.findManyById(stockIds).then((stocks) => ({ stocks }));
+    return this.repository
+      .findManyById(stockIds)
+      .then((stocks) => ({ stocks }));
   }
 
   findByBarcode({ barcode }: { barcode: Barcode }): Promise<{
@@ -174,45 +223,17 @@ export class WarehouseService implements WarehouseApi {
     });
   }
 
-  async reserve(req: {
-    referenceId: string;
-    items: LineItems<{ stockId: string; qty: number }>;
-  }): Promise<void> {
-    await this.tx.run(async () => {
-      await this.repository.decrease(
-        req.items.transform(
-          (s) => ({ id: s.stockId, qty: s.qty }),
-          (s) => s.id,
-        ),
-      );
-
-      await this.reserver.reserve(req);
-    });
-  }
-
   getReservedStocks(req: { referenceId: string }): Promise<{
     reserved: LineItems<{ stockId: string; qty: number }>;
   }> {
     return this.reserver.getReservedStocks(req);
   }
 
-  async release(req: {
-    referenceId: string;
-    items: LineItems<{ stockId: string; qty: number }>;
-  }): Promise<void> {
-    await this.tx.run(async () => {
-      await this.repository.increase(
-        req.items.transform(
-          (r) => ({ id: r.stockId, qty: r.qty }),
-          (r) => r.id,
-        ),
-      );
-
-      await this.reserver.release(req);
-    });
-  }
-
-  async define({ definition }: { definition: StockDefinitionData }): Promise<{ stockId: string }> {
+  async define({
+    definition,
+  }: {
+    definition: StockDefinitionData;
+  }): Promise<{ stockId: string }> {
     const exists = !!(await this.repository.findByBarcode(definition.barcode));
 
     if (exists) {

@@ -1,8 +1,9 @@
 import { CustomerAddress } from '@feature/customer-address-api';
+import { Wallet } from '@feature/customer-wallet-api';
 
 export type CustomerType = 'merchant' | 'consumer' | 'technician';
 
-type TechnicianSpecialty =
+export type TechnicianSpecialty =
   | 'electrical'
   | 'mechanical'
   | 'body_repair'
@@ -14,27 +15,19 @@ export type Customer = {
   id: string;
   fullName: string;
   phoneNumber: string;
+  wallet: Wallet;
 } & (
   | {
       type: Extract<CustomerType, 'consumer'>;
-      addresses: ({ id: string } & Extract<
-        CustomerAddress,
-        { scope: 'inter_city' }
-      >)[];
+      addresses: Extract<CustomerAddress, { scope: 'inter_city' }>[];
     }
   | {
       type: Extract<CustomerType, 'merchant'>;
-      addresses: ({ id: string } & Extract<
-        CustomerAddress,
-        { scope: 'intra_city' }
-      >)[];
+      addresses: Extract<CustomerAddress, { scope: 'intra_city' }>[];
     }
   | {
       type: Extract<CustomerType, 'technician'>;
       specialty: TechnicianSpecialty;
-      addresses: ({ id: string } & Extract<
-        CustomerAddress,
-        { scope: 'intra_city' }
-      >)[];
+      addresses: Extract<CustomerAddress, { scope: 'intra_city' }>[];
     }
 );

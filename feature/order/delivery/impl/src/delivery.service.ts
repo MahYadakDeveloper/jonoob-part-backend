@@ -6,7 +6,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import deliveryConfigs from './delivery.config';
 import { type DeliveryRepository } from './delivery.repository';
-import { InterCityDeliveryMethod, IntraCityDeliveryMethod } from './schema/delivery-method';
+import {
+  InterCityDeliveryMethod,
+  IntraCityDeliveryMethod,
+} from './schema/delivery-method';
 import { DeliverySettingsToken } from './setting/token';
 
 @Injectable()
@@ -20,12 +23,14 @@ export class DeliveryService implements DeliveryApi {
     private readonly configs: ConfigType<typeof deliveryConfigs>,
   ) {}
 
-  async findOne(req: { deliveryId: string }): Promise<{ delivery: { id: string } & Delivery }> {
+  async findById(req: {
+    deliveryId: string;
+  }): Promise<{ delivery: { id: string } & Delivery }> {
     const delivery = await this.repository.findById(req.deliveryId);
     return { delivery };
   }
 
-  async initialize({
+  async create({
     orderId,
     recipient,
   }: {
@@ -79,7 +84,13 @@ export class DeliveryService implements DeliveryApi {
     return this.location.findCitiesByProvince({ provinceId });
   }
 
-  resolveScope({ provinceId, cityId }: { provinceId: number; cityId: number }): {
+  resolveScope({
+    provinceId,
+    cityId,
+  }: {
+    provinceId: number;
+    cityId: number;
+  }): {
     scope: 'inter_city' | 'intra_city';
   } {
     if (provinceId !== this.configs.intraCityProvinceId)

@@ -1,5 +1,5 @@
 import { CustomerAddress } from '@feature/customer-address-api';
-import { Customer, CustomerType } from './customer.type';
+import { Customer, CustomerType, TechnicianSpecialty } from './customer.type';
 
 export interface CustomersApi {
   findById(req: { customerId: string }): Promise<{ customer: Customer }>;
@@ -9,24 +9,28 @@ export interface CustomersApi {
   }): Promise<{ customer: Customer }>;
 
   getContact(req: { customerId: string }): Promise<{
-    customerContract: {
+    customerContact: {
       type: CustomerType;
       phoneNumber: string;
       fullName: string;
     };
   }>;
 
-  getAddresses(req: {
-    customerId: string;
-  }): Promise<{ addresses: CustomerAddress[] }>;
-
   createConsumerTypeCustomer(req: {
     phoneNumber: string;
     fullName: string;
   }): Promise<{ id: string }>;
 
-  existsById(req: { customerId: string }): Promise<{ exists: boolean }>;
-  existsByPhoneNumber(req: {
+  createMerchantTypeCustomer(req: {
     phoneNumber: string;
-  }): Promise<{ exists: boolean }>;
+    fullName: string;
+    address: Extract<CustomerAddress, { scope: 'intra_city' }>;
+  }): Promise<{ id: string }>;
+
+  createTechnicianTypeCustomer(req: {
+    phoneNumber: string;
+    fullName: string;
+    address: Extract<CustomerAddress, { scope: 'intra_city' }>;
+    specialty: TechnicianSpecialty;
+  }): Promise<{ id: string }>;
 }

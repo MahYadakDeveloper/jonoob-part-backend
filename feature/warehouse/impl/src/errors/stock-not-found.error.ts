@@ -1,8 +1,6 @@
-import { Barcode } from "@feature/common";
-
 export class StockNotFoundError extends Error {
-  constructor(id: { goodId: string } | { barcode: Barcode }) {
+  constructor(id: string) {
     super(`No stock found for good "${id}".`);
-    this.name = "StockNotFoundError";
+    this.name = 'StockNotFoundError';
   }
 }

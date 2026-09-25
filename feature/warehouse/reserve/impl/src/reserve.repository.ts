@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems, LockableRepository } from '@feature/common';
 
 export type ReserveData = {
   referenceId: string;
@@ -6,9 +6,11 @@ export type ReserveData = {
   qty: number;
 };
 
-export interface ReserveRepository {
+export interface ReserveRepository extends LockableRepository {
   findByReferenceId(referenceId: string): Promise<LineItems<ReserveData>>;
   upsertMany(reservation: LineItems<ReserveData>): Promise<void>;
   delete(referenceId: string, stockId: string): Promise<void>;
-  deleteMany(items: LineItems<{ referenceId: string; stockId: string }>): Promise<void>;
+  deleteMany(
+    items: LineItems<{ referenceId: string; stockId: string }>,
+  ): Promise<void>;
 }

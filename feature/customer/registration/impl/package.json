@@ -18,6 +18,7 @@
   "private": true,
   "dependencies": {
     "@feature/common": "workspace:*",
+    "@feature/customer-address-api": "workspace:*",
     "@feature/customer-api": "workspace:*",
     "@feature/customer-registration-api": "workspace:*",
     "@feature/order-delivery-api": "workspace:*"

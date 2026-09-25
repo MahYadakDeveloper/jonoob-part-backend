@@ -1,5 +1,4 @@
 import {
-  CustomerType,
   GrantedCashback,
   InvoiceItem,
   InvoiceItemBase,
@@ -8,10 +7,7 @@ import {
 import { CashbackReversalPolicy } from './cashback.enums';
 
 export interface ReversalCashbackRequest {
-  customer: {
-    id: string;
-    type: CustomerType;
-  };
+  customerId: string;
   refundedItems: LineItems<InvoiceItemBase>;
   referenceId: string;
   granted: GrantedCashback;
@@ -19,19 +15,13 @@ export interface ReversalCashbackRequest {
 }
 
 export interface GrantingCashbackRequest {
-  customer: {
-    id: string;
-    type: CustomerType;
-  };
+  customerId: string;
   referenceId: string;
   purchasedItems: LineItems<InvoiceItem>;
   expectedCashback: GrantedCashback;
 }
 
 export interface CalculateCashbackRequest {
-  customer: {
-    id: string;
-    type: CustomerType;
-  };
+  customerId: string;
   purchasedItems: LineItems<InvoiceItem>;
 }
