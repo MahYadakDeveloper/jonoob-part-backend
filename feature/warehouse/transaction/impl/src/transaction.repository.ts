@@ -1,4 +1,9 @@
-import { PageCriteria, PageResult } from '@feature/common';
+import {
+  OffsetPagination,
+  PageCriteria,
+  PageResult,
+  PartialBy,
+} from '@feature/common';
 import { RecordTransactionRequest } from '@feature/warehouse-transaction-api';
 
 export type WarehouseTransaction = {
@@ -6,7 +11,9 @@ export type WarehouseTransaction = {
   recordedAt: Date;
 } & RecordTransactionRequest;
 
-export interface StockTransactionRepository {
-  create(transaction: Omit<WarehouseTransaction, 'id'>): Promise<void>;
-  list(criteria: PageCriteria): Promise<PageResult<WarehouseTransaction>>;
+export interface TransactionRepository {
+  create(data: Omit<WarehouseTransaction, 'id' | 'recordedAt'>): Promise<void>;
+  list(
+    criteria: PageCriteria<OffsetPagination>,
+  ): Promise<PageResult<WarehouseTransaction, OffsetPagination>>;
 }

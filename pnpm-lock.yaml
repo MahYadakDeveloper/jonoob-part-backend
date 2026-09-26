@@ -2005,6 +2005,9 @@ importers:
       '@feature/warehouse-reserve':
         specifier: workspace:*
         version: link:../../../feature/warehouse/reserve/impl
+      '@feature/warehouse-transaction':
+        specifier: workspace:*
+        version: link:../../../feature/warehouse/transaction/impl
       '@infra/db-drizzle':
         specifier: workspace:*
         version: link:../../database/drizzle

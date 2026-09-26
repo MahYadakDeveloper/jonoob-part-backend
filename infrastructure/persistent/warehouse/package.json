@@ -24,6 +24,7 @@
     "@feature/warehouse-api": "workspace:*",
     "@feature/warehouse-quarantine": "workspace:*",
     "@feature/warehouse-reserve": "workspace:*",
+    "@feature/warehouse-transaction": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/local-context": "workspace:*",
     "@infra/persistent-common": "workspace:*",
