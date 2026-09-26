@@ -17,18 +17,18 @@ import {
   SupplyApi,
   SupplyRecordedEventType,
   SupplyRecordEventPayload,
-  SupplyReturnRequest,
-  SupplyReturnResponse,
 } from '@feature/procurement-supply-api';
 import { type PurchaseRecordApi } from '@feature/procurement-supply-purchase-api';
-import { type SupplyReturnApi } from '@feature/procurement-supply-return-api';
 import { type SupplierManagementApi } from '@feature/procurement-supply-supplier-api';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import z from 'zod';
 import { SupplyDocument } from './model/supply-document';
 import { type SupplyRepository } from './supply.repository';
-import { SupplyDocumentPageRequest, SupplyRecordingRequest } from './supply.req';
+import {
+  SupplyDocumentPageRequest,
+  SupplyRecordingRequest,
+} from './supply.req';
 
 @Injectable()
 export class SupplyService implements SupplyApi {
@@ -74,7 +74,9 @@ export class SupplyService implements SupplyApi {
   async findManyLatestPurchasePrice({
     goodIds,
   }: FindManyLatestPurchasePriceRequest): Promise<FindManyLatestPurchasePriceResponse> {
-    const { records } = await this.purchase.findManyLatestRecordByGoodId({ goodIds });
+    const { records } = await this.purchase.findManyLatestRecordByGoodId({
+      goodIds,
+    });
 
     return {
       prices: records.transform(
@@ -87,7 +89,9 @@ export class SupplyService implements SupplyApi {
   /**
    *
    */
-  documents({ criteria }: SupplyDocumentPageRequest): Promise<PageResult<SupplyDocument>> {
+  documents({
+    criteria,
+  }: SupplyDocumentPageRequest): Promise<PageResult<SupplyDocument>> {
     return this.repository.documents(criteria).then((page) => ({ page }));
   }
 
@@ -106,10 +110,17 @@ export class SupplyService implements SupplyApi {
    *
    * Once the `goodId` has been resolved, it can be used to record the supply.
    */
-  async recordSupply({ document }: SupplyRecordingRequest): Promise<{ documentId: string }> {
+  async recordSupply({
+    document,
+  }: SupplyRecordingRequest): Promise<{ documentId: string }> {
     return this.tx.run(async () => {
-      const { supplier } = await this.supplier.findById({ supplierId: document.supplierId });
-      const documentId = await this.repository.createDocument({ ...document, supplier });
+      const { supplier } = await this.supplier.findById({
+        supplierId: document.supplierId,
+      });
+      const documentId = await this.repository.createDocument({
+        ...document,
+        supplier,
+      });
 
       await this.warehouse.receiptGoods({
         reference: {
@@ -154,7 +165,11 @@ export class SupplyService implements SupplyApi {
 
   // [NOTE] To edit/remove the supply documents only 3 days have time to edit/remove
   // otherwise have to manage any changes to purchase records and stock changes manually
-  async editDocument({ document }: { document: Omit<SupplyDocument, 'suppliedAt' | 'supplier'> }) {
+  async editDocument({
+    document,
+  }: {
+    document: Omit<SupplyDocument, 'suppliedAt' | 'supplier'>;
+  }) {
     const supply = await this.repository.findById(document.id);
 
     if (!supply) throw new Error(`Supply document not found: ${document.id}`);
@@ -172,7 +187,12 @@ export class SupplyService implements SupplyApi {
     const purchaseTasks = new LineItems<
       | { operation: 'remove'; recordId: string; goodId: string }
       | { operation: 'new'; goodId: string; purchasePrice: Money }
-      | { operation: 'edit'; recordId: string; goodId: string; purchasePrice: Money }
+      | {
+          operation: 'edit';
+          recordId: string;
+          goodId: string;
+          purchasePrice: Money;
+        }
     >((s) => s.goodId);
 
     const newLines = document.lines.indexedBy((i) => i.goodId);
@@ -196,7 +216,11 @@ export class SupplyService implements SupplyApi {
       const record = recordsByGoodId.getOrThrow(item.goodId);
       const newRecord = newLines.get(item.goodId);
       if (!newRecord) {
-        purchaseTasks.set({ operation: 'remove', recordId: record.id, goodId: item.goodId });
+        purchaseTasks.set({
+          operation: 'remove',
+          recordId: record.id,
+          goodId: item.goodId,
+        });
         continue;
       }
 
@@ -211,11 +235,17 @@ export class SupplyService implements SupplyApi {
     }
 
     // for new item added
-    const existingGoodIds = new Set(supply.lines.toArray().map((item) => item.goodId));
+    const existingGoodIds = new Set(
+      supply.lines.toArray().map((item) => item.goodId),
+    );
     for (const item of newLines.toArray()) {
       if (existingGoodIds.has(item.goodId)) continue;
 
-      updateStock.set({ operation: 'incr', goodId: item.goodId, quantity: item.quantity });
+      updateStock.set({
+        operation: 'incr',
+        goodId: item.goodId,
+        quantity: item.quantity,
+      });
       purchaseTasks.set({
         operation: 'new',
         goodId: item.goodId,
@@ -224,7 +254,9 @@ export class SupplyService implements SupplyApi {
     }
 
     await this.tx.run(async () => {
-      const incrStock = updateStock.toArray().filter((s) => s.operation === 'incr');
+      const incrStock = updateStock
+        .toArray()
+        .filter((s) => s.operation === 'incr');
       if (incrStock.length)
         await this.warehouse.receiptGoods({
           reference: {
@@ -234,7 +266,9 @@ export class SupplyService implements SupplyApi {
           items: incrStock.toLineItems((s) => s.goodId),
         });
 
-      const decrStock = updateStock.toArray().filter((s) => s.operation === 'decr');
+      const decrStock = updateStock
+        .toArray()
+        .filter((s) => s.operation === 'decr');
       if (decrStock.length)
         await this.warehouse.issueGoods({
           reference: {
@@ -244,11 +278,17 @@ export class SupplyService implements SupplyApi {
           items: decrStock.toLineItems((s) => s.goodId),
         });
 
-      const removePurchases = purchaseTasks.toArray().filter((t) => t.operation === 'remove');
+      const removePurchases = purchaseTasks
+        .toArray()
+        .filter((t) => t.operation === 'remove');
       if (removePurchases.length)
-        await this.purchase.deleteMany({ recordIds: removePurchases.map((r) => r.recordId) });
+        await this.purchase.deleteMany({
+          recordIds: removePurchases.map((r) => r.recordId),
+        });
 
-      const createPurchases = purchaseTasks.toArray().filter((t) => t.operation === 'new');
+      const createPurchases = purchaseTasks
+        .toArray()
+        .filter((t) => t.operation === 'new');
       if (createPurchases.length)
         await this.purchase.createManySuppliedRecord({
           lines: createPurchases
@@ -268,9 +308,15 @@ export class SupplyService implements SupplyApi {
       const editPurchases = purchaseTasks
         .toArray()
         .filter((t) => t.operation === 'edit')
-        .map((r) => ({ recordId: r.recordId, goodId: r.goodId, purchasePrice: r.purchasePrice }));
+        .map((r) => ({
+          recordId: r.recordId,
+          goodId: r.goodId,
+          purchasePrice: r.purchasePrice,
+        }));
       if (editPurchases.length)
-        await this.purchase.correctMany({ records: editPurchases.toLineItems((r) => r.goodId) });
+        await this.purchase.correctMany({
+          records: editPurchases.toLineItems((r) => r.goodId),
+        });
 
       await this.repository.updateDocument(document);
     });
@@ -292,8 +338,12 @@ export class SupplyService implements SupplyApi {
     }
 
     await this.tx.run(async () => {
-      const { records } = await this.purchase.findManyRecordByDocumentId({ documentId });
-      await this.purchase.deleteMany({ recordIds: [...records.indexedBy((r) => r.id).keys()] });
+      const { records } = await this.purchase.findManyRecordByDocumentId({
+        documentId,
+      });
+      await this.purchase.deleteMany({
+        recordIds: [...records.indexedBy((r) => r.id).keys()],
+      });
       await this.warehouse.issueGoods({
         reference: {
           source: 'supply',
@@ -314,7 +364,9 @@ export class SupplyService implements SupplyApi {
    */
   async purge() {
     // Resolve Retention settings
-    const retentionDuration = await this.settings.get(SupplyService.RETENTION_SETTING);
+    const retentionDuration = await this.settings.get(
+      SupplyService.RETENTION_SETTING,
+    );
 
     // Cutoff calculation
     const cutoff = subtractDuration(new Date(), retentionDuration);
@@ -326,15 +378,10 @@ export class SupplyService implements SupplyApi {
   /**
    *
    */
-  returnSupply(req: SupplyReturnRequest): Promise<SupplyReturnResponse> {
-    return this.supplyReturn.recordSupplyReturn(req);
-  }
-
-  /**
-   *
-   */
   async getSettings() {
-    const retentionSetting = await this.settings.get(SupplyService.RETENTION_SETTING);
+    const retentionSetting = await this.settings.get(
+      SupplyService.RETENTION_SETTING,
+    );
 
     return {
       settings: {
@@ -347,6 +394,10 @@ export class SupplyService implements SupplyApi {
    *
    */
   async setSetting({ retention }: { retention?: { duration: Duration } }) {
-    if (retention) await this.settings.set(SupplyService.RETENTION_SETTING, retention.duration);
+    if (retention)
+      await this.settings.set(
+        SupplyService.RETENTION_SETTING,
+        retention.duration,
+      );
   }
 }

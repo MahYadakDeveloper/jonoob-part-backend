@@ -1,13 +1,18 @@
-import { LineItems } from '@feature/common';
-
 export type QuarantinedStock = {
+  id: string;
   stockId: string;
   referenceId: string;
   reason: string;
   qty: number;
 };
+
 export interface StockQuarantineRepository {
-  findAll(): LineItems<QuarantinedStock>;
-  quarantine(stock: LineItems<QuarantinedStock>): Promise<void>;
-  release(stocks: LineItems<{ stockId: string; qty: number }>): Promise<void>;
+  findAll(): Promise<QuarantinedStock[]>;
+  quarantine(stock: Omit<QuarantinedStock, 'id'>[]): Promise<void>;
+  release(
+    quarantines: {
+      id: string;
+      qty: number;
+    }[],
+  ): Promise<void>;
 }

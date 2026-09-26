@@ -1,5 +1,3 @@
-import { LineItems } from '@feature/common';
-
 export interface ProductPurchasePriceRequest {
   goodId: string;
 }
@@ -11,5 +9,5 @@ export interface ManyProductPurchasePriceRequest {
 export interface SupplyReturnRequest {
   specialistId: string;
   supplierId: string;
-  items: LineItems<{ goodId: string; quantity: number }>;
+  items: { stockId: string; qty: number }[];
 }

@@ -1,9 +1,15 @@
 import { type TransactionManager } from '@feature/common';
 import { type ProcurementApi } from '@feature/procurement-api';
-import { QuarantineStockRequest, StockQuarantineApi } from '@feature/warehouse-quarantine-api';
+import {
+  QuarantineStockRequest,
+  StockQuarantineApi,
+} from '@feature/warehouse-quarantine-api';
 import { Injectable } from '@nestjs/common';
-import { type StockQuarantineRepository } from './quarantine.repository';
-import { ReleaseStockRequest, ReturnToSupplierRequest } from './quarantine.req';
+import {
+  QuarantinedStock,
+  type StockQuarantineRepository,
+} from './quarantine.repository';
+import { ReleaseStockRequest } from './quarantine.req';
 
 @Injectable()
 export class StockQuarantine implements StockQuarantineApi {
@@ -13,41 +19,24 @@ export class StockQuarantine implements StockQuarantineApi {
     private readonly tx: TransactionManager,
   ) {}
 
-  quarantine({ items, reason, referenceId }: QuarantineStockRequest): Promise<void> {
+  all(): Promise<QuarantinedStock[]> {
+    return this.repository.findAll();
+  }
+
+  quarantine({
+    items,
+    reason,
+    referenceId,
+  }: QuarantineStockRequest): Promise<void> {
     return this.repository.quarantine(
-      items.transform(
-        (q) => ({ referenceId: referenceId, reason: reason, ...q }),
-        (q) => q.stockId,
-      ),
+      items.map((q) => ({ referenceId: referenceId, reason: reason, ...q })),
     );
   }
 
   /**
    * Release to return to the warehouse
    */
-  async release({ items }: ReleaseStockRequest): Promise<void> {
-    await this.repository.release(items);
-  }
-
-  /**
-   * Return the goods to supplier
-   */
-  async returnToSupplier({
-    items,
-    specialistId,
-    supplierId,
-  }: ReturnToSupplierRequest): Promise<{ returnId: string }> {
-    return await this.tx.run(async () => {
-      await this.repository.release(items);
-
-      return this.procurement.returnSupply({
-        specialistId,
-        supplierId,
-        items: items.transform(
-          (s) => ({ goodId: s.stockId, quantity: s.qty }),
-          (g) => g.goodId,
-        ),
-      });
-    });
+  release({ quarantines }: ReleaseStockRequest): Promise<void> {
+    return this.repository.release(quarantines);
   }
 }

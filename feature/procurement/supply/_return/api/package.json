@@ -1,5 +1,5 @@
 {
-  "name": "@feature/procurement-supply-return-api",
+  "name": "_@feature/procurement-supply-return-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",

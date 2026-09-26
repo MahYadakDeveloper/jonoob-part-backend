@@ -5,18 +5,13 @@ import { warehouseSchema } from '../warehouse.schema';
 export const reserves = warehouseSchema.table(
   'reserves',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
+    id: uuid().defaultRandom().primaryKey(),
 
-    referenceId: varchar('reference_id').notNull(),
-    stockId: uuid('stock_id')
+    referenceId: varchar().notNull(),
+    stockId: uuid()
       .notNull()
       .references(() => stocks.id),
-    qty: integer('qty').notNull(),
+    qty: integer().notNull(),
   },
-  (table) => [
-    unique('reserves_reference_id_stock_id_unique').on(
-      table.referenceId,
-      table.stockId,
-    ),
-  ],
+  (table) => [unique().on(table.referenceId, table.stockId)],
 );
