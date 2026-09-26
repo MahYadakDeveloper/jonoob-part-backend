@@ -13,7 +13,7 @@ import { BaseRepository, type DbLockContext } from '@infra/persistent-common';
 import { Inject, Injectable } from '@nestjs/common';
 import { asc, desc, EmptyRelations, sql } from 'drizzle-orm';
 import { NodePgDatabase, NodePgTransaction } from 'drizzle-orm/node-postgres';
-import { transactions } from './drizzle-transactions.schema';
+import { transactions } from './schema/transactions';
 
 @Injectable()
 export class DrizzleTransactionsRepository

@@ -1,7 +1,7 @@
 import { LineItems } from '@feature/common';
 import { StockDefinitionData } from '@feature/warehouse';
 import { Stock } from '@feature/warehouse-api';
-import { stocks } from './drizzle-stocks.schema';
+import { stocks } from './schema/stocks';
 
 type StockRow = typeof stocks.$inferSelect;
 

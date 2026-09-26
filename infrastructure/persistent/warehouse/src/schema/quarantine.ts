@@ -1,6 +1,6 @@
 import { integer, text, uuid, varchar } from 'drizzle-orm/pg-core';
-import { stocks } from '../stock/drizzle-stocks.schema';
 import { warehouseSchema } from '../warehouse.schema';
+import { stocks } from './stocks';
 
 export const quarantines = warehouseSchema.table('quarantines', {
   id: uuid().defaultRandom().primaryKey(),

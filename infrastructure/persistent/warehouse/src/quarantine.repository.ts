@@ -7,7 +7,7 @@ import { BaseRepository, type DbLockContext } from '@infra/persistent-common';
 import { Inject } from '@nestjs/common';
 import { EmptyRelations, eq, sql } from 'drizzle-orm';
 import { NodePgDatabase, NodePgTransaction } from 'drizzle-orm/node-postgres';
-import { quarantines } from './drizzle-quarantine.schema';
+import { quarantines } from './schema/quarantine';
 
 export class DrizzleStockQuarantineRepository
   extends BaseRepository<NodePgDatabase | NodePgTransaction<EmptyRelations>>

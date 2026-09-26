@@ -1,6 +1,6 @@
 import { integer, unique, uuid, varchar } from 'drizzle-orm/pg-core';
-import { stocks } from '../stock/drizzle-stocks.schema';
 import { warehouseSchema } from '../warehouse.schema';
+import { stocks } from './stocks';
 
 export const reserves = warehouseSchema.table(
   'reserves',

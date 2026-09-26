@@ -8,9 +8,9 @@ import type {
   NodePgDatabase,
   NodePgTransaction,
 } from 'drizzle-orm/node-postgres';
-import { sqlCase } from './../utils';
-import { stocks } from './drizzle-stocks.schema';
+import { stocks } from './schema/stocks';
 import { toStock, toStockInsert, toStocks } from './stock.mapper';
+import { sqlCase } from './utils';
 
 @Injectable()
 export class DrizzleStockRepository

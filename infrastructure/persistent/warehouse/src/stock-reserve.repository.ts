@@ -4,7 +4,7 @@ import { BaseRepository, type DbLockContext } from '@infra/persistent-common';
 import { Inject } from '@nestjs/common';
 import { and, EmptyRelations, eq, or, sql } from 'drizzle-orm';
 import { NodePgDatabase, NodePgTransaction } from 'drizzle-orm/node-postgres';
-import { reserves } from './drizzle-stock-reserve.schema';
+import { reserves } from './schema/stock-reserve';
 
 export class DrizzleStockReserveRepository
   extends BaseRepository<NodePgDatabase | NodePgTransaction<EmptyRelations>>
