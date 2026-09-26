@@ -169,12 +169,9 @@ export class WarehouseService implements WarehouseApi {
     items: LineItems<{ stockId: string; qty: number }>;
   }): Promise<void> {
     await this.tx.run(async () => {
-      await this.repository.decrease(
-        items.transform(
-          (s) => ({ id: s.stockId, qty: s.qty }),
-          (s) => s.id,
-        ),
-      );
+      await this.decrease({
+        items,
+      });
 
       // [TODO] Move it inside event handler no need the recorder be here
       await this.recorder.record({

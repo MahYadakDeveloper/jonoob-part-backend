@@ -1,6 +1,7 @@
 import * as p from 'drizzle-orm/pg-core';
+import { warehouseSchema } from '../warehouse.schema';
 
-export const barcodeType = p.pgEnum('barcode_type', [
+export const barcodeType = warehouseSchema.enum('barcode_type', [
   'UPC_A',
   'UPC_E',
   'EAN_13',
@@ -11,13 +12,13 @@ export const barcodeType = p.pgEnum('barcode_type', [
   'Codabar',
 ]);
 
-export const unitOfMeasure = p.pgEnum('unit_of_measure', [
+export const unitOfMeasure = warehouseSchema.enum('unit_of_measure', [
   'piece',
   'pair',
   'set',
 ]);
 
-export const stocks = p.pgTable(
+export const stocks = warehouseSchema.table(
   'stocks',
   {
     id: p.uuid().defaultRandom().primaryKey(),

@@ -1,10 +1,20 @@
-import { CustomerAddress } from '@feature/common';
-import { AddressType } from '@feature/customer-address-api';
+import { PartialBy } from '@feature/common';
+import { CustomerAddress } from '@feature/customer-address-api';
+
+export type Address = { customerId: string } & CustomerAddress;
+export type CreateAddress = PartialBy<Address, 'id'>;
 
 export interface AddressRepository {
-  find(id: string): Promise<AddressType | null>;
-  findByCustomerId(customerId: string): Promise<AddressType[]>;
-  create(customerId: string, data: CustomerAddress): Promise<void>;
+  findById(id: string): Promise<CustomerAddress | null>;
+  findByCustomerId(customerId: string): Promise<CustomerAddress[]>;
 
-  delete(id: string): Promise<void>;
+  create(data: CreateAddress): Promise<void>;
+
+  updateByCustomerIdAndId(
+    customerId: string,
+    addressId: string,
+    data: PartialBy<CustomerAddress, 'id'>,
+  ): Promise<void>;
+
+  deleteByCustomerIdAndId(customerId: string, addressId: string): Promise<void>;
 }

@@ -5,13 +5,4 @@ export interface DeliveryApi {
   findById(req: { deliveryId: string }): Promise<{ delivery: Delivery }>;
   deliver(req: { orderId: string }): Promise<void>;
   cancelDelivery(req: { orderId: string }): Promise<void>;
-  resolveScope({
-    provinceId,
-    cityId,
-  }: {
-    provinceId: number;
-    cityId: number;
-  }): {
-    scope: 'inter_city' | 'intra_city';
-  };
 }

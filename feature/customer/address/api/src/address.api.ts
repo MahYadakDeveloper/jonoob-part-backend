@@ -1,15 +1,10 @@
+import { PartialBy } from '@feature/common';
 import { CustomerAddress } from './address.type';
 
 export interface CustomerAddressApi {
-  findById({
-    addressId,
-  }: {
-    addressId: string;
-  }): Promise<{ address: CustomerAddress }>;
+  findById(req: { addressId: string }): Promise<{ address: CustomerAddress }>;
 
-  findManyByCustomerId({
-    customerId,
-  }: {
+  findByCustomerId(req: {
     customerId: string;
   }): Promise<{ addresses: CustomerAddress[] }>;
 }

@@ -2,10 +2,16 @@ import { LineItems } from '@feature/common';
 import { Order } from './model/order';
 
 export interface OrderRepository {
-  findOrderByCustomerId(customerId: string, orderId: string): Promise<Order | null>;
-  find(id: string): Promise<Order | null>;
-  findBySessionId(sessionId: number): Promise<Extract<Order, { status: 'settlement' }>>;
-  getPaymentPendingOrders(customerId: string): Promise<LineItems<Order>>;
+  findByCustomerId(customerId: string): Promise<Order[]>;
+  findById(id: string): Promise<Order | null>;
+  findBySessionId(
+    sessionId: number,
+  ): Promise<Extract<Order, { status: 'settlement' }>>;
+
+  findByCustomerIdWithPaymentPendingStatus(
+    customerId: string,
+  ): Promise<LineItems<Order>>;
+
   findOrderHandOverToCourier(
     orderId: string,
   ): Promise<Extract<

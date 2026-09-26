@@ -2,7 +2,10 @@ import { LineItems } from '@feature/common';
 import { Fulfillment } from '@feature/order-fulfillment-api';
 
 export interface FulfillmentRepository {
-  create(orderId: string, items: LineItems<{ goodId: string; quantity: number }>): Promise<void>;
+  create(
+    orderId: string,
+    items: LineItems<{ stockId: string; qty: number }>,
+  ): Promise<void>;
   find(orderId: string): Promise<Fulfillment | null>;
   enqueue(orderId: string): Promise<void>;
 

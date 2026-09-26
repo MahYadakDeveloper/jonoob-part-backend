@@ -1,44 +1,55 @@
-import { AddAddressRequest, AddressApi, AddressType } from '@feature/customer-address-api';
-import { type DeliveryApi } from '@feature/order-delivery-api';
+import { PartialBy } from '@feature/common';
+import {
+  CustomerAddress,
+  CustomerAddressApi,
+} from '@feature/customer-address-api';
 import { Injectable } from '@nestjs/common';
-import { type AddressRepository } from './address.repository';
+import { CreateAddress, type AddressRepository } from './address.repository';
 
 @Injectable()
-export class AddressService implements AddressApi {
-  constructor(
-    private readonly delivery: DeliveryApi,
-    private readonly repository: AddressRepository,
-  ) {}
+export class AddressService implements CustomerAddressApi {
+  constructor(private readonly repository: AddressRepository) {}
 
-  findById({ addressId }: { addressId: string }): Promise<{
-    address: AddressType;
-  }> {
-    return this.repository.find(addressId).then((address) => {
-      if (!address) throw new Error();
-      return { address };
-    });
-  }
-
-  findAddressesByCustomerId({ customerId }: { customerId: string }): Promise<{
-    addresses: AddressType[];
+  findByCustomerId({ customerId }: { customerId: string }): Promise<{
+    addresses: CustomerAddress[];
   }> {
     return this.repository.findByCustomerId(customerId).then((addresses) => ({
       addresses,
     }));
   }
 
-  async addAddress(req: AddAddressRequest): Promise<void> {
-    const { scope } = this.delivery.resolveScope({
-      provinceId: req.provinceId,
-      cityId: req.cityId,
+  findById({ addressId }: { addressId: string }): Promise<{
+    address: CustomerAddress;
+  }> {
+    return this.repository.findById(addressId).then((address) => {
+      if (!address) throw new Error();
+      return { address };
     });
-
-    if (req.scope !== scope) throw new Error();
-
-    await this.repository.create(req.customerId, req);
   }
 
-  removeAddress({ addressId }: { addressId: string }): Promise<void> {
-    return this.repository.delete(addressId);
+  async create(req: CreateAddress): Promise<void> {
+    await this.repository.create(req);
+  }
+
+  updateByCustomerIdAndId(req: {
+    customerId: string;
+    addressId: string;
+    data: PartialBy<CustomerAddress, 'id'>;
+  }): Promise<void> {
+    return this.repository.updateByCustomerIdAndId(
+      req.customerId,
+      req.addressId,
+      req.data,
+    );
+  }
+
+  deleteByCustomerIdAndId({
+    addressId,
+    customerId,
+  }: {
+    customerId: string;
+    addressId: string;
+  }): Promise<void> {
+    return this.repository.deleteByCustomerIdAndId(customerId, addressId);
   }
 }

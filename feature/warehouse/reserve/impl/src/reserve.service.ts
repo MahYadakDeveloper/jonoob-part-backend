@@ -1,14 +1,17 @@
 import { LineItems, type TransactionManager } from '@feature/common';
 import type { WarehouseApi } from '@feature/warehouse-api';
 import { type StockReserverApi } from '@feature/warehouse-reserve-api';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ReserveData, type ReserveRepository } from './reserve.repository';
 
 @Injectable()
 export class StockReserverService implements StockReserverApi {
   constructor(
+    @Inject('WarehouseApi')
     private readonly warehouse: WarehouseApi,
+    @Inject('ReserveRepository')
     private readonly repository: ReserveRepository,
+    @Inject('TransactionManager')
     private readonly tx: TransactionManager,
   ) {}
 

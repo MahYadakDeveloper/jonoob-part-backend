@@ -8,16 +8,16 @@ import type {
   NodePgDatabase,
   NodePgTransaction,
 } from 'drizzle-orm/node-postgres';
-import { stocks } from './schema/stocks';
+import { sqlCase } from './../utils';
+import { stocks } from './drizzle-stocks.schema';
 import { toStock, toStockInsert, toStocks } from './stock.mapper';
-import { sqlCase } from './utils';
 
 @Injectable()
-export class StockRepositoryImpl
+export class DrizzleStockRepository
   extends BaseRepository<NodePgDatabase | NodePgTransaction<EmptyRelations>>
   implements StockRepository
 {
-  private readonly logger = new Logger(StockRepositoryImpl.name);
+  private readonly logger = new Logger(DrizzleStockRepository.name);
   constructor(
     @Inject('DbProvider')
     dbProvider: DbProvider<NodePgDatabase>,
@@ -34,8 +34,6 @@ export class StockRepositoryImpl
 
   findById(id: string): Promise<Stock | null> {
     const query = this.db.select().from(stocks).where(eq(stocks.id, id));
-
-    this.logger.log('Query with:', this.lock.current());
 
     return (
       this.lock.current() === 'for_update' ? query.for('update') : query

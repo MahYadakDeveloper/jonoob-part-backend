@@ -1,6 +1,9 @@
-import { type CatalogApi, FindManyProductResponse } from '@feature/catalog-api';
-import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/common';
-import { type OrderApi } from '@feature/order-api';
+import type { CatalogApi, FindManyProductResponse } from '@feature/catalog-api';
+import {
+  LineItems,
+  type OutboxRepository,
+  type TransactionManager,
+} from '@feature/common';
 import {
   FulfillmentApi,
   FulfillmentCanceledByMerchantEventPayload,
@@ -8,9 +11,10 @@ import {
   FulfillmentDoneEventPayload,
   FulfillmentDoneEventType,
 } from '@feature/order-fulfillment-api';
-import { type WarehouseApi } from '@feature/warehouse-api';
+import type { WarehouseApi } from '@feature/warehouse-api';
+import type { StockReserverApi } from '@feature/warehouse-reserve-api';
 import { Injectable } from '@nestjs/common';
-import { type FulfillmentRepository } from './fulfillment.repository';
+import type { FulfillmentRepository } from './fulfillment.repository';
 
 /**
  * [NOTE] for checking out reserve items have to use getReservedItems from order service
@@ -19,25 +23,30 @@ import { type FulfillmentRepository } from './fulfillment.repository';
 export class FulfillmentService implements FulfillmentApi {
   constructor(
     private readonly repository: FulfillmentRepository,
-    private readonly order: OrderApi,
     private readonly catalog: CatalogApi,
     private readonly warehouse: WarehouseApi,
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
+    private readonly reserver: StockReserverApi,
   ) {}
 
-  async initialize({
+  async create({
     orderId,
     items,
   }: {
     orderId: string;
     items: LineItems<{ productId: string; quantity: number }>;
   }): Promise<void> {
-    const { products } = await this.catalog.findMany({ productIds: [...items.keys()] });
+    const { products } = await this.catalog.findMany({
+      productIds: [...items.keys()],
+    });
     const reserve = this.calculateReserveStock(items, products);
     await this.tx.run(async () => {
       // Reserve stocks
-      await this.warehouse.reserveStock({ referenceId: orderId, items: reserve });
+      await this.reserver.reserve({
+        referenceId: orderId,
+        items: reserve,
+      });
 
       await this.repository.create(orderId, reserve);
     });
@@ -56,18 +65,22 @@ export class FulfillmentService implements FulfillmentApi {
     pickedStocks,
   }: {
     orderId: string;
-    pickedStocks: LineItems<{ goodId: string; quantity: number }>;
+    pickedStocks: LineItems<{ stockId: string; qty: number }>;
   }) {
     const fulfill = await this.repository.find(orderId);
     if (!fulfill) throw new Error();
 
-    if (!fulfill.items.equals(pickedStocks, (a, b) => a.quantity === b.quantity)) {
+    if (!fulfill.items.equals(pickedStocks, (a, b) => a.qty === b.qty)) {
       throw new Error('Processed stocks do not match required stocks');
     }
 
     await this.tx.run(async () => {
-      await this.warehouse.releaseStock({ referenceId: orderId, items: pickedStocks });
-      await this.warehouse.issueGoods({
+      await this.reserver.release({
+        referenceId: orderId,
+        items: pickedStocks,
+      });
+
+      await this.warehouse.issue({
         reference: { source: 'order', id: orderId },
         items: pickedStocks,
       });
@@ -83,7 +96,13 @@ export class FulfillmentService implements FulfillmentApi {
     });
   }
 
-  async markAsCanceledByMerchant({ orderId, reason }: { orderId: string; reason: string }) {
+  async markAsCanceledByMerchant({
+    orderId,
+    reason,
+  }: {
+    orderId: string;
+    reason: string;
+  }) {
     const fulfill = await this.repository.find(orderId);
     if (!fulfill) throw new Error();
 
@@ -93,7 +112,10 @@ export class FulfillmentService implements FulfillmentApi {
         reason,
       });
 
-      await this.warehouse.releaseStock({ referenceId: orderId, items: fulfill.items });
+      await this.reserver.release({
+        referenceId: orderId,
+        items: fulfill.items,
+      });
 
       await this.outbox.save({
         type: FulfillmentCanceledByMerchantEventType,
@@ -117,7 +139,10 @@ export class FulfillmentService implements FulfillmentApi {
             status: 'canceled_by_customer',
           });
 
-          await this.warehouse.releaseStock({ referenceId: orderId, items: fulfill.items });
+          await this.reserver.release({
+            referenceId: orderId,
+            items: fulfill.items,
+          });
         });
         break;
     }
@@ -126,18 +151,20 @@ export class FulfillmentService implements FulfillmentApi {
   private calculateReserveStock(
     items: LineItems<{ productId: string; quantity: number }>,
     products: FindManyProductResponse['products'],
-  ): LineItems<{ goodId: string; quantity: number }> {
-    const reserve = new LineItems<{ goodId: string; quantity: number }>((s) => s.goodId);
+  ): LineItems<{ stockId: string; qty: number }> {
+    const reserve = new LineItems<{ stockId: string; qty: number }>(
+      (s) => s.stockId,
+    );
     for (const item of items) {
       const product = products.getOrThrow(item.productId);
       if (product.kind === 'leaf') {
         const alreadyAdded = reserve.get(item.productId);
         if (alreadyAdded)
           reserve.set({
-            goodId: product.goodId,
-            quantity: alreadyAdded.quantity + item.quantity,
+            stockId: product.goodId,
+            qty: alreadyAdded.qty + item.quantity,
           });
-        else reserve.set({ goodId: product.goodId, quantity: item.quantity });
+        else reserve.set({ stockId: product.goodId, qty: item.quantity });
         continue;
       }
 
@@ -145,13 +172,13 @@ export class FulfillmentService implements FulfillmentApi {
         const alreadyAdded = reserve.get(bundleItem.productId);
         if (alreadyAdded)
           reserve.set({
-            goodId: bundleItem.goodId,
-            quantity: alreadyAdded.quantity + bundleItem.quantity * item.quantity,
+            stockId: bundleItem.goodId,
+            qty: alreadyAdded.qty + bundleItem.quantity * item.quantity,
           });
         else
           reserve.set({
-            goodId: bundleItem.goodId,
-            quantity: bundleItem.quantity * item.quantity,
+            stockId: bundleItem.goodId,
+            qty: bundleItem.quantity * item.quantity,
           });
       }
     }

@@ -1,7 +1,7 @@
 import { LineItems } from '@feature/common';
 
 export type Fulfillment = {
-  items: LineItems<{ goodId: string; quantity: number }>;
+  items: LineItems<{ stockId: string; qty: number }>;
 } & (
   | {
       status: 'initial';

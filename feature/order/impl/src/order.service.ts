@@ -31,20 +31,14 @@ export class OrderService implements OrderApi {
   ) {}
 
   async findById({ orderId }): Promise<{ order: Order }> {
-    const order = await this.repository.find(orderId);
+    const order = await this.repository.findById(orderId);
     if (!order) throw new Error();
 
     return { order };
   }
 
-  findByCustomerId({
-    customerId,
-    orderId,
-  }: {
-    customerId: string;
-    orderId: string;
-  }) {
-    return this.repository.findOrderByCustomerId(customerId, orderId);
+  findByCustomerId({ customerId }: { customerId: string }) {
+    return this.repository.findByCustomerId(customerId);
   }
 
   /**
@@ -81,7 +75,9 @@ export class OrderService implements OrderApi {
 
     // Check single payment pending order
     const paymentPendingOrders =
-      await this.repository.getPaymentPendingOrders(customerId);
+      await this.repository.findByCustomerIdWithPaymentPendingStatus(
+        customerId,
+      );
     if (paymentPendingOrders.size)
       throw new Error(`Customer has none active none settled order`);
 
@@ -193,7 +189,7 @@ export class OrderService implements OrderApi {
    *
    */
   async cancelOrder({ orderId }: { orderId: string }) {
-    const order = await this.repository.find(orderId);
+    const order = await this.repository.findById(orderId);
 
     if (!order) throw new Error();
 
