@@ -1,5 +1,5 @@
 {
-  "name": "@feature/warehouse-transaction",
+  "name": "@feature/retention-purge",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -18,8 +18,8 @@
   "private": true,
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@feature/warehouse-transaction-api": "workspace:*",
-    "@nestjs/common": "^11.1.28",
-    "@nestjs/schedule": "catalog:"
+    "@feature/schedule-api": "workspace:*",
+    "@nestjs/common": "^12.0.1",
+    "zod": "^4.4.3"
   }
 }

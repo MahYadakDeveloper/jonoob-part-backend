@@ -1,5 +1,6 @@
 import { type TransactionContext, TransactionManager } from '@feature/common';
 import { Inject, Injectable } from '@nestjs/common';
+import { InjectDrizzle } from '@nestjs/drizzle';
 import { EmptyRelations } from 'drizzle-orm';
 import type {
   NodePgDatabase,
@@ -9,7 +10,7 @@ import type {
 @Injectable()
 export class DrizzleTransactionManager implements TransactionManager {
   constructor(
-    @Inject('DrizzleDbClient')
+    @InjectDrizzle()
     private readonly db: NodePgDatabase,
     @Inject('TransactionContext')
     private readonly txContext: TransactionContext<

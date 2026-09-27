@@ -8,6 +8,7 @@ import type {
   TransactionRepository,
   WarehouseTransaction,
 } from './transaction.repository';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class TransactionService implements TransactionRecorderApi {
@@ -24,5 +25,10 @@ export class TransactionService implements TransactionRecorderApi {
     req: PageCriteria<OffsetPagination>,
   ): Promise<PageResult<WarehouseTransaction, OffsetPagination>> {
     return this.repository.list(req);
+  }
+
+  @Cron('0 0 4 * * 5', { timeZone: 'Asia/Tehran' })
+  purgeOldTransactions() {
+    await this.repository.deleteOlderThan();
   }
 }

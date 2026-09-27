@@ -1,9 +1,4 @@
-import {
-  OffsetPagination,
-  PageCriteria,
-  PageResult,
-  PartialBy,
-} from '@feature/common';
+import { OffsetPagination, PageCriteria, PageResult } from '@feature/common';
 import { RecordTransactionRequest } from '@feature/warehouse-transaction-api';
 
 export type WarehouseTransaction = {
@@ -16,4 +11,6 @@ export interface TransactionRepository {
   list(
     criteria: PageCriteria<OffsetPagination>,
   ): Promise<PageResult<WarehouseTransaction, OffsetPagination>>;
+
+  deleteOlderThan(date: Date): Promise<void>;
 }

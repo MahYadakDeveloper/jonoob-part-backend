@@ -23,6 +23,7 @@ import {
   SuppliedRecordManyCreationRequest,
 } from '@feature/procurement-supply-purchase-api';
 import { Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import z from 'zod';
 import { type PurchaseRecordRepository } from './purchase-record.repository';
 import { QuotedRecordCreationRequest } from './purchase-record.req';
@@ -90,7 +91,9 @@ export class PurchaseRecordService implements PurchaseRecordApi {
     throw new Error('Method not implemented.');
   }
 
-  async createManySuppliedRecord(req: SuppliedRecordManyCreationRequest): Promise<void> {
+  async createManySuppliedRecord(
+    req: SuppliedRecordManyCreationRequest,
+  ): Promise<void> {
     await this.tx.run(async () => {
       const ids = await this.repository.createMany(
         req.lines.transform(
@@ -115,7 +118,9 @@ export class PurchaseRecordService implements PurchaseRecordApi {
     });
   }
 
-  async createQuotedRecord({ data }: QuotedRecordCreationRequest): Promise<{ id: string }> {
+  async createQuotedRecord({
+    data,
+  }: QuotedRecordCreationRequest): Promise<{ id: string }> {
     return await this.tx.run(async () => {
       const id = await this.repository.create({
         ...data,
@@ -134,9 +139,12 @@ export class PurchaseRecordService implements PurchaseRecordApi {
     });
   }
 
+  @Cron('0 0 4 * * 5', { timeZone: 'Asia/Tehran' })
   async purgeExpiredRecords() {
     // Resolve Retention settings
-    const retentionDuration = await this.settings.get(PurchaseRecordService.RETENTION_SETTING);
+    const retentionDuration = await this.settings.get(
+      PurchaseRecordService.RETENTION_SETTING,
+    );
 
     // Cutoff calculation
     const cutoff = subtractDuration(new Date(), retentionDuration);
@@ -146,7 +154,9 @@ export class PurchaseRecordService implements PurchaseRecordApi {
   }
 
   async getSettings() {
-    const retentionSetting = await this.settings.get(PurchaseRecordService.RETENTION_SETTING);
+    const retentionSetting = await this.settings.get(
+      PurchaseRecordService.RETENTION_SETTING,
+    );
 
     return {
       settings: {
@@ -157,6 +167,9 @@ export class PurchaseRecordService implements PurchaseRecordApi {
 
   async setSetting({ retention }: { retention?: { duration: Duration } }) {
     if (retention)
-      await this.settings.set(PurchaseRecordService.RETENTION_SETTING, retention.duration);
+      await this.settings.set(
+        PurchaseRecordService.RETENTION_SETTING,
+        retention.duration,
+      );
   }
 }
