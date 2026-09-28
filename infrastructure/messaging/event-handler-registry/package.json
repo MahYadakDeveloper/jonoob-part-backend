@@ -1,5 +1,5 @@
 {
-  "name": "@infra/event-handler-registry-messaging",
+  "name": "@infra/messaging-event-handler-registry",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",

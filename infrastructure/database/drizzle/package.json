@@ -21,12 +21,14 @@
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/drizzle": "catalog:",
+    "@nestjs/outbox": "catalog:",
     "drizzle-orm": "catalog:",
     "pg": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
-    "dotenv": "catalog:"
+    "dotenv": "catalog:",
+    "drizzle-kit": "catalog:"
   }
 }

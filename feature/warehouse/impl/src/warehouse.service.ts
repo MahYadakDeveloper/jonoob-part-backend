@@ -1,9 +1,4 @@
-import {
-  Barcode,
-  LineItems,
-  type OutboxRepository,
-  type TransactionManager,
-} from '@feature/common';
+import { Barcode, LineItems, type TransactionManager } from '@feature/common';
 import {
   GoodsIssuedEventPayload,
   GoodsIssuedEventType,
@@ -12,10 +7,10 @@ import {
   Stock,
   WarehouseApi,
 } from '@feature/warehouse-api';
-import { type StockQuarantineApi } from '@feature/warehouse-quarantine-api';
-import { type StockReserverApi } from '@feature/warehouse-reserve-api';
+import { type StockReserverApi } from '../../reservations/api/dist';
 import { type TransactionRecorderApi } from '@feature/warehouse-transaction-api';
 import { Inject, Injectable } from '@nestjs/common';
+import { Outbox } from '@nestjs/outbox';
 import { InsufficientStockError, StockNotFoundError } from './errors';
 import {
   StockDefinitionData,
@@ -26,12 +21,11 @@ import {
 export class WarehouseService implements WarehouseApi {
   constructor(
     private readonly repository: StockRepository,
-    private readonly quarantineManager: StockQuarantineApi,
     private readonly reserver: StockReserverApi,
     private readonly recorder: TransactionRecorderApi,
     @Inject('TransactionManager')
     private readonly tx: TransactionManager,
-    private readonly outbox: OutboxRepository,
+    private readonly outbox: Outbox,
   ) {}
 
   decrease({
@@ -63,6 +57,8 @@ export class WarehouseService implements WarehouseApi {
           (s) => s.id,
         ),
       );
+
+      await this.outbox.add(null, { topic: '', payload: {} });
     });
   }
 
@@ -174,18 +170,18 @@ export class WarehouseService implements WarehouseApi {
       });
 
       // [TODO] Move it inside event handler no need the recorder be here
-      await this.recorder.record({
-        type: 'outbound',
-        items,
-        reference,
-      });
+      // await this.recorder.record({
+      //   type: 'outbound',
+      //   items,
+      //   reference,
+      // });
 
-      await this.outbox.save({
-        type: GoodsIssuedEventType,
-        payload: {
-          goodIds: [...items.keys()],
-        } satisfies GoodsIssuedEventPayload,
-      });
+      // await this.outbox.save({
+      //   type: GoodsIssuedEventType,
+      //   payload: {
+      //     goodIds: [...items.keys()],
+      //   } satisfies GoodsIssuedEventPayload,
+      // });
     });
   }
 
@@ -205,18 +201,18 @@ export class WarehouseService implements WarehouseApi {
       );
 
       // [TODO] Move it inside event handler no need the recorder be here
-      await this.recorder.record({
-        type: 'inbound',
-        items,
-        reference,
-      });
+      // await this.recorder.record({
+      //   type: 'inbound',
+      //   items,
+      //   reference,
+      // });
 
-      await this.outbox.save({
-        type: GoodsReceiptedEventType,
-        payload: {
-          goodIds: [...items.keys()],
-        } satisfies GoodsReceiptedEventPayload,
-      });
+      // await this.outbox.save({
+      //   type: GoodsReceiptedEventType,
+      //   payload: {
+      //     goodIds: [...items.keys()],
+      //   } satisfies GoodsReceiptedEventPayload,
+      // });
     });
   }
 

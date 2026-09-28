@@ -29,6 +29,8 @@
     "@feature/warehouse-transaction-api": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
+    "@nestjs/outbox": "catalog:",
+    "rxjs": "catalog:",
     "zod": "catalog:"
   }
 }

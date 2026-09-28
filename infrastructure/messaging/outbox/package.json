@@ -1,5 +1,5 @@
 {
-  "name": "@infra/outbox-messaging",
+  "name": "@infra/messaging-outbox",
   "private": true,
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -17,9 +17,14 @@
   },
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@nestjs/bullmq": "^11.0.4",
-    "@nestjs/common": "^11.1.28",
-    "@nestjs/schedule": "^6.1.3",
-    "bullmq": "^5.80.5"
+    "@infra/db-drizzle": "workspace:*",
+    "@infra/persistent-common": "workspace:*",
+    "@nestjs/bullmq": "catalog:",
+    "@nestjs/common": "catalog:",
+    "@nestjs/outbox": "catalog:",
+    "@nestjs/schedule": "catalog:",
+    "bullmq": "catalog:",
+    "drizzle-orm": "catalog:",
+    "rxjs": "catalog:"
   }
 }

@@ -1,12 +1,13 @@
 {
   "extends": "./../../../tsconfig.base.json",
   "compilerOptions": {
+    "declaration": true,
     "rootDir": "./src",
     "outDir": "./dist",
     "sourceRoot": "./src",
     "paths": { "*": ["./*"] },
     "resolveJsonModule": true
   },
-  "include": ["./src/**/*.ts", "./generated/prisma/**.*.d.ts"],
+  "include": ["./src/**/*.ts"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }

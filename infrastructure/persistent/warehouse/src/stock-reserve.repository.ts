@@ -1,5 +1,8 @@
 import { type DbProvider, LineItems } from '@feature/common';
-import { ReserveData, ReserveRepository } from '@feature/warehouse-reserve';
+import {
+  ReserveData,
+  ReserveRepository,
+} from '../../../../feature/warehouse/reservations/impl/dist';
 import { BaseRepository, type DbLockContext } from '@infra/persistent-common';
 import { Inject } from '@nestjs/common';
 import { and, EmptyRelations, eq, or, sql } from 'drizzle-orm';

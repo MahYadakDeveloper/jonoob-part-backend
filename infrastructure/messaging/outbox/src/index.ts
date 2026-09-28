@@ -1,1 +1,1 @@
-export * from "./outbox-publisher";
+export * from './outbox.module';

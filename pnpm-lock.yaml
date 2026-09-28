@@ -12,19 +12,25 @@ catalogs:
     '@fastify/multipart':
       specifier: 10.1.1
       version: 10.1.1
+    '@nestjs/bullmq':
+      specifier: ^12.0.0
+      version: 12.0.0
     '@nestjs/cli':
       specifier: ^12.0.3
       version: 12.0.3
     '@nestjs/common':
-      specifier: ^12.0.3
+      specifier: 12.0.3
       version: 12.0.3
     '@nestjs/config':
       specifier: ^12.0.0
       version: 12.0.0
     '@nestjs/core':
-      specifier: ^12.0.3
+      specifier: 12.0.3
       version: 12.0.3
     '@nestjs/drizzle':
+      specifier: ^0.0.1
+      version: 0.0.1
+    '@nestjs/outbox':
       specifier: ^0.0.1
       version: 0.0.1
     '@nestjs/platform-fastify':
@@ -42,15 +48,24 @@ catalogs:
     '@prisma/orm-postgres':
       specifier: 8.0.0-rc.11
       version: 8.0.0-rc.11
+    bullmq:
+      specifier: ^6.3.9
+      version: 6.3.9
     dotenv:
       specifier: ^17.4.2
       version: 17.4.2
+    drizzle-kit:
+      specifier: 1.0.0-rc.4
+      version: 1.0.0-rc.4
     drizzle-orm:
       specifier: 1.0.0-rc.4
       version: 1.0.0-rc.4
     pg:
       specifier: ^8.23.0
       version: 8.23.0
+    rxjs:
+      specifier: 7.8.1
+      version: 7.8.1
     typescript:
       specifier: ^6.0.3
       version: 6.0.3
@@ -113,12 +128,15 @@ importers:
       '@feature/warehouse':
         specifier: workspace:*
         version: link:../../feature/warehouse/impl
+      '@infra/messaging-outbox':
+        specifier: workspace:*
+        version: link:../../infrastructure/messaging/outbox
       '@infra/persistent-warehouse':
         specifier: workspace:*
         version: link:../../infrastructure/persistent/warehouse
       '@nestjs/bullmq':
-        specifier: ^11.0.4
-        version: 11.0.4(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))(bullmq@5.81.3(redis@6.0.1))
+        specifier: 'catalog:'
+        version: 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))(bullmq@6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.0.1))
       '@nestjs/common':
         specifier: 'catalog:'
         version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
@@ -132,8 +150,8 @@ importers:
         specifier: 'catalog:'
         version: 12.0.3(@fastify/static@10.1.3)(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))
       '@nestjs/schedule':
-        specifier: ^6.1.3
-        version: 6.1.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))
+        specifier: 'catalog:'
+        version: 12.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))
       fastify:
         specifier: 5.12.5
         version: 5.12.5
@@ -144,7 +162,7 @@ importers:
         specifier: ^0.2.2
         version: 0.2.2
       rxjs:
-        specifier: ^7.8.1
+        specifier: 'catalog:'
         version: 7.8.1
       zod:
         specifier: 'catalog:'
@@ -846,7 +864,7 @@ importers:
         version: link:../../../warehouse/api
       '@feature/warehouse-reserve-api':
         specifier: workspace:*
-        version: link:../../../warehouse/reserve/api
+        version: link:../../../warehouse/reservations/api
       '@nestjs/common':
         specifier: ^11.2.1
         version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -1330,7 +1348,7 @@ importers:
         version: 9.39.4
       '@nestjs/testing':
         specifier: ^11.1.27
-        version: 11.1.27(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+        version: 11.1.27(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
       globals:
         specifier: ^17.6.0
         version: 17.7.0
@@ -1447,16 +1465,22 @@ importers:
         version: link:../quarantine/api
       '@feature/warehouse-reserve-api':
         specifier: workspace:*
-        version: link:../reserve/api
+        version: link:../reservations/api
       '@feature/warehouse-transaction-api':
         specifier: workspace:*
         version: link:../transaction/api
       '@nestjs/common':
         specifier: 'catalog:'
-        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
       '@nestjs/config':
         specifier: 'catalog:'
-        version: 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+        version: 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(rxjs@7.8.1)
+      '@nestjs/outbox':
+        specifier: 'catalog:'
+        version: 0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      rxjs:
+        specifier: 'catalog:'
+        version: 7.8.1
       zod:
         specifier: 'catalog:'
         version: 4.6.5
@@ -1482,13 +1506,13 @@ importers:
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
-  feature/warehouse/reserve/api:
+  feature/warehouse/reservations/api:
     dependencies:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
 
-  feature/warehouse/reserve/impl:
+  feature/warehouse/reservations/impl:
     dependencies:
       '@feature/common':
         specifier: workspace:*
@@ -1501,7 +1525,7 @@ importers:
         version: link:../api
       '@nestjs/common':
         specifier: ^11.1.28
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/warehouse/transaction/api:
     dependencies:
@@ -1614,6 +1638,9 @@ importers:
       '@nestjs/drizzle':
         specifier: 'catalog:'
         version: 0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(drizzle-orm@1.0.0-rc.4(@cloudflare/workers-types@5.20260920.1)(@effect/sql-d1@4.0.0-rc.116(effect@4.0.0-rc.112))(@effect/sql-sqlite-do@4.0.0-rc.116(effect@4.0.0-rc.112))(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(@sinclair/typebox@0.34.49)(@types/pg@8.23.1)(arktype@2.2.3)(effect@4.0.0-rc.112)(pg@8.23.0)(valibot@1.2.0(typescript@7.0.2))(zod@4.6.5))(reflect-metadata@0.2.2)
+      '@nestjs/outbox':
+        specifier: 'catalog:'
+        version: 0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-rc.4(@cloudflare/workers-types@5.20260920.1)(@effect/sql-d1@4.0.0-rc.116(effect@4.0.0-rc.112))(@effect/sql-sqlite-do@4.0.0-rc.116(effect@4.0.0-rc.112))(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(@sinclair/typebox@0.34.49)(@types/pg@8.23.1)(arktype@2.2.3)(effect@4.0.0-rc.112)(pg@8.23.0)(valibot@1.2.0(typescript@7.0.2))(zod@4.6.5)
@@ -1630,6 +1657,9 @@ importers:
       dotenv:
         specifier: 'catalog:'
         version: 17.4.2
+      drizzle-kit:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.4
 
   infrastructure/database/elasticsearch: {}
 
@@ -1804,7 +1834,7 @@ importers:
         version: link:../../../feature/common
       '@nestjs/bullmq':
         specifier: ^11.0.4
-        version: 11.0.4(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.80.5(redis@6.0.1))
+        version: 11.0.4(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.80.5(redis@6.0.1))
       bullmq:
         specifier: ^5.80.5
         version: 5.80.5(redis@6.0.1)
@@ -1816,7 +1846,7 @@ importers:
         version: link:../../../feature/common
       '@nestjs/bullmq':
         specifier: ^11.0.4
-        version: 11.0.4(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.80.5(redis@6.0.1))
+        version: 11.0.4(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.80.5(redis@6.0.1))
       bullmq:
         specifier: ^5.80.5
         version: 5.80.5(redis@6.0.1)
@@ -1826,18 +1856,33 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../feature/common
+      '@infra/db-drizzle':
+        specifier: workspace:*
+        version: link:../../database/drizzle
+      '@infra/persistent-common':
+        specifier: workspace:*
+        version: link:../../persistent/common
       '@nestjs/bullmq':
-        specifier: ^11.0.4
-        version: 11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.80.5(redis@6.0.1))
+        specifier: 'catalog:'
+        version: 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))(bullmq@6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.0.1))
       '@nestjs/common':
-        specifier: ^11.1.28
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        specifier: 'catalog:'
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      '@nestjs/outbox':
+        specifier: 'catalog:'
+        version: 0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
       '@nestjs/schedule':
-        specifier: ^6.1.3
-        version: 6.1.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+        specifier: 'catalog:'
+        version: 12.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))
       bullmq:
-        specifier: ^5.80.5
-        version: 5.80.5(redis@6.0.1)
+        specifier: 'catalog:'
+        version: 6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.0.1)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.4(@cloudflare/workers-types@5.20260920.1)(@effect/sql-d1@4.0.0-rc.116(effect@4.0.0-rc.112))(@effect/sql-sqlite-do@4.0.0-rc.116(effect@4.0.0-rc.112))(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(@sinclair/typebox@0.34.49)(@types/pg@8.23.1)(arktype@2.2.3)(effect@4.0.0-rc.112)(pg@8.23.0)(valibot@1.2.0(typescript@7.0.2))(zod@4.6.5)
+      rxjs:
+        specifier: 'catalog:'
+        version: 7.8.1
 
   infrastructure/messaging/queue:
     dependencies:
@@ -1846,7 +1891,7 @@ importers:
         version: link:../../../packages/contracts
       '@nestjs/bullmq':
         specifier: ^11.0.4
-        version: 11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.81.3(redis@6.0.1))
+        version: 11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.0.1))
       '@nestjs/common':
         specifier: ^11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -2031,7 +2076,7 @@ importers:
         version: link:../../../feature/warehouse/quarantine/impl
       '@feature/warehouse-reserve':
         specifier: workspace:*
-        version: link:../../../feature/warehouse/reserve/impl
+        version: link:../../../feature/warehouse/reservations/impl
       '@feature/warehouse-transaction':
         specifier: workspace:*
         version: link:../../../feature/warehouse/transaction/impl
@@ -3649,12 +3694,25 @@ packages:
       '@nestjs/common': ^10.0.0 || ^11.0.0
       '@nestjs/core': ^10.0.0 || ^11.0.0
 
+  '@nestjs/bull-shared@12.0.0':
+    resolution: {integrity: sha512-OShKmwIt00oK2DIqKP4mjh9C2RQsoHPZbBsQwbnETPmK/+Ld1xyYQa1WOrYKKA8qoSzZJvxQaA6/4sV5SfAIyA==}
+    peerDependencies:
+      '@nestjs/common': ^10.0.0 || ^11.0.0 || ^12.0.0
+      '@nestjs/core': ^10.0.0 || ^11.0.0 || ^12.0.0
+
   '@nestjs/bullmq@11.0.4':
     resolution: {integrity: sha512-wBzK9raAVG0/6NTMdvLGM4/FQ1lsB35/pYS8L6a0SDgkTiLpd7mAjQ8R692oMx5s7IjvgntaZOuTUrKYLNfIkA==}
     peerDependencies:
       '@nestjs/common': ^10.0.0 || ^11.0.0
       '@nestjs/core': ^10.0.0 || ^11.0.0
       bullmq: ^3.0.0 || ^4.0.0 || ^5.0.0
+
+  '@nestjs/bullmq@12.0.0':
+    resolution: {integrity: sha512-8aOL+TA2W6BgWVeNroofk4CDJrutPt8m+Kp5oghwOUHF73mSPDWTS2vPssuF8IrBq8g195JnKAc2Tu1OdQidLQ==}
+    peerDependencies:
+      '@nestjs/common': ^10.0.0 || ^11.0.0 || ^12.0.0
+      '@nestjs/core': ^10.0.0 || ^11.0.0 || ^12.0.0
+      bullmq: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0
 
   '@nestjs/cli@12.0.3':
     resolution: {integrity: sha512-HofsPoiWsx6gZ7/IivaZJrgsq/3CTCb4FkCQzFu/Q3J2V+4xC7GYnit/HNB66EfuY8j3gWJCzasMKmF5VugmOA==}
@@ -3765,6 +3823,19 @@ packages:
       class-validator:
         optional: true
 
+  '@nestjs/common@12.1.0':
+    resolution: {integrity: sha512-YGNboXyCmLWwIyrrVLst2dsH+DjsIje4S3P2i06HRwV0Sdcp+qZ7UV3PvIvCD4mI/VGH/f4p0Oq2sMVkVB0GOA==}
+    peerDependencies:
+      class-transformer: '>=0.4.1'
+      class-validator: '>=0.13.2'
+      reflect-metadata: ^0.1.12 || ^0.2.0
+      rxjs: ^7.1.0
+    peerDependenciesMeta:
+      class-transformer:
+        optional: true
+      class-validator:
+        optional: true
+
   '@nestjs/config@12.0.0':
     resolution: {integrity: sha512-pG5+fFfCo3cdgVkLJLvvhUGfxEjwzv9hIAQ1aJVHvHlHVniDWfwX5pR/utgoAkJzSikv2oTR1BmIF03FXdi42Q==}
     peerDependencies:
@@ -3828,6 +3899,15 @@ packages:
         optional: true
       class-validator:
         optional: true
+
+  '@nestjs/outbox@0.0.1':
+    resolution: {integrity: sha512-tDJtLKBka1URrhi8PtIIti4gKIOGmOkOW41gc5I39BeupnJgJbcmTLfciid1zYwMoMJaVDkhTF6m2XFMRZZuzw==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      '@nestjs/common': ^11.0.0 || ^12.0.0
+      '@nestjs/core': ^11.0.0 || ^12.0.0
+      reflect-metadata: ^0.1.13 || ^0.2.0
+      rxjs: ^7.1.0
 
   '@nestjs/platform-fastify@12.0.3':
     resolution: {integrity: sha512-Cn8jR8jwPJBk7ftkzunplz0LHDahnq7urAO9VjOV0OWkk1YCwaFMm4CElSk3BwBiDwP177anJjJUbVxTlASk4A==}
@@ -5429,6 +5509,24 @@ packages:
       redis:
         optional: true
 
+  bullmq@6.3.9:
+    resolution: {integrity: sha512-wBGk4tHZRFcQayZlC5DPRxg2EFfCqhgkJq0uQ8EvufMgh2hYmPeH8tK+1U4ffimNmnJzTUhwwW1PNUIQMhvSpQ==}
+    engines: {node: '>=14.17.0'}
+    peerDependencies:
+      bullmq-otel: '>=2.0.0'
+      ioredis: '>=5.0.0'
+      pg: '>=8.0.0'
+      redis: '>=5.0.0'
+    peerDependenciesMeta:
+      bullmq-otel:
+        optional: true
+      ioredis:
+        optional: true
+      pg:
+        optional: true
+      redis:
+        optional: true
+
   bundle-name@4.1.0:
     resolution: {integrity: sha512-tjwM5exMg6BGRI+kNmTntNsvdZS1X8BFYS6tnJ2hdH0kVxM6/eVZ2xy+FqStSWvYmtfFMDLIxurorHwDKfDz5Q==}
     engines: {node: '>=18'}
@@ -5686,6 +5784,10 @@ packages:
     resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
     engines: {node: '>=12.0.0'}
     deprecated: v4 is no longer maintained, upgrade to v5
+
+  cron-parser@5.10.1:
+    resolution: {integrity: sha512-pKRrRagItwk9rGIStcUyMxFX34x56zoX3KDf9HJ4ttwkXIK1qxK63EvXvEDmlxI9AdPJ+Y7TEKRftRlW5eSS7A==}
+    engines: {node: '>=18'}
 
   cron@4.4.0:
     resolution: {integrity: sha512-fkdfq+b+AHI4cKdhZlppHveI/mgz2qpiYxcm+t5E5TsxX7QrLS1VE0+7GENEk9z0EeGPcpSciGv6ez24duWhwQ==}
@@ -6275,6 +6377,10 @@ packages:
 
   file-type@22.1.0:
     resolution: {integrity: sha512-fbvf9u6jnHWr1EP6V8R99E9iLMhNLXgZkUzWBiPpJ5/89UJ/Atuxjn5YXR+XaZWo2hc2/8mGfTez+NDAgOcpLA==}
+    engines: {node: '>=22'}
+
+  file-type@22.1.1:
+    resolution: {integrity: sha512-sEB0oStmeLGtpmSAD88RDNuLsvhv4iC3u0lE25CUvfCULvj49xoQ3l3K525Vn+ZzsZ6DOLajQCV6RmhwwhqiJg==}
     engines: {node: '>=22'}
 
   file-uri-to-path@1.0.0:
@@ -10062,24 +10168,16 @@ snapshots:
       '@nestjs/core': 12.0.3(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
       tslib: 2.8.1
 
-  '@nestjs/bull-shared@11.0.4(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))':
+  '@nestjs/bull-shared@11.0.4(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
+    dependencies:
+      '@nestjs/common': 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      tslib: 2.8.1
+
+  '@nestjs/bull-shared@12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))':
     dependencies:
       '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
       '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
-      tslib: 2.8.1
-
-  '@nestjs/bull-shared@11.0.4(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
-    dependencies:
-      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      tslib: 2.8.1
-
-  '@nestjs/bullmq@11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.80.5(redis@6.0.1))':
-    dependencies:
-      '@nestjs/bull-shared': 11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
-      '@nestjs/common': 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      bullmq: 5.80.5(redis@6.0.1)
       tslib: 2.8.1
 
   '@nestjs/bullmq@11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.81.3(redis@6.0.1))':
@@ -10090,6 +10188,14 @@ snapshots:
       bullmq: 5.81.3(redis@6.0.1)
       tslib: 2.8.1
 
+  '@nestjs/bullmq@11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.0.1))':
+    dependencies:
+      '@nestjs/bull-shared': 11.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+      '@nestjs/common': 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      bullmq: 6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.0.1)
+      tslib: 2.8.1
+
   '@nestjs/bullmq@11.0.4(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.81.3(redis@6.0.1))':
     dependencies:
       '@nestjs/bull-shared': 11.0.4(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
@@ -10098,20 +10204,20 @@ snapshots:
       bullmq: 5.81.3(redis@6.0.1)
       tslib: 2.8.1
 
-  '@nestjs/bullmq@11.0.4(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))(bullmq@5.81.3(redis@6.0.1))':
+  '@nestjs/bullmq@11.0.4(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.80.5(redis@6.0.1))':
     dependencies:
-      '@nestjs/bull-shared': 11.0.4(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))
-      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
-      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
-      bullmq: 5.81.3(redis@6.0.1)
+      '@nestjs/bull-shared': 11.0.4(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+      '@nestjs/common': 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      bullmq: 5.80.5(redis@6.0.1)
       tslib: 2.8.1
 
-  '@nestjs/bullmq@11.0.4(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(bullmq@5.80.5(redis@6.0.1))':
+  '@nestjs/bullmq@12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))(bullmq@6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.0.1))':
     dependencies:
-      '@nestjs/bull-shared': 11.0.4(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
-      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      bullmq: 5.80.5(redis@6.0.1)
+      '@nestjs/bull-shared': 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))
+      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      bullmq: 6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.0.1)
       tslib: 2.8.1
 
   '@nestjs/cli@12.0.3(@types/node@24.13.2)(fork-ts-checker-webpack-plugin@9.1.0(typescript@6.0.3)(webpack@5.106.2))(prettier@3.8.4)(ts-loader@9.6.0(typescript@6.0.3)(webpack@5.106.2))(tsconfig-paths-webpack-plugin@4.2.0)(webpack-node-externals@3.0.0)(webpack@5.106.2)':
@@ -10218,6 +10324,19 @@ snapshots:
     dependencies:
       '@standard-schema/spec': 1.1.0
       file-type: 22.1.0
+      iterare: 1.2.1
+      load-esm: 1.0.3
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.2
+      tslib: 2.8.1
+      uid: 2.0.2
+    transitivePeerDependencies:
+      - supports-color
+
+  '@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      file-type: 22.1.1
       iterare: 1.2.1
       load-esm: 1.0.3
       reflect-metadata: 0.2.2
@@ -10343,6 +10462,17 @@ snapshots:
       tslib: 2.8.1
       uid: 2.0.2
 
+  '@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)':
+    dependencies:
+      '@nestjs/common': 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      fast-safe-stringify: 2.1.1
+      iterare: 1.2.1
+      path-to-regexp: 8.4.2
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.2
+      tslib: 2.8.1
+      uid: 2.0.2
+
   '@nestjs/drizzle@0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(drizzle-orm@1.0.0-rc.4(@cloudflare/workers-types@5.20260920.1)(@effect/sql-d1@4.0.0-rc.116(effect@4.0.0-rc.112))(@effect/sql-sqlite-do@4.0.0-rc.116(effect@4.0.0-rc.112))(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(@sinclair/typebox@0.34.49)(@types/pg@8.23.1)(arktype@2.2.3)(effect@4.0.0-rc.112)(pg@8.23.0)(valibot@1.2.0(typescript@7.0.2))(zod@4.6.5))(reflect-metadata@0.2.2)':
     dependencies:
       '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -10367,6 +10497,20 @@ snapshots:
       '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
       reflect-metadata: 0.2.2
 
+  '@nestjs/outbox@0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)':
+    dependencies:
+      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.1
+
+  '@nestjs/outbox@0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)':
+    dependencies:
+      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.2
+
   '@nestjs/platform-fastify@12.0.3(@fastify/static@10.1.3)(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))':
     dependencies:
       '@fastify/cors': 11.3.0
@@ -10389,6 +10533,12 @@ snapshots:
       '@nestjs/core': 12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
       cron: 4.4.0
 
+  '@nestjs/schedule@12.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))':
+    dependencies:
+      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      cron: 4.4.0
+
   '@nestjs/schedule@6.1.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
     dependencies:
       '@nestjs/common': 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -10405,12 +10555,6 @@ snapshots:
     dependencies:
       '@nestjs/common': 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 12.0.3(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      cron: 4.4.0
-
-  '@nestjs/schedule@6.1.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))':
-    dependencies:
-      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
-      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
       cron: 4.4.0
 
   '@nestjs/schematics@11.1.0(chokidar@5.0.0)(prettier@3.8.4)(typescript@6.0.3)':
@@ -10460,10 +10604,10 @@ snapshots:
       '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1)
       tslib: 2.8.1
 
-  '@nestjs/testing@11.1.27(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
+  '@nestjs/testing@11.1.27(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
     dependencies:
-      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/common': 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
       tslib: 2.8.1
 
   '@noble/hashes@1.8.0': {}
@@ -12225,6 +12369,18 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  bullmq@6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.0.1):
+    dependencies:
+      cron-parser: 5.10.1
+      msgpackr: 2.1.0
+      node-abort-controller: 3.1.1
+      semver: 7.8.5
+      tslib: 2.8.1
+    optionalDependencies:
+      ioredis: 5.11.1
+      pg: 8.23.0
+      redis: 6.0.1
+
   bundle-name@4.1.0:
     dependencies:
       run-applescript: 7.1.0
@@ -12441,6 +12597,10 @@ snapshots:
   create-require@1.1.1: {}
 
   cron-parser@4.9.0:
+    dependencies:
+      luxon: 3.7.2
+
+  cron-parser@5.10.1:
     dependencies:
       luxon: 3.7.2
 
@@ -13016,6 +13176,15 @@ snapshots:
       - supports-color
 
   file-type@22.1.0:
+    dependencies:
+      '@tokenizer/inflate': 0.4.1
+      strtok3: 10.3.5
+      token-types: 6.1.2
+      uint8array-extras: 1.5.0
+    transitivePeerDependencies:
+      - supports-color
+
+  file-type@22.1.1:
     dependencies:
       '@tokenizer/inflate': 0.4.1
       strtok3: 10.3.5

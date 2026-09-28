@@ -1,6 +1,6 @@
 import { uuid } from 'drizzle-orm/cockroach-core';
 import { jsonb, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { warehouseSchema } from '../warehouse.schema';
+import { warehouseSchema } from './warehouse.schema';
 
 export const transactionType = warehouseSchema.enum('transaction_type', [
   'inbound',

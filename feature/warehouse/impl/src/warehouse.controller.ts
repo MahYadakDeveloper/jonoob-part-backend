@@ -1,6 +1,5 @@
 import { type AuthenticatedUser } from '@feature/authentication-api';
-import { AuthenticationGuard, User } from '@feature/authentication-nest';
-import { CheckPolicies, PoliciesGuard } from '@feature/authorization-nest';
+import { User } from '@feature/authentication-nest';
 import '@feature/common';
 import { type TransactionManager } from '@feature/common';
 import {
@@ -11,11 +10,9 @@ import {
   Logger,
   Param,
   Patch,
-  UseGuards,
 } from '@nestjs/common';
+import { Outbox } from '@nestjs/outbox';
 import z from 'zod';
-import { ManageWarehousePolicy } from './policies/manage-warehouse-policy.handler';
-import { WarehouseAbilityFactory } from './policies/warehouse-ability';
 import { type StockRepository } from './repository/stock.repository';
 
 const decreaseReqBody = z.object(
@@ -33,6 +30,8 @@ export class WarehouseController {
   constructor(
     @Inject('StockRepository') private readonly stocks: StockRepository,
     @Inject('TransactionManager') private readonly tx: TransactionManager,
+
+    private readonly outbox: Outbox,
   ) {}
 
   @Get(':id')
@@ -46,19 +45,19 @@ export class WarehouseController {
           [{ id: stockId, qty: 5 }].toLineItems((s) => s.id),
         );
 
-        this.logger.log('Stock quantity increased!, huh?');
-
-        throw new Error('Sry, huh??!');
-        return s;
+        await this.outbox.add(null, {
+          topic: 'stock.get',
+          payload: { x: 'X' },
+        });
       }),
     );
   }
 
-  @UseGuards(AuthenticationGuard, PoliciesGuard)
-  @CheckPolicies({
-    abilityFactory: WarehouseAbilityFactory,
-    handlers: [ManageWarehousePolicy],
-  })
+  // @UseGuards(AuthenticationGuard, PoliciesGuard)
+  // @CheckPolicies({
+  //   abilityFactory: WarehouseAbilityFactory,
+  //   handlers: [ManageWarehousePolicy],
+  // })
   @Patch('decrease/:id')
   async decrease(
     @Param('id') stockId: string,
