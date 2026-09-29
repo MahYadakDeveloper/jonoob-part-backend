@@ -1,5 +1,5 @@
-export const GoodsIssuedEventType = 'warehouse.goods-issued';
-export const GoodsReceiptedEventType = 'warehouse.goods-receipted';
+export const IssuedEventType = 'warehouse.goods-issued';
+export const StocksReceiptedEventType = 'warehouse.goods-receipted';
 
 export interface GoodsIssuedEventPayload {
   goodIds: string[];

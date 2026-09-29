@@ -1,0 +1,3 @@
+export const STOCK_QUERY_API = Symbol('STOCK_QUERY_API');
+export const STOCK_MOVEMENT_API = Symbol('STOCK_MOVEMENT_API');
+export const STOCK_RESERVATION_API = Symbol('STOCK_RESERVATION_API');

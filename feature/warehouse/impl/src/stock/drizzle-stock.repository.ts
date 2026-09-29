@@ -3,7 +3,7 @@ import { StockDefinitionData, StockRepository } from '@feature/warehouse';
 import { Stock } from '@feature/warehouse-api';
 import { BaseRepository, type DbLockContext } from '@infra/common-persistent';
 import { stocks } from '@infra/db-drizzle';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { and, EmptyRelations, eq, inArray, sql } from 'drizzle-orm';
 import type {
   NodePgDatabase,
@@ -17,7 +17,6 @@ export class DrizzleStockRepository
   extends BaseRepository<NodePgDatabase | NodePgTransaction<EmptyRelations>>
   implements StockRepository
 {
-  private readonly logger = new Logger(DrizzleStockRepository.name);
   constructor(
     @Inject('DbProvider')
     dbProvider: DbProvider<NodePgDatabase>,

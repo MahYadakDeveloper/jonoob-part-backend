@@ -869,9 +869,6 @@ importers:
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../../../warehouse/api
-      '@feature/warehouse-reserve-api':
-        specifier: workspace:*
-        version: link:../../../warehouse/reservations/api
       '@nestjs/common':
         specifier: ^11.2.1
         version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -1467,15 +1464,6 @@ importers:
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/warehouse-quarantine-api':
-        specifier: workspace:*
-        version: link:../quarantine/api
-      '@feature/warehouse-reserve-api':
-        specifier: workspace:*
-        version: link:../reservations/api
-      '@feature/warehouse-transaction-api':
-        specifier: workspace:*
-        version: link:../transaction/api
       '@nestjs/common':
         specifier: 'catalog:'
         version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
@@ -1491,48 +1479,6 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.6.5
-
-  feature/warehouse/quarantine/api:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../common
-
-  feature/warehouse/quarantine/impl:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../common
-      '@feature/procurement-api':
-        specifier: workspace:*
-        version: link:../../../procurement/api
-      '@feature/warehouse-quarantine-api':
-        specifier: workspace:*
-        version: link:../api
-      '@nestjs/common':
-        specifier: ^11.1.28
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-
-  feature/warehouse/reservations/api:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../common
-
-  feature/warehouse/reservations/impl:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../common
-      '@feature/warehouse-api':
-        specifier: workspace:*
-        version: link:../../api
-      '@feature/warehouse-reserve-api':
-        specifier: workspace:*
-        version: link:../api
-      '@nestjs/common':
-        specifier: ^11.1.28
-        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/warehouse/transaction/api:
     dependencies:
@@ -2081,15 +2027,6 @@ importers:
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../../../feature/warehouse/api
-      '@feature/warehouse-quarantine':
-        specifier: workspace:*
-        version: link:../../../feature/warehouse/quarantine/impl
-      '@feature/warehouse-reserve':
-        specifier: workspace:*
-        version: link:../../../feature/warehouse/reservations/impl
-      '@feature/warehouse-transaction':
-        specifier: workspace:*
-        version: link:../../../feature/warehouse/transaction/impl
       '@infra/db-drizzle':
         specifier: workspace:*
         version: link:../../database/drizzle

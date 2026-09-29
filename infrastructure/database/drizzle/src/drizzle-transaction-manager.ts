@@ -4,13 +4,18 @@ import { InjectDrizzle } from '@nestjs/drizzle';
 import type { Database, Transaction } from './drizzle';
 
 @Injectable()
-export class DrizzleTransactionManager implements TransactionManager {
+export class DrizzleTransactionManager implements TransactionManager<Transaction> {
   constructor(
     @InjectDrizzle()
     private readonly db: Database,
     @Inject('TransactionContext')
     private readonly txContext: TransactionContext<Transaction>,
   ) {}
+  current(): Transaction | null {
+    const ctx = this.txContext.current();
+    if (!ctx) return null;
+    return ctx;
+  }
 
   async run<T>(fn: () => Promise<T>): Promise<T> {
     // propagation = REQUIRED

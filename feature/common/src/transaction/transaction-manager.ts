@@ -1,3 +1,4 @@
-export interface TransactionManager {
-  run<T>(fn: () => Promise<T>): Promise<T>;
+export interface TransactionManager<T = unknown> {
+  run<U>(fn: () => Promise<U>): Promise<U>;
+  current(): T | null;
 }
