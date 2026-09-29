@@ -1,11 +1,12 @@
-import type { DbProvider } from '@feature/common';
 import {
+  Database,
   outboxDeadLetters,
   outboxInbox,
   outboxMessages,
+  Transaction,
 } from '@infra/db-drizzle';
-import { BaseRepository } from '@infra/persistent-common';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { InjectDrizzle } from '@nestjs/drizzle';
 import {
   OutboxStorage,
   OutboxTransactionRequiredError,
@@ -39,39 +40,34 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { alias } from 'drizzle-orm/pg-core';
 import { createHash } from 'node:crypto';
 
-type Database = NodePgDatabase;
-/** The `tx` that `db.transaction()` passes its callback. */
-type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
-
 /** Advisory lock classes (the two-number form): any two numbers no other code of yours locks on. */
 const CLAIM_LOCK = 20_260_901;
 const KEY_LOCK = 20_260_902;
 
 @Injectable()
-export class DrizzleOutboxStore
-  extends BaseRepository<NodePgDatabase | Transaction>
-  implements OutboxStore, OutboxInboxStore
-{
+export class DrizzleOutboxStore implements OutboxStore, OutboxInboxStore {
   constructor(
-    @Inject('DbProvider')
-    dbProvider: DbProvider<NodePgDatabase>,
+    @InjectDrizzle()
+    private readonly db: NodePgDatabase,
     storage: OutboxStorage,
   ) {
-    super(dbProvider);
     storage.registerSource({ messages: this, inbox: this });
   }
 
-  async add(messages: readonly OutboxMessage[]): Promise<void> {
-    assertTransaction(this.db);
+  async add(
+    tx: Transaction,
+    messages: readonly OutboxMessage[],
+  ): Promise<void> {
+    assertTransaction(tx);
     if (messages.length === 0) return;
     // Commit order: a transaction adding a message with the same key waits here until this
     // one commits or rolls back, so rows are numbered in the order they become visible.
     for (const lock of keyLocks(messages)) {
-      await this.db.execute(
+      await tx.execute(
         sql`SELECT pg_advisory_xact_lock(${KEY_LOCK}::int, ${lock}::int)`,
       );
     }
-    await this.db.insert(outboxMessages).values(
+    await tx.insert(outboxMessages).values(
       messages.map((message) => ({
         id: message.id,
         topic: message.topic,
@@ -395,7 +391,7 @@ export class DrizzleOutboxStore
 }
 
 /** Drizzle's `tx` has rollback(); the database itself doesn't, and would write outside the transaction. */
-function assertTransaction(tx) {
+function assertTransaction(tx: Database | Transaction) {
   if (
     typeof (tx as Partial<Transaction> | undefined)?.rollback !== 'function'
   ) {

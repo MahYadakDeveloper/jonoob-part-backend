@@ -1,7 +1,10 @@
 import { type AuthenticatedUser } from '@feature/authentication-api';
 import { User } from '@feature/authentication-nest';
 import '@feature/common';
-import { type TransactionManager } from '@feature/common';
+import {
+  type TransactionContext,
+  type TransactionManager,
+} from '@feature/common';
 import {
   Body,
   Controller,
@@ -30,7 +33,7 @@ export class WarehouseController {
   constructor(
     @Inject('StockRepository') private readonly stocks: StockRepository,
     @Inject('TransactionManager') private readonly tx: TransactionManager,
-
+    @Inject('TransactionContext') private readonly txCtx: TransactionContext,
     private readonly outbox: Outbox,
   ) {}
 
@@ -45,10 +48,12 @@ export class WarehouseController {
           [{ id: stockId, qty: 5 }].toLineItems((s) => s.id),
         );
 
-        await this.outbox.add(null, {
-          topic: 'stock.get',
-          payload: { x: 'X' },
-        });
+        await this.outbox.add(await this.txCtx.current(), [
+          {
+            topic: 'stock.get',
+            payload: { x: 'X, v2' },
+          },
+        ]);
       }),
     );
   }

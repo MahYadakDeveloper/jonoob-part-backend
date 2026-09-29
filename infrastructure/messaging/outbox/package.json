@@ -21,6 +21,7 @@
     "@infra/persistent-common": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
+    "@nestjs/drizzle": "catalog:",
     "@nestjs/outbox": "catalog:",
     "@nestjs/schedule": "catalog:",
     "bullmq": "catalog:",

@@ -1,13 +1,10 @@
 import { type DbProvider, LineItems } from '@feature/common';
-import {
-  ReserveData,
-  ReserveRepository,
-} from '../../../../feature/warehouse/reservations/impl/dist';
+import { ReserveData, ReserveRepository } from '@feature/warehouse-reserve';
+import { reserves } from '@infra/db-drizzle';
 import { BaseRepository, type DbLockContext } from '@infra/persistent-common';
 import { Inject } from '@nestjs/common';
 import { and, EmptyRelations, eq, or, sql } from 'drizzle-orm';
 import { NodePgDatabase, NodePgTransaction } from 'drizzle-orm/node-postgres';
-import { reserves } from './schema/stock-reserve';
 
 export class DrizzleStockReserveRepository
   extends BaseRepository<NodePgDatabase | NodePgTransaction<EmptyRelations>>

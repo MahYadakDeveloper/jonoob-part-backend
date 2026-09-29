@@ -2,6 +2,7 @@ import { Barcode, LineItems, type DbProvider } from '@feature/common';
 import { StockDefinitionData, StockRepository } from '@feature/warehouse';
 import { Stock } from '@feature/warehouse-api';
 import { BaseRepository, type DbLockContext } from '@infra/common-persistent';
+import { stocks } from '@infra/db-drizzle';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, EmptyRelations, eq, inArray, sql } from 'drizzle-orm';
 import type {
@@ -10,7 +11,6 @@ import type {
 } from 'drizzle-orm/node-postgres';
 import { toStock, toStockInsert, toStocks } from './stock.mapper';
 import { sqlCase } from './utils';
-import { stocks } from '@infra/db-drizzle';
 
 @Injectable()
 export class DrizzleStockRepository

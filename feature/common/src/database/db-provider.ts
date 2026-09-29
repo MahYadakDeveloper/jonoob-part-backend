@@ -1,3 +1,3 @@
 export interface DbProvider<TClient = unknown> {
-  current();
+  current(): TClient;
 }
