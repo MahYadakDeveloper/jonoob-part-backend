@@ -1,10 +1,9 @@
-import { LocalContextModule } from '@infra/local-context';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DrizzleModule } from '@nestjs/drizzle';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { DrizzleDbProvider } from './drizzle-db.provider';
-import { DrizzleTransactionManager } from './drizzle-transaction-manager';
+import { DrizzleDbProvider } from './drizzle-db-provider';
+import { DrizzleTransactionContext } from './drizzle-transaction';
 import drizzleConfig from './drizzle.config';
 
 @Global()
@@ -18,21 +17,7 @@ import drizzleConfig from './drizzle.config';
         connection: config.getOrThrow<string>('drizzle.databaseUrl'),
       }),
     }),
-    LocalContextModule,
   ],
-  providers: [
-    DrizzleDbProvider,
-    DrizzleTransactionManager,
-    {
-      provide: 'DbProvider',
-      useExisting: DrizzleDbProvider,
-    },
-    {
-      provide: 'TransactionManager',
-      useExisting: DrizzleTransactionManager,
-    },
-  ],
-
-  exports: ['TransactionManager', 'DbProvider'],
+  providers: [DrizzleDbProvider, DrizzleTransactionContext],
 })
 export class DrizzleDbModule {}

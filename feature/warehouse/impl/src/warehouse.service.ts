@@ -15,7 +15,7 @@ import { InsufficientStockError, StockNotFoundError } from './errors';
 import {
   StockDefinitionData,
   type StockRepository,
-} from './repository/stock.repository';
+} from './stock/stock.repository';
 
 @Injectable()
 export class WarehouseService implements WarehouseApi {

@@ -20,7 +20,6 @@
     "@fastify/multipart": "catalog:",
     "@fastify/static": "^10.1.3",
     "@feature/warehouse": "workspace:*",
-    "@infra/local-context": "workspace:*",
     "@infra/messaging-outbox": "workspace:*",
     "@infra/persistent-warehouse": "workspace:*",
     "@nestjs/bullmq": "catalog:",
