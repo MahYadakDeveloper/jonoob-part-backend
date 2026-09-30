@@ -10,7 +10,6 @@ import type {
   NodePgTransaction,
 } from 'drizzle-orm/node-postgres';
 import { toStock, toStockInsert, toStocks } from './stock.mapper';
-import { sqlCase } from './utils';
 
 @Injectable()
 export class DrizzleStockRepository

@@ -1464,6 +1464,9 @@ importers:
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../api
+      '@infra/db-drizzle':
+        specifier: workspace:*
+        version: link:../../../infrastructure/database/drizzle
       '@nestjs/common':
         specifier: 'catalog:'
         version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
