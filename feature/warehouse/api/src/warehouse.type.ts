@@ -1,26 +1,20 @@
 import { Barcode, UnitOfMeasure } from '@feature/common';
 
-export type StockMovementItem = { stockId: string; quantity: number };
+export type StockItems = { stockId: string; quantity: number };
 
-export type IssueMovementSource = Extract<
-  OutboundStockMovement['source'],
-  { type: 'sales' }
->;
+export type IssueMovementSource = OutboundMovementSource['source'];
 
 export type ReceiptMovementSource = Extract<
-  InboundStockMovement['source'],
+  InboundMovementSource['source'],
   { type: 'procurement' }
 >;
 
 export type ReturnMovementSource = Extract<
-  InboundStockMovement['source'],
+  InboundMovementSource['source'],
   { type: 'return' }
 >;
 
-export type InboundStockMovement = {
-  id: string;
-  movedAt: number;
-  direction: 'inbound';
+export type InboundMovementSource = {
   source:
     | { type: 'adjustment'; reason?: string }
     | ({
@@ -37,10 +31,7 @@ export type InboundStockMovement = {
       ));
 };
 
-export type OutboundStockMovement = {
-  id: string;
-  movedAt: number;
-  direction: 'outbound';
+export type OutboundMovementSource = {
   source:
     | { type: 'adjustment'; reason?: string }
     | {

@@ -4,12 +4,12 @@ import {
   DrizzleBaseRepository,
   DrizzleDbProvider,
   sqlCase,
-  stocks,
 } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { toStock, toStockInsert, toStocks } from './stock.mapper';
+import { toStock, toStockRow } from './mappers/stock.mapper';
+import { stocks } from './schema/stocks.schema';
 
 export type StockDefinitionData = Omit<Stock, 'id' | 'quantity'>;
 
@@ -17,22 +17,18 @@ export type StockDefinitionData = Omit<Stock, 'id' | 'quantity'>;
 export class StockRepository extends DrizzleBaseRepository {
   constructor(
     dbProvider: DrizzleDbProvider,
-    private readonly lock: AsyncLocalStorage<'for_update'>,
+    lockContext: AsyncLocalStorage<'for_update'>,
     // private readonly cache: StockCache,
   ) {
-    super(dbProvider);
-  }
-
-  withLock<T>(fn: () => Promise<T>): Promise<T> {
-    return this.lock.run('for_update', fn);
+    super(dbProvider, lockContext);
   }
 
   findById(id: string): Promise<Stock | null> {
     const query = this.db.select().from(stocks).where(eq(stocks.id, id));
 
-    return (
-      this.lock.getStore() === 'for_update' ? query.for('update') : query
-    ).then(toStock);
+    return (this.lockMode === 'for_update' ? query.for('update') : query).then(
+      ([row]) => (!!row ? toStock(row) : null),
+    );
   }
 
   findManyById(ids: string[]): Promise<Stock[]> {
@@ -40,7 +36,7 @@ export class StockRepository extends DrizzleBaseRepository {
       .select()
       .from(stocks)
       .where(inArray(stocks.id, ids))
-      .then(toStocks);
+      .then((rows) => rows.map(toStock));
   }
 
   async findByBarcode(barcode: Barcode): Promise<Stock | null> {
@@ -53,7 +49,7 @@ export class StockRepository extends DrizzleBaseRepository {
           eq(stocks.barcodeValue, barcode.value),
         ),
       )
-      .then(toStock);
+      .then(([row]) => (!!row ? toStock(row) : null));
   }
 
   async increase(items: { id: string; quantity: number }[]): Promise<void> {
@@ -116,11 +112,11 @@ export class StockRepository extends DrizzleBaseRepository {
       );
   }
 
-  available(ids: string[]): Promise<{ id: string; quantity: number }[]> {
+  available(ids: string[]): Promise<{ id: string; available: boolean }[]> {
     return this.db
       .select({
         id: stocks.id,
-        quantity: stocks.qty,
+        available: sql<boolean>`${stocks.qty} > 0`,
       })
       .from(stocks)
       .where(inArray(stocks.id, ids));
@@ -129,7 +125,7 @@ export class StockRepository extends DrizzleBaseRepository {
   define(stock: StockDefinitionData): Promise<{ id: string }> {
     return this.db
       .insert(stocks)
-      .values(toStockInsert(stock))
+      .values(toStockRow(stock))
       .returning({
         id: stocks.id,
       })
@@ -139,7 +135,7 @@ export class StockRepository extends DrizzleBaseRepository {
   async redefine(id: string, stock: StockDefinitionData): Promise<void> {
     await this.db
       .update(stocks)
-      .set(toStockInsert(stock))
+      .set(toStockRow(stock))
       .where(eq(stocks.id, id));
   }
 }

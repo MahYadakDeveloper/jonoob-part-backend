@@ -8,4 +8,6 @@ export class StockMovementRepository extends DrizzleBaseRepository {
   ) {
     super(dbProvider, lockContext);
   }
+
+  record(): Promise<{ movementId: string }> {}
 }

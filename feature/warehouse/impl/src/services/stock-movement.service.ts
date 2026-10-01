@@ -1,24 +1,20 @@
+import { StockMovementRepository } from '@/repositories/stock-movement.repository';
 import {
-  IssueMovementSource,
-  ReceiptMovementSource,
-  ReturnMovementSource,
-  StockMovementApi,
-  StockMovementItem,
+    IssueMovementSource,
+    ReceiptMovementSource,
+    ReturnMovementSource,
+    StockMovementApi,
+    StockMovementItem,
 } from '@feature/warehouse-api';
-import {
-  STOCK_MUTATION_API,
-  type StockMutationApi,
-} from '@feature/warehouse-stock-api';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
-import { Inject, Injectable } from '@nestjs/common';
-import { StockMovementRepository } from './repository/stock-movement.repository';
+import { Injectable } from '@nestjs/common';
 import { AdjustMovementSource } from './stock-movement.types';
+import { StockService } from './stock.service';
 
 @Injectable()
 export class StockMovementService implements StockMovementApi {
   constructor(
-    @Inject(STOCK_MUTATION_API)
-    private readonly stockMutation: StockMutationApi,
+    private readonly stock: StockService,
     private readonly tx: DrizzleTransactionContext,
     private readonly repository: StockMovementRepository,
   ) {}
@@ -28,7 +24,11 @@ export class StockMovementService implements StockMovementApi {
     source: IssueMovementSource,
     idempotencyKey: string,
   ): Promise<{ movementId: string }> {
-    return this.tx.run(async () => {});
+    return this.tx.run(async () => {
+      await this.stock.decrease(stocks)
+
+      await this.repository.
+    });
   }
 
   receipt(

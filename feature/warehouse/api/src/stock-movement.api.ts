@@ -2,25 +2,25 @@ import {
   IssueMovementSource,
   ReceiptMovementSource,
   ReturnMovementSource,
-  StockMovementItem,
+  StockItems,
 } from './warehouse.type';
 
 export const STOCK_MOVEMENT_API = Symbol('STOCK_MOVEMENT_API');
 export interface StockMovementApi {
   issue(
-    stocks: StockMovementItem[],
+    items: StockItems[],
     source: IssueMovementSource,
     idempotencyKey: string,
   ): Promise<{ movementId: string }>;
 
   receipt(
-    stocks: StockMovementItem[],
+    items: StockItems[],
     source: ReceiptMovementSource,
     idempotencyKey: string,
   ): Promise<{ movementId: string }>;
 
   return(
-    stocks: StockMovementItem[],
+    items: StockItems[],
     source: ReturnMovementSource,
     idempotencyKey: string,
   ): Promise<{ movementId: string }>;

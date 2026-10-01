@@ -1,10 +1,8 @@
 import { Stock } from '@feature/warehouse-api';
-import { stocks } from '@infra/db-drizzle';
-import { StockDefinitionData } from './stock.repository';
+import { stocks } from '../schema/stocks.schema';
+import { StockDefinitionData } from '../stock.repository';
 
-type StockRow = typeof stocks.$inferSelect;
-
-const toStockItem = (row: StockRow): Stock => ({
+export const toStock = (row: typeof stocks.$inferSelect): Stock => ({
   id: row.id,
   quantity: row.qty,
   unitOfMeasure: row.unitOfMeasure,
@@ -15,13 +13,7 @@ const toStockItem = (row: StockRow): Stock => ({
   storageLocation: row.storageLocation ?? undefined,
 });
 
-export const toStock = (rows: StockRow[]): Stock | null => {
-  const row = rows[0];
-
-  return row ? toStockItem(row) : null;
-};
-
-export const toStockInsert = ({
+export const toStockRow = ({
   barcode,
   ...rest
 }: StockDefinitionData): typeof stocks.$inferInsert => ({

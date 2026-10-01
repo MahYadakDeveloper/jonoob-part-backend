@@ -16,5 +16,5 @@ export interface StockQueryApi {
    */
   available(
     stockIds: string[],
-  ): Promise<{ stockId: string; available: boolean }>;
+  ): Promise<{ stockId: string; available: boolean }[]>;
 }
