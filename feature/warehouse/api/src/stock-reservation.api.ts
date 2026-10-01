@@ -1,3 +1,4 @@
+export const STOCK_RESERVATION_API = Symbol('STOCK_RESERVATION_API');
 export interface StockReservationApi {
   /**
    * Reserves stock for an operation (e.g. order creation or checkout) to

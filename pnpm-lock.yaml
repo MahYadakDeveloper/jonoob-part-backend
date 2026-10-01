@@ -1452,9 +1452,6 @@ importers:
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/warehouse-stock':
-        specifier: workspace:*
-        version: link:../stock/impl
       '@infra/db-drizzle':
         specifier: workspace:*
         version: link:../../../infrastructure/database/drizzle
@@ -1473,77 +1470,10 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.6.5
-
-  feature/warehouse/movement/impl:
-    dependencies:
-      '@casl/ability':
+    devDependencies:
+      drizzle-kit:
         specifier: 'catalog:'
-        version: 7.0.1
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../common
-      '@feature/warehouse-api':
-        specifier: workspace:*
-        version: link:../../api
-      '@feature/warehouse-stock-api':
-        specifier: workspace:*
-        version: link:../../stock/api
-      '@infra/db-drizzle':
-        specifier: workspace:*
-        version: link:../../../../infrastructure/database/drizzle
-      '@nestjs/common':
-        specifier: 'catalog:'
-        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/outbox':
-        specifier: 'catalog:'
-        version: 0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-
-  feature/warehouse/stock/api: {}
-
-  feature/warehouse/stock/impl:
-    dependencies:
-      '@casl/ability':
-        specifier: 'catalog:'
-        version: 7.0.1
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../common
-      '@feature/warehouse-api':
-        specifier: workspace:*
-        version: link:../../api
-      '@infra/db-drizzle':
-        specifier: workspace:*
-        version: link:../../../../infrastructure/database/drizzle
-      '@nestjs/common':
-        specifier: 'catalog:'
-        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/outbox':
-        specifier: 'catalog:'
-        version: 0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-
-  feature/warehouse/transaction/api:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../common
-      '@jonoob-part/contracts':
-        specifier: workspace:*
-        version: link:../../../../packages/contracts
-
-  feature/warehouse/transaction/impl:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../common
-      '@feature/warehouse-transaction-api':
-        specifier: workspace:*
-        version: link:../api
-      '@nestjs/common':
-        specifier: ^11.1.28
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/schedule':
-        specifier: 'catalog:'
-        version: 12.0.2(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+        version: 1.0.0-rc.4
 
   infrastructure/config:
     dependencies:
@@ -8629,12 +8559,6 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@fastify/static': 10.1.3
-
-  '@nestjs/schedule@12.0.2(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))':
-    dependencies:
-      '@nestjs/common': 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      cron: 4.4.0
 
   '@nestjs/schedule@12.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(reflect-metadata@0.2.2)(rxjs@7.8.1))':
     dependencies:

@@ -1,6 +1,8 @@
 import { Barcode } from '@feature/common';
 import { Stock } from './warehouse.type';
 
+export const STOCK_QUERY_API = Symbol('STOCK_QUERY_API');
+
 export interface StockQueryApi {
   /**
    *

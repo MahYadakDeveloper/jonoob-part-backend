@@ -1,7 +1,7 @@
 import { DrizzleDbModule } from '@infra/db-drizzle';
 import { Module } from '@nestjs/common';
 import { OutboxModule } from '@nestjs/outbox';
-import { DrizzleOutboxStore } from './drizzle-outbox.store.ts';
+import { DrizzleOutboxStore } from './drizzle-outbox.store.js';
 
 @Module({
   imports: [
