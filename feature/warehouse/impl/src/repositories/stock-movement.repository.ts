@@ -12,29 +12,33 @@ export class StockMovementRepository extends DrizzleBaseRepository {
   }
 
   findById(id: string) {
-    return this.db
-      .select()
-      .from(movements)
-      .limit(1)
-      .then(([row]) => row ?? null);
+    const query = this.db.select().from(movements).limit(1);
+
+    return (this.forUpdate ? query.for('update') : query).then(
+      ([row]) => row ?? null,
+    );
   }
 
   findByIdempotencyKey(key: string) {
-    return this.db
+    const query = this.db
       .select()
       .from(movements)
       .where(eq(movements.idempotencyKey, key))
-      .limit(1)
-      .then(([row]) => row ?? null);
+      .limit(1);
+    return (this.forUpdate ? query.for('update') : query).then(
+      ([row]) => row ?? null,
+    );
   }
 
   findByReversesId(reversesId: string) {
-    return this.db
+    const query = this.db
       .select({ id: movements.id })
       .from(movements)
       .where(eq(movements.reversesId, reversesId))
-      .limit(1)
-      .then(([row]) => row ?? null);
+      .limit(1);
+    return (this.forUpdate ? query.for('update') : query).then(
+      ([row]) => row ?? null,
+    );
   }
 
   record(data: typeof movements.$inferInsert): Promise<{ movementId: string }> {
@@ -49,9 +53,5 @@ export class StockMovementRepository extends DrizzleBaseRepository {
       })
       .returning({ movementId: movements.id })
       .then(([row]) => row);
-  }
-
-  reverse(movementId: string) {
-    return this.db.select({}).from(movements);
   }
 }

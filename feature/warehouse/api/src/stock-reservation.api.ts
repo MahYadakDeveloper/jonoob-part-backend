@@ -1,36 +1,19 @@
+import { IssueMovementSource } from './warehouse.type';
+
 export const STOCK_RESERVATION_API = Symbol('STOCK_RESERVATION_API');
+
+export interface StockReservationItem {
+  stockId: string;
+  quantity: number;
+}
+
 export interface StockReservationApi {
-  /**
-   * Reserves stock for an operation (e.g. order creation or checkout) to
-   * prevent overselling caused by concurrent requests.
-   *
-   * The reserved quantity is not deducted from inventory. It is only marked as
-   * unavailable until the reservation is released.
-   */
-  reserve(
-    referenceId: string,
-    items: {
-      stockId: string;
-      quantity: number;
-    }[],
-  ): Promise<void>;
+  /** Reserves stock. `movementSource` is stored and used by `consume`. */
+  reserve(input: {
+    items: StockReservationItem[];
+    idempotencyKey: string;
+  }): Promise<{ reservationId: string }>;
 
-  /**
-   * Releases a previously reserved quantity, making it available for future
-   * reservations.
-   *
-   * Call this when the operation is cancelled or immediately before issuing the
-   * reserved stock.
-   */
-  release(
-    referenceId: string,
-    items: {
-      stockId: string;
-      quantity: number;
-    }[],
-  ): Promise<void>;
-
-  reserved(
-    referenceId: string,
-  ): Promise<{ reserved: { stockId: string; quantity: number }[] }>;
+  /** Cancels an active reservation. No-op if released; fails if consumed. */
+  release(reservationId: string): Promise<void>;
 }
