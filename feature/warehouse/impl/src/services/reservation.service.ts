@@ -1,10 +1,10 @@
-import { StockReservationRepository } from '@/repositories/stock-reservation.repository';
 import {
   StockReservationApi,
   StockReservationItem,
 } from '@feature/warehouse-api';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
+import { StockReservationRepository } from './repositories/stock-reservation.repository';
 import { StockService } from './stock.service';
 
 @Injectable()

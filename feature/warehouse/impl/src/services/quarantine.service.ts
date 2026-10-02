@@ -11,6 +11,16 @@ import {
 } from './quarantine.repository';
 import { ReleaseStockRequest } from './quarantine.req';
 
+export interface ReleaseStockRequest {
+  quarantines: { id: string; qty: number }[];
+}
+
+export interface ReturnToSupplierRequest {
+  specialistId: string;
+  supplierId: string;
+  quarantines: { id: string; qty: number }[];
+}
+
 @Injectable()
 export class StockQuarantine implements StockQuarantineApi {
   constructor(

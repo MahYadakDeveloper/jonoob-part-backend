@@ -1,10 +1,9 @@
-import { InsufficientStockError } from '@/errors';
-import { StockRepository } from '@/repositories/stock.repository';
 import { Barcode } from '@feature/common';
 import { Stock, StockQueryApi } from '@feature/warehouse-api';
 import { DbTransaction, DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { Outbox } from '@nestjs/outbox';
+import { StockRepository } from './repositories/stock.repository';
 
 @Injectable()
 export class StockService implements StockQueryApi {
@@ -138,7 +137,7 @@ function assertSufficientStock(
     const quantity = quantities.get(stock.id)!;
 
     if (quantity > stock.quantity) {
-      throw new InsufficientStockError(stock.id);
+      throw new Error('...');
     }
   }
 }

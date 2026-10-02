@@ -1,4 +1,3 @@
-import { StockMovementRepository } from '@/repositories/stock-movement.repository';
 import {
   InboundMovementSource,
   IssueMovementSource,
@@ -11,6 +10,7 @@ import {
 import { DbTransaction, DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { Outbox } from '@nestjs/outbox';
+import { StockMovementRepository } from './repositories/stock-movement.repository';
 import { StockService } from './stock.service';
 
 export type AdjustMovementSource = Extract<
