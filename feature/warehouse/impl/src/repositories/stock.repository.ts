@@ -17,17 +17,17 @@ export type StockDefinitionData = Omit<Stock, 'id' | 'quantity'>;
 export class StockRepository extends DrizzleBaseRepository {
   constructor(
     dbProvider: DrizzleDbProvider,
-    lockContext: AsyncLocalStorage<'for_update'>,
+    forUpdateCtx: AsyncLocalStorage<'for_update'>,
     // private readonly cache: StockCache,
   ) {
-    super(dbProvider, lockContext);
+    super(dbProvider, forUpdateCtx);
   }
 
   findById(id: string): Promise<Stock | null> {
     const query = this.db.select().from(stocks).where(eq(stocks.id, id));
 
-    return (this.lockMode === 'for_update' ? query.for('update') : query).then(
-      ([row]) => (!!row ? toStock(row) : null),
+    return (this.forUpdate ? query.for('update') : query).then(([row]) =>
+      !!row ? toStock(row) : null,
     );
   }
 

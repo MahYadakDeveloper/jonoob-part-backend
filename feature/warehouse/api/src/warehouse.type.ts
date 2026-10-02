@@ -1,6 +1,6 @@
 import { Barcode, UnitOfMeasure } from '@feature/common';
 
-export type StockItems = { stockId: string; quantity: number };
+export type MovementItem = { stockId: string; quantity: number };
 
 export type IssueMovementSource = OutboundMovementSource['source'];
 
@@ -17,8 +17,12 @@ export type ReturnMovementSource = Extract<
 export type InboundMovementSource = {
   source:
     | { type: 'adjustment'; reason?: string }
+    | {
+        type: 'reversal';
+        boundary: 'pos' | 'order';
+      }
     | ({
-        referenceId?: string;
+        referenceId: string;
       } & (
         | {
             type: 'procurement';
@@ -38,6 +42,10 @@ export type OutboundMovementSource = {
         referenceId: string;
         type: 'sales';
         boundary: 'pos' | 'order';
+      }
+    | {
+        type: 'reversal';
+        boundary: 'supply';
       };
 };
 

@@ -1,33 +1,51 @@
 import { AsyncLocalStorage } from 'async_hooks';
+import { sql } from 'drizzle-orm';
 import { Database, DbTransaction } from '../drizzle';
 import { DrizzleDbProvider } from '../drizzle-db-provider';
 
 export abstract class DrizzleBaseRepository {
   constructor(
     protected readonly dbProvider: DrizzleDbProvider,
-    protected readonly lockContext: AsyncLocalStorage<'for_update'>,
+    protected readonly forUpdateCtx: AsyncLocalStorage<'for_update'>,
   ) {}
 
   protected get db(): Database | DbTransaction {
     return this.dbProvider.current;
   }
 
-  protected get lockMode() {
-    return this.lockContext.getStore();
+  protected get forUpdate() {
+    return !!this.forUpdateCtx.getStore();
   }
 
   withForUpdate<T>(fn: () => Promise<T>): Promise<T> {
-    this.assertTransaction(this.dbProvider.current);
+    assertTransaction(this.dbProvider.current, 'withForUpdate');
 
-    return this.lockContext.run('for_update', fn);
+    return this.forUpdateCtx.run('for_update', fn);
   }
 
-  /** Drizzle's `tx` has rollback(); the database itself doesn't, and would write outside the transaction. */
-  private assertTransaction(tx: Database | DbTransaction) {
-    if (
-      typeof (tx as Partial<DbTransaction> | undefined)?.rollback !== 'function'
-    ) {
-      throw new Error('withForUpdate must run inside a transaction');
-    }
+  async withLock<T>(
+    namespace: string,
+    key: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    assertTransaction(this.dbProvider.current, 'witLock');
+
+    await this.lock(namespace, key);
+    return fn();
+  }
+
+  private async lock(namespace: string, key: string): Promise<void> {
+    await this.db.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtextextended(${namespace + ':' + key}, 0))`,
+    );
+  }
+}
+
+/** Drizzle's `tx` has rollback(); the database itself doesn't, and would write outside the transaction. */
+function assertTransaction(tx: any, caller: string) {
+  if (
+    typeof (tx as Partial<DbTransaction> | undefined)?.rollback !== 'function'
+  ) {
+    throw new Error(`${caller} must run inside a transaction`);
   }
 }

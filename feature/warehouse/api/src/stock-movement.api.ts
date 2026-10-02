@@ -1,30 +1,33 @@
 import {
   IssueMovementSource,
+  MovementItem,
   ReceiptMovementSource,
   ReturnMovementSource,
-  StockItems,
 } from './warehouse.type';
 
 export const STOCK_MOVEMENT_API = Symbol('STOCK_MOVEMENT_API');
 export interface StockMovementApi {
   issue(
-    items: StockItems[],
+    items: MovementItem[],
     source: IssueMovementSource,
     idempotencyKey: string,
   ): Promise<{ movementId: string }>;
 
   receipt(
-    items: StockItems[],
+    items: MovementItem[],
     source: ReceiptMovementSource,
     idempotencyKey: string,
   ): Promise<{ movementId: string }>;
 
   return(
-    items: StockItems[],
+    items: MovementItem[],
     source: ReturnMovementSource,
     idempotencyKey: string,
   ): Promise<{ movementId: string }>;
 
-  reverse(movementId: string): Promise<void>;
+  reverse(
+    movementId: string,
+    idempotencyKey: string,
+  ): Promise<{ reversalMovementId: string }>;
   // transfer(stocks:{..}[], from: warehouseId, to: WarehouseId)
 }
