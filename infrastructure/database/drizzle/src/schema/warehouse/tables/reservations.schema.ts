@@ -8,11 +8,11 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { warehouseSchema } from '../warehouse.schema';
 import { stocks } from './stocks.schema';
-import { warehouseSchema } from './warehouse.schema';
 
 export const reservations = warehouseSchema.table('reservations', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').defaultRandom().primaryKey().notNull(),
   idempotencyKey: text('idempotency_key').unique().notNull(),
 
   createdAt: timestamp('created_at', { withTimezone: true })

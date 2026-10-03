@@ -30,8 +30,5 @@
     "@nestjs/outbox": "catalog:",
     "rxjs": "catalog:",
     "zod": "catalog:"
-  },
-  "devDependencies": {
-    "drizzle-kit": "catalog:"
   }
 }

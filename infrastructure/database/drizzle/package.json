@@ -13,6 +13,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js",
+      "require": "./dist/schema/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "schema": [
+        "./dist/schema/index.d.ts"
+      ]
     }
   },
   "dependencies": {
@@ -26,8 +38,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/pg": "^8.23.1",
-    "dotenv": "catalog:",
-    "drizzle-kit": "catalog:"
+    "@types/pg": "^8.23.1"
   }
 }

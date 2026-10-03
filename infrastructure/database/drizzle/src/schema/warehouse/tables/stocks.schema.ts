@@ -1,5 +1,5 @@
 import { integer, text, unique, uuid } from 'drizzle-orm/pg-core';
-import { warehouseSchema } from './warehouse.schema';
+import { warehouseSchema } from '../warehouse.schema';
 
 export const barcodeType = warehouseSchema.enum('barcode_type', [
   'UPC_A',
@@ -21,7 +21,7 @@ export const unitOfMeasure = warehouseSchema.enum('unit_of_measure', [
 export const stocks = warehouseSchema.table(
   'stocks',
   {
-    id: uuid().defaultRandom().primaryKey(),
+    id: uuid().defaultRandom().primaryKey().notNull(),
     barcodeValue: text().notNull(),
     barcodeType: barcodeType().notNull(),
     qty: integer().default(0).notNull(),

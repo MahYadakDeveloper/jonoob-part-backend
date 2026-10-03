@@ -1,10 +1,4 @@
-import {
-  Database,
-  DbTransaction,
-  outboxDeadLetters,
-  outboxInbox,
-  outboxMessages,
-} from '@infra/db-drizzle';
+import { Database, DbTransaction } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
 import {
@@ -39,6 +33,11 @@ import {
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { alias } from 'drizzle-orm/pg-core';
 import { createHash } from 'node:crypto';
+import {
+  outboxDeadLetters,
+  outboxInbox,
+  outboxMessages,
+} from './outbox.drizzle.schema';
 
 /** Advisory lock classes (the two-number form): any two numbers no other code of yours locks on. */
 const CLAIM_LOCK = 20_260_901;

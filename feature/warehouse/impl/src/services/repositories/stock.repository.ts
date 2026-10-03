@@ -5,18 +5,19 @@ import {
   DrizzleDbProvider,
   sqlCase,
 } from '@infra/db-drizzle';
+import { stocks, warehouseRelations } from '@infra/db-drizzle/schema';
 import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { toStock, toStockRow } from './mappers/stock.mapper';
-import { stocks } from './schema/stocks.schema';
 
 export type StockDefinitionData = Omit<Stock, 'id' | 'quantity'>;
 
 @Injectable()
-export class StockRepository extends DrizzleBaseRepository {
+export class StockRepository extends DrizzleBaseRepository<
+  typeof warehouseRelations
+> {
   constructor(
-    dbProvider: DrizzleDbProvider,
+    dbProvider: DrizzleDbProvider<typeof warehouseRelations>,
     forUpdateCtx: AsyncLocalStorage<'for_update'>,
     // private readonly cache: StockCache,
   ) {
@@ -27,7 +28,7 @@ export class StockRepository extends DrizzleBaseRepository {
     const query = this.db.select().from(stocks).where(eq(stocks.id, id));
 
     return (this.forUpdate ? query.for('update') : query).then(([row]) =>
-      !!row ? toStock(row) : null,
+      !!row ? this.toModel(row) : null,
     );
   }
 
@@ -36,7 +37,7 @@ export class StockRepository extends DrizzleBaseRepository {
       .select()
       .from(stocks)
       .where(inArray(stocks.id, ids))
-      .then((rows) => rows.map(toStock));
+      .then((rows) => rows.map(this.toModel));
   }
 
   async findByBarcode(barcode: Barcode): Promise<Stock | null> {
@@ -49,7 +50,7 @@ export class StockRepository extends DrizzleBaseRepository {
           eq(stocks.barcodeValue, barcode.value),
         ),
       )
-      .then(([row]) => (!!row ? toStock(row) : null));
+      .then(([row]) => (!!row ? this.toModel(row) : null));
   }
 
   async increase(items: { id: string; quantity: number }[]): Promise<void> {
@@ -125,7 +126,7 @@ export class StockRepository extends DrizzleBaseRepository {
   define(stock: StockDefinitionData): Promise<{ id: string }> {
     return this.db
       .insert(stocks)
-      .values(toStockRow(stock))
+      .values(this.toRowInsert(stock))
       .returning({
         id: stocks.id,
       })
@@ -135,7 +136,31 @@ export class StockRepository extends DrizzleBaseRepository {
   async redefine(id: string, stock: StockDefinitionData): Promise<void> {
     await this.db
       .update(stocks)
-      .set(toStockRow(stock))
+      .set(this.toRowInsert(stock))
       .where(eq(stocks.id, id));
+  }
+
+  private toModel(row: typeof stocks.$inferSelect): Stock {
+    return {
+      id: row.id,
+      quantity: row.qty,
+      unitOfMeasure: row.unitOfMeasure,
+      barcode: {
+        type: row.barcodeType,
+        value: row.barcodeValue,
+      },
+      storageLocation: row.storageLocation ?? undefined,
+    };
+  }
+
+  private toRowInsert({
+    barcode,
+    ...rest
+  }: Omit<Stock, 'id' | 'quantity'>): typeof stocks.$inferInsert {
+    return {
+      ...rest,
+      barcodeType: barcode.type,
+      barcodeValue: barcode.value,
+    };
   }
 }

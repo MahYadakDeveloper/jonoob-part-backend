@@ -29,7 +29,7 @@ export class StockQuarantine implements StockQuarantineApi {
     private readonly tx: TransactionManager,
   ) {}
 
-  all(): Promise<QuarantinedStock[]> {
+  list(): Promise<QuarantinedStock[]> {
     return this.repository.findAll();
   }
 

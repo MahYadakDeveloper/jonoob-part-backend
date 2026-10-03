@@ -2,16 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
 import { AsyncLocalStorage } from 'async_hooks';
 import type { Database, DbTransaction } from './drizzle';
+import { TablesRelationalConfig } from 'drizzle-orm';
 
 @Injectable()
-export class DrizzleTransactionContext {
+export class DrizzleTransactionContext<T extends TablesRelationalConfig = {}> {
   constructor(
     @InjectDrizzle()
-    private readonly db: Database,
-    private readonly ctx: AsyncLocalStorage<DbTransaction>,
+    private readonly db: Database<T>,
+    private readonly ctx: AsyncLocalStorage<DbTransaction<T>>,
   ) {}
 
-  get current(): DbTransaction | null {
+  get current(): DbTransaction<T> | null {
     const tx = this.ctx.getStore();
     if (!tx) return null;
     return tx;

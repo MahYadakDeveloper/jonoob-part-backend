@@ -1,7 +1,7 @@
 import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
+import { movements } from '@infra/db-drizzle/schema';
 import { AsyncLocalStorage } from 'async_hooks';
 import { eq, sql } from 'drizzle-orm';
-import { movements } from './schema/movements.schema';
 
 export class StockMovementRepository extends DrizzleBaseRepository {
   constructor(

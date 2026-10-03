@@ -12,7 +12,7 @@ import type {
 import { transactions } from '@infra/db-drizzle';
 import { BaseRepository, type DbLockContext } from '@infra/persistent-common';
 import { Inject, Injectable } from '@nestjs/common';
-import { asc, desc, EmptyRelations, sql } from 'drizzle-orm';
+import { asc, count, desc, EmptyRelations } from 'drizzle-orm';
 import { NodePgDatabase, NodePgTransaction } from 'drizzle-orm/node-postgres';
 
 @Injectable()
@@ -40,17 +40,17 @@ export class DrizzleTransactionsRepository
     });
   }
 
-  async list(
+  async page(
     criteria: PageCriteria<OffsetPagination>,
   ): Promise<PageResult<WarehouseTransaction, OffsetPagination>> {
-    const size = criteria.page.size;
-    const page = criteria.page.page;
+    const size = Math.max(1, criteria.page.size);
+    const page = Math.max(1, criteria.page.page);
 
     const offset = (page - 1) * size;
 
     const orderBy = this.getOrderBy(criteria.sort);
 
-    const [rows, countResult] = await Promise.all([
+    const [rows, [{ totalItems }]] = await Promise.all([
       this.db
         .select()
         .from(transactions)
@@ -60,14 +60,12 @@ export class DrizzleTransactionsRepository
 
       this.db
         .select({
-          count: sql<number>`count(*)`,
+          totalItems: count(),
         })
         .from(transactions),
     ]);
 
-    const totalItems = Number(countResult[0]?.count ?? 0);
-
-    const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / size);
+    const totalPages = Math.ceil(totalItems / size);
 
     return {
       page: {

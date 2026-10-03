@@ -1,12 +1,26 @@
+import { OffsetPagination, PageCriteria, PageResult } from '@feature/common';
 import { StockReservationItem } from '@feature/warehouse-api';
 import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
+import {
+  reservationItems,
+  reservations,
+  warehouseRelations,
+} from '@infra/db-drizzle/schema';
 import { AsyncLocalStorage } from 'async_hooks';
-import { eq } from 'drizzle-orm';
-import { reservationItems, reservations } from './schema/reservations.schema';
+import { count, eq } from 'drizzle-orm';
 
-export class StockReservationRepository extends DrizzleBaseRepository {
+type ReservationRow = typeof reservations.$inferSelect & {
+  items: (typeof reservationItems.$inferSelect)[];
+};
+type Reservation = typeof reservations.$inferSelect & {
+  items: Omit<typeof reservationItems.$inferSelect, 'reservationId'>[];
+};
+
+export class StockReservationRepository extends DrizzleBaseRepository<
+  typeof warehouseRelations
+> {
   constructor(
-    dbProvider: DrizzleDbProvider,
+    dbProvider: DrizzleDbProvider<typeof warehouseRelations>,
     lockContext: AsyncLocalStorage<'for_update'>,
     // private readonly cache: StockCache,
   ) {
@@ -14,48 +28,70 @@ export class StockReservationRepository extends DrizzleBaseRepository {
   }
 
   async findById(reservationId: string) {
-    const query = this.db
-      .select()
-      .from(reservations)
-      .innerJoin(
-        reservationItems,
-        eq(reservations.id, reservationItems.reservationId),
-      )
-      .where(eq(reservations.id, reservationId));
+    if (this.forUpdate) await this.lock('reservations', reservationId);
 
-    const rows = await (this.forUpdate ? query.for('update') : query);
+    const reservation = await this.db.query.reservations.findFirst({
+      where: {
+        id: reservationId,
+      },
+      with: {
+        items: true,
+      },
+    });
 
-    if (rows.length === 0) return null;
-
-    return {
-      ...rows[0].reservations,
-      items: rows.flatMap(({ reservation_items }) => ({
-        stockId: reservation_items.stockId,
-        quantity: reservation_items.quantity,
-      })),
-    };
+    return reservation ? this.toModel(reservation) : null;
   }
 
   async findByIdempotencyKey(idempotencyKey: string) {
-    const query = this.db
-      .select()
-      .from(reservations)
-      .innerJoin(
-        reservationItems,
-        eq(reservations.id, reservationItems.reservationId),
-      )
-      .where(eq(reservations.idempotencyKey, idempotencyKey));
+    if (this.forUpdate) await this.lock('reservations', idempotencyKey);
 
-    const rows = await (this.forUpdate ? query.for('update') : query);
+    const reservation = await this.db.query.reservations.findFirst({
+      where: {
+        idempotencyKey,
+      },
+      with: {
+        items: true,
+      },
+    });
 
-    if (rows.length === 0) return null;
+    return reservation ? this.toModel(reservation) : null;
+  }
+
+  async page(
+    criteria: PageCriteria<OffsetPagination>,
+  ): Promise<PageResult<Reservation, OffsetPagination>> {
+    const size = Math.max(1, criteria.page.size);
+    const page = Math.max(1, criteria.page.page);
+
+    const offset = (page - 1) * size;
+
+    const [rows, [{ totalItems }]] = await Promise.all([
+      this.db.query.reservations.findMany({
+        orderBy: { createdAt: 'desc' },
+        offset,
+        with: {
+          items: true,
+        },
+      }),
+      this.db
+        .select({
+          totalItems: count(),
+        })
+        .from(reservations),
+    ]);
+
+    const totalPages = Math.ceil(totalItems / size);
 
     return {
-      ...rows[0].reservations,
-      items: rows.flatMap(({ reservation_items }) => ({
-        stockId: reservation_items.stockId,
-        quantity: reservation_items.quantity,
-      })),
+      page: {
+        items: rows.map((row) => this.toModel(row)),
+        number: page,
+        size,
+        totalItems,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
     };
   }
 
@@ -83,5 +119,12 @@ export class StockReservationRepository extends DrizzleBaseRepository {
     await this.db
       .delete(reservations)
       .where(eq(reservations.id, reservationId));
+  }
+
+  private toModel(row: ReservationRow) {
+    return {
+      ...row,
+      items: row.items.map(({ stockId, quantity }) => ({ stockId, quantity })),
+    };
   }
 }
