@@ -11,4 +11,24 @@ export const warehouseRelations = defineRelationsPart(schema, (r) => ({
       to: r.reservations.id,
     }),
   },
+
+  movements: {
+    quarantines: r.many.quarantines(),
+  },
+
+  stocks: {},
+
+  quarantines: {
+    stock: r.one.stocks({
+      from: r.quarantines.stockId,
+      to: r.stocks.id,
+      optional: false,
+    }),
+
+    movement: r.one.movements({
+      from: r.quarantines.movementId,
+      to: r.movements.id,
+      optional: false,
+    }),
+  },
 }));

@@ -2,19 +2,20 @@ import {
   InboundMovementSource,
   IssueMovementSource,
   MovementItem,
-  OutboundMovementSource,
   ReceiptMovementSource,
+  ReturnMovementItem,
   ReturnMovementSource,
   StockMovementApi,
 } from '@feature/warehouse-api';
-import { DbTransaction, DrizzleTransactionContext } from '@infra/db-drizzle';
+import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { Outbox } from '@nestjs/outbox';
-import { StockMovementRepository } from './repositories/stock-movement.repository';
+import { StockQuarantineService } from './quarantine.service';
+import { StockMovementRepository } from './repositories/movement.repository';
 import { StockService } from './stock.service';
 
 export type AdjustMovementSource = Extract<
-  (InboundMovementSource | OutboundMovementSource)['source'],
+  InboundMovementSource['source'],
   { type: 'adjustment' }
 >;
 
@@ -22,9 +23,10 @@ export type AdjustMovementSource = Extract<
 export class StockMovementService implements StockMovementApi {
   constructor(
     private readonly stock: StockService,
+    private readonly quarantine: StockQuarantineService,
     private readonly tx: DrizzleTransactionContext,
     private readonly repository: StockMovementRepository,
-    private readonly outbox: Outbox<DbTransaction>,
+    private readonly outbox: Outbox,
   ) {}
 
   issue(
@@ -48,13 +50,13 @@ export class StockMovementService implements StockMovementApi {
         const { movementId } = await this.repository.record({
           idempotencyKey: key,
           items,
-          details: {
+          source: {
             direction: 'outbound',
-            source,
+            ...source,
           },
         });
 
-        await this.outbox.add(this.tx.current!, {
+        await this.outbox.add(this.tx.current, {
           topic: 'warehouse.stocks-issued',
           payload: {},
         });
@@ -85,13 +87,13 @@ export class StockMovementService implements StockMovementApi {
         const { movementId } = await this.repository.record({
           idempotencyKey: key,
           items,
-          details: {
+          source: {
             direction: 'inbound',
-            source,
+            ...source,
           },
         });
 
-        await this.outbox.add(this.tx.current!, {
+        await this.outbox.add(this.tx.current, {
           topic: 'warehouse.stocks-receipted',
           payload: {},
         });
@@ -102,7 +104,7 @@ export class StockMovementService implements StockMovementApi {
   }
 
   return(
-    items: MovementItem[],
+    items: ReturnMovementItem[],
     source: ReturnMovementSource,
     idempotencyKey: string,
   ): Promise<{ movementId: string }> {
@@ -110,27 +112,41 @@ export class StockMovementService implements StockMovementApi {
       this.repository.withLock('return', idempotencyKey, async () => {
         const key = `return:${idempotencyKey}`;
 
-        const movement = await this.repository.findByIdempotencyKey(key);
+        const existing = await this.repository.findByIdempotencyKey(key);
+        if (existing) return { movementId: existing.id };
 
-        if (movement)
-          return {
-            movementId: movement.id,
-          };
+        const sealed = items.filter((i) => i.packaging === 'sealed');
+        const opened = items.filter((i) => i.packaging === 'opened');
 
-        await this.stock.increase(items);
+        const restocked = this.groupCount(sealed);
+
+        await this.stock.increase(restocked);
 
         const { movementId } = await this.repository.record({
           idempotencyKey: key,
-          items,
-          details: {
+          items: restocked,
+          source: {
             direction: 'inbound',
-            source,
+            ...source,
           },
         });
 
+        await this.quarantine.quarantineMany(
+          opened.map((i) => ({
+            stockId: i.stockId,
+            reason: i.reason,
+            note: i.note,
+            movementId,
+          })),
+        );
+
         await this.outbox.add(this.tx.current!, {
           topic: 'warehouse.stocks-returned',
-          payload: {},
+          payload: {
+            movementId,
+            restocked,
+            quarantined: this.groupCount(opened),
+          },
         });
 
         return { movementId };
@@ -167,9 +183,9 @@ export class StockMovementService implements StockMovementApi {
         const { movementId } = await this.repository.record({
           idempotencyKey: key,
           items: [item],
-          details: {
+          source: {
             direction,
-            source,
+            ...source,
           },
         });
 
@@ -183,95 +199,69 @@ export class StockMovementService implements StockMovementApi {
     );
   }
 
-  async reverse(
-    movementId: string,
-    idempotencyKey: string,
-  ): Promise<{ reversalMovementId: string }> {
+  undo(movementId: string): Promise<void> {
     return this.tx.run(async () =>
-      this.repository.withLock('reversal', movementId, async () => {
-        const key = `reversal:${idempotencyKey}`;
-
-        const done = await this.repository.findByIdempotencyKey(key);
-        if (done) return { reversalMovementId: done.id };
-
-        const alreadyReversed =
-          await this.repository.findByReversesId(movementId);
-        if (alreadyReversed) {
-          throw new Error(`Movement ${movementId} is already reversed`);
-        }
-
+      this.repository.withForUpdate(async () => {
         const movement = await this.repository.findById(movementId);
         if (!movement) {
           throw new Error(`Movement ${movementId} not found`);
         }
 
-        if (movement.reversesId) {
-          throw new Error('A reversal cannot be reversed');
-        }
+        await this.applyInverse(movement);
 
-        const { details } = movement;
+        await this.repository.delete(movementId);
 
-        if (
-          details.source.type !== 'procurement' &&
-          details.source.type !== 'sales'
-        ) {
-          throw new Error(
-            `Movements of type "${details.source.type}" cannot be reversed`,
-          );
-        }
-
-        let reversalDetails:
-          | ({ direction: 'inbound' } & InboundMovementSource)
-          | ({ direction: 'outbound' } & OutboundMovementSource);
-
-        if (details.direction === 'inbound') {
-          if (details.source.type !== 'procurement') {
-            throw new Error('Unexpected inbound source');
-          }
-          await this.stock.decrease(movement.items);
-
-          reversalDetails = {
-            direction: 'outbound',
-            source: {
-              type: 'reversal',
-              boundary: 'supply',
-            },
-          };
-        } else {
-          if (details.source.type !== 'sales') {
-            throw new Error('Unexpected outbound source');
-          }
-          await this.stock.increase(movement.items);
-
-          reversalDetails = {
-            direction: 'inbound',
-            source: {
-              type: 'reversal',
-              boundary: details.source.boundary,
-            },
-          };
-        }
-
-        const { movementId: reversalMovementId } = await this.repository.record(
-          {
-            idempotencyKey: key,
-            items: movement.items,
-            details: reversalDetails,
-            reversesId: movement.id,
-          },
-        );
-
-        await this.outbox.add(this.tx.current!, {
-          topic: 'warehouse.stocks-adjusted',
+        await this.outbox.add(this.tx.current, {
+          topic: 'warehouse.movement-undone',
           payload: {
-            movementId: reversalMovementId,
-            reversesId: movement.id,
+            movementId,
             items: movement.items,
           },
         });
-
-        return { reversalMovementId };
       }),
     );
   }
+
+  private async applyInverse(
+    movement: Awaited<ReturnType<typeof this.repository.findById>>,
+  ): Promise<void> {
+    const { source, items } = movement;
+
+    switch (source.type) {
+      case 'sales':
+        await this.stock.increase(items);
+        break;
+
+      case 'procurement':
+        await this.stock.decrease(items);
+        break;
+
+      case 'adjustment':
+        await (source.direction === 'inbound'
+          ? this.stock.decrease(items)
+          : this.stock.increase(items));
+        break;
+
+      case 'return':
+        break;
+
+      default:
+        return assertNever(source); // compile error if a new type is added
+    }
+  }
+
+  private groupCount(units: { stockId: string }[]) {
+    return [
+      ...units.reduce(
+        (m, u) => m.set(u.stockId, (m.get(u.stockId) ?? 0) + 1),
+        new Map<string, number>(),
+      ),
+    ]
+      .map(([stockId, quantity]) => ({ stockId, quantity }))
+      .sort((a, b) => a.stockId.localeCompare(b.stockId));
+  }
+}
+
+function assertNever(x: never): never {
+  throw new Error(`Unhandled movement type: ${JSON.stringify(x)}`);
 }

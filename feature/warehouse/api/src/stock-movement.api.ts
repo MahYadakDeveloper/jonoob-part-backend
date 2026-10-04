@@ -2,6 +2,7 @@ import {
   IssueMovementSource,
   MovementItem,
   ReceiptMovementSource,
+  ReturnMovementItem,
   ReturnMovementSource,
 } from './warehouse.type';
 
@@ -20,14 +21,14 @@ export interface StockMovementApi {
   ): Promise<{ movementId: string }>;
 
   return(
-    items: MovementItem[],
+    items: ReturnMovementItem[],
     source: ReturnMovementSource,
     idempotencyKey: string,
   ): Promise<{ movementId: string }>;
 
-  reverse(
-    movementId: string,
-    idempotencyKey: string,
-  ): Promise<{ reversalMovementId: string }>;
-  // transfer(stocks:{..}[], from: warehouseId, to: WarehouseId)
+  /**
+   * Undoes the stock effects of a movement and permanently removes its record.
+   * Fails if the movement is referenced elsewhere (e.g. by a quarantine).
+   */
+  undo(movementId: string): Promise<void>;
 }

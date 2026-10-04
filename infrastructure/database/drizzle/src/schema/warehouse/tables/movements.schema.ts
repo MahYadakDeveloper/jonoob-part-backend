@@ -1,13 +1,10 @@
-import { AnyPgColumn, jsonb, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { jsonb, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { warehouseSchema } from '../warehouse.schema';
 
 type MovementSource =
-  | ({ direction: 'outbound' } & (
+  | ({ direction: 'inbound' } & (
       | { type: 'adjustment'; reason?: string }
-      | {
-          type: 'reversal';
-          boundary: 'pos' | 'order';
-        }
       | ({
           referenceId: string;
         } & (
@@ -28,10 +25,6 @@ type MovementSource =
           type: 'sales';
           boundary: 'pos' | 'order';
         }
-      | {
-          type: 'reversal';
-          boundary: 'supply';
-        }
     ));
 
 export const movements = warehouseSchema.table('movements', {
@@ -43,11 +36,9 @@ export const movements = warehouseSchema.table('movements', {
     .$type<{ stockId: string; quantity: number }[]>()
     .notNull(),
 
-  details: jsonb('details').$type<MovementSource>().notNull(),
+  source: jsonb('source').$type<MovementSource>().notNull(),
 
-  reversesId: uuid('reverses_id')
-    .unique()
-    .references((): AnyPgColumn => movements.id),
+  sourceType: text('source_type').generatedAlwaysAs(sql`source->>'type'`),
 
   recordedAt: timestamp('recorded_at', { withTimezone: true })
     .defaultNow()

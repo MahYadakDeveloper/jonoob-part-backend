@@ -4,7 +4,7 @@ import {
 } from '@feature/warehouse-api';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
-import { StockReservationRepository } from './repositories/stock-reservation.repository';
+import { StockReservationRepository } from './repositories/reservation.repository';
 import { StockService } from './stock.service';
 
 @Injectable()

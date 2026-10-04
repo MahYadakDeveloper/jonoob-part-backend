@@ -4,14 +4,14 @@ import { Database, DbTransaction } from './drizzle';
 import { DrizzleDbProvider } from './drizzle-db-provider';
 
 export abstract class DrizzleBaseRepository<
-  T extends TablesRelationalConfig = {},
+  TRelation extends TablesRelationalConfig = {},
 > {
   constructor(
-    protected readonly dbProvider: DrizzleDbProvider<T>,
+    protected readonly dbProvider: DrizzleDbProvider<TRelation>,
     protected readonly forUpdateCtx: AsyncLocalStorage<'for_update'>,
   ) {}
 
-  protected get db(): Database<T> | DbTransaction<T> {
+  protected get db(): Database<TRelation> | DbTransaction<TRelation> {
     return this.dbProvider.current;
   }
 

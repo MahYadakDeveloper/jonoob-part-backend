@@ -1,15 +1,10 @@
-import { type TransactionManager } from '@feature/common';
-import { type ProcurementApi } from '@feature/procurement-api';
-import {
-  QuarantineStockRequest,
-  StockQuarantineApi,
-} from '@feature/warehouse-quarantine-api';
+import { ReturnReason } from '@feature/warehouse-api';
+import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import {
   QuarantinedStock,
   type StockQuarantineRepository,
 } from './quarantine.repository';
-import { ReleaseStockRequest } from './quarantine.req';
 
 export interface ReleaseStockRequest {
   quarantines: { id: string; qty: number }[];
@@ -22,25 +17,25 @@ export interface ReturnToSupplierRequest {
 }
 
 @Injectable()
-export class StockQuarantine implements StockQuarantineApi {
+export class StockQuarantineService {
   constructor(
-    private readonly procurement: ProcurementApi,
     private readonly repository: StockQuarantineRepository,
-    private readonly tx: TransactionManager,
+    private readonly tx: DrizzleTransactionContext,
   ) {}
 
-  list(): Promise<QuarantinedStock[]> {
+  page(): Promise<QuarantinedStock[]> {
     return this.repository.findAll();
   }
 
-  quarantine({
-    items,
-    reason,
-    referenceId,
-  }: QuarantineStockRequest): Promise<void> {
-    return this.repository.quarantine(
-      items.map((q) => ({ referenceId: referenceId, reason: reason, ...q })),
-    );
+  async quarantineMany(
+    items: {
+      stockId: string;
+      reason: ReturnReason;
+      note?: string;
+      movementId: string;
+    }[],
+  ): Promise<void> {
+    this.repository.createMany();
   }
 
   /**

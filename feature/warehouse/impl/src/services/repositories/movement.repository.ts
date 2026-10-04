@@ -25,17 +25,7 @@ export class StockMovementRepository extends DrizzleBaseRepository {
       .from(movements)
       .where(eq(movements.idempotencyKey, key))
       .limit(1);
-    return (this.forUpdate ? query.for('update') : query).then(
-      ([row]) => row ?? null,
-    );
-  }
 
-  findByReversesId(reversesId: string) {
-    const query = this.db
-      .select({ id: movements.id })
-      .from(movements)
-      .where(eq(movements.reversesId, reversesId))
-      .limit(1);
     return (this.forUpdate ? query.for('update') : query).then(
       ([row]) => row ?? null,
     );
@@ -53,5 +43,9 @@ export class StockMovementRepository extends DrizzleBaseRepository {
       })
       .returning({ movementId: movements.id })
       .then(([row]) => row);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(movements).where(eq(movements.id, id));
   }
 }
