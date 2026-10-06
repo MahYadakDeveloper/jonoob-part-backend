@@ -1,7 +1,4 @@
-export * from './database/db-provider';
 export * from './job-scheduler';
-export * from './database/db-lock';
-export * from './model/barcode';
 export * from './model/invoice-snapshot';
 export * from './model/line-items';
 export * from './model/money';
@@ -10,8 +7,6 @@ export * from './outbox';
 export * from './pagination';
 export * from './settings';
 export * from './synchronizer/synchronizer';
-export * from './transaction/transaction-context';
-export * from './transaction/transaction-manager';
 export * from './types';
 export * from './utils';
 export * from './zod';

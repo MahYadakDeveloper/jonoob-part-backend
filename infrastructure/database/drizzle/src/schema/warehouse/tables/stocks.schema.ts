@@ -1,4 +1,4 @@
-import { integer, text, unique, uuid } from 'drizzle-orm/pg-core';
+import { integer, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 import { warehouseSchema } from '../warehouse.schema';
 
 export const barcodeType = warehouseSchema.enum('barcode_type', [
@@ -18,15 +18,25 @@ export const unitOfMeasure = warehouseSchema.enum('unit_of_measure', [
   'set',
 ]);
 
-export const stocks = warehouseSchema.table(
-  'stocks',
+export const barcode = warehouseSchema.table(
+  'barcode',
   {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    barcodeValue: text().notNull(),
-    barcodeType: barcodeType().notNull(),
-    qty: integer().default(0).notNull(),
-    unitOfMeasure: unitOfMeasure().notNull(),
-    storageLocation: text(),
+    stockId: uuid('stock_id')
+      .primaryKey()
+      .references(() => stocks.id, { onDelete: 'cascade' }),
+    type: barcodeType('type').notNull(),
+    value: text('value').notNull(),
   },
-  (table) => [unique().on(table.barcodeType, table.barcodeValue)],
+  (t) => [unique('uq_type_value').on(t.type, t.value)],
 );
+
+export const stocks = warehouseSchema.table('stocks', {
+  id: uuid('id').defaultRandom().primaryKey().notNull(),
+  quantity: integer('quantity').default(0).notNull(),
+  unitOfMeasure: unitOfMeasure('unit_of_measure').notNull(),
+  storageLocation: text('storage_location'),
+  definedAt: timestamp('defined_at', { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});

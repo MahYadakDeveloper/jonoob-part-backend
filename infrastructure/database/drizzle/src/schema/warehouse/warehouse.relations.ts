@@ -16,7 +16,19 @@ export const warehouseRelations = defineRelationsPart(schema, (r) => ({
     quarantines: r.many.quarantines(),
   },
 
-  stocks: {},
+  barcode: {},
+
+  stocks: {
+    barcode: r.one.barcode({
+      from: r.stocks.id,
+      to: r.barcode.stockId,
+      optional: false,
+    }),
+    reservedQty: r.many.reservationItems({
+      from: r.stocks.id,
+      to: r.reservationItems.stockId,
+    }),
+  },
 
   quarantines: {
     stock: r.one.stocks({

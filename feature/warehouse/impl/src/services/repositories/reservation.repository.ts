@@ -1,6 +1,9 @@
 import { OffsetPagination, PageCriteria, PageResult } from '@feature/common';
-import { StockReservationItem } from '@feature/warehouse-api';
-import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
+import {
+  DrizzleBaseRepository,
+  DrizzleDbProvider,
+  DrizzleTransactionContext,
+} from '@infra/db-drizzle';
 import {
   reservationItems,
   reservations,
@@ -9,19 +12,13 @@ import {
 import { AsyncLocalStorage } from 'async_hooks';
 import { count, eq } from 'drizzle-orm';
 
-type ReservationRow = typeof reservations.$inferSelect & {
-  items: (typeof reservationItems.$inferSelect)[];
-};
-type Reservation = typeof reservations.$inferSelect & {
-  items: Omit<typeof reservationItems.$inferSelect, 'reservationId'>[];
-};
-
 export class StockReservationRepository extends DrizzleBaseRepository<
   typeof warehouseRelations
 > {
   constructor(
     dbProvider: DrizzleDbProvider<typeof warehouseRelations>,
     lockContext: AsyncLocalStorage<'for_update'>,
+    private readonly tx: DrizzleTransactionContext,
     // private readonly cache: StockCache,
   ) {
     super(dbProvider, lockContext);
@@ -30,49 +27,63 @@ export class StockReservationRepository extends DrizzleBaseRepository<
   async findById(reservationId: string) {
     if (this.forUpdate) await this.lock('reservations', reservationId);
 
-    const reservation = await this.db.query.reservations.findFirst({
-      where: {
-        id: reservationId,
-      },
-      with: {
-        items: true,
-      },
-    });
-
-    return reservation ? this.toModel(reservation) : null;
+    return this.db.query.reservations
+      .findFirst({
+        where: {
+          id: reservationId,
+        },
+        with: {
+          items: {
+            columns: {
+              reservationId: false,
+            },
+          },
+        },
+      })
+      .then((reservation) => reservation ?? null);
   }
 
   async findByIdempotencyKey(idempotencyKey: string) {
     if (this.forUpdate) await this.lock('reservations', idempotencyKey);
 
-    const reservation = await this.db.query.reservations.findFirst({
-      where: {
-        idempotencyKey,
-      },
-      with: {
-        items: true,
-      },
-    });
-
-    return reservation ? this.toModel(reservation) : null;
+    return this.db.query.reservations
+      .findFirst({
+        where: {
+          idempotencyKey,
+        },
+        with: {
+          items: {
+            columns: {
+              reservationId: false,
+            },
+          },
+        },
+      })
+      .then((reservation) => reservation ?? null);
   }
 
   async page(
     criteria: PageCriteria<OffsetPagination>,
-  ): Promise<PageResult<Reservation, OffsetPagination>> {
+  ): Promise<PageResult<any, OffsetPagination>> {
     const size = Math.max(1, criteria.page.size);
     const page = Math.max(1, criteria.page.page);
 
     const offset = (page - 1) * size;
 
-    const [rows, [{ totalItems }]] = await Promise.all([
-      this.db.query.reservations.findMany({
-        orderBy: { createdAt: 'desc' },
-        offset,
-        with: {
-          items: true,
-        },
-      }),
+    const [_reservations, [{ totalItems }]] = await Promise.all([
+      this.db.query.reservations
+        .findMany({
+          orderBy: { createdAt: 'desc' },
+          offset,
+          with: {
+            items: {
+              columns: {
+                reservationId: false,
+              },
+            },
+          },
+        })
+        .then((reservation) => reservation ?? null),
       this.db
         .select({
           totalItems: count(),
@@ -84,7 +95,7 @@ export class StockReservationRepository extends DrizzleBaseRepository<
 
     return {
       page: {
-        items: rows.map((row) => this.toModel(row)),
+        items: _reservations,
         number: page,
         size,
         totalItems,
@@ -96,35 +107,28 @@ export class StockReservationRepository extends DrizzleBaseRepository<
   }
 
   async create(
-    items: StockReservationItem[],
+    items: Omit<typeof reservationItems.$inferInsert, 'reservationId'>[],
     idempotencyKey: string,
   ): Promise<{ reservationId: string }> {
-    const [reservation] = await this.db
-      .insert(reservations)
-      .values([{ idempotencyKey }])
-      .returning({ id: reservations.id });
+    return this.tx.run(async () => {
+      const [row] = await this.db
+        .insert(reservations)
+        .values([{ idempotencyKey }])
+        .returning({ id: reservations.id });
 
-    await this.db
-      .insert(reservationItems)
-      .values(
-        items.map((item) => ({ reservationId: reservation.id, ...item })),
-      );
+      await this.db
+        .insert(reservationItems)
+        .values(items.map((item) => ({ reservationId: row.id, ...item })));
 
-    return {
-      reservationId: reservation.id,
-    };
+      return {
+        reservationId: row.id,
+      };
+    });
   }
 
   async delete(reservationId: string): Promise<void> {
     await this.db
       .delete(reservations)
       .where(eq(reservations.id, reservationId));
-  }
-
-  private toModel(row: ReservationRow) {
-    return {
-      ...row,
-      items: row.items.map(({ stockId, quantity }) => ({ stockId, quantity })),
-    };
   }
 }

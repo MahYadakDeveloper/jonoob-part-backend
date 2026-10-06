@@ -1,6 +1,5 @@
-import { Barcode } from '@feature/common';
-import { Stock, StockQueryApi } from '@feature/warehouse-api';
-import { DbTransaction, DrizzleTransactionContext } from '@infra/db-drizzle';
+import { Barcode, Stock, StockQueryApi } from '@feature/warehouse-api';
+import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { Outbox } from '@nestjs/outbox';
 import { StockRepository } from './repositories/stock.repository';
@@ -10,7 +9,7 @@ export class StockService implements StockQueryApi {
   constructor(
     private readonly repository: StockRepository,
     private readonly tx: DrizzleTransactionContext,
-    private readonly outbox: Outbox<DbTransaction>,
+    private readonly outbox: Outbox,
   ) {}
 
   findById(stockId: string): Promise<Stock> {
@@ -37,6 +36,10 @@ export class StockService implements StockQueryApi {
       if (!stock) throw new Error('');
       return stock;
     });
+  }
+
+  page(criteria: Parameters<typeof this.repository.page>[0]) {
+    return this.repository.page(criteria);
   }
 
   async available(
@@ -94,6 +97,17 @@ export class StockService implements StockQueryApi {
         },
       });
     });
+  }
+
+  define(definition: Parameters<typeof this.repository.define>[0]) {
+    return this.repository.define(definition);
+  }
+
+  redefine(
+    stockId: string,
+    definition: Parameters<typeof this.repository.redefine>[1],
+  ) {
+    return this.repository.redefine(stockId, definition);
   }
 }
 

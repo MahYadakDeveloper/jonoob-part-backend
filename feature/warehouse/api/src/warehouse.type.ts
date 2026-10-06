@@ -1,4 +1,4 @@
-import { Barcode, UnitOfMeasure } from '@feature/common';
+import { UnitOfMeasure } from '@feature/common';
 
 export type MovementItem = { stockId: string; quantity: number };
 
@@ -63,10 +63,26 @@ export type OutboundMovementSource = {
       };
 };
 
+export type BarcodeType =
+  | 'UPC_A'
+  | 'UPC_E'
+  | 'EAN_13'
+  | 'EAN_8'
+  | 'Code39'
+  | 'Code93'
+  | 'Code128'
+  | 'Codabar';
+
+export type Barcode = {
+  type: BarcodeType;
+  value: string;
+};
+
 export type Stock = {
   id: string;
   quantity: number;
   barcode: Barcode;
   unitOfMeasure: UnitOfMeasure;
-  storageLocation?: string;
+  storageLocation: string | null;
+  reservedQty: number;
 };
