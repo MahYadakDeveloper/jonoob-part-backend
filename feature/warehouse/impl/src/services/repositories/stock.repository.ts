@@ -5,6 +5,9 @@ import {
   DrizzleBaseRepository,
   DrizzleDbProvider,
   DrizzleTransactionContext,
+  orderBy,
+  PageCriteria,
+  sortableFields,
   sqlCase,
 } from '@infra/db-drizzle';
 import {
@@ -28,6 +31,8 @@ type Stock = typeof stocks.$inferSelect & {
   barcode: Barcode;
   reservedQty: number;
 };
+
+export const stockSortableFields = sortableFields(stocks);
 
 @Injectable()
 export class StockRepository extends DrizzleBaseRepository<
@@ -126,19 +131,14 @@ export class StockRepository extends DrizzleBaseRepository<
     page,
     size,
     sort,
-  }: {
-    sort: {
-      filed: 'definedAt';
-      direction: 'asc' | 'desc';
-    };
-    page: number;
-    size: number;
-  }): Promise<PageResult<Stock, OffsetPagination>> {
+  }: PageCriteria<typeof stocks>): Promise<
+    PageResult<Stock, OffsetPagination>
+  > {
     const offset = (page - 1) * size;
 
     const [_stocks, [{ totalItems }]] = await Promise.all([
       this.db.query.stocks.findMany({
-        orderBy: { definedAt: sort.direction },
+        orderBy: orderBy(sort),
         offset,
         with: {
           barcode: {
@@ -209,26 +209,6 @@ export class StockRepository extends DrizzleBaseRepository<
           })),
           sql`0`,
         )}`,
-      })
-      .where(
-        inArray(
-          stocks.id,
-          items.map(({ id }) => id),
-        ),
-      );
-  }
-
-  async adjust(items: { id: string; quantity: number }[]): Promise<void> {
-    await this.db
-      .update(stocks)
-      .set({
-        quantity: sqlCase<number>(
-          items.map((s) => ({
-            when: eq(stocks.id, s.id),
-            then: sql`${s.quantity}`,
-          })),
-          sql`0`,
-        ),
       })
       .where(
         inArray(

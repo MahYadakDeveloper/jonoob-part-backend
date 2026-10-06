@@ -1,7 +1,10 @@
+import { StockMovementService } from '@/services/movement.service';
 import { StockService } from '@/services/stock.service';
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { z } from 'zod';
 import {
+  type StockAdjustment,
+  stockAdjustmentSchema,
   type StockDefinition,
   stockDefinitionSchema,
   type StockPageQuery,
@@ -10,16 +13,19 @@ import {
 
 @Controller('warehouse/stock')
 export class StockController {
-  constructor(private readonly stockService: StockService) {}
+  constructor(
+    private readonly stockService: StockService,
+    private readonly stockMovementService: StockMovementService,
+  ) {}
 
   @Get(':id')
-  stock(@Param({ schema: z.uuid() }) id: string) {
-    return this.stockService.findById(id);
+  stock(@Param('id', { schema: z.uuid() }) stockId: string) {
+    return this.stockService.findById(stockId);
   }
 
   @Get()
   page(@Query({ schema: stockPageQuerySchema }) criteria: StockPageQuery) {
-    return this.stockService.page;
+    return this.stockService.page(criteria);
   }
 
   @Post()
@@ -27,11 +33,20 @@ export class StockController {
     return this.stockService.define(definition);
   }
 
+  @Post('adjust/:id')
+  adjust(
+    @Param({ schema: z.uuid() }) stockId: string,
+    @Body({ schema: stockAdjustmentSchema })
+    { quantity, ...rest }: StockAdjustment,
+  ) {
+    this.stockMovementService.adjust({ ...rest, item: { stockId, quantity } });
+  }
+
   @Post(':id')
   redefine(
-    @Param({ schema: z.uuid() }) id: string,
+    @Param('id', { schema: z.uuid() }) stockId: string,
     @Body({ schema: stockDefinitionSchema }) definition: StockDefinition,
   ) {
-    return this.stockService.redefine(id, definition);
+    return this.stockService.redefine(stockId, definition);
   }
 }

@@ -1,6 +1,12 @@
 import type { OmitPartials } from '@/utils';
-import { OffsetPagination, PageCriteria, PageResult } from '@feature/common';
-import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
+import { OffsetPagination, PageResult } from '@feature/common';
+import {
+  DrizzleBaseRepository,
+  DrizzleDbProvider,
+  orderBy,
+  PageCriteria,
+  sortableFields,
+} from '@infra/db-drizzle';
 import {
   movements,
   quarantines,
@@ -18,11 +24,7 @@ type Quarantine = Omit<
   movement: typeof movements.$inferSelect;
 };
 
-type RowInsert = OmitPartials<
-  typeof quarantines.$inferSelect & {
-    movement: OmitPartials<typeof movements.$inferSelect>;
-  }
->;
+export const quarantineSortableFields = sortableFields(quarantines);
 
 export class StockQuarantineRepository extends DrizzleBaseRepository<
   typeof warehouseRelations
@@ -34,17 +36,18 @@ export class StockQuarantineRepository extends DrizzleBaseRepository<
     super(dbProvider, lockContext);
   }
 
-  async page(
-    criteria: PageCriteria<OffsetPagination>,
-  ): Promise<PageResult<Quarantine, OffsetPagination>> {
-    const size = Math.max(1, criteria.page.size);
-    const page = Math.max(1, criteria.page.page);
-
+  async page({
+    page,
+    size,
+    sort,
+  }: PageCriteria<typeof quarantines>): Promise<
+    PageResult<Quarantine, OffsetPagination>
+  > {
     const offset = (page - 1) * size;
 
     const [_quantities, [{ totalItems }]] = await Promise.all([
       this.db.query.quarantines.findMany({
-        orderBy: { createdAt: 'desc' },
+        orderBy: orderBy(sort),
         offset,
         with: {
           stock: true,

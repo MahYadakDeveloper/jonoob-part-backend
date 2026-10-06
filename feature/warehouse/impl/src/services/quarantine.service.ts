@@ -1,10 +1,7 @@
 import { ReturnReason } from '@feature/warehouse-api';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
-import {
-  QuarantinedStock,
-  type StockQuarantineRepository,
-} from './quarantine.repository';
+import { type StockQuarantineRepository } from './repositories/quarantine.repository';
 
 export interface ReleaseStockRequest {
   quarantines: { id: string; qty: number }[];
@@ -23,8 +20,8 @@ export class StockQuarantineService {
     private readonly tx: DrizzleTransactionContext,
   ) {}
 
-  page(): Promise<QuarantinedStock[]> {
-    return this.repository.findAll();
+  page(criteria: Parameters<StockQuarantineRepository['page']>[0]) {
+    return this.repository.page(criteria);
   }
 
   async quarantineMany(

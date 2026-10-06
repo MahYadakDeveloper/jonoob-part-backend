@@ -4,14 +4,6 @@ import {
   Pagination,
 } from './pagination-type';
 
-export interface PageCriteria<T extends CursorPagination | OffsetPagination> {
-  filters?: PageFilters;
-
-  sort?: PageSort;
-
-  page: T;
-}
-
 export interface PageResult<T, TPagination extends Pagination> {
   page: Page<T, TPagination>;
 }

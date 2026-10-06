@@ -99,13 +99,13 @@ export class StockService implements StockQueryApi {
     });
   }
 
-  define(definition: Parameters<typeof this.repository.define>[0]) {
+  define(definition: Parameters<StockRepository['define']>[0]) {
     return this.repository.define(definition);
   }
 
   redefine(
     stockId: string,
-    definition: Parameters<typeof this.repository.redefine>[1],
+    definition: Parameters<StockRepository['redefine']>[1],
   ) {
     return this.repository.redefine(stockId, definition);
   }

@@ -29,11 +29,15 @@ export class StockMovementService implements StockMovementApi {
     private readonly outbox: Outbox,
   ) {}
 
-  issue(
-    items: MovementItem[],
-    source: IssueMovementSource,
-    idempotencyKey: string,
-  ): Promise<{ movementId: string }> {
+  issue({
+    idempotencyKey,
+    items,
+    source,
+  }: {
+    items: MovementItem[];
+    source: IssueMovementSource;
+    idempotencyKey: string;
+  }): Promise<{ movementId: string }> {
     return this.tx.run(async () =>
       this.repository.withLock('issue', idempotencyKey, async () => {
         const key = `issue:${idempotencyKey}`;
@@ -66,11 +70,15 @@ export class StockMovementService implements StockMovementApi {
     );
   }
 
-  receipt(
-    items: MovementItem[],
-    source: ReceiptMovementSource,
-    idempotencyKey: string,
-  ): Promise<{ movementId: string }> {
+  receipt({
+    idempotencyKey,
+    items,
+    source,
+  }: {
+    items: MovementItem[];
+    source: ReceiptMovementSource;
+    idempotencyKey: string;
+  }): Promise<{ movementId: string }> {
     return this.tx.run(async () =>
       this.repository.withLock('receipt', idempotencyKey, async () => {
         const key = `receipt:${idempotencyKey}`;
@@ -103,11 +111,15 @@ export class StockMovementService implements StockMovementApi {
     );
   }
 
-  return(
-    items: ReturnMovementItem[],
-    source: ReturnMovementSource,
-    idempotencyKey: string,
-  ): Promise<{ movementId: string }> {
+  return({
+    idempotencyKey,
+    items,
+    source,
+  }: {
+    items: ReturnMovementItem[];
+    source: ReturnMovementSource;
+    idempotencyKey: string;
+  }): Promise<{ movementId: string }> {
     return this.tx.run(async () =>
       this.repository.withLock('return', idempotencyKey, async () => {
         const key = `return:${idempotencyKey}`;
@@ -154,12 +166,17 @@ export class StockMovementService implements StockMovementApi {
     );
   }
 
-  adjust(
-    item: MovementItem,
-    direction: 'inbound' | 'outbound',
-    source: AdjustMovementSource,
-    idempotencyKey: string,
-  ): Promise<{ movementId: string }> {
+  adjust({
+    direction,
+    idempotencyKey,
+    item,
+    source,
+  }: {
+    item: MovementItem;
+    direction: 'inbound' | 'outbound';
+    source: AdjustMovementSource;
+    idempotencyKey: string;
+  }): Promise<{ movementId: string }> {
     return this.tx.run(async () =>
       this.repository.withLock('adjustment', idempotencyKey, async () => {
         const key = `adjustment:${idempotencyKey}`;
@@ -199,7 +216,7 @@ export class StockMovementService implements StockMovementApi {
     );
   }
 
-  undo(movementId: string): Promise<void> {
+  undo({ movementId }: { movementId: string }): Promise<void> {
     return this.tx.run(async () =>
       this.repository.withForUpdate(async () => {
         const movement = await this.repository.findById(movementId);
@@ -223,7 +240,7 @@ export class StockMovementService implements StockMovementApi {
   }
 
   private async applyInverse(
-    movement: Awaited<ReturnType<typeof this.repository.findById>>,
+    movement: NonNullable<Awaited<ReturnType<typeof this.repository.findById>>>,
   ): Promise<void> {
     const { source, items } = movement;
 
