@@ -13,11 +13,17 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./constants": {
+      "types": "./dist/queue.constants.d.ts",
+      "import": "./dist/queue.constants.js",
+      "require": "./dist/queue.constants.js"
     }
   },
   "dependencies": {
     "@jonoob-part/contracts": "workspace:*",
     "@nestjs/bullmq": "^11.0.4",
-    "@nestjs/common": "^11.1.28"
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/config": "catalog:"
   }
 }

@@ -15,12 +15,9 @@
       "require": "./dist/index.js"
     }
   },
-  "peerDependencies": {
-    "@nestjs/config": "^4.0.4"
-  },
   "dependencies": {
-    "@nestjs/common": "^11.2.1",
-    "@nestjs/config": "^4.0.4",
-    "zod": "^4.4.3"
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "zod": "catalog:"
   }
 }

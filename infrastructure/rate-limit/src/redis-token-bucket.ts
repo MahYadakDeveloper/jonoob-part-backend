@@ -1,28 +1,36 @@
-import {
-  RateLimitResult,
-  RateLimitResults,
-  RateLimitService,
-  TokenBucketConfig,
-} from '@feature/auth-rate-limit';
 import { REDIS_CLIENT } from '@infra/db-redis';
 import { Inject } from '@nestjs/common';
 import { type RedisClientType } from 'redis';
-import { ATTEMPT_SCRIPT, CHECK_LUA_SCRIPT, CONSUME_LUA_SCRIPT } from './lua-scripts.constant';
+import {
+  ATTEMPT_SCRIPT,
+  CHECK_LUA_SCRIPT,
+  CONSUME_LUA_SCRIPT,
+} from './lua-scripts.constant';
+import {
+  RateLimitResult,
+  RateLimitResults,
+  TokenBucketConfig,
+} from './rate-limit';
 
-export class RedisTokenBucketBasedRateLimitService implements RateLimitService {
+export class TokenBucketRateLimitService {
   constructor(
     @Inject(REDIS_CLIENT)
     private readonly redis: RedisClientType,
   ) {}
 
-  async attempt(buckets: { key: string; config: TokenBucketConfig }[]): Promise<RateLimitResults> {
+  async attempt(
+    buckets: { key: string; config: TokenBucketConfig }[],
+  ): Promise<RateLimitResults> {
     const now = Date.now() / 1000; // seconds with fractional precision
 
     const result = (await this.redis.eval(ATTEMPT_SCRIPT, {
       keys: buckets.map((b) => b.key),
       arguments: [
         now.toString(),
-        ...buckets.flatMap((b) => [b.config.maxTokens.toString(), b.config.refillRate.toString()]),
+        ...buckets.flatMap((b) => [
+          b.config.maxTokens.toString(),
+          b.config.refillRate.toString(),
+        ]),
       ],
     })) as [1, number] | [0, string, number, number, number];
 
@@ -41,7 +49,10 @@ export class RedisTokenBucketBasedRateLimitService implements RateLimitService {
     };
   }
 
-  async consume(key: string, config: TokenBucketConfig): Promise<RateLimitResult> {
+  async consume(
+    key: string,
+    config: TokenBucketConfig,
+  ): Promise<RateLimitResult> {
     const { maxTokens, refillRate } = config;
 
     const now = Date.now() / 1000; // seconds with fractional precision
@@ -58,7 +69,10 @@ export class RedisTokenBucketBasedRateLimitService implements RateLimitService {
     return { allowed, remaining, limit: maxTokens, retryAfter };
   }
 
-  async check(key: string, config: TokenBucketConfig): Promise<RateLimitResult> {
+  async check(
+    key: string,
+    config: TokenBucketConfig,
+  ): Promise<RateLimitResult> {
     const { maxTokens, refillRate } = config;
     const now = Date.now() / 1000; // seconds with fractional precision
 

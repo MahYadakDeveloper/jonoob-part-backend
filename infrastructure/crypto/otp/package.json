@@ -1,5 +1,5 @@
 {
-  "name": "@infra/db-redis",
+  "name": "@infra/crypto-otp",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -17,9 +17,6 @@
   },
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@nestjs/common": "catalog:",
-    "@nestjs/config": "catalog:",
-    "redis": "catalog:",
-    "zod": "catalog:"
+    "@nestjs/common": "catalog:"
   }
 }

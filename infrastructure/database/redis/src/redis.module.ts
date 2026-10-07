@@ -1,32 +1,25 @@
 import { Global, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigType } from '@nestjs/config';
 import { createClient, type RedisClientType } from 'redis';
+import { redisConfig } from './redis.config';
 import { REDIS_CLIENT } from './redis.constants';
 import { RedisLifecycle } from './redis.lifecycle';
 
 @Global()
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule.forFeature(redisConfig)],
   providers: [
     {
       provide: REDIS_CLIENT,
-      inject: [ConfigService],
-      useFactory: (config: ConfigService): RedisClientType => {
-        const isProduction = config.get<string>('NODE_ENV') === 'production';
-
-        if (!isProduction) {
-          return createClient({
-            url: config.get<string>('REDIS_URL', 'redis://localhost:6379'),
-          });
-        }
-
+      inject: [redisConfig.KEY],
+      useFactory: (config: ConfigType<typeof redisConfig>): RedisClientType => {
         return createClient({
-          username: config.get<string>('REDIS_USERNAME'),
-          password: config.get<string>('REDIS_PASSWORD'),
-          database: config.get<number>('REDIS_DB', 0),
+          username: config.username,
+          password: config.password,
+          database: config.database,
           socket: {
-            host: config.get<string>('REDIS_HOST', 'localhost'),
-            port: config.get<number>('REDIS_PORT', 6379),
+            host: config.host,
+            port: config.port,
             tls: true,
           },
         });

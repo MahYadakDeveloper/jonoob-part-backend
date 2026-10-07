@@ -1,7 +1,3 @@
-import {
-  type RateLimitService,
-  TokenBucketConfig,
-} from '@feature/auth-rate-limit';
 import { type SmsService } from '@feature/auth-sms';
 import {
   AuthenticatedUser,
@@ -14,14 +10,21 @@ import type { ManagerApi } from '@feature/manager-api';
 import type { CourierApi } from '@feature/order-delivery-courier-api';
 import { HashService } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
+import {
+  TokenBucketConfig,
+  TokenBucketRateLimitService,
+} from '@infra/rate-limit';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import authConfig from './auth.config';
 import { RefreshClaim } from './auth.type';
-import { type OtpStore } from './port/otp.store';
+import { OtpStore } from './otp/otp.store';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
 
 @Injectable()
-export class AuthService implements AuthenticationApi {
+export class AuthenticationService implements AuthenticationApi {
   // otp
   private readonly otpRateLimitConfig: TokenBucketConfig = {
     maxTokens: 1,
@@ -60,12 +63,12 @@ export class AuthService implements AuthenticationApi {
     private readonly otps: OtpStore,
     private readonly jwtService: JwtService,
     private readonly hashService: HashService,
-    private readonly rateLimit: RateLimitService,
-    private readonly sms: SmsService,
+    private readonly rateLimit: TokenBucketRateLimitService,
     private readonly otpGenerator: OtpGenerator,
     private readonly synchronizer: Synchronizer,
     @Inject(authConfig.KEY)
     private readonly config: ConfigType<typeof authConfig>,
+    @InjectQueue(SMS_QUEUE_NAME) private readonly smsQueue: Queue,
   ) {}
 
   async authenticate({
@@ -133,7 +136,7 @@ export class AuthService implements AuthenticationApi {
       this.otpTtlSeconds,
     );
 
-    await this.sms.sendOtpTo(phoneNumber, otp);
+    await this.smsQueue.add('send_otp', { x: 'test' });
   }
 
   async verify({
@@ -204,7 +207,7 @@ export class AuthService implements AuthenticationApi {
     if (!payload) throw new Error();
 
     return await this.synchronizer.executeExclusive(
-      `${AuthService.name}:sign-in:${payload.jti}`,
+      `${AuthenticationService.name}:sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
@@ -257,7 +260,7 @@ export class AuthService implements AuthenticationApi {
     const payload = this.jwtService.decode(verifyToken);
     if (!payload) throw new Error();
     return await this.synchronizer.executeExclusive(
-      `${AuthService.name}:courier-sign-in:${payload.jti}`,
+      `${AuthenticationService.name}:courier-sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
@@ -313,7 +316,7 @@ export class AuthService implements AuthenticationApi {
     if (!payload) throw new Error();
 
     return await this.synchronizer.executeExclusive(
-      `${AuthService.name}:manager-sign-in:${payload.jti}`,
+      `${AuthenticationService.name}:manager-sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
@@ -366,7 +369,7 @@ export class AuthService implements AuthenticationApi {
     if (!payload) throw new Error();
 
     return await this.synchronizer.executeExclusive(
-      `${AuthService.name}:admin-sign-in:${payload.jti}`,
+      `${AuthenticationService.name}:admin-sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
@@ -422,7 +425,7 @@ export class AuthService implements AuthenticationApi {
     if (!payload) throw new Error();
 
     return this.synchronizer.executeExclusive(
-      `${AuthService.name}:sign-up:${payload.jti}`,
+      `${AuthenticationService.name}:sign-up:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
@@ -478,7 +481,7 @@ export class AuthService implements AuthenticationApi {
     if (!payload) throw new Error();
 
     return await this.synchronizer.executeExclusive(
-      `${AuthService.name}:refresh:${payload.jti}`,
+      `${AuthenticationService.name}:refresh:${payload.jti}`,
       async () => {
         const payload = (await this.jwtService.verify(
           oldRefreshToken,
