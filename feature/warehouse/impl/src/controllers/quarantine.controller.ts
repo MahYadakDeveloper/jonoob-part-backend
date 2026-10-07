@@ -1,11 +1,12 @@
-import { StockQuarantineService } from '@/services/quarantine.service';
-import { Controller, Get, Query } from '@nestjs/common';
+import { StockQuarantineService } from '../services/quarantine.service';
+import { Controller, Delete, Get, Param, Query } from '@nestjs/common';
+import { z } from 'zod';
 import {
   type QuarantinesPageQuery,
   quarantinesPageQuerySchema,
 } from './schema/quarantine.schemas';
 
-@Controller('quarantine')
+@Controller('warehouse/quarantines')
 export class StockQuarantineController {
   constructor(
     private readonly stockQuarantineService: StockQuarantineService,
@@ -17,5 +18,10 @@ export class StockQuarantineController {
     criteria: QuarantinesPageQuery,
   ) {
     return this.stockQuarantineService.page(criteria);
+  }
+
+  @Delete(':id')
+  release(@Param('id', { schema: z.uuid() }) quarantineId: string) {
+    return this.stockQuarantineService.release(quarantineId);
   }
 }

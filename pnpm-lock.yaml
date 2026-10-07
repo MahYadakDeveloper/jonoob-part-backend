@@ -9,6 +9,9 @@ catalogs:
     '@casl/ability':
       specifier: ^7.0.1
       version: 7.0.1
+    '@fastify/formbody':
+      specifier: ^9.0.0
+      version: 9.0.0
     '@fastify/multipart':
       specifier: 10.1.1
       version: 10.1.1
@@ -107,6 +110,9 @@ importers:
 
   app/api:
     dependencies:
+      '@fastify/formbody':
+        specifier: 'catalog:'
+        version: 9.0.0
       '@fastify/multipart':
         specifier: 'catalog:'
         version: 10.1.1
@@ -1452,6 +1458,9 @@ importers:
       '@infra/db-drizzle':
         specifier: workspace:*
         version: link:../../../infrastructure/database/drizzle
+      '@infra/messaging-outbox':
+        specifier: workspace:*
+        version: link:../../../infrastructure/messaging/outbox
       '@nestjs/common':
         specifier: 'catalog:'
         version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)

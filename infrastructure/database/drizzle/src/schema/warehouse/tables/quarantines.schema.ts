@@ -22,7 +22,7 @@ export const quarantines = warehouseSchema.table(
       .notNull()
       .references(() => stocks.id),
 
-    movementId: uuid('stock_id').notNull(),
+    movementId: uuid('movement_id').notNull(),
 
     movementSourceType: text('movement_source_type')
       .notNull()

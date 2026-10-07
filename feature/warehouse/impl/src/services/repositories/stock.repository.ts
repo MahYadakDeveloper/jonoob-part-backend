@@ -1,4 +1,3 @@
-import { OmitPartials } from '@/utils';
 import { OffsetPagination, PageResult } from '@feature/common';
 import { Barcode } from '@feature/warehouse-api';
 import {
@@ -19,6 +18,7 @@ import {
 import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { count, eq, inArray, sql } from 'drizzle-orm';
+import type { OmitPartials } from '../../utils';
 
 type StockDefinition = OmitPartials<
   typeof stocks.$inferInsert & {
@@ -63,11 +63,11 @@ export class StockRepository extends DrizzleBaseRepository<
           },
         },
         extras: {
-          reservedQty: (stocks, { sql }) =>
+          reservedQty: (_stocks, { sql }) =>
             sql<number>`coalesce((
               select sum(${reservationItems.quantity})::int
               from ${reservationItems}
-              where ${reservationItems.stockId} = ${stocks.id}
+              where ${reservationItems.stockId} = ${_stocks.id}
             ), 0)`,
         },
       })
@@ -147,12 +147,13 @@ export class StockRepository extends DrizzleBaseRepository<
             },
           },
         },
+        limit: size,
         extras: {
           reservedQty: (stocks, { sql }) =>
             sql<number>`coalesce((
               select sum(${reservationItems.quantity})::int
               from ${reservationItems}
-              where ${reservationItems} = ${stocks.id}
+              where ${reservationItems.stockId} = ${stocks.id}
             ), 0)`,
         },
       }),
@@ -255,5 +256,9 @@ export class StockRepository extends DrizzleBaseRepository<
         .set(_barcode)
         .where(eq(barcode.stockId, id));
     });
+  }
+
+  delete(id: string) {
+    return this.db.delete(stocks).where(eq(stocks.id, id));
   }
 }

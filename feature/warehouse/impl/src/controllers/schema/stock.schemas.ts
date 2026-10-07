@@ -1,13 +1,16 @@
-import { stockSortableFields } from '@/services/repositories/stock.repository';
-import { StockService } from '@/services/stock.service';
 import { barcodeType, unitOfMeasure } from '@infra/db-drizzle/schema';
 import { z } from 'zod';
+import { stockSortableFields } from '../../services/repositories/stock.repository';
+import type { StockService } from '../../services/stock.service';
 import { createPageQuerySchema } from './utils';
 
 export const stockPageQuerySchema = createPageQuerySchema(
   stockSortableFields,
   '-definedAt',
 );
+
+type x = z.output<typeof stockPageQuerySchema>;
+
 export type StockPageQuery = z.infer<typeof stockPageQuerySchema>;
 
 // =============================================================================
@@ -20,7 +23,7 @@ export const stockDefinitionSchema = z.object({
     value: z.string().min(1),
   }),
   unitOfMeasure: z.enum(unitOfMeasure.enumValues),
-  storageLocation: z.string().nullable(),
+  storageLocation: z.string().nullable().default(null),
 }) satisfies z.ZodType<DefineStockInput>;
 
 export type StockDefinition = z.infer<typeof stockDefinitionSchema>;

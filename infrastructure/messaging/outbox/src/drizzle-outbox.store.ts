@@ -1,4 +1,9 @@
 import { Database, DbTransaction } from '@infra/db-drizzle';
+import {
+  outboxDeadLetters,
+  outboxInbox,
+  outboxMessages,
+} from '@infra/db-drizzle/schema';
 import { Injectable } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
 import {
@@ -33,11 +38,6 @@ import {
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { alias } from 'drizzle-orm/pg-core';
 import { createHash } from 'node:crypto';
-import {
-  outboxDeadLetters,
-  outboxInbox,
-  outboxMessages,
-} from './outbox.drizzle.schema';
 
 /** Advisory lock classes (the two-number form): any two numbers no other code of yours locks on. */
 const CLAIM_LOCK = 20_260_901;
@@ -54,7 +54,7 @@ export class DrizzleOutboxStore implements OutboxStore, OutboxInboxStore {
   }
 
   async add(
-    tx: DbTransaction,
+    tx: DbTransaction<{}>,
     messages: readonly OutboxMessage[],
   ): Promise<void> {
     assertTransaction(tx);
@@ -326,7 +326,7 @@ export class DrizzleOutboxStore implements OutboxStore, OutboxInboxStore {
   }
 
   async recordInbox(
-    tx: DbTransaction | undefined,
+    tx: DbTransaction<{}> | undefined,
     consumer: string,
     messageId: string,
     now: number,
@@ -390,9 +390,10 @@ export class DrizzleOutboxStore implements OutboxStore, OutboxInboxStore {
 }
 
 /** Drizzle's `tx` has rollback(); the database itself doesn't, and would write outside the transaction. */
-function assertTransaction(tx: Database | DbTransaction) {
+function assertTransaction(tx: Database<{}> | DbTransaction<{}>) {
   if (
-    typeof (tx as Partial<DbTransaction> | undefined)?.rollback !== 'function'
+    typeof (tx as Partial<DbTransaction<{}>> | undefined)?.rollback !==
+    'function'
   ) {
     throw new OutboxTransactionRequiredError(
       'Pass the tx that db.transaction() gives you, not the database.',

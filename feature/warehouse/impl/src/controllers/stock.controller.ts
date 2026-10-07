@@ -1,6 +1,16 @@
 import { StockMovementService } from '@/services/movement.service';
 import { StockService } from '@/services/stock.service';
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { z } from 'zod';
 import {
   type StockAdjustment,
@@ -11,7 +21,7 @@ import {
   stockPageQuerySchema,
 } from './schema/stock.schemas';
 
-@Controller('warehouse/stock')
+@Controller('warehouse/stocks')
 export class StockController {
   constructor(
     private readonly stockService: StockService,
@@ -33,7 +43,7 @@ export class StockController {
     return this.stockService.define(definition);
   }
 
-  @Post('adjust/:id')
+  @Patch(':id')
   adjust(
     @Param({ schema: z.uuid() }) stockId: string,
     @Body({ schema: stockAdjustmentSchema })
@@ -42,11 +52,16 @@ export class StockController {
     this.stockMovementService.adjust({ ...rest, item: { stockId, quantity } });
   }
 
-  @Post(':id')
+  @Put(':id')
   redefine(
     @Param('id', { schema: z.uuid() }) stockId: string,
     @Body({ schema: stockDefinitionSchema }) definition: StockDefinition,
   ) {
     return this.stockService.redefine(stockId, definition);
+  }
+
+  @Delete(':id')
+  delete(@Param('id', { schema: z.uuid() }) stockId: string) {
+    return this.stockService.delete(stockId);
   }
 }

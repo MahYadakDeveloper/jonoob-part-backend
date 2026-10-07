@@ -25,6 +25,7 @@
     "@feature/common": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
+    "@infra/messaging-outbox": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/outbox": "catalog:",

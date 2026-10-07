@@ -1,8 +1,8 @@
 // import { BullModule } from '@nestjs/bullmq';
+import { WarehouseModule } from '@feature/warehouse';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import path from 'node:path';
-import { WarehouseModule } from './warehouse/warehouse.module';
 // import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({

@@ -1,8 +1,10 @@
-import { OffsetPagination, PageCriteria, PageResult } from '@feature/common';
+import { OffsetPagination, PageResult } from '@feature/common';
 import {
   DrizzleBaseRepository,
   DrizzleDbProvider,
   DrizzleTransactionContext,
+  orderBy,
+  PageCriteria,
 } from '@infra/db-drizzle';
 import {
   reservationItems,
@@ -62,18 +64,19 @@ export class StockReservationRepository extends DrizzleBaseRepository<
       .then((reservation) => reservation ?? null);
   }
 
-  async page(
-    criteria: PageCriteria<OffsetPagination>,
-  ): Promise<PageResult<any, OffsetPagination>> {
-    const size = Math.max(1, criteria.page.size);
-    const page = Math.max(1, criteria.page.page);
-
+  async page({
+    page,
+    size,
+    sort,
+  }: PageCriteria<typeof reservations>): Promise<
+    PageResult<any, OffsetPagination>
+  > {
     const offset = (page - 1) * size;
 
     const [_reservations, [{ totalItems }]] = await Promise.all([
       this.db.query.reservations
         .findMany({
-          orderBy: { createdAt: 'desc' },
+          orderBy: orderBy(sort),
           offset,
           with: {
             items: {

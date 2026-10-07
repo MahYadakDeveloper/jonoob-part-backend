@@ -4,12 +4,15 @@ import {
   index,
   integer,
   jsonb,
-  pgTable,
+  pgSchema,
   primaryKey,
   text,
   timestamp,
 } from 'drizzle-orm/pg-core';
-export const outboxMessages = pgTable(
+
+export const outboxSchema = pgSchema('outbox');
+
+export const outboxMessages = outboxSchema.table(
   'outbox_messages',
   {
     /** Order within a key: numbered at insert, in commit order (DrizzleOutboxStore.add() locks the key). */
@@ -34,7 +37,7 @@ export const outboxMessages = pgTable(
   (table) => [index('outbox_messages_key_seq').on(table.key, table.seq)],
 );
 
-export const outboxDeadLetters = pgTable(
+export const outboxDeadLetters = outboxSchema.table(
   'outbox_dead_letters',
   {
     id: text('id').primaryKey(),
@@ -59,7 +62,7 @@ export const outboxDeadLetters = pgTable(
   ],
 );
 
-export const outboxInbox = pgTable(
+export const outboxInbox = outboxSchema.table(
   'outbox_inbox',
   {
     consumer: text('consumer').notNull(),

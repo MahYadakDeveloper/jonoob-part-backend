@@ -1,4 +1,4 @@
-import { quarantineSortableFields } from '@/services/repositories/quarantine.repository';
+import { quarantineSortableFields } from '../../services/repositories/quarantine.repository';
 import { createPageQuerySchema } from './utils';
 import { z } from 'zod';
 

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { jsonb, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 import { warehouseSchema } from '../warehouse.schema';
 
 type MovementSource =
@@ -27,20 +27,24 @@ type MovementSource =
         }
     ));
 
-export const movements = warehouseSchema.table('movements', {
-  id: uuid('id').defaultRandom().primaryKey().notNull(),
+export const movements = warehouseSchema.table(
+  'movements',
+  {
+    id: uuid('id').defaultRandom().primaryKey().notNull(),
 
-  idempotencyKey: text('idempotency_key').unique().notNull(),
+    idempotencyKey: text('idempotency_key').unique().notNull(),
 
-  items: jsonb('items')
-    .$type<{ stockId: string; quantity: number }[]>()
-    .notNull(),
+    items: jsonb('items')
+      .$type<{ stockId: string; quantity: number }[]>()
+      .notNull(),
 
-  source: jsonb('source').$type<MovementSource>().notNull(),
+    source: jsonb('source').$type<MovementSource>().notNull(),
 
-  sourceType: text('source_type').generatedAlwaysAs(sql`source->>'type'`),
+    sourceType: text('source_type').generatedAlwaysAs(sql`source->>'type'`),
 
-  recordedAt: timestamp('recorded_at', { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-});
+    recordedAt: timestamp('recorded_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [unique('movements_id_source_type_unique').on(t.id, t.sourceType)],
+);

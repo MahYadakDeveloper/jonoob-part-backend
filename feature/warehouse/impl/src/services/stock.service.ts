@@ -109,6 +109,10 @@ export class StockService implements StockQueryApi {
   ) {
     return this.repository.redefine(stockId, definition);
   }
+
+  delete(id: string) {
+    return this.repository.delete(id);
+  }
 }
 
 function assertAllExist(

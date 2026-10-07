@@ -1,31 +1,28 @@
 import { z } from 'zod';
 
-export const sortTerm = <const T extends string>(
-  sortableFields: readonly T[],
-) =>
-  z.string().transform((term, ctx) => {
-    const direction = term.startsWith('-')
-      ? ('desc' as const)
-      : ('asc' as const);
+type SortExpr<K extends string> = K | `-${K}`;
+type SortTerm<K extends string> = { field: K; direction: 'asc' | 'desc' };
+
+const sortTerm = <K extends string>(
+  fields: readonly [K, ...K[]],
+): z.ZodType<SortTerm<K>, string> =>
+  z.string().transform((term, ctx): SortTerm<K> => {
+    const direction = term.startsWith('-') ? 'desc' : 'asc';
     const field = term.replace(/^-/, '');
 
-    if (!(sortableFields as readonly string[]).includes(field)) {
+    if (!(fields as readonly string[]).includes(field)) {
       ctx.addIssue({
         code: 'custom',
-        message: `Cannot sort by "${field}". Allowed: ${sortableFields.join(', ')}`,
+        message: `Cannot sort by "${field}". Allowed: ${fields.join(', ')}`,
       });
       return z.NEVER;
     }
-    return { field: field as T, direction };
+    return { field: field as K, direction };
   });
 
-type SortExpr<TField extends string> = TField | `-${TField}`;
-
-export const createPageQuerySchema = <
-  const F extends readonly [string, ...string[]],
->(
-  sortableFields: F,
-  defaultSort: NoInfer<SortExpr<F[number]>>,
+export const createPageQuerySchema = <K extends string>(
+  sortableFields: readonly [K, ...K[]],
+  defaultSort: NoInfer<SortExpr<K>>,
 ) =>
   z.object({
     page: z.coerce.number().int().min(1).default(1),

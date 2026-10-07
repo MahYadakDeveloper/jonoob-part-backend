@@ -1,6 +1,11 @@
-import { OmitPartials } from '@/utils';
-import { OffsetPagination, PageCriteria, PageResult } from '@feature/common';
-import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
+import type { OmitPartials } from '../../utils';
+import { OffsetPagination, PageResult } from '@feature/common';
+import {
+  DrizzleBaseRepository,
+  DrizzleDbProvider,
+  orderBy,
+  PageCriteria,
+} from '@infra/db-drizzle';
 import { movements, warehouseRelations } from '@infra/db-drizzle/schema';
 import { AsyncLocalStorage } from 'async_hooks';
 import { count, eq, sql } from 'drizzle-orm';
@@ -46,17 +51,18 @@ export class StockMovementRepository extends DrizzleBaseRepository<
       .then((movement) => movement ?? null);
   }
 
-  async page(
-    criteria: PageCriteria<OffsetPagination>,
-  ): Promise<PageResult<Movement, OffsetPagination>> {
-    const size = Math.max(1, criteria.page.size);
-    const page = Math.max(1, criteria.page.page);
-
+  async page({
+    page,
+    size,
+    sort,
+  }: PageCriteria<typeof movements>): Promise<
+    PageResult<Movement, OffsetPagination>
+  > {
     const offset = (page - 1) * size;
 
     const [_movements, [{ totalItems }]] = await Promise.all([
       this.db.query.movements.findMany({
-        orderBy: { recordedAt: 'desc' },
+        orderBy: orderBy(sort),
         offset,
         columns: {
           sourceType: false,
