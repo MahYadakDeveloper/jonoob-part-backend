@@ -1,21 +1,18 @@
-import {
-  IssueTokenOptions,
-  TokenPayload,
-  TokenService,
-  TokenType,
-} from '@feature/authentication-token';
+import { REDIS_CLIENT } from '@infra/db-redis';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService as NestJwtService } from '@nestjs/jwt';
 import { randomUUID } from 'crypto';
 import { type RedisClientType } from 'redis';
-import tokenConfig from './token.config';
+import tokenConfig from './jwt.config';
+import { IssueTokenOptions, TokenPayload, TokenType } from './jwt';
 
 @Injectable()
-export class TokenServiceImpl implements TokenService {
+export class JwtService {
   constructor(
+    @Inject(REDIS_CLIENT)
     private readonly redis: RedisClientType,
-    private readonly jwt: JwtService,
+    private readonly jwt: NestJwtService,
     @Inject(tokenConfig.KEY)
     private readonly config: ConfigType<typeof tokenConfig>,
   ) {}

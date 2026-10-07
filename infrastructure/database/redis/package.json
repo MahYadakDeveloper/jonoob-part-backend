@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@feature/common": "workspace:*",
-    "@nestjs/common": "^11.1.26",
-    "@nestjs/config": "^4.0.4",
-    "redis": "^6.0.1"
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "redis": "catalog:"
   }
 }

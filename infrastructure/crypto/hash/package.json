@@ -16,12 +16,11 @@
     }
   },
   "dependencies": {
-    "@feature/authentication-hashing": "workspace:*",
     "@feature/common": "workspace:*",
-    "@nestjs/common": "^11.2.1",
-    "@nestjs/config": "^4.0.4",
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
     "bcrypt": "^6.0.0",
-    "zod": "^4.4.3"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0"

@@ -1,7 +1,6 @@
-import { HashService } from '@feature/auth-hashing';
 import bcrypt from 'bcrypt';
 
-export class HashServiceImpl implements HashService {
+export class HashService {
   constructor(private readonly rounds: number) {}
 
   async hash(value: string): Promise<string> {

@@ -1,7 +1,9 @@
+import { HashService } from '@infra/crypto-hash';
+import { JwtModule } from '@infra/crypto-jwt';
 import { Module } from '@nestjs/common';
-import { HashService } from './hash.service';
 
 @Module({
+  imports: [JwtModule],
   providers: [
     {
       provide: HashService,
@@ -9,4 +11,4 @@ import { HashService } from './hash.service';
     },
   ],
 })
-export class HashModule {}
+export class AuthenticationModule {}

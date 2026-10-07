@@ -33,6 +33,9 @@ catalogs:
     '@nestjs/drizzle':
       specifier: ^0.0.1
       version: 0.0.1
+    '@nestjs/jwt':
+      specifier: ^12.0.2
+      version: 12.0.2
     '@nestjs/outbox':
       specifier: ^0.0.1
       version: 0.0.1
@@ -54,6 +57,9 @@ catalogs:
     pg:
       specifier: ^8.23.0
       version: 8.23.0
+    redis:
+      specifier: ^6.0.1
+      version: 6.0.1
     rxjs:
       specifier: 7.8.1
       version: 7.8.1
@@ -250,23 +256,11 @@ importers:
         specifier: 5.12.5
         version: 5.12.5
 
-  feature/authentication/hash:
-    dependencies:
-      '@feature/customer-api':
-        specifier: workspace:*
-        version: link:../../customer/api
-      '@nestjs/common':
-        specifier: ^12.0.1
-        version: 12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
-
   feature/authentication/impl:
     dependencies:
       '@feature/authentication-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/authentication-hashing':
-        specifier: workspace:*
-        version: link:../hash
       '@feature/authentication-rate-limit':
         specifier: workspace:*
         version: link:../rate-limit
@@ -288,6 +282,12 @@ importers:
       '@feature/order-delivery-courier-api':
         specifier: workspace:*
         version: link:../../order/delivery/courier/api
+      '@infra/crypto-hash':
+        specifier: workspace:*
+        version: link:../../../infrastructure/crypto/hash
+      '@infra/crypto-jwt':
+        specifier: workspace:*
+        version: link:../../../infrastructure/crypto/jwt
       '@nestjs/common':
         specifier: ^12.0.1
         version: 12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -1491,28 +1491,49 @@ importers:
 
   infrastructure/crypto/hash:
     dependencies:
-      '@feature/authentication-hashing':
-        specifier: workspace:*
-        version: link:../../../feature/authentication/hash
       '@feature/common':
         specifier: workspace:*
         version: link:../../../feature/common
       '@nestjs/common':
-        specifier: ^11.2.1
-        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        specifier: 'catalog:'
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/config':
-        specifier: ^4.0.4
-        version: 4.0.4(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+        specifier: 'catalog:'
+        version: 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@types/bcrypt':
         specifier: ^6.0.0
         version: 6.0.0
+
+  infrastructure/crypto/jwt:
+    dependencies:
+      '@feature/common':
+        specifier: workspace:*
+        version: link:../../../feature/common
+      '@infra/db-redis':
+        specifier: workspace:*
+        version: link:../../database/redis
+      '@nestjs/common':
+        specifier: 'catalog:'
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/config':
+        specifier: 'catalog:'
+        version: 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@nestjs/jwt':
+        specifier: 'catalog:'
+        version: 12.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))
+      redis:
+        specifier: 'catalog:'
+        version: 6.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
 
   infrastructure/crypto/opt:
     dependencies:
@@ -1525,27 +1546,27 @@ importers:
 
   infrastructure/crypto/token:
     dependencies:
-      '@feature/authentication-token':
-        specifier: workspace:*
-        version: link:../../../feature/authentication/token
       '@feature/common':
         specifier: workspace:*
         version: link:../../../feature/common
+      '@infra/db-redis':
+        specifier: workspace:*
+        version: link:../../database/redis
       '@nestjs/common':
-        specifier: ^11.2.1
-        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        specifier: 'catalog:'
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/config':
-        specifier: ^4.0.4
-        version: 4.0.4(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+        specifier: 'catalog:'
+        version: 12.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/jwt':
-        specifier: ^12.0.1
-        version: 12.0.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))
+        specifier: 'catalog:'
+        version: 12.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))
       redis:
-        specifier: ^6.0.1
+        specifier: 'catalog:'
         version: 6.0.1
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: 'catalog:'
+        version: 4.6.5
 
   infrastructure/database/drizzle:
     dependencies:
@@ -1586,13 +1607,13 @@ importers:
         specifier: workspace:*
         version: link:../../../feature/common
       '@nestjs/common':
-        specifier: ^11.1.26
-        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        specifier: 'catalog:'
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/config':
-        specifier: ^4.0.4
-        version: 4.0.4(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+        specifier: 'catalog:'
+        version: 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       redis:
-        specifier: ^6.0.1
+        specifier: 'catalog:'
         version: 6.0.1
 
   infrastructure/evaluator:
@@ -3308,6 +3329,12 @@ packages:
       '@nestjs/common': ^11.0.0 || ^12.0.0
       rxjs: ^7.1.0
 
+  '@nestjs/config@12.0.1':
+    resolution: {integrity: sha512-pxqEtULFi4qXda0TqyR2YFq7o4UoRa7h4K5H0lgFuBMrUGr6x6VVldaJJrowFyh4uvp8dNq9Mie3T+l+uEOTfw==}
+    peerDependencies:
+      '@nestjs/common': ^11.0.0 || ^12.0.0
+      rxjs: ^7.1.0
+
   '@nestjs/config@4.0.4':
     resolution: {integrity: sha512-CJPjNitr0bAufSEnRe2N+JbnVmMmDoo6hvKCPzXgZoGwJSmp/dZPk9f/RMbuD/+Q1ZJPjwsRpq0vxna++Knwow==}
     peerDependencies:
@@ -3347,8 +3374,8 @@ packages:
       '@nestjs/common': ^10.0.0 || ^11.0.0
       '@nestjs/core': ^10.0.0 || ^11.0.0
 
-  '@nestjs/jwt@12.0.1':
-    resolution: {integrity: sha512-AOvjo0JIuVMNr+6JgbEz4fP+4afclGR5ffZnHtjOFs4+HhzerUYKcIVUL06u5uQYQi/ra8WHO+NZR7OFdQeGvA==}
+  '@nestjs/jwt@12.0.2':
+    resolution: {integrity: sha512-1crs22hB7pNf7FnfRRRXvFTo595Rgx+JLyIuWInsyd5Ov/z0N8CCJPqMlTy41D5XTWe8CVr9miwB+2OXxVX9RA==}
     peerDependencies:
       '@nestjs/common': ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0
 
@@ -4761,6 +4788,11 @@ packages:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
+  dotenv@18.0.3:
+    resolution: {integrity: sha512-/8CJTyL817qPnfbQrJgOEcrU3fDrJkRIoXBE566wHuvIXKOCHUZhPqGPbCPi9SogjdGnreF0TlvnTgK6J/8zpA==}
+    engines: {node: '>=12'}
+    hasBin: true
+
   drizzle-kit@1.0.0-rc.4:
     resolution: {integrity: sha512-KZCpjRyu+oYHLj/UJogfFlOkWhHVkaEI2EOT1U3NDVXUzLoTyPjqwFxwOrlQxsY6jzRyxcz4EacqboGfhEeYrA==}
     hasBin: true
@@ -4971,6 +5003,9 @@ packages:
 
   es-toolkit@1.51.0:
     resolution: {integrity: sha512-zC2lQGkM7QX+Gm6iM3+WIdZJzthsEd14LvRNJneSO2hzyz/zNBENR8+YXWo1cKxgPBtV6ksPYHELbcwBRzmdCw==}
+
+  es-toolkit@1.52.0:
+    resolution: {integrity: sha512-XTNEJQh1tY1ZJVcf6ayP/2n4ZPyaHlW2FWs7xvw5ddPuhUVjLD3olQVQS7kf58JbAB48iL0uL/jerTrjtV3lDA==}
 
   esbuild@0.25.12:
     resolution: {integrity: sha512-bbPBYYrtZbkt6Os6FiTLCTFxvq4tt3JKall1vRwshA3fdVztsLAatFaZobhkBC8/BrPetoa0oksYoKXoG4ryJg==}
@@ -8386,6 +8421,15 @@ snapshots:
       es-toolkit: 1.51.0
       rxjs: 7.8.2
 
+  '@nestjs/config@12.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
+    dependencies:
+      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@standard-schema/spec': 1.1.0
+      dotenv: 18.0.3
+      dotenv-expand: 13.0.0
+      es-toolkit: 1.52.0
+      rxjs: 7.8.2
+
   '@nestjs/config@4.0.4(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -8515,9 +8559,9 @@ snapshots:
       '@nestjs/core': 12.0.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
       eventemitter2: 6.4.9
 
-  '@nestjs/jwt@12.0.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))':
+  '@nestjs/jwt@12.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))':
     dependencies:
-      '@nestjs/common': 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@types/jsonwebtoken': 9.0.10
       jsonwebtoken: 9.0.3
 
@@ -9973,6 +10017,8 @@ snapshots:
 
   dotenv@17.4.2: {}
 
+  dotenv@18.0.3: {}
+
   drizzle-kit@1.0.0-rc.4:
     dependencies:
       '@drizzle-team/brocli': 0.12.1
@@ -10083,6 +10129,8 @@ snapshots:
       hasown: 2.0.4
 
   es-toolkit@1.51.0: {}
+
+  es-toolkit@1.52.0: {}
 
   esbuild@0.25.12:
     optionalDependencies:

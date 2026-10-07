@@ -18,7 +18,6 @@
   "private": true,
   "dependencies": {
     "@feature/authentication-api": "workspace:*",
-    "@feature/authentication-hashing": "workspace:*",
     "@feature/authentication-rate-limit": "workspace:*",
     "@feature/authentication-sms": "workspace:*",
     "@feature/authentication-token": "workspace:*",
@@ -26,6 +25,8 @@
     "@feature/customer-api": "workspace:*",
     "@feature/manager-api": "workspace:*",
     "@feature/order-delivery-courier-api": "workspace:*",
+    "@infra/crypto-hash": "workspace:*",
+    "@infra/crypto-jwt": "workspace:*",
     "@nestjs/common": "^12.0.1",
     "@nestjs/config": "^4.0.4",
     "zod": "^4.4.3"
