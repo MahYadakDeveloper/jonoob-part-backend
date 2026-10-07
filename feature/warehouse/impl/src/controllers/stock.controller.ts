@@ -1,5 +1,5 @@
-import { StockMovementService } from '@/services/movement.service';
-import { StockService } from '@/services/stock.service';
+import { StockMovementService } from '../services/movement.service';
+import { StockService } from '../services/stock.service';
 import {
   Body,
   Controller,
@@ -21,7 +21,7 @@ import {
   stockPageQuerySchema,
 } from './schema/stock.schemas';
 
-@Controller('warehouse/stocks')
+@Controller('warehouse/stock')
 export class StockController {
   constructor(
     private readonly stockService: StockService,

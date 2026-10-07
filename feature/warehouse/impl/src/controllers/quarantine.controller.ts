@@ -6,7 +6,7 @@ import {
   quarantinesPageQuerySchema,
 } from './schema/quarantine.schemas';
 
-@Controller('warehouse/quarantines')
+@Controller('warehouse/quarantine')
 export class StockQuarantineController {
   constructor(
     private readonly stockQuarantineService: StockQuarantineService,

@@ -57,7 +57,7 @@ async function bootstrap() {
     }),
   );
 
-  if (production) {
+  if (!production) {
     const config = new DocumentBuilder()
       .setTitle('Jonoob Part API')
       .setDescription('Jonoob Part backend API')
