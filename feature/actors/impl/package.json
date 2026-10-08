@@ -1,5 +1,5 @@
 {
-  "name": "@feature/manager-api",
+  "name": "@feature/actors",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",

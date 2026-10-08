@@ -1,3 +1,4 @@
+import { OrderModule } from '@feature/order';
 import { HashService } from '@infra/crypto-hash';
 import { JwtModule } from '@infra/crypto-jwt';
 import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
@@ -7,6 +8,7 @@ import { Module } from '@nestjs/common';
 
 @Module({
   imports: [
+    OrderModule,
     JwtModule,
     RateLimitModule,
     BullModule.registerQueue({

@@ -15,6 +15,9 @@ catalogs:
     '@fastify/multipart':
       specifier: 10.1.1
       version: 10.1.1
+    '@nestjs/axios':
+      specifier: ^12.0.1
+      version: 12.0.1
     '@nestjs/bullmq':
       specifier: ^12.0.0
       version: 12.0.0
@@ -45,6 +48,9 @@ catalogs:
     '@nestjs/schedule':
       specifier: ^12.0.2
       version: 12.0.2
+    axios:
+      specifier: ^1.20.0
+      version: 1.20.0
     bullmq:
       specifier: ^6.3.9
       version: 6.3.9
@@ -246,9 +252,15 @@ importers:
 
   app/worker:
     dependencies:
+      '@feature/authentication':
+        specifier: workspace:*
+        version: link:../../feature/authentication/impl
       '@infra/messaging-queue':
         specifier: workspace:*
         version: link:../../infrastructure/messaging/queue
+      '@nestjs/axios':
+        specifier: 'catalog:'
+        version: 12.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(axios@1.20.0)(rxjs@7.8.1)
       '@nestjs/bullmq':
         specifier: 'catalog:'
         version: 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3)(bullmq@6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.3.0))
@@ -261,6 +273,9 @@ importers:
       '@nestjs/core':
         specifier: 'catalog:'
         version: 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      axios:
+        specifier: 'catalog:'
+        version: 1.20.0
       bullmq:
         specifier: 'catalog:'
         version: 6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.3.0)
@@ -313,9 +328,6 @@ importers:
       '@feature/authentication-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/authentication-sms':
-        specifier: workspace:*
-        version: link:../sms
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
@@ -325,9 +337,12 @@ importers:
       '@feature/manager-api':
         specifier: workspace:*
         version: link:../../manager/api
-      '@feature/order-delivery-courier-api':
+      '@feature/order':
         specifier: workspace:*
-        version: link:../../order/delivery/courier/api
+        version: link:../../order/impl
+      '@feature/order-api':
+        specifier: workspace:*
+        version: link:../../order/api
       '@infra/crypto-hash':
         specifier: workspace:*
         version: link:../../../infrastructure/crypto/hash
@@ -379,8 +394,6 @@ importers:
       fastify:
         specifier: 5.12.5
         version: 5.12.5
-
-  feature/authentication/sms: {}
 
   feature/authorization/api:
     dependencies:
@@ -802,10 +815,6 @@ importers:
         specifier: 5.12.5
         version: 5.12.5
 
-  feature/notification/api: {}
-
-  feature/notification/impl: {}
-
   feature/order/api:
     dependencies:
       '@feature/catalog-api':
@@ -837,9 +846,6 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../../common
-      '@feature/notification-api':
-        specifier: workspace:*
-        version: link:../../../../notification/api
       '@feature/order-api':
         specifier: workspace:*
         version: link:../../../api
@@ -3111,6 +3117,14 @@ packages:
   '@neon-rs/load@0.0.4':
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
 
+  '@nestjs/axios@12.0.1':
+    resolution: {integrity: sha512-Sqp14ZDrsNT96S9obtmQVzN1PLZ+FL0hnUEUjpOOtjYcGW30Knr9vV4goky/bPYPUxSCCFoXp+biRUyafkLFLA==}
+    engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
+    peerDependencies:
+      '@nestjs/common': ^10.0.0 || ^11.0.0 || ^12.0.0
+      axios: ^1.3.1
+      rxjs: ^7.0.0
+
   '@nestjs/axios@4.0.1':
     resolution: {integrity: sha512-68pFJgu+/AZbWkGu65Z3r55bTsCPlgyKaV4BSG8yUAD72q1PPuyVRgUwFv6BxdnibTUHlyxm06FmYWNC+bjN7A==}
     peerDependencies:
@@ -4533,6 +4547,9 @@ packages:
 
   axios@1.19.0:
     resolution: {integrity: sha512-ht/iuYZXEjFxLH/Hkezgd7m6JKlHHXEUSneaDz8uZe1Gj5QZtCnpyDsckvAiEnT89OEbCLmnte4R4sn7P0EKFw==}
+
+  axios@1.20.0:
+    resolution: {integrity: sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==}
 
   babel-jest@30.4.1:
     resolution: {integrity: sha512-fATAbM8piYxkiXQp3RBXmZHxZVNJZAVXXfyeyCN2Tida3+qJ8ea9UxhiJ2y4fLO90ZImKt6k9FlcH2+rLkJGhw==}
@@ -8545,6 +8562,12 @@ snapshots:
   '@neon-rs/load@0.0.4':
     optional: true
 
+  '@nestjs/axios@12.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(axios@1.20.0)(rxjs@7.8.1)':
+    dependencies:
+      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      axios: 1.20.0
+      rxjs: 7.8.1
+
   '@nestjs/axios@4.0.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(axios@1.19.0)(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -10191,6 +10214,16 @@ snapshots:
       fastq: 1.20.1
 
   axios@1.19.0:
+    dependencies:
+      follow-redirects: 1.16.0
+      form-data: 4.0.6
+      https-proxy-agent: 5.0.1
+      proxy-from-env: 2.1.0
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+
+  axios@1.20.0:
     dependencies:
       follow-redirects: 1.16.0
       form-data: 4.0.6

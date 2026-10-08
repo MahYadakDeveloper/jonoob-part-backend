@@ -16,11 +16,14 @@
     "lint": "oxlint --type-aware src/ test/"
   },
   "dependencies": {
+    "@feature/authentication": "workspace:*",
     "@infra/messaging-queue": "workspace:*",
+    "@nestjs/axios": "catalog:",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",
+    "axios": "catalog:",
     "bullmq": "catalog:",
     "rxjs": "catalog:"
   },

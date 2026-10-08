@@ -1,1 +1,1 @@
-export type PickupRequest = { deliveryId: string };
+export type PickupRequest = {};

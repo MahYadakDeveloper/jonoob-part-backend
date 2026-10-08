@@ -18,6 +18,11 @@
       "types": "./dist/queue.constants.d.ts",
       "import": "./dist/queue.constants.js",
       "require": "./dist/queue.constants.js"
+    },
+    "./job-types": {
+      "types": "./dist/job-types/index.d.ts",
+      "import": "./dist/job-types/index.js",
+      "require": "./dist/job-types/index.js"
     }
   },
   "dependencies": {

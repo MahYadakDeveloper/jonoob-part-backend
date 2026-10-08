@@ -1,4 +1,3 @@
-import { type SmsService } from '@feature/auth-sms';
 import {
   AuthenticatedUser,
   AuthenticationApi,
@@ -7,21 +6,23 @@ import {
 import { type OtpGenerator, type Synchronizer } from '@feature/common';
 import type { CustomersApi, CustomerType } from '@feature/customer-api';
 import type { ManagerApi } from '@feature/manager-api';
-import type { CourierApi } from '@feature/order-delivery-courier-api';
+import type { CourierApi } from '@feature/order-api/courier';
 import { HashService } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
+import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
+import { SmsJobs } from '@infra/messaging-queue/job-types';
 import {
   TokenBucketConfig,
   TokenBucketRateLimitService,
 } from '@infra/rate-limit';
+import { InjectQueue } from '@nestjs/bullmq';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
+import { Queue } from 'bullmq';
 import authConfig from './auth.config';
 import { RefreshClaim } from './auth.type';
 import { OtpStore } from './otp/otp.store';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
+import { SmsSendOtpJobPayload } from './sms/sms-opt.template';
 
 @Injectable()
 export class AuthenticationService implements AuthenticationApi {
@@ -136,7 +137,13 @@ export class AuthenticationService implements AuthenticationApi {
       this.otpTtlSeconds,
     );
 
-    await this.smsQueue.add('send_otp', { x: 'test' });
+    await this.smsQueue.add(SmsJobs.Send, {
+      to: phoneNumber,
+      template: 'otp',
+      data: {
+        otp,
+      },
+    } satisfies SmsSendOtpJobPayload);
   }
 
   async verify({
@@ -265,9 +272,7 @@ export class AuthenticationService implements AuthenticationApi {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
 
-        const { courier } = await this.courier.findByPhoneNumber({
-          phoneNumber: payload.sub,
-        });
+        const courier = await this.courier.findByPhoneNumber(payload.sub);
 
         const verified = this.hashService.verify(password, courier.password);
         if (!verified) throw new Error();
@@ -538,9 +543,7 @@ export class AuthenticationService implements AuthenticationApi {
             });
             break;
           case 'courier':
-            const { courier } = await this.courier.findById({
-              courierId: payload.id,
-            });
+            const courier = await this.courier.findById(payload.id);
 
             accessToken = await this.jwtService.issue({
               type: 'access',

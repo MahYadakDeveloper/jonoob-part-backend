@@ -1,5 +1,5 @@
 {
-  "name": "@feature/order-api",
+  "name": "@feature/actors-api",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -9,10 +9,15 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+    "./customer": {
+      "types": "./dist/customers/index.d.ts",
+      "import": "./dist/customers/index.js",
+      "require": "./dist/customers/index.js"
+    },
+    "./manager": {
+      "types": "./dist/manager/index.d.ts",
+      "import": "./dist/manager/index.js",
+      "require": "./dist/manager/index.js"
     },
     "./courier": {
       "types": "./dist/courier/index.d.ts",
@@ -20,10 +25,5 @@
       "require": "./dist/courier/index.js"
     }
   },
-  "private": true,
-  "dependencies": {
-    "@feature/catalog-api": "workspace:*",
-    "@feature/common": "workspace:*",
-    "@feature/customer-api": "workspace:*"
-  }
+  "private": true
 }

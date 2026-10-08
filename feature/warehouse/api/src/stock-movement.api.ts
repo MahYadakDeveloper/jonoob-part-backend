@@ -6,7 +6,7 @@ import {
   ReturnMovementSource,
 } from './warehouse.type';
 
-export const STOCK_MOVEMENT_API = Symbol('STOCK_MOVEMENT_API');
+export const STOCK_MOVEMENT_API = Symbol('StockMovementApi');
 export interface StockMovementApi {
   issue(input: {
     items: MovementItem[];

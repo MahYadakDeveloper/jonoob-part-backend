@@ -13,16 +13,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./sms": {
+      "types": "./dist/sms/index.d.ts",
+      "import": "./dist/sms/index.js",
+      "require": "./dist/sms/index.js"
     }
   },
   "private": true,
   "dependencies": {
     "@feature/authentication-api": "workspace:*",
-    "@feature/authentication-sms": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/customer-api": "workspace:*",
     "@feature/manager-api": "workspace:*",
-    "@feature/order-delivery-courier-api": "workspace:*",
+    "@feature/order": "workspace:*",
+    "@feature/order-api": "workspace:*",
     "@infra/crypto-hash": "workspace:*",
     "@infra/crypto-jwt": "workspace:*",
     "@infra/db-redis": "workspace:*",

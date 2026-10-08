@@ -1,6 +1,6 @@
 import { IssueMovementSource } from './warehouse.type';
 
-export const STOCK_RESERVATION_API = Symbol('STOCK_RESERVATION_API');
+export const STOCK_RESERVATION_API = Symbol('StockReservationApi');
 
 export interface StockReservationItem {
   stockId: string;
