@@ -17,11 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@casl/ability": "catalog:",
-    "@feature/authentication-api": "workspace:*",
-    "@feature/authentication-nest": "workspace:*",
-    "@feature/authorization-api": "workspace:*",
-    "@feature/authorization-nest": "workspace:*",
     "@feature/common": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@infra/db-drizzle": "workspace:*",

@@ -10,9 +10,14 @@
   "types": "./dist/index.d.ts",
   "exports": {
     "./customer": {
-      "types": "./dist/customers/index.d.ts",
-      "import": "./dist/customers/index.js",
-      "require": "./dist/customers/index.js"
+      "types": "./dist/customer/index.d.ts",
+      "import": "./dist/customer/index.js",
+      "require": "./dist/customer/index.js"
+    },
+    "./customer/wallet": {
+      "types": "./dist/customer/wallet/index.d.ts",
+      "import": "./dist/customer/wallet/index.js",
+      "require": "./dist/customer/wallet/index.js"
     },
     "./manager": {
       "types": "./dist/manager/index.d.ts",

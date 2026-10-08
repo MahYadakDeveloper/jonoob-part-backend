@@ -13,11 +13,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
-    },
-    "./courier": {
-      "types": "./dist/courier/index.d.ts",
-      "import": "./dist/courier/index.js",
-      "require": "./dist/courier/index.js"
     }
   },
   "private": true,

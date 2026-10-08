@@ -17,11 +17,6 @@
   },
   "private": true,
   "dependencies": {
-    "@casl/ability": "^7.0.1",
-    "@feature/authentication-api": "workspace:*",
-    "@feature/authentication-nest": "workspace:*",
-    "@feature/authorization-api": "workspace:*",
-    "@feature/authorization-nest": "workspace:*",
     "@feature/cashback-api": "workspace:*",
     "@feature/catalog-api": "workspace:*",
     "@feature/common": "workspace:*",
@@ -34,7 +29,7 @@
     "@feature/pricing-api": "workspace:*",
     "@feature/schedule-api": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "^12.0.3",
-    "zod": "^4.4.3"
+    "@nestjs/common": "catalog:",
+    "zod": "catalog:"
   }
 }

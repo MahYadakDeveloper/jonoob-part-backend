@@ -24,9 +24,7 @@
   "dependencies": {
     "@feature/authentication-api": "workspace:*",
     "@feature/common": "workspace:*",
-    "@feature/customer-api": "workspace:*",
-    "@feature/manager-api": "workspace:*",
-    "@feature/order": "workspace:*",
+    "@feature/actors-api": "workspace:*",
     "@feature/order-api": "workspace:*",
     "@infra/crypto-hash": "workspace:*",
     "@infra/crypto-jwt": "workspace:*",

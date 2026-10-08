@@ -1,12 +1,16 @@
+import { type CourierApi, COURIER_API } from '@feature/actors-api/courier';
+import {
+  type CustomersApi,
+  CUSTOMER_API,
+  CustomerType,
+} from '@feature/actors-api/customer';
+import { type ManagerApi, MANAGER_API } from '@feature/actors-api/manager';
 import {
   AuthenticatedUser,
   AuthenticationApi,
   AuthenticationResult,
 } from '@feature/authentication-api';
 import { type OtpGenerator, type Synchronizer } from '@feature/common';
-import type { CustomersApi, CustomerType } from '@feature/customer-api';
-import type { ManagerApi } from '@feature/manager-api';
-import type { CourierApi } from '@feature/order-api/courier';
 import { HashService } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
 import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
@@ -58,9 +62,9 @@ export class AuthenticationService implements AuthenticationApi {
   private readonly refreshTokenExpiresIn = 604800; // 7 days
 
   constructor(
-    private readonly customers: CustomersApi,
-    private readonly manager: ManagerApi,
-    private readonly courier: CourierApi,
+    @Inject(CUSTOMER_API) private readonly customers: CustomersApi,
+    @Inject(MANAGER_API) private readonly manager: ManagerApi,
+    @Inject(COURIER_API) private readonly courier: CourierApi,
     private readonly otps: OtpStore,
     private readonly jwtService: JwtService,
     private readonly hashService: HashService,
