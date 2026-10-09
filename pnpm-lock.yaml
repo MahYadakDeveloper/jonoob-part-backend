@@ -313,106 +313,32 @@ importers:
 
   feature/actors/api: {}
 
-  feature/actors/impl: {}
-
-  feature/actors/impl/customer/address/api:
+  feature/actors/impl:
     dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../../../common
-
-  feature/actors/impl/customer/address/impl:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../../../common
-      '@feature/customer-address-api':
+      '@feature/actors-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/order-delivery-api':
-        specifier: workspace:*
-        version: link:../../../../../order/delivery/api
-      '@nestjs/common':
-        specifier: ^12.0.1
-        version: 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
-
-  feature/actors/impl/customer/api:
-    dependencies:
       '@feature/common':
         specifier: workspace:*
-        version: link:../../../../common
-      '@feature/customer-address-api':
+        version: link:../../common
+      '@infra/db-drizzle':
         specifier: workspace:*
-        version: link:../address/api
-      '@feature/customer-wallet-api':
+        version: link:../../../infrastructure/database/drizzle
+      '@infra/messaging-queue':
         specifier: workspace:*
-        version: link:../wallet/api
-
-  feature/actors/impl/customer/impl:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../../common
-      '@feature/customer-address-api':
-        specifier: workspace:*
-        version: link:../address/api
-      '@feature/customer-api':
-        specifier: workspace:*
-        version: link:../api
-      '@nestjs/common':
-        specifier: ^11.1.27
-        version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
-
-  feature/actors/impl/customer/registration/api:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../../../common
-
-  feature/actors/impl/customer/registration/impl:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../../../common
-      '@feature/customer-address-api':
-        specifier: workspace:*
-        version: link:../../address/api
-      '@feature/customer-api':
-        specifier: workspace:*
-        version: link:../../api
-      '@feature/customer-registration-api':
-        specifier: workspace:*
-        version: link:../api
-      '@feature/order-delivery-api':
-        specifier: workspace:*
-        version: link:../../../../../order/delivery/api
-
-  feature/actors/impl/customer/wallet/api:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../../../common
-
-  feature/actors/impl/customer/wallet/impl:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../../../common
-      '@feature/customer-wallet-api':
-        specifier: workspace:*
-        version: link:../api
+        version: link:../../../infrastructure/messaging/queue
+      '@nestjs/bullmq':
+        specifier: 'catalog:'
+        version: 12.0.0(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3)(bullmq@6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.3.0))
       '@nestjs/common':
         specifier: 'catalog:'
         version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      zod:
+      bullmq:
         specifier: 'catalog:'
-        version: 4.6.5
-
-  feature/actors/impl/customer/wallet/transaction:
-    dependencies:
-      '@feature/common':
-        specifier: workspace:*
-        version: link:../../../../../common
+        version: 6.3.9(ioredis@5.11.1)(pg@8.23.0)(redis@6.3.0)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.4(@cloudflare/workers-types@5.20260920.1)(@effect/sql-d1@4.0.0-rc.116(effect@4.0.0-rc.112))(@effect/sql-sqlite-do@4.0.0-rc.116(effect@4.0.0-rc.112))(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(@sinclair/typebox@0.34.49)(@types/pg@8.23.1)(arktype@2.2.3)(effect@4.0.0-rc.112)(pg@8.23.0)(valibot@1.2.0(typescript@7.0.2))(zod@4.6.5)
 
   feature/authentication/api:
     dependencies:
@@ -479,25 +405,18 @@ importers:
 
   feature/cashback/impl:
     dependencies:
+      '@feature/actors':
+        specifier: workspace:*
+        version: link:../../actors/impl
       '@feature/cashback-api':
         specifier: workspace:*
         version: link:../api
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
-      '@feature/customer-wallet-api':
-        specifier: workspace:*
-        version: link:../../actors/impl/customer/wallet/api
       '@nestjs/common':
-        specifier: ^11.1.27
-        version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
-    devDependencies:
-      '@eslint/js':
-        specifier: ^10.0.1
-        version: 10.0.1(eslint@9.39.5(jiti@2.7.0))
-      typescript-eslint:
-        specifier: ^8.67.0
-        version: 8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
+        specifier: 'catalog:'
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
 
   feature/catalog/api:
     dependencies:
@@ -654,9 +573,6 @@ importers:
       '@feature/media-image':
         specifier: workspace:*
         version: link:../../media/image
-      '@feature/media-nest':
-        specifier: workspace:*
-        version: link:../../media/nest
       '@feature/warehouse-api':
         specifier: workspace:*
         version: link:../../warehouse/api
@@ -726,27 +642,24 @@ importers:
 
   feature/order/api:
     dependencies:
+      '@feature/actors':
+        specifier: workspace:*
+        version: link:../../actors/impl
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../../catalog/api
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
-      '@feature/customer-api':
-        specifier: workspace:*
-        version: link:../../actors/impl/customer/api
 
   feature/order/delivery/api:
     dependencies:
+      '@feature/actors':
+        specifier: workspace:*
+        version: link:../../../actors/impl
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
-      '@feature/customer-address-api':
-        specifier: workspace:*
-        version: link:../../../actors/impl/customer/address/api
-      '@feature/customer-api':
-        specifier: workspace:*
-        version: link:../../../actors/impl/customer/api
 
   feature/order/delivery/courier/api: {}
 
@@ -761,9 +674,6 @@ importers:
       '@feature/order-delivery-api':
         specifier: workspace:*
         version: link:../../api
-      '@feature/order-delivery-courier-api':
-        specifier: workspace:*
-        version: link:../api
       '@nestjs/common':
         specifier: ^11.2.1
         version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -836,6 +746,9 @@ importers:
 
   feature/order/impl:
     dependencies:
+      '@feature/actors':
+        specifier: workspace:*
+        version: link:../../actors/impl
       '@feature/cashback-api':
         specifier: workspace:*
         version: link:../../cashback/api
@@ -845,12 +758,6 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
-      '@feature/customer-api':
-        specifier: workspace:*
-        version: link:../../actors/impl/customer/api
-      '@feature/customer-wallet-api':
-        specifier: workspace:*
-        version: link:../../actors/impl/customer/wallet/api
       '@feature/order-api':
         specifier: workspace:*
         version: link:../api
@@ -890,9 +797,6 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../../common
-      '@feature/customer-wallet-api':
-        specifier: workspace:*
-        version: link:../../../../actors/impl/customer/wallet/api
       '@feature/order-payment-api':
         specifier: workspace:*
         version: link:../../api
@@ -902,12 +806,12 @@ importers:
 
   feature/order/payment/impl:
     dependencies:
+      '@feature/actors':
+        specifier: workspace:*
+        version: link:../../../actors/impl
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
-      '@feature/customer-wallet-api':
-        specifier: workspace:*
-        version: link:../../../actors/impl/customer/wallet/api
       '@feature/order-api':
         specifier: workspace:*
         version: link:../../api
@@ -936,12 +840,12 @@ importers:
 
   feature/pos/payment/impl:
     dependencies:
+      '@feature/actors':
+        specifier: workspace:*
+        version: link:../../../actors/impl
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
-      '@feature/customer-wallet-api':
-        specifier: workspace:*
-        version: link:../../../actors/impl/customer/wallet/api
       '@feature/pos-payment-api':
         specifier: workspace:*
         version: link:../api
@@ -960,6 +864,9 @@ importers:
 
   feature/pos/return/impl:
     dependencies:
+      '@feature/actors':
+        specifier: workspace:*
+        version: link:../../../actors/impl
       '@feature/cashback-api':
         specifier: workspace:*
         version: link:../../../cashback/api
@@ -969,9 +876,6 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../../common
-      '@feature/customer-wallet-api':
-        specifier: workspace:*
-        version: link:../../../actors/impl/customer/wallet/api
       '@feature/pos-payment-api':
         specifier: workspace:*
         version: link:../../payment/api
@@ -1350,12 +1254,12 @@ importers:
 
   feature/settlement/impl:
     dependencies:
+      '@feature/actors':
+        specifier: workspace:*
+        version: link:../../actors/impl
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
-      '@feature/customer-wallet-api':
-        specifier: workspace:*
-        version: link:../../actors/impl/customer/wallet/api
       '@feature/settlement-api':
         specifier: workspace:*
         version: link:../api
@@ -7766,10 +7670,6 @@ snapshots:
   '@eslint/js@10.0.1(eslint@9.39.4(jiti@2.7.0))':
     optionalDependencies:
       eslint: 9.39.4(jiti@2.7.0)
-
-  '@eslint/js@10.0.1(eslint@9.39.5(jiti@2.7.0))':
-    optionalDependencies:
-      eslint: 9.39.5(jiti@2.7.0)
 
   '@eslint/js@9.39.4': {}
 

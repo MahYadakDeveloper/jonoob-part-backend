@@ -6,6 +6,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import deliveryConfigs from './delivery.config';
 import { type DeliveryRepository } from './delivery.repository';
+import { ReportDeliveryAttemptRequest } from './delivery.req';
 import {
   InterCityDeliveryMethod,
   IntraCityDeliveryMethod,
@@ -45,6 +46,55 @@ export class DeliveryService implements DeliveryApi {
     await this.courier.pickup({ deliveryId: delivery.id });
     await this.repository.markAsCourierRequested(orderId, {
       requestedAt: new Date(),
+    });
+  }
+
+  async confirmPickup(deliveryId: string, courierId: string) {}
+
+  async reportDeliveryAttempt(req: ReportDeliveryAttemptRequest) {
+    const delivery = await this.courier.getDelivery(
+      req.courierId,
+      req.deliveryId,
+    );
+    if (delivery.status !== 'handed_over_to_courier') throw new Error();
+
+    if (req.result === 'delivered') {
+      if (delivery.recipient.scope === 'intra_city') {
+        if (req.scope !== delivery.recipient.scope) throw new Error();
+
+        if (
+          delivery.recipient.deliveryConfirmationCode !== req.confirmationCode
+        )
+          throw new Error();
+
+        await this.outbox.save({
+          type: DeliverySucceededEventType,
+          payload: {
+            deliveryId: req.deliveryId,
+            scope: 'intra_city',
+          } satisfies DeliverySucceededEventPayload,
+        });
+        return;
+      }
+
+      if (req.scope !== delivery.recipient.scope) throw new Error();
+      await this.outbox.save({
+        type: DeliverySucceededEventType,
+        payload: {
+          deliveryId: req.deliveryId,
+          scope: 'inter_city',
+          trackingNumber: req.trackingNumber,
+        } satisfies DeliverySucceededEventPayload,
+      });
+
+      return;
+    }
+
+    await this.outbox.save({
+      type: DeliveryFailedEventType,
+      payload: {
+        ...req,
+      } satisfies DeliveryFailedEventPayload,
     });
   }
 

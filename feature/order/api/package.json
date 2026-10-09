@@ -19,6 +19,6 @@
   "dependencies": {
     "@feature/catalog-api": "workspace:*",
     "@feature/common": "workspace:*",
-    "@feature/customer-api": "workspace:*"
+    "@feature/actors": "workspace:*"
   }
 }

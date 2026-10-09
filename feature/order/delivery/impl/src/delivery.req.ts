@@ -1,8 +1,3 @@
-export interface PickingUpRequest {
-  courierId: string;
-  deliveryId: string;
-}
-
 export type ReportDeliveryAttemptRequest = {
   courierId: string;
   deliveryId: string;

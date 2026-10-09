@@ -143,7 +143,7 @@ export class AuthenticationService implements AuthenticationApi {
 
     await this.smsQueue.add(SmsJobs.Send, {
       to: phoneNumber,
-      template: 'otp',
+      template: 'auth.otp',
       data: {
         otp,
       },

@@ -15,5 +15,15 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@feature/actors-api": "workspace:*",
+    "@feature/common": "workspace:*",
+    "@infra/db-drizzle": "workspace:*",
+    "@infra/messaging-queue": "workspace:*",
+    "@nestjs/bullmq": "catalog:",
+    "@nestjs/common": "catalog:",
+    "bullmq": "catalog:",
+    "drizzle-orm": "catalog:"
+  }
 }

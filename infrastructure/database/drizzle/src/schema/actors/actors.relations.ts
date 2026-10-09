@@ -7,6 +7,7 @@ export const actorsRelations = defineRelationsPart(
     ...{ ...schemas, deliveries },
   },
   (r) => ({
+    deliveries: {},
     couriers: {
       deliveries: r.many.deliveries({
         from: r.couriers.id,

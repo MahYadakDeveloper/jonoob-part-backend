@@ -2,8 +2,9 @@ import { SmsJobPayload } from '@infra/messaging-queue/job-types';
 
 declare module '@infra/messaging-queue/job-types' {
   interface SmsTemplateRegistry {
-    'auth.otp': { otp: string };
+    'delivery.pickup-request': { deliveryId: string };
   }
 }
 
-export type SmsSendOtpJobPayload = SmsJobPayload<'auth.otp'>;
+export type SmsPickupRequestJobPayload =
+  SmsJobPayload<'delivery.pickup-request'>;

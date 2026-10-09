@@ -21,7 +21,7 @@
     "@feature/order-api": "workspace:*",
     "@feature/order-payment-api": "workspace:*",
     "@feature/order-payment-gateway-api": "workspace:*",
-    "@feature/customer-wallet-api": "workspace:*",
+    "@feature/actors": "workspace:*",
     "@nestjs/common": "^11.1.28",
     "zod": "^4.4.3"
   }
