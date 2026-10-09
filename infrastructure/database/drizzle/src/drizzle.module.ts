@@ -6,7 +6,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { DrizzleDbProvider } from './drizzle-db-provider';
 import { DrizzleTransactionContext } from './drizzle-transaction.context';
 import drizzleConfig from './drizzle.config';
-import { warehouseRelations } from './schema';
+import { actorsRelations, orderRelations, warehouseRelations } from './schema';
 
 @Global()
 @Module({
@@ -17,7 +17,11 @@ import { warehouseRelations } from './schema';
       useFactory: (config: ConfigService) => ({
         drizzle,
         connection: config.getOrThrow<string>('drizzle.databaseUrl'),
-        relations: { ...warehouseRelations },
+        relations: {
+          ...warehouseRelations,
+          ...orderRelations,
+          ...actorsRelations,
+        },
       }),
     }),
   ],

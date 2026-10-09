@@ -3,7 +3,7 @@ import { actorsSchema } from '../actors.schema';
 
 export const couriers = actorsSchema.table('couriers', {
   id: uuid('id').defaultRandom().primaryKey().notNull(),
-  fullName: text('fullname').notNull(),
+  fullName: text('full_name').notNull(),
   phone: text('phone').unique().notNull(),
-  password: varchar('password').notNull(),
+  hashedPassword: varchar('hashed_password').notNull(),
 });

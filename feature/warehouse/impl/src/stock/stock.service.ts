@@ -1,8 +1,12 @@
-import { Barcode, Stock, StockQueryApi } from '@feature/warehouse-api';
+import {
+  Barcode,
+  Stock as StockDto,
+  StockQueryApi,
+} from '@feature/warehouse-api';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { Outbox } from '@nestjs/outbox';
-import { StockRepository } from './repositories/stock.repository';
+import { StockRepository } from './stock.repository';
 
 @Injectable()
 export class StockService implements StockQueryApi {
@@ -12,14 +16,14 @@ export class StockService implements StockQueryApi {
     private readonly outbox: Outbox,
   ) {}
 
-  findById(stockId: string): Promise<Stock> {
+  findById(stockId: string): Promise<StockDto> {
     return this.repository.findById(stockId).then((stock) => {
       if (!stock) throw new Error('');
       return stock;
     });
   }
 
-  findManyById(stockIds: string[]): Promise<Stock[]> {
+  findManyById(stockIds: string[]): Promise<StockDto[]> {
     return this.repository.findManyById(stockIds).then((stocks) => {
       assertAllExist(
         stockIds,
@@ -31,7 +35,7 @@ export class StockService implements StockQueryApi {
     });
   }
 
-  findByBarcode(barcode: Barcode): Promise<Stock> {
+  findByBarcode(barcode: Barcode): Promise<StockDto> {
     return this.repository.findByBarcode(barcode).then((stock) => {
       if (!stock) throw new Error('');
       return stock;
@@ -144,7 +148,7 @@ function aggregateQuantities(
 }
 
 function assertSufficientStock(
-  stocks: Stock[],
+  stocks: StockDto[],
   items: { stockId: string; quantity: number }[],
 ): void {
   const quantities = new Map(

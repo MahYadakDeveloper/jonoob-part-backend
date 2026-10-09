@@ -19,6 +19,7 @@
   "dependencies": {
     "@feature/actors-api": "workspace:*",
     "@feature/common": "workspace:*",
+    "@infra/crypto-hash": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/messaging-queue": "workspace:*",
     "@nestjs/bullmq": "catalog:",

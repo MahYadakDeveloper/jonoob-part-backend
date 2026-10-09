@@ -10,9 +10,9 @@ import {
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { Outbox } from '@nestjs/outbox';
-import { StockQuarantineService } from './quarantine.service';
-import { StockMovementRepository } from './repositories/movement.repository';
-import { StockService } from './stock.service';
+import { StockQuarantineService } from '../quarantine/quarantine.service';
+import { StockService } from '../stock/stock.service';
+import { StockMovementRepository } from './movement.repository';
 
 export type AdjustMovementSource = Extract<
   InboundMovementSource['source'],

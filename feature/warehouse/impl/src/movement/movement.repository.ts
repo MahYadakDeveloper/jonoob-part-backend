@@ -1,5 +1,4 @@
-import type { OmitPartials } from '../../utils';
-import { OffsetPagination, PageResult } from '@feature/common';
+import { OffsetPagination, OmitPartials, PageResult } from '@feature/common';
 import {
   DrizzleBaseRepository,
   DrizzleDbProvider,

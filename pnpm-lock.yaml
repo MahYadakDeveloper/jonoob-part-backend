@@ -321,6 +321,9 @@ importers:
       '@feature/common':
         specifier: workspace:*
         version: link:../../common
+      '@infra/crypto-hash':
+        specifier: workspace:*
+        version: link:../../../infrastructure/crypto/hash
       '@infra/db-drizzle':
         specifier: workspace:*
         version: link:../../../infrastructure/database/drizzle

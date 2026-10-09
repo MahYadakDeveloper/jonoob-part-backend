@@ -7,32 +7,26 @@ import {
 
 export const CUSTOMER_API = Symbol('CustomersApi');
 export interface CustomersApi {
-  findById(req: { customerId: string }): Promise<{ customer: Customer }>;
+  findById(customerId: string): Promise<Customer>;
 
-  findByPhoneNumber(req: {
-    phoneNumber: string;
-  }): Promise<{ customer: Customer }>;
+  findByPhoneNumber(phone: string): Promise<Customer>;
 
-  getContact(req: { customerId: string }): Promise<{
-    customerContact: {
-      type: CustomerType;
-      phoneNumber: string;
-      fullName: string;
-    };
-  }>;
+  getContact(
+    customerId: string,
+  ): Promise<{ type: CustomerType; phoneNumber: string; fullName: string }>;
 
-  createConsumerTypeCustomer(req: {
+  createConsumerTypeCustomer(customer: {
     phoneNumber: string;
     fullName: string;
   }): Promise<{ id: string }>;
 
-  createMerchantTypeCustomer(req: {
+  createMerchantTypeCustomer(customer: {
     phoneNumber: string;
     fullName: string;
     address: Extract<CustomerAddress, { scope: 'intra_city' }>;
   }): Promise<{ id: string }>;
 
-  createTechnicianTypeCustomer(req: {
+  createTechnicianTypeCustomer(customer: {
     phoneNumber: string;
     fullName: string;
     address: Extract<CustomerAddress, { scope: 'intra_city' }>;

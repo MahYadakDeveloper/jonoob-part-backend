@@ -12,7 +12,22 @@ import {
   warehouseRelations,
 } from '@infra/db-drizzle/schema';
 import { AsyncLocalStorage } from 'async_hooks';
-import { count, eq } from 'drizzle-orm';
+import { count, DBQueryConfigWith, eq } from 'drizzle-orm';
+
+export type Reservation = typeof reservations.$inferSelect & {
+  items: Omit<typeof reservationItems.$inferSelect, 'reservationId'>[];
+};
+
+const withItems = {
+  items: {
+    columns: {
+      reservationId: false,
+    },
+  },
+} satisfies DBQueryConfigWith<
+  typeof warehouseRelations,
+  typeof warehouseRelations.reservations.relations
+>;
 
 export class StockReservationRepository extends DrizzleBaseRepository<
   typeof warehouseRelations
@@ -26,7 +41,7 @@ export class StockReservationRepository extends DrizzleBaseRepository<
     super(dbProvider, lockContext);
   }
 
-  async findById(reservationId: string) {
+  async findById(reservationId: string): Promise<Reservation | null> {
     if (this.forUpdate) await this.lock('reservations', reservationId);
 
     return this.db.query.reservations
@@ -34,18 +49,14 @@ export class StockReservationRepository extends DrizzleBaseRepository<
         where: {
           id: reservationId,
         },
-        with: {
-          items: {
-            columns: {
-              reservationId: false,
-            },
-          },
-        },
+        with: withItems,
       })
       .then((reservation) => reservation ?? null);
   }
 
-  async findByIdempotencyKey(idempotencyKey: string) {
+  async findByIdempotencyKey(
+    idempotencyKey: string,
+  ): Promise<Reservation | null> {
     if (this.forUpdate) await this.lock('reservations', idempotencyKey);
 
     return this.db.query.reservations
@@ -53,13 +64,7 @@ export class StockReservationRepository extends DrizzleBaseRepository<
         where: {
           idempotencyKey,
         },
-        with: {
-          items: {
-            columns: {
-              reservationId: false,
-            },
-          },
-        },
+        with: withItems,
       })
       .then((reservation) => reservation ?? null);
   }
@@ -69,7 +74,7 @@ export class StockReservationRepository extends DrizzleBaseRepository<
     size,
     sort,
   }: PageCriteria<typeof reservations>): Promise<
-    PageResult<any, OffsetPagination>
+    PageResult<Reservation, OffsetPagination>
   > {
     const offset = (page - 1) * size;
 
@@ -78,13 +83,7 @@ export class StockReservationRepository extends DrizzleBaseRepository<
         .findMany({
           orderBy: orderBy(sort),
           offset,
-          with: {
-            items: {
-              columns: {
-                reservationId: false,
-              },
-            },
-          },
+          with: withItems,
         })
         .then((reservation) => reservation ?? null),
       this.db

@@ -1,6 +1,6 @@
 import { ReturnReason } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
-import { StockQuarantineRepository } from './repositories/quarantine.repository';
+import { StockQuarantineRepository } from './quarantine.repository';
 
 @Injectable()
 export class StockQuarantineService {

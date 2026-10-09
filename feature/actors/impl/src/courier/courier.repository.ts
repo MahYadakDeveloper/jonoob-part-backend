@@ -67,8 +67,8 @@ export class CourierRepository extends DrizzleBaseRepository<
     await this.db.insert(couriers).values(courier);
   }
 
-  async update(courier: Partial<Courier>): Promise<void> {
-    await this.db.update(couriers).set(courier);
+  async update(id: string, courier: Partial<Courier>): Promise<void> {
+    await this.db.update(couriers).set(courier).where(eq(couriers.id, id));
   }
 
   async delete(id: string): Promise<void> {

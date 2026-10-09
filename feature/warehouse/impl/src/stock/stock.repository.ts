@@ -1,4 +1,4 @@
-import { OffsetPagination, PageResult } from '@feature/common';
+import { OffsetPagination, OmitPartials, PageResult } from '@feature/common';
 import { Barcode } from '@feature/warehouse-api';
 import {
   DrizzleBaseRepository,
@@ -10,7 +10,7 @@ import {
   sqlCase,
 } from '@infra/db-drizzle';
 import {
-  barcode,
+  barcodes,
   reservationItems,
   stocks,
   warehouseRelations,
@@ -18,17 +18,16 @@ import {
 import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { count, eq, inArray, sql } from 'drizzle-orm';
-import type { OmitPartials } from '../../utils';
 
 type StockDefinition = OmitPartials<
   typeof stocks.$inferInsert & {
-    barcode: Omit<typeof barcode.$inferInsert, 'stockId'>;
+    barcode: Omit<typeof barcodes.$inferInsert, 'stockId'>;
   },
   'storageLocation'
 >;
 
-type Stock = typeof stocks.$inferSelect & {
-  barcode: Barcode;
+export type Stock = typeof stocks.$inferSelect & {
+  barcode: Omit<typeof barcodes.$inferSelect, 'stockId'>;
   reservedQty: number;
 };
 
@@ -238,7 +237,7 @@ export class StockRepository extends DrizzleBaseRepository<
         id: stocks.id,
       });
 
-      await this.db.insert(barcode).values({ ..._barcode, stockId: row.id });
+      await this.db.insert(barcodes).values({ ..._barcode, stockId: row.id });
 
       return row;
     });
@@ -252,9 +251,9 @@ export class StockRepository extends DrizzleBaseRepository<
       await this.db.update(stocks).set(rest).where(eq(stocks.id, id));
 
       await this.db
-        .update(barcode)
+        .update(barcodes)
         .set(_barcode)
-        .where(eq(barcode.stockId, id));
+        .where(eq(barcodes.stockId, id));
     });
   }
 

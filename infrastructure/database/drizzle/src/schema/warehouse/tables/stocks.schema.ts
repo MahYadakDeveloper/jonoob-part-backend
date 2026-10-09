@@ -18,7 +18,7 @@ export const unitOfMeasure = warehouseSchema.enum('unit_of_measure', [
   'set',
 ]);
 
-export const barcode = warehouseSchema.table(
+export const barcodes = warehouseSchema.table(
   'barcode',
   {
     stockId: uuid('stock_id')

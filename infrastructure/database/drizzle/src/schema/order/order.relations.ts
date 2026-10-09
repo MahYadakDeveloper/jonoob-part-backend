@@ -1,5 +1,5 @@
 import { defineRelationsPart } from 'drizzle-orm';
-import { couriers } from './../actors/tables/courier.schema';
+import { couriers } from '../actors/tables/couriers.schema';
 import * as schemas from './table';
 
 export const orderRelations = defineRelationsPart(

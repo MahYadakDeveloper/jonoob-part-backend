@@ -4,11 +4,11 @@ import {
 } from '@feature/warehouse-api';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
-import { StockReservationRepository } from './repositories/reservation.repository';
-import { StockService } from './stock.service';
+import { StockService } from '../stock/stock.service';
+import { StockReservationRepository } from './reservation.repository';
 
 @Injectable()
-export class StockReservationService implements StockReservationApi {
+export class StockReservationApiImpl implements StockReservationApi {
   constructor(
     private readonly stock: StockService,
     private readonly repository: StockReservationRepository,

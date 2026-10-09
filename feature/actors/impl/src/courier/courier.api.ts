@@ -7,7 +7,7 @@ import { Courier, CourierRepository } from './courier.repository';
 import { SmsPickupRequestJobPayload } from './sms/pickup-request.template';
 
 @Injectable()
-export class CourierImpl implements CourierApi {
+export class CourierApiImpl implements CourierApi {
   constructor(
     @Inject(SMS_QUEUE_NAME) private readonly smsQueue: Queue,
     private readonly repository: CourierRepository,
