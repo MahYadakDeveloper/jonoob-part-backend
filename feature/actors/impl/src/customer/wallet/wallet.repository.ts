@@ -195,6 +195,4 @@ export class WalletRepository extends DrizzleBaseRepository<
       .returning({ id: walletTransactions.id })
       .then((rows) => rows[0] ?? null);
   }
-
-  getBalance(id: string): Promise<{ total: Money; frozen: Money }> {}
 }

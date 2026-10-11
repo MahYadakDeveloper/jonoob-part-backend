@@ -71,7 +71,11 @@ export class WalletService implements WalletApi {
             );
 
           if (existing) {
-            if (existing.type !== 'freeze') {
+            if (
+              existing.type !== 'freeze' ||
+              existing.amount !== amount ||
+              existing.reason !== reason
+            ) {
               throw new ConflictException(
                 'Idempotency key reused with a different payload',
               );
@@ -85,6 +89,12 @@ export class WalletService implements WalletApi {
             };
           }
 
+          const { freezeId } = await this.repository.freezeBalanceAmount(
+            wallet.id,
+            amount,
+            reason,
+          );
+
           await this.repository.recordTransaction({
             type: 'freeze',
             walletId: wallet.id,
@@ -92,13 +102,8 @@ export class WalletService implements WalletApi {
             amount,
             reason,
             description,
+            freezedAmountId: freezeId,
           });
-
-          const { freezeId } = await this.repository.freezeBalanceAmount(
-            wallet.id,
-            amount,
-            reason,
-          );
 
           return { freezeId };
         },
@@ -113,49 +118,88 @@ export class WalletService implements WalletApi {
     description,
   }: CommitFrozenAmountRequest): Promise<WalletTransactionResponse> {
     return this.tx.run(async () =>
-      this.repository.withLock('wallet-transaction', freezeId, async () => {
-        const wallet = await this.repository.findByCustomerId(customerId);
+      this.repository.withLock(
+        'wallet-transaction',
+        idempotencyKey,
+        async () => {
+          const wallet = await this.repository.findByCustomerId(customerId);
+          if (!wallet) throw new NotFoundException('Wallet not found!');
 
-        if (!wallet) throw new NotFoundException('Wallet not found!');
+          const existing =
+            await this.repository.findTransactionByIdempotencyKeyAndWalletId(
+              idempotencyKey,
+              wallet.id,
+            );
 
-        const frozen = await this.repository.releaseFrozen(freezeId);
+          if (existing) {
+            if (existing.type !== 'withdraw') {
+              throw new ConflictException(
+                'Idempotency key reused with a different payload',
+              );
+            }
 
-        if (!frozen) throw new Error();
+            return { transactionId: existing.id };
+          }
 
-        if (wallet.id !== frozen.walletId)
-          throw new BadRequestException('The frozen id is invalided');
+          const frozen = await this.repository.releaseFrozen(freezeId);
+          if (!frozen) {
+            throw new NotFoundException('Frozen amount not found');
+          }
 
-        await this.repository.decreaseBalance(wallet.id, frozen.amount);
+          if (wallet.id !== frozen.walletId)
+            throw new BadRequestException('The frozen id is invalided');
 
-        const { id: transactionId } = await this.repository.recordTransaction({
-          type: 'withdraw',
-          amount: frozen.amount,
-          walletId: frozen.walletId,
-          idempotencyKey,
-          reason: frozen.reason,
-          description,
-        });
+          const updated = await this.repository.decreaseBalance(
+            wallet.id,
+            frozen.amount,
+          );
 
-        return { transactionId };
-      }),
+          if (!updated)
+            throw new UnprocessableEntityException('Insufficient funds');
+
+          const { id: transactionId } = await this.repository.recordTransaction({
+            type: 'withdraw',
+            amount: frozen.amount,
+            walletId: frozen.walletId,
+            idempotencyKey,
+            reason: frozen.reason,
+            description,
+          });
+
+          return { transactionId };
+        },
+      ),
     );
   }
 
   releaseFrozen({ freezeId }: ReleaseFrozenAmountRequest): Promise<void> {
+    const idempotencyKey = `unfreeze:${freezeId}`;
+
     return this.tx.run(async () =>
-      this.repository.withLock('wallet-transaction', freezeId, async () => {
-        const frozen = await this.repository.releaseFrozen(freezeId);
+      this.repository.withLock(
+        'wallet-transaction',
+        idempotencyKey,
+        async () => {
+          const frozen = await this.repository.releaseFrozen(freezeId);
+          if (!frozen) return;
 
-        if (!frozen) return;
+          const existing =
+            await this.repository.findTransactionByIdempotencyKeyAndWalletId(
+              idempotencyKey,
+              frozen.walletId,
+            );
 
-        await this.repository.recordTransaction({
-          type: 'unfreeze',
-          amount: frozen.amount,
-          walletId: frozen.walletId,
-          idempotencyKey: `unfreeze:${freezeId}`,
-          reason: frozen.reason,
-        });
-      }),
+          if (existing) return;
+
+          await this.repository.recordTransaction({
+            type: 'unfreeze',
+            amount: frozen.amount,
+            walletId: frozen.walletId,
+            idempotencyKey,
+            reason: frozen.reason,
+          });
+        },
+      ),
     );
   }
 

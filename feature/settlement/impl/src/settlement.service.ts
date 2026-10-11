@@ -47,7 +47,6 @@ export class SettlementService implements SettlementApi {
         customerId: req.customerId,
         amount: req.amount,
         reason: 'refund',
-        referenceId: req.referenceId,
         idempotencyKey: `refund:${req.referenceId}`,
         description: 'Sale return refund',
       });
@@ -65,19 +64,20 @@ export class SettlementService implements SettlementApi {
       // Only withdrawals require wallet freeze
       if (type === 'withdrawal') {
         const frozen = await this.wallet.freeze({
-          customerId: customerId,
-          amount: amount,
-          reason: 'withdrawal-request',
-          referenceId: referenceId,
+          customerId,
+          amount,
+          reason: 'withdrawal_request',
+          idempotencyKey: `withdrawal:${referenceId}`,
+          description: 'Withdrawal request freeze',
         });
 
         await this.repository.createRequest({
-          customerId: customerId,
-          amount: amount,
-          referenceId: referenceId,
+          customerId,
+          amount,
+          referenceId,
           freezeId: frozen.freezeId,
-          destination: destination,
-          type: type,
+          destination,
+          type,
         });
       }
     });
@@ -91,7 +91,8 @@ export class SettlementService implements SettlementApi {
       if (settlementRequest.type === 'withdrawal')
         await this.wallet.commitFrozen({
           freezeId: settlementRequest.freezeId,
-          referenceId: settlementRequest.referenceId,
+          customerId: settlementRequest.customerId,
+          idempotencyKey: `withdrawal:commit:${settlementRequest.referenceId}`,
         });
     });
   }
@@ -103,7 +104,6 @@ export class SettlementService implements SettlementApi {
       if (settlementRequest.type === 'withdrawal')
         await this.wallet.releaseFrozen({
           freezeId: settlementRequest.freezeId,
-          reason: 'withdrawal-request',
         });
 
       await this.repository.markRejected(id, reason);
