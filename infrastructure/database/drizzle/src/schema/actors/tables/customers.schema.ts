@@ -27,7 +27,7 @@ export const walletTransactionReason = actorsSchema.enum(
     'payment',
     'withdrawal',
     'cashback_reversal',
-    'withdrawal-request',
+    'withdrawal_request',
     'manual',
   ],
 );
@@ -44,6 +44,10 @@ export const walletTransactions = actorsSchema.table(
     amount: bigint('amount', { mode: 'number' }).notNull(),
     reason: walletTransactionReason('reason').notNull(),
     description: text('description'),
+    freezedAmountId: uuid('freezed_amount_id').references(
+      () => freezedAmounts.id,
+      { onDelete: 'set null' },
+    ),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -51,8 +55,26 @@ export const walletTransactions = actorsSchema.table(
   (t) => [
     unique('uq_wallet_tx_idempotency').on(t.walletId, t.idempotencyKey),
     check('chk_wallet_tx_amount_positive', sql`${t.amount} > 0`),
+    check(
+      'chk_wallet_tx_freeze_ref',
+      sql`${t.type} <> 'freeze' OR ${t.freezedAmountId} IS NOT NULL`,
+    ),
+    index('idx_wallet_tx_freezed_amount').on(t.freezedAmountId),
   ],
 );
+
+export const freezedAmounts = actorsSchema.table('freezed_amounts', {
+  id: uuid('id').defaultRandom().primaryKey().notNull(),
+  walletId: uuid('wallet_id')
+    .notNull()
+    .references(() => wallets.id, {
+      onDelete: 'cascade',
+    }),
+  amount: bigint('amount', { mode: 'number' }).notNull(),
+  reason: walletTransactionReason('reason')
+    .$type<'withdrawal_request' | 'manual'>()
+    .notNull(),
+});
 
 export const wallets = actorsSchema.table(
   'wallets',
@@ -63,16 +85,11 @@ export const wallets = actorsSchema.table(
       .unique()
       .references(() => customers.id, { onDelete: 'restrict' }),
     total: bigint('total', { mode: 'number' }).notNull().default(0),
-    frozen: bigint('frozen', { mode: 'number' }).notNull().default(0),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (t) => [
-    check('chk_wallets_total_non_negative', sql`${t.total} >= 0`),
-    check('chk_wallets_frozen_non_negative', sql`${t.frozen} >= 0`),
-    check('chk_wallets_frozen_within_total', sql`${t.frozen} <= ${t.total}`),
-  ],
+  (t) => [check('chk_wallets_total_non_negative', sql`${t.total} >= 0`)],
 );
 
 export const addressScope = actorsSchema.enum('address_scope', [

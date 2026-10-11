@@ -10,6 +10,4 @@ export type WalletTransactionResponse = {
 
 export interface FrozenBalanceResponse {
   freezeId: string;
-  amount: number;
-  expiresAt?: Date;
 }

@@ -9,11 +9,11 @@ import {
 } from '@infra/db-drizzle';
 import {
   actorsRelations,
+  freezedAmounts,
   wallets,
   walletTransactions,
 } from '@infra/db-drizzle/schema';
 import {
-  BadRequestException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
@@ -77,9 +77,11 @@ export class WalletRepository extends DrizzleBaseRepository<
   }
 
   async decreaseBalance(walletId: string, amount: number) {
-    if (!Number.isSafeInteger(amount) || amount <= 0) {
-      throw new BadRequestException('Amount must be a positive integer');
-    }
+    const frozen = sql`coalesce((
+      select sum(${freezedAmounts.amount})
+      from ${freezedAmounts}
+      where ${freezedAmounts.walletId} = ${wallets.id}
+    ), 0)::bigint`;
 
     return this.db
       .update(wallets)
@@ -87,11 +89,42 @@ export class WalletRepository extends DrizzleBaseRepository<
         total: sql`${wallets.total} - ${amount}`,
         updatedAt: new Date(),
       })
-      .where(eq(wallets.id, walletId))
-      .returning({
-        id: wallets.id,
-      })
+      .where(
+        and(
+          eq(wallets.id, walletId),
+          sql`${wallets.total} - ${frozen} >= ${amount}`,
+        ),
+      )
+      .returning({ id: wallets.id })
       .then(([row]) => row ?? null);
+  }
+
+  async freezeBalanceAmount(
+    walletId: string,
+    amount: number,
+    reason: (typeof freezedAmounts.$inferSelect)['reason'],
+  ): Promise<{ freezeId: string }> {
+    return this.db
+      .insert(freezedAmounts)
+      .values({
+        amount,
+        walletId,
+        reason,
+      })
+      .returning({ freezeId: freezedAmounts.id })
+      .then((rows) => rows[0]);
+  }
+
+  releaseFrozen(freezeId: string) {
+    return this.db
+      .delete(freezedAmounts)
+      .where(eq(freezedAmounts.id, freezeId))
+      .returning({
+        walletId: freezedAmounts.walletId,
+        amount: freezedAmounts.amount,
+        reason: freezedAmounts.reason,
+      })
+      .then((rows) => rows[0] ?? null);
   }
 
   async pageTransactions(

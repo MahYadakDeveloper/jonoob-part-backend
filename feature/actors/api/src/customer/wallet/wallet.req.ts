@@ -37,18 +37,16 @@ export interface GetWalletBalanceRequest {
   customerId: string;
 }
 
-export interface FreezeWalletAmountRequest {
-  customerId: string;
+export type FreezeWalletAmountRequest = WalletOperationRequest & {
   amount: number;
 
-  reason: 'withdrawal-request' | 'manual';
-}
+  reason: 'withdrawal_request' | 'manual';
+};
 
-export interface CommitFrozenAmountRequest {
+export type CommitFrozenAmountRequest = WalletOperationRequest & {
   freezeId: string;
-}
+};
 
 export interface ReleaseFrozenAmountRequest {
   freezeId: string;
-  reason: 'withdrawal-request' | 'manual';
 }
