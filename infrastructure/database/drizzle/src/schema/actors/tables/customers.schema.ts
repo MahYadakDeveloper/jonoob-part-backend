@@ -18,6 +18,20 @@ export const walletTransactionType = actorsSchema.enum(
   ['deposit', 'withdraw', 'freeze', 'unfreeze'],
 );
 
+export const walletTransactionReason = actorsSchema.enum(
+  'wallet_transaction_reason',
+  [
+    'cashback',
+    'manual_adjustment',
+    'refund',
+    'payment',
+    'withdrawal',
+    'cashback_reversal',
+    'withdrawal-request',
+    'manual',
+  ],
+);
+
 export const walletTransactions = actorsSchema.table(
   'wallet_transactions',
   {
@@ -28,6 +42,8 @@ export const walletTransactions = actorsSchema.table(
     idempotencyKey: varchar('idempotency_key').notNull(),
     type: walletTransactionType().notNull(),
     amount: bigint('amount', { mode: 'number' }).notNull(),
+    reason: walletTransactionReason('reason').notNull(),
+    description: text('description'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

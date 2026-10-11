@@ -7,6 +7,7 @@ export const actorsRelations = defineRelationsPart(
     ...{ ...schemas, deliveries },
   },
   (r) => ({
+    walletTransactions: {},
     wallets: {},
     addresses: {},
     customers: {

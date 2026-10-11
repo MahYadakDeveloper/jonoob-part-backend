@@ -5,6 +5,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { Courier, CourierRepository } from './courier.repository';
 import { SmsPickupRequestJobPayload } from './sms/pickup-request.template';
+import { hash } from 'crypto';
 
 @Injectable()
 export class CourierApiImpl implements CourierApi {
@@ -42,9 +43,15 @@ export class CourierApiImpl implements CourierApi {
   }
 }
 
-function toDto({ deliveries, phone, ...rest }: Courier): CourierDto {
+function toDto({
+  deliveries,
+  phone,
+  hashedPassword,
+  ...rest
+}: Courier): CourierDto {
   return {
     ...rest,
     phoneNumber: phone,
+    password: hashedPassword,
   };
 }

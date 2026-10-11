@@ -6,9 +6,13 @@ import {
   TechnicianSpecialty,
 } from '@feature/actors-api/customer';
 import { CustomerRepository } from './customer.repository';
+import { WalletRepository } from './wallet/wallet.repository';
 
 export class CustomersApiImpl implements CustomersApi {
-  constructor(private readonly repository: CustomerRepository) {}
+  constructor(
+    private readonly repository: CustomerRepository,
+    private readonly walletRepository: WalletRepository,
+  ) {}
   findById(customerId: string): Promise<Customer> {
     throw new Error('Method not implemented.');
   }
@@ -26,8 +30,10 @@ export class CustomersApiImpl implements CustomersApi {
     phoneNumber: string;
     fullName: string;
   }): Promise<{ id: string }> {
+    // create wallet for customer...
     throw new Error('Method not implemented.');
   }
+
   createMerchantTypeCustomer(customer: {
     phoneNumber: string;
     fullName: string;
@@ -35,6 +41,7 @@ export class CustomersApiImpl implements CustomersApi {
   }): Promise<{ id: string }> {
     throw new Error('Method not implemented.');
   }
+
   createTechnicianTypeCustomer(customer: {
     phoneNumber: string;
     fullName: string;

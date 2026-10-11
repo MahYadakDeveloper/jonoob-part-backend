@@ -1,9 +1,6 @@
 export type WalletOperationRequest = {
   customerId: string;
 
-  /** Business reference (saleId, returnId, campaignId, etc.) */
-  referenceId: string;
-
   /** Prevent duplicate processing */
   idempotencyKey: string;
 
@@ -18,9 +15,6 @@ export type RefundWalletRequest = {
 
   /** Original payment transaction id */
   originalTransactionId: string;
-
-  /** Return document id */
-  referenceId: string;
 
   idempotencyKey: string;
 
@@ -47,13 +41,11 @@ export interface FreezeWalletAmountRequest {
   customerId: string;
   amount: number;
 
-  referenceId: string;
   reason: 'withdrawal-request' | 'manual';
 }
 
 export interface CommitFrozenAmountRequest {
   freezeId: string;
-  referenceId: string;
 }
 
 export interface ReleaseFrozenAmountRequest {

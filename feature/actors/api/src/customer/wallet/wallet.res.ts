@@ -6,13 +6,6 @@ export interface GetWalletBalanceResponse {
 
 export type WalletTransactionResponse = {
   transactionId: string;
-
-  amount: number;
-
-  balanceBefore: number;
-  balanceAfter: number;
-
-  occurredAt: Date;
 };
 
 export interface FrozenBalanceResponse {

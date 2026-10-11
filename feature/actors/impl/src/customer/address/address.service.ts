@@ -1,40 +1,40 @@
-import { PartialBy } from '@feature/common';
 import {
   CustomerAddress,
   CustomerAddressApi,
-} from '@feature/customer-address-api';
+} from '@feature/actors-api/customer';
 import { Injectable } from '@nestjs/common';
-import { CreateAddress, type AddressRepository } from './address.repository';
+import { AddressRepository } from './address.repository';
+
+export type AddressDto = CustomerAddress;
 
 @Injectable()
 export class AddressService implements CustomerAddressApi {
   constructor(private readonly repository: AddressRepository) {}
 
-  findByCustomerId({ customerId }: { customerId: string }): Promise<{
-    addresses: CustomerAddress[];
-  }> {
-    return this.repository.findByCustomerId(customerId).then((addresses) => ({
-      addresses,
-    }));
+  findManyByCustomerId(customerId: string): Promise<CustomerAddress[]> {
+    return this.repository.findManyByCustomerId(customerId);
   }
 
-  findById({ addressId }: { addressId: string }): Promise<{
-    address: CustomerAddress;
-  }> {
-    return this.repository.findById(addressId).then((address) => {
-      if (!address) throw new Error();
-      return { address };
-    });
+  findByIdAndCustomerId(
+    addressId: string,
+    customerId: string,
+  ): Promise<CustomerAddress> {
+    return this.repository
+      .findByIdAndCustomerId(addressId, customerId)
+      .then((a) => {
+        if (!a) throw new Error();
+        return a;
+      });
   }
 
-  async create(req: CreateAddress): Promise<void> {
-    await this.repository.create(req);
+  async create(customerId: string, address: CustomerAddress): Promise<void> {
+    await this.repository.create(customerId, address);
   }
 
   updateByCustomerIdAndId(req: {
     customerId: string;
     addressId: string;
-    data: PartialBy<CustomerAddress, 'id'>;
+    data: Omit<AddressDto, 'id'>;
   }): Promise<void> {
     return this.repository.updateByCustomerIdAndId(
       req.customerId,

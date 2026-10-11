@@ -15,10 +15,6 @@ export abstract class DrizzleBaseRepository<
     return this.dbProvider.current;
   }
 
-  protected get forUpdate() {
-    return !!this.forUpdateCtx.getStore();
-  }
-
   withForUpdate<T>(fn: () => Promise<T>): Promise<T> {
     assertTransaction(this.dbProvider.current, 'withForUpdate');
 

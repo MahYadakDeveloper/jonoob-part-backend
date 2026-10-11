@@ -22,7 +22,8 @@ export class StockMovementRepository extends DrizzleBaseRepository<
   }
 
   async findById(id: string): Promise<Movement | null> {
-    if (this.forUpdate) await this.lock('movements', id);
+    if (this.forUpdateCtx.getStore() === 'for_update')
+      await this.lock('movements', id);
     return this.db.query.movements
       .findFirst({
         where: {
@@ -36,7 +37,8 @@ export class StockMovementRepository extends DrizzleBaseRepository<
   }
 
   async findByIdempotencyKey(key: string): Promise<Movement | null> {
-    if (this.forUpdate) await this.lock('movements', key);
+    if (this.forUpdateCtx.getStore() === 'for_update')
+      await this.lock('movements', key);
 
     return this.db.query.movements
       .findFirst({
