@@ -1,10 +1,10 @@
-import { CustomerType } from '@feature/common';
+import { CustomerType } from './customer-type';
 
 export type AuthenticatedUser =
   | ({
       id: string;
       fullName: string;
-      phoneNumber: string;
+      phone: string;
     } & (
       | {
           role: 'customer';

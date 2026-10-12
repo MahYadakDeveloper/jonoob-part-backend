@@ -1,6 +1,4 @@
-import { Wallet } from './wallet';
-
-export type CustomerType = 'merchant' | 'consumer' | 'technician';
+import { CustomerType } from '@feature/common/types/customer-type';
 
 export type CustomerAddress = { id: string } & (
   | {
@@ -32,8 +30,7 @@ export type TechnicianSpecialty =
 export type Customer = {
   id: string;
   fullName: string;
-  phoneNumber: string;
-  wallet: Wallet;
+  phone: string;
 } & (
   | {
       type: Extract<CustomerType, 'consumer'>;

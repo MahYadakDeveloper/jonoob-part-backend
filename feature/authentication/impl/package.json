@@ -22,21 +22,23 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/authentication-api": "workspace:*",
-    "@feature/common": "workspace:*",
     "@feature/actors-api": "workspace:*",
+    "@feature/common": "workspace:*",
     "@feature/order-api": "workspace:*",
     "@infra/crypto-hash": "workspace:*",
     "@infra/crypto-jwt": "workspace:*",
+    "@infra/crypto-otp": "workspace:*",
     "@infra/db-redis": "workspace:*",
     "@infra/messaging-queue": "workspace:*",
     "@infra/rate-limit": "workspace:*",
+    "@infra/synchronizer": "workspace:*",
     "@jonoob-part/contracts": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "bullmq": "catalog:",
     "redis": "catalog:",
+    "rxjs": "catalog:",
     "zod": "catalog:"
   }
 }

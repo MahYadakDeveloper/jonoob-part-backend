@@ -1,5 +1,5 @@
 {
-  "name": "@feature/authentication-api",
+  "name": "@feature/authentication",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -13,10 +13,13 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./sms": {
+      "types": "./dist/sms/index.d.ts",
+      "import": "./dist/sms/index.js",
+      "require": "./dist/sms/index.js"
     }
   },
   "private": true,
-  "dependencies": {
-    "@feature/common": "workspace:*"
-  }
+  "dependencies": {}
 }

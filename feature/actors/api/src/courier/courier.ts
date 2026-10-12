@@ -1,6 +1,6 @@
 export type Courier = {
   id: string;
   fullName: string;
-  phoneNumber: string;
+  phone: string;
   password: string;
 };

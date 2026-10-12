@@ -1,53 +1,87 @@
 import {
-  Customer,
-  CustomerAddress,
+  Customer as CustomerDto,
   CustomersApi,
   CustomerType,
-  TechnicianSpecialty,
 } from '@feature/actors-api/customer';
-import { CustomerRepository } from './customer.repository';
-import { WalletRepository } from './wallet/wallet.repository';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Customer, CustomerRepository } from './customer.repository';
 
+@Injectable()
 export class CustomersApiImpl implements CustomersApi {
-  constructor(
-    private readonly repository: CustomerRepository,
-    private readonly walletRepository: WalletRepository,
-  ) {}
-  findById(customerId: string): Promise<Customer> {
-    throw new Error('Method not implemented.');
+  constructor(private readonly repository: CustomerRepository) {}
+
+  async findById(customerId: string): Promise<CustomerDto> {
+    return this.repository.findById(customerId).then((c) => {
+      if (!c) throw new NotFoundException(`Customer ${customerId} not found!`);
+      return toCustomerDto(c);
+    });
   }
-  findByPhoneNumber(phone: string): Promise<Customer> {
-    throw new Error('Method not implemented.');
+
+  findByPhone(phone: string): Promise<CustomerDto> {
+    return this.repository.findByPhone(phone).then((c) => {
+      if (!c)
+        throw new NotFoundException(`Customer with ${phone} phone not found!`);
+      return toCustomerDto(c);
+    });
   }
+
   getContact(customerId: string): Promise<{
     type: CustomerType;
-    phoneNumber: string;
+    phone: string;
     fullName: string;
   }> {
-    throw new Error('Method not implemented.');
-  }
-  createConsumerTypeCustomer(customer: {
-    phoneNumber: string;
-    fullName: string;
-  }): Promise<{ id: string }> {
-    // create wallet for customer...
-    throw new Error('Method not implemented.');
-  }
-
-  createMerchantTypeCustomer(customer: {
-    phoneNumber: string;
-    fullName: string;
-    address: Extract<CustomerAddress, { scope: 'intra_city' }>;
-  }): Promise<{ id: string }> {
-    throw new Error('Method not implemented.');
+    return this.repository.findById(customerId).then((c) => {
+      if (!c) throw new NotFoundException('Customer not found!');
+      return {
+        fullName: c.fullName,
+        phone: c.phone,
+        type: c.type,
+      };
+    });
   }
 
-  createTechnicianTypeCustomer(customer: {
-    phoneNumber: string;
+  createConsumerTypeCustomer({
+    fullName,
+    phone,
+  }: {
+    phone: string;
     fullName: string;
-    address: Extract<CustomerAddress, { scope: 'intra_city' }>;
-    specialty: TechnicianSpecialty;
   }): Promise<{ id: string }> {
-    throw new Error('Method not implemented.');
+    return this.repository.create({
+      fullName,
+      phone,
+      type: 'consumer',
+    });
+  }
+}
+
+type Addr<S extends CustomerDto['addresses'][0]['scope']> = Extract<
+  CustomerDto['addresses'][0]['scope'],
+  { scope: S }
+>[];
+
+export function toCustomerDto(c: Customer): CustomerDto {
+  const base = { id: c.id, fullName: c.fullName, phone: c.phone };
+
+  switch (c.type) {
+    case 'consumer':
+      return {
+        ...base,
+        type: c.type,
+        addresses: c.addresses as Addr<'inter_city'>,
+      };
+    case 'merchant':
+      return {
+        ...base,
+        type: c.type,
+        addresses: c.addresses as Addr<'intra_city'>,
+      };
+    case 'technician':
+      return {
+        ...base,
+        type: c.type,
+        specialty: c.specialty!,
+        addresses: c.addresses as Addr<'intra_city'>,
+      };
   }
 }

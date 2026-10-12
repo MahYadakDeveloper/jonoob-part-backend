@@ -12,7 +12,7 @@ import {
 } from '@nestjs/swagger';
 import qs from 'qs';
 import { createSchema } from 'zod-openapi';
-import { AppModule } from './moduels/app.module';
+import { AppModule } from './app.module';
 
 /**
  * [NOTE] @fastify/static is required for openapi/swagger
@@ -36,20 +36,6 @@ async function bootstrap() {
 
   app.register(import('@fastify/formbody'), { parser: (str) => qs.parse(str) });
   app.register(multipart);
-
-  // app.useBodyParser(
-  //   'application/x-www-form-urlencoded',
-  //   {},
-  //   (_req, body, done) => {
-  //     try {
-  //       const raw = body.toString('utf8');
-  //       console.log('raw:', raw);
-  //       done(null, qs.parse(raw as string));
-  //     } catch (e) {
-  //       done(e as Error, undefined);
-  //     }
-  //   },
-  // );
 
   app.useGlobalPipes(
     new StandardSchemaValidationPipe({

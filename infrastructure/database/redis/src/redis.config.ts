@@ -8,9 +8,13 @@ const optionalString = z
   .transform((v) => (v?.trim() ? v : undefined));
 
 const redisEnvSchema = z.object({
-  REDIS_HOST: z.string().min(1).default('localhost'),
-  REDIS_PORT: z.coerce.number().int().min(1).max(65535).default(6379),
+  REDIS_HOST: z.string().min(1),
+  REDIS_PORT: z.coerce.number().int().min(1).max(65535),
   REDIS_DB: z.coerce.number().int().min(0).max(15).default(0),
+  REDIS_TLS: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
   REDIS_USERNAME: optionalString,
   REDIS_PASSWORD: optionalString,
 });
@@ -31,6 +35,7 @@ export const redisConfig = registerAs('redis', () => {
     host: env.REDIS_HOST,
     port: env.REDIS_PORT,
     database: env.REDIS_DB,
+    tls: env.REDIS_TLS,
     username: env.REDIS_USERNAME,
     password: env.REDIS_PASSWORD,
   };

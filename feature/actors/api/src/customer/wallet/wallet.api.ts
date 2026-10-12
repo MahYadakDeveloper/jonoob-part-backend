@@ -7,6 +7,7 @@ import {
 } from './wallet.req';
 import { FrozenBalanceResponse, WalletTransactionResponse } from './wallet.res';
 
+export const WALLET_API = Symbol('WalletApi');
 export interface WalletApi {
   deposit(req: WalletDepositRequest): Promise<WalletTransactionResponse>;
 

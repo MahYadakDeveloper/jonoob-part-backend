@@ -1,10 +1,10 @@
 import { MongoAbility } from '@casl/ability';
-import '@feature/authentication-api';
-import { PolicyContext, PolicyDefinition } from '@feature/authorization-api';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
-import { CHECK_POLICIES_KEY } from './check-policies.decorator';
+import { PolicyContext } from '../contracts/policy-context';
+import { PolicyDefinition } from '../contracts/policy-definition';
+import { CHECK_POLICIES_KEY } from '../decorators/check-policies.decorator';
 
 @Injectable()
 export class PoliciesGuard implements CanActivate {
@@ -27,7 +27,9 @@ export class PoliciesGuard implements CanActivate {
 
     const user = request.user;
 
-    const abilityFactory = this.moduleRef.get(definition.abilityFactory, { strict: false });
+    const abilityFactory = this.moduleRef.get(definition.abilityFactory, {
+      strict: false,
+    });
 
     const ability = abilityFactory.createFor(user);
 

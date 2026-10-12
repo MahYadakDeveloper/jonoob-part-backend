@@ -1,39 +1,28 @@
-import { Synchronizer } from "@feature/warehouse";
-import { ConfigService } from "@nestjs/config";
-import { Injectable } from "@nestjs/common";
-import Redis from "ioredis";
-import Redlock from "redlock";
+import { REDIS_CLIENT } from '@infra/db-redis';
+import { Inject, Injectable } from '@nestjs/common';
+import type { RedisClientType } from 'redis';
+import { createLock, NodeRedisAdapter } from 'redlock-universal';
 
 @Injectable()
-export class RedlockSynchronizer implements Synchronizer {
-  private readonly redlock: Redlock;
+export class RedlockSynchronizer {
+  private readonly adapter: NodeRedisAdapter;
 
-  /**
-   * TODO: Use env variable for redis connection
-   */
-  constructor(private readonly config: ConfigService) {
-    // By default, it will connect to localhost:6379.
-    const redis = new Redis();
-    this.redlock = new Redlock(redis)
+  constructor(@Inject(REDIS_CLIENT) client: RedisClientType) {
+    this.adapter = new NodeRedisAdapter(client);
   }
 
   async executeExclusive<T>(
     key: string,
     callback: () => Promise<T>,
+    ttlMs = 5000,
   ): Promise<T> {
-    // Acquire a lock.
-    let lock = await this.redlock.acquire(["a"], 5000);
+    const lock = createLock({ adapter: this.adapter, key, ttl: ttlMs });
+
+    const handle = await lock.acquire();
     try {
       return await callback();
-
-      // Extend the lock. Note that this returns a new `Lock` instance.
-      // lock = await lock.extend(5000);
-
-      // Do something else...
-      // await somethingElse();
     } finally {
-      // Release the lock.
-      await lock.release();
+      await lock.release(handle);
     }
   }
 }

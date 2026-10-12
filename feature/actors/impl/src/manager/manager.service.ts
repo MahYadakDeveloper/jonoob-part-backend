@@ -1,19 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Manager, ManagerApi } from '@feature/actors-api/manager';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { ManagerRepository } from './manager.repository';
 
 @Injectable()
 export class ManagerService implements ManagerApi {
-  constructor() {}
+  constructor(private readonly repository: ManagerRepository) {}
 
-  findById(req: { managerId: string }): Promise<{
-    manager: Manager;
-  }> {
-    throw new Error('Method not implemented.');
+  findById(managerId: string): Promise<Manager> {
+    return this.repository.findById(managerId).then((m) => {
+      if (!m) throw new NotFoundException(`Manager ${managerId} not found`);
+      return m;
+    });
   }
 
-  findByPhoneNumber(req: { phoneNumber: string }): Promise<{
-    manager: Manager;
-  }> {
-    throw new Error('Method not implemented.');
+  findByPhone(phone: string): Promise<Manager> {
+    return this.repository.findByPhone(phone).then((m) => {
+      if (!m)
+        throw new NotFoundException(`Manager not found with ${phone} number`);
+      return m;
+    });
   }
 
   /**

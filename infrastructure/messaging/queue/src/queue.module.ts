@@ -16,6 +16,10 @@ import { SMS_QUEUE_NAME } from './queue.constants';
           username: config.get<string>('REDIS_USERNAME') || undefined,
           password: config.get<string>('REDIS_PASSWORD') || undefined,
           db: Number(config.get('REDIS_DB') ?? 0),
+          tls:
+            config.get<string>('REDIS_TLS')?.toLowerCase() === 'true'
+              ? {}
+              : undefined,
         },
         prefix: config.get<string>('QUEUE_PREFIX', 'bull'),
         defaultJobOptions: {

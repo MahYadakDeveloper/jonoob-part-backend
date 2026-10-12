@@ -5,8 +5,9 @@ import {
   couriers,
   deliveries,
 } from '@infra/db-drizzle/schema';
+import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
-import { DBQueryConfigWith, eq } from 'drizzle-orm/';
+import { DBQueryConfigWith, eq } from 'drizzle-orm';
 
 export type Courier = typeof couriers.$inferSelect & {
   deliveries: Omit<typeof deliveries.$inferSelect, 'courierId'>;
@@ -23,6 +24,7 @@ const withDeliveries = {
   typeof actorsRelations.couriers.relations
 >;
 
+@Injectable()
 export class CourierRepository extends DrizzleBaseRepository<
   typeof actorsRelations
 > {

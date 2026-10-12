@@ -1,3 +1,5 @@
+import { CustomerType } from '@feature/actors-api/customer';
+
 export type RefreshClaim =
   | {
       role: 'admin';

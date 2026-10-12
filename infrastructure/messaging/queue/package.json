@@ -27,8 +27,9 @@
   },
   "dependencies": {
     "@jonoob-part/contracts": "workspace:*",
-    "@nestjs/bullmq": "^11.0.4",
-    "@nestjs/common": "^11.1.28",
-    "@nestjs/config": "catalog:"
+    "@nestjs/bullmq": "catalog:",
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "rxjs": "catalog:"
   }
 }

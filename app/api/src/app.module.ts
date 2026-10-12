@@ -1,5 +1,6 @@
 // import { BullModule } from '@nestjs/bullmq';
-import { WarehouseModule } from '@feature/warehouse';
+import { ActorsModule } from '@feature/actors';
+import { AuthenticationModule } from '@feature/authentication';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import path from 'node:path';
@@ -21,7 +22,7 @@ import path from 'node:path';
     //   },
     // }),
     // ScheduleModule.forRoot(),
-    WarehouseModule,
+    AuthenticationModule.forRoot({ imports: [ActorsModule] }),
   ],
 })
 export class AppModule {}

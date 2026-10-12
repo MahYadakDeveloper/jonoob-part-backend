@@ -1,1 +1,1 @@
-export * from './sms-opt.template';
+export * from './pickup-request.template';

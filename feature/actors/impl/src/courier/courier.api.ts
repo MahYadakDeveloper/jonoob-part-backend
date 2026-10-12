@@ -1,16 +1,16 @@
 import { CourierApi, Courier as CourierDto } from '@feature/actors-api/courier';
 import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
 import { SmsJobs } from '@infra/messaging-queue/job-types';
-import { Inject, Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { Courier, CourierRepository } from './courier.repository';
 import { SmsPickupRequestJobPayload } from './sms/pickup-request.template';
-import { hash } from 'crypto';
 
 @Injectable()
 export class CourierApiImpl implements CourierApi {
   constructor(
-    @Inject(SMS_QUEUE_NAME) private readonly smsQueue: Queue,
+    @InjectQueue(SMS_QUEUE_NAME) private readonly smsQueue: Queue,
     private readonly repository: CourierRepository,
   ) {}
 
@@ -22,7 +22,7 @@ export class CourierApiImpl implements CourierApi {
     });
   }
 
-  findByPhoneNumber(phone: string): Promise<CourierDto> {
+  findByPhone(phone: string): Promise<CourierDto> {
     return this.repository.findByPhone(phone).then((courier) => {
       if (!courier) throw new Error();
 
@@ -43,15 +43,9 @@ export class CourierApiImpl implements CourierApi {
   }
 }
 
-function toDto({
-  deliveries,
-  phone,
-  hashedPassword,
-  ...rest
-}: Courier): CourierDto {
+function toDto({ deliveries, hashedPassword, ...rest }: Courier): CourierDto {
   return {
     ...rest,
-    phoneNumber: phone,
     password: hashedPassword,
   };
 }

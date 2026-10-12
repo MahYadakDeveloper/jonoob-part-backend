@@ -1,6 +1,6 @@
 export interface Manager {
   id: string;
   fullName: string;
-  phoneNumber: string;
-  password: string;
+  phone: string;
+  hashedPassword: string;
 }

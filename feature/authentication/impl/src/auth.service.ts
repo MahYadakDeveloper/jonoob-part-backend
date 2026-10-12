@@ -5,20 +5,18 @@ import {
   CustomerType,
 } from '@feature/actors-api/customer';
 import { type ManagerApi, MANAGER_API } from '@feature/actors-api/manager';
-import {
-  AuthenticatedUser,
-  AuthenticationApi,
-  AuthenticationResult,
-} from '@feature/authentication-api';
-import { type OtpGenerator, type Synchronizer } from '@feature/common';
+import { AuthenticationApi } from '@feature/common/contracts/authentication.api';
+import { AuthenticatedUser } from '@feature/common/types/authenticated-user';
 import { HashService } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
+import { OtpGenerator } from '@infra/crypto-otp';
 import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
 import { SmsJobs } from '@infra/messaging-queue/job-types';
 import {
   TokenBucketConfig,
   TokenBucketRateLimitService,
 } from '@infra/rate-limit';
+import { RedlockSynchronizer } from '@infra/synchronizer';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
@@ -70,7 +68,7 @@ export class AuthenticationService implements AuthenticationApi {
     private readonly hashService: HashService,
     private readonly rateLimit: TokenBucketRateLimitService,
     private readonly otpGenerator: OtpGenerator,
-    private readonly synchronizer: Synchronizer,
+    private readonly synchronizer: RedlockSynchronizer,
     @Inject(authConfig.KEY)
     private readonly config: ConfigType<typeof authConfig>,
     @InjectQueue(SMS_QUEUE_NAME) private readonly smsQueue: Queue,
@@ -80,7 +78,7 @@ export class AuthenticationService implements AuthenticationApi {
     token,
   }: {
     token: string;
-  }): Promise<AuthenticationResult | null> {
+  }): Promise<{ user: AuthenticatedUser } | null> {
     const payload = await this.jwtService.verify(token, 'access');
     if (!payload) return null;
 
@@ -224,9 +222,7 @@ export class AuthenticationService implements AuthenticationApi {
         if (!payload) throw new Error();
 
         // payload.sub is a phone number, because it comes from verify token
-        const { customer } = await this.customers.findByPhoneNumber({
-          phoneNumber: payload.sub,
-        });
+        const customer = await this.customers.findByPhone(payload.sub);
 
         const accessToken = await this.jwtService.issue({
           type: 'access',
@@ -237,7 +233,7 @@ export class AuthenticationService implements AuthenticationApi {
             id: customer.id,
             type: customer.type,
             fullName: customer.fullName,
-            phoneNumber: customer.phoneNumber,
+            phone: customer.phone,
           } satisfies AuthenticatedUser,
         });
 
@@ -276,7 +272,7 @@ export class AuthenticationService implements AuthenticationApi {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
 
-        const courier = await this.courier.findByPhoneNumber(payload.sub);
+        const courier = await this.courier.findByPhone(payload.sub);
 
         const verified = this.hashService.verify(password, courier.password);
         if (!verified) throw new Error();
@@ -330,11 +326,12 @@ export class AuthenticationService implements AuthenticationApi {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) throw new Error();
 
-        const { manager } = await this.manager.findByPhoneNumber({
-          phoneNumber: payload.sub,
-        });
+        const manager = await this.manager.findByPhone(payload.sub);
 
-        const verified = this.hashService.verify(password, manager.password);
+        const verified = this.hashService.verify(
+          password,
+          manager.hashedPassword,
+        );
         if (!verified) throw new Error();
 
         const accessToken = await this.jwtService.issue({
@@ -440,16 +437,13 @@ export class AuthenticationService implements AuthenticationApi {
         if (!payload) throw new Error();
 
         // payload.sub is a phone number, because it comes from verify token
-        const { customer: customerExists } =
-          await this.customers.findByPhoneNumber({
-            phoneNumber: payload.sub,
-          });
+        const customerExists = await this.customers.findByPhone(payload.sub);
 
         const customerType: CustomerType = 'consumer';
         const { id: customerId } =
           await this.customers.createConsumerTypeCustomer({
             fullName,
-            phoneNumber: payload.sub,
+            phone: payload.sub,
           });
 
         const accessToken = await this.jwtService.issue({
@@ -460,7 +454,7 @@ export class AuthenticationService implements AuthenticationApi {
             role: 'customer',
             id: customerId,
             fullName,
-            phoneNumber: payload.sub,
+            phone: payload.sub,
             type: customerType,
           } satisfies AuthenticatedUser,
         });
@@ -522,9 +516,7 @@ export class AuthenticationService implements AuthenticationApi {
             });
             break;
           case 'manager':
-            const { manager } = await this.manager.findById({
-              managerId: payload.id,
-            });
+            const manager = await this.manager.findById(payload.id);
 
             accessToken = await this.jwtService.issue({
               type: 'access',
@@ -571,9 +563,7 @@ export class AuthenticationService implements AuthenticationApi {
             break;
           case 'customer':
             // sub here is customer id, because it comes from refresh token
-            const { customer } = await this.customers.findById({
-              customerId: payload.sub,
-            });
+            const customer = await this.customers.findById(payload.sub);
 
             accessToken = await this.jwtService.issue({
               type: 'access',

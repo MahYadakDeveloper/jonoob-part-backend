@@ -17,12 +17,10 @@
   },
   "dependencies": {
     "@feature/warehouse": "workspace:*",
-    "@nestjs/common": "^11.1.27",
-    "@nestjs/config": "^4.0.4",
-    "ioredis": "^5.11.1",
-    "redlock": "5.0.0-beta.2"
-  },
-  "devDependencies": {
-    "typescript": "^6.0.3"
+    "@infra/db-redis": "workspace:*",
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "redis": "catalog:",
+    "redlock-universal": "^0.8.5"
   }
 }

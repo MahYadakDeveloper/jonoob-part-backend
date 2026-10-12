@@ -25,6 +25,7 @@
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "bullmq": "catalog:",
-    "drizzle-orm": "catalog:"
+    "drizzle-orm": "catalog:",
+    "rxjs": "catalog:"
   }
 }

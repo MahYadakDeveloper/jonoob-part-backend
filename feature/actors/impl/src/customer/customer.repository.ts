@@ -4,6 +4,7 @@ import {
   addresses,
   customers,
 } from '@infra/db-drizzle/schema';
+import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { DBQueryConfigWith } from 'drizzle-orm';
 
@@ -22,6 +23,7 @@ const withAddresses = {
   typeof actorsRelations.customers.relations
 >;
 
+@Injectable()
 export class CustomerRepository extends DrizzleBaseRepository<
   typeof actorsRelations
 > {
@@ -42,7 +44,7 @@ export class CustomerRepository extends DrizzleBaseRepository<
           ...withAddresses,
         },
       })
-      .then((customer) => customer ?? null);
+      .then((c) => c ?? null);
   }
 
   findByPhone(phone: string): Promise<Customer | null> {
@@ -55,10 +57,14 @@ export class CustomerRepository extends DrizzleBaseRepository<
           ...withAddresses,
         },
       })
-      .then((customer) => customer ?? null);
+      .then((c) => c ?? null);
   }
 
-  create(
-    data: PartialBy<Customer, 'id' | 'wallet' | 'addresses'>,
-  ): Promise<{ id: string }> {}
+  create(customer: typeof customers.$inferInsert): Promise<{ id: string }> {
+    return this.db
+      .insert(customers)
+      .values(customer)
+      .returning({ id: customers.id })
+      .then(([row]) => row);
+  }
 }

@@ -34,6 +34,6 @@ import { actorsRelations, orderRelations, warehouseRelations } from './schema';
     DrizzleDbProvider,
     DrizzleTransactionContext,
   ],
-  exports: [DrizzleDbProvider, DrizzleTransactionContext],
+  exports: [AsyncLocalStorage, DrizzleDbProvider, DrizzleTransactionContext],
 })
 export class DrizzleDbModule {}

@@ -13,13 +13,29 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.js"
+    },
+    "./types/*": {
+      "types": "./dist/types/*.d.ts",
+      "import": "./dist/types/*.js",
+      "require": "./dist/types/*.js"
+    },
+    "./decorators/*": {
+      "types": "./dist/decorators/*.d.ts",
+      "import": "./dist/decorators/*.js",
+      "require": "./dist/decorators/*.js"
+    },
+    "./contracts/*": {
+      "types": "./dist/contracts/*.d.ts",
+      "import": "./dist/contracts/*.js",
+      "require": "./dist/contracts/*.js"
     }
   },
   "private": true,
   "dependencies": {
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "drizzle-orm": "catalog:"
+    "@casl/ability": "catalog:",
+    "@nestjs/common": "catalog:",
+    "@nestjs/core": "catalog:",
+    "fastify": "catalog:",
+    "zod": "catalog:"
   }
 }
