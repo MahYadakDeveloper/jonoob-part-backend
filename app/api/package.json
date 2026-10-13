@@ -29,7 +29,6 @@
     "@infra/db-redis": "workspace:*",
     "@infra/messaging-outbox": "workspace:*",
     "@infra/messaging-queue": "workspace:*",
-    "@infra/persistent-warehouse": "workspace:*",
     "@infra/rate-limit": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",

@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -9,7 +10,10 @@ import type { AuthenticationApi } from '../contracts/authentication.api';
 
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
-  constructor(private readonly authentication: AuthenticationApi) {}
+  constructor(
+    @Inject('AuthenticationApi')
+    private readonly authentication: AuthenticationApi,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<FastifyRequest>();

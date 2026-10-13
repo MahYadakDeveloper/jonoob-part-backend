@@ -2,10 +2,9 @@ import { HashService } from '@infra/crypto-hash';
 import { JwtModule } from '@infra/crypto-jwt';
 import { OtpGenerator } from '@infra/crypto-otp';
 import { RedisModule } from '@infra/db-redis';
-import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
+import { QueueModule } from '@infra/messaging-queue';
 import { RateLimitModule } from '@infra/rate-limit';
 import { SynchronizerModule } from '@infra/synchronizer';
-import { BullModule } from '@nestjs/bullmq';
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import authConfig from './auth.config';
@@ -19,26 +18,22 @@ import { OtpStore } from './otp/otp.store';
     JwtModule,
     RateLimitModule,
     SynchronizerModule,
-    BullModule.registerQueue({
-      name: SMS_QUEUE_NAME,
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 500 },
-        removeOnComplete: true,
-        removeOnFail: 1000,
-      },
-    }),
+    QueueModule,
   ],
   providers: [
     OtpStore,
     OtpGenerator,
     AuthenticationService,
     {
+      provide: 'AuthenticationApi',
+      useExisting: AuthenticationService,
+    },
+    {
       provide: HashService,
       useFactory: () => new HashService(12),
     },
   ],
-  exports: [AuthenticationService],
+  exports: ['AuthenticationApi'],
 })
 export class AuthenticationModule {
   static forRoot(options: ModuleMetadata): DynamicModule {

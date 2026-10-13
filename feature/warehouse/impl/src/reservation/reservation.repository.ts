@@ -1,4 +1,4 @@
-import { OffsetPagination, PageResult } from '@feature/shared';
+import { OffsetPagination, PageResult } from '@feature/shared/pagination';
 import {
   DrizzleBaseRepository,
   DrizzleDbProvider,
@@ -42,7 +42,8 @@ export class StockReservationRepository extends DrizzleBaseRepository<
   }
 
   async findById(reservationId: string): Promise<Reservation | null> {
-    if (this.forUpdate) await this.lock('reservations', reservationId);
+    if (this.forUpdateCtx.getStore() === 'for_update')
+      await this.lock('reservations', reservationId);
 
     return this.db.query.reservations
       .findFirst({
@@ -57,7 +58,8 @@ export class StockReservationRepository extends DrizzleBaseRepository<
   async findByIdempotencyKey(
     idempotencyKey: string,
   ): Promise<Reservation | null> {
-    if (this.forUpdate) await this.lock('reservations', idempotencyKey);
+    if (this.forUpdateCtx.getStore() === 'for_update')
+      await this.lock('reservations', idempotencyKey);
 
     return this.db.query.reservations
       .findFirst({

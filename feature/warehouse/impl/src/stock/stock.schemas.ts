@@ -1,8 +1,8 @@
 import { barcodeType, unitOfMeasure } from '@infra/db-drizzle/schema';
 import { z } from 'zod';
-import { stockSortableFields } from '../../services/repositories/stock.repository';
-import type { StockService } from '../../services/stock.service';
-import { createPageQuerySchema } from './utils';
+import { createPageQuerySchema } from '../utils';
+import { stockSortableFields } from './stock.repository';
+import { StockService } from './stock.service';
 
 export const stockPageQuerySchema = createPageQuerySchema(
   stockSortableFields,

@@ -158,9 +158,6 @@ importers:
       '@infra/messaging-queue':
         specifier: workspace:*
         version: link:../../infrastructure/messaging/queue
-      '@infra/persistent-warehouse':
-        specifier: workspace:*
-        version: link:../../infrastructure/persistent/warehouse
       '@infra/rate-limit':
         specifier: workspace:*
         version: link:../../infrastructure/rate-limit
@@ -1298,13 +1295,16 @@ importers:
         version: 7.0.1
       '@nestjs/common':
         specifier: 'catalog:'
-        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
       '@nestjs/core':
         specifier: 'catalog:'
-        version: 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.1)
       fastify:
         specifier: 5.12.5
         version: 5.12.5
+      rxjs:
+        specifier: 'catalog:'
+        version: 7.8.1
       zod:
         specifier: 'catalog:'
         version: 4.6.5

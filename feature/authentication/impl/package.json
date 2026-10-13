@@ -14,10 +14,10 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
-    "./sms": {
-      "types": "./dist/sms/index.d.ts",
-      "import": "./dist/sms/index.js",
-      "require": "./dist/sms/index.js"
+    "./sms/*": {
+      "types": "./dist/sms/*.d.ts",
+      "import": "./dist/sms/*.js",
+      "require": "./dist/sms/*.js"
     }
   },
   "private": true,

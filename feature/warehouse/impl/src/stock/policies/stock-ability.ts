@@ -4,9 +4,8 @@ import {
   type MongoAbility,
   type MongoQuery,
 } from '@casl/ability';
-
-import type { AuthenticatedUser } from '@feature/authentication-api';
-import type { AbilityFactory } from '@feature/authorization-api';
+import { AbilityFactory } from '@feature/shared/contracts/ability-factory';
+import { AuthenticatedUser } from '@feature/shared/types/authenticated-user';
 
 export type StockAction = 'manage';
 

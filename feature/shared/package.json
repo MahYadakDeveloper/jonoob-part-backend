@@ -3,16 +3,15 @@
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+    "build": "pnpm exec tsc"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js",
+      "require": "./dist/*.js"
     },
     "./types/*": {
       "types": "./dist/types/*.d.ts",
@@ -24,6 +23,11 @@
       "import": "./dist/decorators/*.js",
       "require": "./dist/decorators/*.js"
     },
+    "./guards/*": {
+      "types": "./dist/guards/*.d.ts",
+      "import": "./dist/guards/*.js",
+      "require": "./dist/guards/*.js"
+    },
     "./contracts/*": {
       "types": "./dist/contracts/*.d.ts",
       "import": "./dist/contracts/*.js",
@@ -31,10 +35,13 @@
     }
   },
   "private": true,
-  "dependencies": {
-    "@casl/ability": "catalog:",
+  "peerDependencies": {
     "@nestjs/common": "catalog:",
     "@nestjs/core": "catalog:",
+    "rxjs": "catalog:"
+  },
+  "dependencies": {
+    "@casl/ability": "catalog:",
     "fastify": "catalog:",
     "zod": "catalog:"
   }

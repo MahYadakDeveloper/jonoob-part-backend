@@ -9,10 +9,12 @@ import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { StockMovementRepository } from './movement/movement.repository';
 import { StockMovementService } from './movement/movement.service';
+import { StockQuarantineController } from './quarantine/quarantine.controller';
 import { StockQuarantineRepository } from './quarantine/quarantine.repository';
 import { StockQuarantineService } from './quarantine/quarantine.service';
 import { StockReservationApiImpl } from './reservation/reservation.api';
 import { StockReservationRepository } from './reservation/reservation.repository';
+import { StockController } from './stock/stock.controller';
 import { StockRepository } from './stock/stock.repository';
 import { StockService } from './stock/stock.service';
 
@@ -42,12 +44,14 @@ import { StockService } from './stock/stock.service';
       useExisting: StockReservationApiImpl,
     },
   ],
+  controllers: [StockController, StockQuarantineController],
   exports: [STOCK_MOVEMENT_API, STOCK_QUERY_API, STOCK_RESERVATION_API],
 })
 export class WarehouseModule {
   static forRoot(options: ModuleMetadata): DynamicModule {
     return {
       module: WarehouseModule,
+      ...options,
     };
   }
 }

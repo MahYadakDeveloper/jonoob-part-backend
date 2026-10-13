@@ -1,9 +1,3 @@
-import {
-  CursorPagination,
-  OffsetPagination,
-  Pagination,
-} from './pagination-type';
-
 export interface PageResult<T, TPagination extends Pagination> {
   page: Page<T, TPagination>;
 }
@@ -49,4 +43,22 @@ export interface CursorPage<T> {
   hasPrevious: boolean;
 
   nextCursor?: string;
+}
+
+export type Pagination = OffsetPagination | CursorPagination;
+
+export interface OffsetPagination {
+  type: 'offset';
+
+  page: number;
+
+  size: number;
+}
+
+export interface CursorPagination {
+  type: 'cursor';
+
+  after?: string;
+
+  size: number;
 }

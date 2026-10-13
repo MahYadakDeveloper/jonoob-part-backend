@@ -1,4 +1,5 @@
-import { OffsetPagination, OmitPartials, PageResult } from '@feature/shared';
+import { OmitPartials } from '@feature/shared/utils';
+import { PageResult, OffsetPagination } from '@feature/shared/pagination';
 import { Barcode } from '@feature/warehouse-api';
 import {
   DrizzleBaseRepository,
@@ -47,7 +48,8 @@ export class StockRepository extends DrizzleBaseRepository<
   }
 
   async findById(id: string): Promise<Stock | null> {
-    if (this.forUpdate) await this.lock('stocks', id);
+    if (this.forUpdateCtx.getStore() === 'for_update')
+      await this.lock('stocks', id);
 
     return this.db.query.stocks
       .findFirst({

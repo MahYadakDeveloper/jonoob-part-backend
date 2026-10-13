@@ -1,6 +1,6 @@
-import { quarantineSortableFields } from '../../services/repositories/quarantine.repository';
-import { createPageQuerySchema } from './utils';
 import { z } from 'zod';
+import { createPageQuerySchema } from '../utils';
+import { quarantineSortableFields } from './quarantine.repository';
 
 export const quarantinesPageQuerySchema = createPageQuerySchema(
   quarantineSortableFields,
