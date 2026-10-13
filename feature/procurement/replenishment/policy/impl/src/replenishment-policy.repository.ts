@@ -1,4 +1,4 @@
-import { LineItems, PageCriteria, PageResult } from '@feature/common';
+import { LineItems, PageCriteria, PageResult } from '@feature/shared';
 import { ReplenishmentPolicy } from './model/replenishment';
 
 export interface ReplenishmentPolicyRepository {

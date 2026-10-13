@@ -1,4 +1,4 @@
-import { InvoiceItem, InvoiceSummary, LineItems, Money } from '@feature/common';
+import { InvoiceItem, InvoiceSummary, LineItems, Money } from '@feature/shared';
 
 export interface ManyProductPricingResponse {
   prices: LineItems<{

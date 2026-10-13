@@ -10,7 +10,7 @@ import {
   Money,
   type OutboxRepository,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import {
   ReturnSnapshot,
   SaleReturnRecordedEventPayload,

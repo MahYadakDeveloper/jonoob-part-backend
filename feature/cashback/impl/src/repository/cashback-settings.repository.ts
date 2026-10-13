@@ -1,4 +1,4 @@
-import { CustomerType } from "@feature/common";
+import { CustomerType } from "@feature/shared";
 
 export type CashbackPolicyVariant = Exclude<CustomerType, "merchant">;
 

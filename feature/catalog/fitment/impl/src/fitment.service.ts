@@ -1,5 +1,5 @@
 import { FitmentNode, type FitmentNodeApi } from '@feature/catalog.fitment.node-api';
-import { OutboxRepository, TransactionManager } from '@feature/common';
+import { OutboxRepository, TransactionManager } from '@feature/shared';
 import {
   FindFitmentRequest,
   FindFitmentResponse,

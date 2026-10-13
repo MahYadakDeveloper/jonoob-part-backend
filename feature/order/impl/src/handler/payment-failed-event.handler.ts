@@ -2,7 +2,7 @@ import {
   BaseEventHandler,
   type EventHandlerRegistry,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { type DeliveryApi } from '@feature/order-delivery-api';
 import { type FulfillmentApi } from '@feature/order-fulfillment-api';
 import { PaymentFailedEventPayload, PaymentFailedEventType } from '@feature/order-payment-api';

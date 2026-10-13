@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { MarkupDto } from './markup.dto';
 
 export interface ResolveMarkupResponse {

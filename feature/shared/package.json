@@ -1,5 +1,5 @@
 {
-  "name": "@feature/common",
+  "name": "@feature/shared",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",

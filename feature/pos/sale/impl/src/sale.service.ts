@@ -6,7 +6,7 @@ import {
   LineItems,
   type OutboxRepository,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { type DiscountApi } from '@feature/discount-api';
 import { PlanPaymentRequest, type PaymentApi } from '@feature/payment-api';
 import {

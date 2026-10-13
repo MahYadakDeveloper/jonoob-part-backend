@@ -1,4 +1,4 @@
-import { Payment } from '@feature/common';
+import { Payment } from '@feature/shared';
 
 export interface PlanPaymentResponse {
   payment: Payment;

@@ -7,7 +7,7 @@ import {
   type JobScheduler,
   type SettingsStore,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { type OrderApi } from '@feature/order-api';
 import {
   GetPaymentGatewayByOrderIdRequest,

@@ -19,7 +19,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/tax": "workspace:*",
     "@feature/warehouse": "workspace:*",
     "@infra/persistent-common": "workspace:*",

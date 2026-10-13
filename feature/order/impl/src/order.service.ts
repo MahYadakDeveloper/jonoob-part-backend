@@ -4,7 +4,7 @@ import {
   Money,
   type SettingsStore,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { type CustomersApi } from '@feature/customer-api';
 import { OrderApi } from '@feature/order-api';
 import { type DeliveryApi } from '@feature/order-delivery-api';

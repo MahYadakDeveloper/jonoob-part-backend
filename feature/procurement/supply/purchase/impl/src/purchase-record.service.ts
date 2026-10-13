@@ -5,7 +5,7 @@ import {
   Duration,
   SettingToken,
   subtractDuration,
-} from '@feature/common';
+} from '@feature/shared';
 import {
   CorrectManyRecordRequest,
   CorrectRecordRequest,

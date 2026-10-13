@@ -1,4 +1,4 @@
-import { PageCriteria, PageResult, type TransactionManager } from '@feature/common';
+import { PageCriteria, PageResult, type TransactionManager } from '@feature/shared';
 import {
   RecordSupplyReturnRequest,
   RecordSupplyReturnResponse,

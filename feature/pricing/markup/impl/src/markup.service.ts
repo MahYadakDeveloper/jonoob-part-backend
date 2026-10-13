@@ -1,7 +1,7 @@
 import { ProductDto, type CatalogApi } from '@feature/catalog-api';
 import { type BrandApi } from '@feature/catalog-brand-api';
 import { type CategoryApi } from '@feature/catalog-category-api';
-import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/common';
+import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/shared';
 import {
   MarkupDto,
   MarkupPolicyApi,

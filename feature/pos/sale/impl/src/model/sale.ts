@@ -5,7 +5,7 @@ import {
   InvoiceSnapshot,
   InvoiceSummary,
   LineItems,
-} from '@feature/common';
+} from '@feature/shared';
 import { InvoiceNumber } from './invoice-number';
 
 export class Sale {

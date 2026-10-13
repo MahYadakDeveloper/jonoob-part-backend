@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { PurchaseRecord } from './model/purchase-record';
 
 type CreatePurchaseRecord = Omit<PurchaseRecord, 'id'>;

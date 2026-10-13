@@ -17,7 +17,7 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/order-api": "workspace:*",
     "@feature/order-payment-gateway-api": "workspace:*",
     "@nestjs/axios": "^4.0.1",

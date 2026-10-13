@@ -1,4 +1,4 @@
-import { Money } from "@feature/common";
+import { Money } from "@feature/shared";
 
 export abstract class PaymentError extends Error {
   protected constructor(message: string) {

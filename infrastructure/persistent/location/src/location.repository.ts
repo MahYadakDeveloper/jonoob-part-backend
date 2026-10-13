@@ -1,4 +1,4 @@
-import { type DbProvider } from '@feature/common';
+import { type DbProvider } from '@feature/shared';
 import {
   FindCityByIdRequest,
   FindCityByIdResponse,

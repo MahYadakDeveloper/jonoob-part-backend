@@ -16,7 +16,7 @@
     }
   },
   "dependencies": {
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/persistent-common": "workspace:*",
     "@nestjs/bullmq": "catalog:",

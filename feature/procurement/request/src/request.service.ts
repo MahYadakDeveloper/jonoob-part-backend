@@ -1,5 +1,5 @@
 import { type CatalogApi } from '@feature/catalog-api';
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { type ReplenishmentApi } from '@feature/procurement-replenishment-api';
 import { Injectable } from '@nestjs/common';
 import { ProcurementRequest } from './model/procurement-request';

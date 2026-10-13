@@ -1,5 +1,5 @@
 import { CashbackReversalPolicy } from '@feature/cashback-api';
-import { BankDestination } from '@feature/common';
+import { BankDestination } from '@feature/shared';
 
 export type RecordReturnRequest =
   | {

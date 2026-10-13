@@ -3,7 +3,7 @@ import {
   InvoiceItemBase,
   LineItems,
   Money,
-} from "@feature/common";
+} from "@feature/shared";
 
 export type ReturnSnapshot = {
   header: InvoiceHeader;

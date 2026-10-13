@@ -1,4 +1,4 @@
-import { SettingToken } from '@feature/common';
+import { SettingToken } from '@feature/shared';
 import { z } from 'zod';
 import { CancellationFee } from './order.type';
 

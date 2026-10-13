@@ -2,7 +2,7 @@ import {
   InvoiceItemBase,
   ProductBundleKind,
   ProductLeafKind,
-} from "@feature/common";
+} from "@feature/shared";
 
 export type UnpricedInvoiceItemBase = Omit<
   InvoiceItemBase,

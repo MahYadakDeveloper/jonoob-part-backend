@@ -1,4 +1,4 @@
-import { LineItems, Money } from '@feature/common';
+import { LineItems, Money } from '@feature/shared';
 import { NewSuppliedPurchaseRecordDto } from './purchase-record.dto';
 
 export interface FindLatestRecordByGoodIdRequest {

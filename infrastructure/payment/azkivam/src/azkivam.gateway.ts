@@ -1,4 +1,4 @@
-import { type OutboxRepository } from '@feature/common';
+import { type OutboxRepository } from '@feature/shared';
 import {
   CreatePaymentTicketRequest,
   CreatePaymentTicketResponse,

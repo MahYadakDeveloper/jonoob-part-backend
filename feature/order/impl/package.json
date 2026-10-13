@@ -19,7 +19,7 @@
   "dependencies": {
     "@feature/cashback-api": "workspace:*",
     "@feature/catalog-api": "workspace:*",
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/actors": "workspace:*",
     "@feature/order-api": "workspace:*",
     "@feature/order-delivery-api": "workspace:*",

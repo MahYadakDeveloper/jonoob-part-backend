@@ -1,4 +1,4 @@
-import { InvoiceItem, InvoiceSummary, LineItems } from '@feature/common';
+import { InvoiceItem, InvoiceSummary, LineItems } from '@feature/shared';
 import { Delivery } from '@feature/order-delivery-api';
 import { Fulfillment } from '@feature/order-fulfillment-api';
 import { Payment } from '@feature/order-payment-api';

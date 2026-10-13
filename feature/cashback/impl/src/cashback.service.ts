@@ -8,7 +8,7 @@ import {
   ReversalCashbackRequest,
   ReversalCashbackResponse,
 } from '@feature/cashback-api';
-import { CustomerType, GrantedCashback, InvoiceItem, LineItems, Money } from '@feature/common';
+import { CustomerType, GrantedCashback, InvoiceItem, LineItems, Money } from '@feature/shared';
 import { type WalletApi } from '@feature/wallet-api';
 import { Injectable } from '@nestjs/common';
 import { CashbackAmountChangedError, InvalidCashbackRateError } from './cashback.errors';

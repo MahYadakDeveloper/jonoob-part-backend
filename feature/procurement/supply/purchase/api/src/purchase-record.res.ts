@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { PurchaseRecordDto } from './purchase-record.dto';
 
 export interface FindLatestRecordByGoodIdResponse {

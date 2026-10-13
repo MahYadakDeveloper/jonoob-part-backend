@@ -1,4 +1,4 @@
-import { CustomerType, LineItems } from '@feature/common';
+import { CustomerType, LineItems } from '@feature/shared';
 import { UnpricedInvoiceItem } from './pricing.types';
 
 export interface ManyProductPricingRequest {

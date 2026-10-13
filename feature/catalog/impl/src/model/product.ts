@@ -1,4 +1,4 @@
-import { RawProduct } from '@feature/common';
+import { RawProduct } from '@feature/shared';
 import { ImageRef } from '@feature/media-api';
 
 export type SpecificationReferences = {

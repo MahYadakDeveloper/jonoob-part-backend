@@ -5,8 +5,8 @@ import {
   CustomerType,
 } from '@feature/actors-api/customer';
 import { type ManagerApi, MANAGER_API } from '@feature/actors-api/manager';
-import { AuthenticationApi } from '@feature/common/contracts/authentication.api';
-import { AuthenticatedUser } from '@feature/common/types/authenticated-user';
+import { AuthenticationApi } from '@feature/shared/contracts/authentication.api';
+import { AuthenticatedUser } from '@feature/shared/types/authenticated-user';
 import { HashService } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
 import { OtpGenerator } from '@infra/crypto-otp';

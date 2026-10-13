@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { CreateProduct, UpdateProduct } from 'catalog.types';
 import { Product } from 'model/product';
 import { FindManyProductsOptions } from './find-many-product-options';

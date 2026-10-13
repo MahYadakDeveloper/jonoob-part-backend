@@ -9,7 +9,7 @@ import {
   FindManyBrandRequest,
   FindManyBrandResponse,
 } from '@feature/catalog.brand-api';
-import { type OutboxRepository, type TransactionManager } from '@feature/common';
+import { type OutboxRepository, type TransactionManager } from '@feature/shared';
 import { Injectable } from '@nestjs/common';
 import { type BrandRepository } from './brand.repository';
 import { BrandCreationRequest, BrandDeletionRequest, BrandUpdatingRequest } from './brand.req';

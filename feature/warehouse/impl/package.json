@@ -18,7 +18,7 @@
   "private": true,
   "dependencies": {
     "@casl/ability": "catalog:",
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/messaging-outbox": "workspace:*",

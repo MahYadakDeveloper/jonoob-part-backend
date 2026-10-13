@@ -1,4 +1,4 @@
-import { BankDestination, Money } from "@feature/common";
+import { BankDestination, Money } from "@feature/shared";
 
 export type RefundRequest = {
   customerId?: string;

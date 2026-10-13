@@ -1,4 +1,4 @@
-import { InvoiceItem, LineItems, ProductInvoiceItem } from '@feature/common';
+import { InvoiceItem, LineItems, ProductInvoiceItem } from '@feature/shared';
 
 export function flattenInvoiceItem(item: InvoiceItem): readonly ProductInvoiceItem[] {
   if (item.kind === 'leaf') {

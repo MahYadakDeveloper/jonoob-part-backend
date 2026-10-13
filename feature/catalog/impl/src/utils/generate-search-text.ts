@@ -1,5 +1,5 @@
 import { BrandDto } from '@feature/catalog-brand-api';
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { FitmentDto } from '../../../fitment/api/dist/fitment.dto';
 import { SearchTextBuilder } from './string-text-builder';
 

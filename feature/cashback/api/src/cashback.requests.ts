@@ -3,7 +3,7 @@ import {
   InvoiceItem,
   InvoiceItemBase,
   LineItems,
-} from '@feature/common';
+} from '@feature/shared';
 import { CashbackReversalPolicy } from './cashback.enums';
 
 export interface ReversalCashbackRequest {

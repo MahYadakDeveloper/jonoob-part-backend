@@ -1,1 +1,1 @@
-import { DbProvider } from '@feature/common';
+import { DbProvider } from '@feature/shared';

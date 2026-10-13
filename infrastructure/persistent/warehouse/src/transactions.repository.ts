@@ -4,7 +4,7 @@ import {
   PageResult,
   PageSort,
   type DbProvider,
-} from '@feature/common';
+} from '@feature/shared';
 import type {
   TransactionRepository,
   WarehouseTransaction,

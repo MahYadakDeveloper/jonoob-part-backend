@@ -1,4 +1,4 @@
-import { LineItems, Money } from '@feature/common';
+import { LineItems, Money } from '@feature/shared';
 
 export interface SupplyDocument {
   id: string;

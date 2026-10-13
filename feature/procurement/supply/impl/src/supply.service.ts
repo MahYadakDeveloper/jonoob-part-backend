@@ -8,7 +8,7 @@ import {
   type OutboxRepository,
   type SettingsStore,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import {
   FindLatestPurchasePriceRequest,
   FindLatestPurchasePriceResponse,

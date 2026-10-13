@@ -1,4 +1,4 @@
-import { Money } from "@feature/common";
+import { Money } from "@feature/shared";
 import { type TaxFormulaEvaluator } from "@feature/tax";
 import math from "mathjs";
 

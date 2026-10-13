@@ -3,7 +3,7 @@ import {
   type EventHandlerRegistry,
   type OutboxRepository,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { OrderPaidEventPayload, OrderPaidEventType } from '@feature/order-api';
 import { TicketVerifiedEventPayload, TicketVerifiedEventType } from '@feature/payment-gateway-api';
 import { Injectable } from '@nestjs/common';

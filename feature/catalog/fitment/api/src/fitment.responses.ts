@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { FitmentDto } from './fitment.dto';
 
 export interface FindManyFitmentResponse {

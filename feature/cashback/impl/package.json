@@ -18,7 +18,7 @@
   "private": true,
   "dependencies": {
     "@feature/cashback-api": "workspace:*",
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/actors": "workspace:*",
     "@nestjs/common": "catalog:"
   }

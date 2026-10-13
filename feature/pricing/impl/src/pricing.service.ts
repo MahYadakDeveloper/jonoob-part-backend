@@ -7,7 +7,7 @@ import {
   LineItems,
   Money,
   RawProduct,
-} from '@feature/common';
+} from '@feature/shared';
 import {
   ApplicableCampaignDiscount,
   ApplicableDiscount,

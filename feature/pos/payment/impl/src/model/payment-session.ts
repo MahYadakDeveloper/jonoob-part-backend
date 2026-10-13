@@ -1,4 +1,4 @@
-import { JobHandle } from '@feature/common';
+import { JobHandle } from '@feature/shared';
 
 export type PaymentSession = {
   providerId: number; // prisma: id Int @Id - session Id

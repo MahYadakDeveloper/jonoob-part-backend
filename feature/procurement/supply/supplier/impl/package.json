@@ -17,7 +17,7 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/procurement-supply-supplier-api": "workspace:*",
     "@nestjs/common": "^11.1.29"
   }

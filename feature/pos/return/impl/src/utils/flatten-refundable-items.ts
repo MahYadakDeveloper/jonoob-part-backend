@@ -1,4 +1,4 @@
-import { InvoiceItem, InvoiceItemBase, LineItems, Money } from '@feature/common';
+import { InvoiceItem, InvoiceItemBase, LineItems, Money } from '@feature/shared';
 
 export function flattenRefundableItems(items: LineItems<InvoiceItem>): LineItems<InvoiceItemBase> {
   const result: LineItems<InvoiceItemBase> = new LineItems((item) => item.productId);

@@ -337,7 +337,7 @@ importers:
 
   feature/actors/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
@@ -346,7 +346,7 @@ importers:
       '@feature/actors-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@infra/crypto-hash':
@@ -381,7 +381,7 @@ importers:
       '@feature/actors-api':
         specifier: workspace:*
         version: link:../../actors/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/order-api':
@@ -435,7 +435,7 @@ importers:
 
   feature/cashback/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
@@ -447,7 +447,7 @@ importers:
       '@feature/cashback-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@nestjs/common':
@@ -456,13 +456,13 @@ importers:
 
   feature/catalog/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
   feature/catalog/brand/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/media-api':
@@ -474,7 +474,7 @@ importers:
       '@feature/catalog-brand-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/media-api':
@@ -486,7 +486,7 @@ importers:
 
   feature/catalog/category/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/media-api':
@@ -498,7 +498,7 @@ importers:
       '@feature/catalog-category-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@nestjs/common':
@@ -507,7 +507,7 @@ importers:
 
   feature/catalog/common:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/media-api':
@@ -525,7 +525,7 @@ importers:
 
   feature/catalog/fitment/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/media-api':
@@ -537,7 +537,7 @@ importers:
       '@feature/catalog-fitment-api':
         specifier: workspace:*
         version: link:../../api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
       '@feature/media-api':
@@ -552,7 +552,7 @@ importers:
       '@feature/catalog-fitment-node-api':
         specifier: workspace:*
         version: link:../api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
       '@feature/media-api':
@@ -570,7 +570,7 @@ importers:
       '@feature/catalog-fitment-node-api':
         specifier: workspace:*
         version: link:../fitment-node/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/media-api':
@@ -600,7 +600,7 @@ importers:
       '@feature/catalog-fitment-node-api':
         specifier: workspace:*
         version: link:../fitment/fitment-node/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/media-api':
@@ -639,13 +639,13 @@ importers:
 
   feature/discount/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
   feature/discount/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/discount-api':
@@ -692,7 +692,7 @@ importers:
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../../catalog/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
@@ -701,7 +701,7 @@ importers:
       '@feature/actors':
         specifier: workspace:*
         version: link:../../../actors/impl
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
 
@@ -709,7 +709,7 @@ importers:
 
   feature/order/delivery/courier/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
       '@feature/order-api':
@@ -724,7 +724,7 @@ importers:
 
   feature/order/delivery/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/media-api':
@@ -757,13 +757,13 @@ importers:
 
   feature/order/delivery/location/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
 
   feature/order/fulfillment/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
 
@@ -772,7 +772,7 @@ importers:
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../../../catalog/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/order-api':
@@ -799,7 +799,7 @@ importers:
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../../catalog/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/order-api':
@@ -832,13 +832,13 @@ importers:
 
   feature/order/payment/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
 
   feature/order/payment/gateway/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
       '@feature/order-payment-api':
@@ -853,7 +853,7 @@ importers:
       '@feature/actors':
         specifier: workspace:*
         version: link:../../../actors/impl
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/order-api':
@@ -878,7 +878,7 @@ importers:
 
   feature/pos/payment/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
 
@@ -887,7 +887,7 @@ importers:
       '@feature/actors':
         specifier: workspace:*
         version: link:../../../actors/impl
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/pos-payment-api':
@@ -902,7 +902,7 @@ importers:
 
   feature/pos/return/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
 
@@ -917,7 +917,7 @@ importers:
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../../../catalog/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/pos-payment-api':
@@ -944,7 +944,7 @@ importers:
 
   feature/pos/sale/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
 
@@ -956,7 +956,7 @@ importers:
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../../../catalog/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/discount-api':
@@ -986,7 +986,7 @@ importers:
 
   feature/pricing/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
@@ -995,7 +995,7 @@ importers:
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../../catalog/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/discount-api':
@@ -1019,7 +1019,7 @@ importers:
 
   feature/pricing/markup/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
 
@@ -1034,7 +1034,7 @@ importers:
       '@feature/catalog-category-api':
         specifier: workspace:*
         version: link:../../../catalog/category/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/pricing-markup-api':
@@ -1046,7 +1046,7 @@ importers:
 
   feature/procurement/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
@@ -1067,13 +1067,13 @@ importers:
 
   feature/procurement/replenishment/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
 
   feature/procurement/replenishment/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/procurement-api':
@@ -1093,7 +1093,7 @@ importers:
 
   feature/procurement/replenishment/policy/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
       '@feature/procurement-api':
@@ -1114,7 +1114,7 @@ importers:
       '@feature/catalog-api':
         specifier: workspace:*
         version: link:../../catalog/api
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/procurement-replenishment-api':
@@ -1126,13 +1126,13 @@ importers:
 
   feature/procurement/supply/_return/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
 
   feature/procurement/supply/_return/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
       '@feature/warehouse-api':
@@ -1144,7 +1144,7 @@ importers:
 
   feature/procurement/supply/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/procurement-api':
@@ -1159,7 +1159,7 @@ importers:
 
   feature/procurement/supply/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../common
       '@feature/procurement-supply-api':
@@ -1199,13 +1199,13 @@ importers:
 
   feature/procurement/supply/purchase/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
 
   feature/procurement/supply/purchase/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
       '@feature/procurement-supply-purchase-api':
@@ -1223,13 +1223,13 @@ importers:
 
   feature/procurement/supply/supplier/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
 
   feature/procurement/supply/supplier/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../../common
       '@feature/procurement-supply-supplier-api':
@@ -1256,7 +1256,7 @@ importers:
 
   feature/retention-purge/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/schedule-api':
@@ -1271,13 +1271,13 @@ importers:
 
   feature/schedule/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
   feature/schedule/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/schedule-api':
@@ -1292,7 +1292,7 @@ importers:
 
   feature/settlement/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
@@ -1301,7 +1301,7 @@ importers:
       '@feature/actors':
         specifier: workspace:*
         version: link:../../actors/impl
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/settlement-api':
@@ -1313,13 +1313,13 @@ importers:
 
   feature/tax/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
 
   feature/tax/impl:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/tax-api':
@@ -1328,7 +1328,7 @@ importers:
 
   feature/warehouse/api:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@jonoob-part/contracts':
@@ -1340,7 +1340,7 @@ importers:
       '@casl/ability':
         specifier: 'catalog:'
         version: 7.0.1
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../common
       '@feature/warehouse-api':
@@ -1382,7 +1382,7 @@ importers:
 
   infrastructure/crypto/hash:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@nestjs/common':
@@ -1404,7 +1404,7 @@ importers:
 
   infrastructure/crypto/jwt:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@infra/db-redis':
@@ -1428,7 +1428,7 @@ importers:
 
   infrastructure/crypto/otp:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@nestjs/common':
@@ -1437,7 +1437,7 @@ importers:
 
   infrastructure/database/drizzle:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@nestjs/common':
@@ -1470,7 +1470,7 @@ importers:
 
   infrastructure/database/redis:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@nestjs/common':
@@ -1488,7 +1488,7 @@ importers:
 
   infrastructure/evaluator:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../feature/common
       '@feature/tax':
@@ -1531,7 +1531,7 @@ importers:
 
   infrastructure/messaging/outbox:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@infra/db-drizzle':
@@ -1621,7 +1621,7 @@ importers:
 
   infrastructure/payment/azkivam:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@feature/order-payment-gateway-api':
@@ -1657,7 +1657,7 @@ importers:
 
   infrastructure/payment/digipay:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@feature/order-api':
@@ -1684,7 +1684,7 @@ importers:
 
   infrastructure/persistent/common:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@nestjs/common':
@@ -1693,7 +1693,7 @@ importers:
 
   infrastructure/persistent/location:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@feature/order-delivery-location-api':
@@ -1715,7 +1715,7 @@ importers:
 
   infrastructure/persistent/settings:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@infra/persistent-common':
@@ -1737,7 +1737,7 @@ importers:
 
   infrastructure/persistent/warehouse:
     dependencies:
-      '@feature/common':
+      '@feature/shared':
         specifier: workspace:*
         version: link:../../../feature/common
       '@feature/warehouse':

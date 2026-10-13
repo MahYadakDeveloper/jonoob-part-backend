@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { Fulfillment } from '@feature/order-fulfillment-api';
 
 export interface FulfillmentRepository {

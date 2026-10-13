@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { BaseFitmentNode, CreateNode, UpdateNode } from '../model/fitment-node';
 
 export interface FitmentNodeRepository {

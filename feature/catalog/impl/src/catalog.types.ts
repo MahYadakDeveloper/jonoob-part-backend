@@ -1,4 +1,4 @@
-import { LineItems, PartialBy } from '@feature/common';
+import { LineItems, PartialBy } from '@feature/shared';
 import { ProductDto } from 'dto/product.dto';
 import { Product } from 'model/product';
 

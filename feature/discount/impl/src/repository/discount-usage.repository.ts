@@ -1,4 +1,4 @@
-import { LineItems } from "@feature/common";
+import { LineItems } from "@feature/shared";
 import { DiscountUsage } from "../model/discount-usage";
 
 export interface DiscountUsageRepository {

@@ -1,4 +1,4 @@
-import { Page, Pagination } from '@feature/common';
+import { Page, Pagination } from '@feature/shared';
 import { MediaRef } from '@feature/media-api';
 
 export interface ProductSearchCriteria {

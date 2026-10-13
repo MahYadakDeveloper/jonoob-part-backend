@@ -15,7 +15,7 @@ import {
   FitmentSeriesNode,
   FitmentTransmissionNode,
 } from '@feature/catalog.fitment.node-api';
-import { type OutboxRepository, type TransactionManager } from '@feature/common';
+import { type OutboxRepository, type TransactionManager } from '@feature/shared';
 import { Injectable } from '@nestjs/common';
 import {
   FitmentFuelTypeCreationRequest,

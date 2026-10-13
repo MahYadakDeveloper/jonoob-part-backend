@@ -1,4 +1,4 @@
-import { Page } from '@feature/common';
+import { Page } from '@feature/shared';
 import { SupplyDocument } from './model/supply-document';
 
 export interface SupplyRecordingResponse {

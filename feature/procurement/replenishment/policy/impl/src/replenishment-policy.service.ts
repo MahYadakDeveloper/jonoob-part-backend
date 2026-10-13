@@ -1,4 +1,4 @@
-import { PageCriteria, PageResult } from '@feature/common';
+import { PageCriteria, PageResult } from '@feature/shared';
 import { Injectable } from '@nestjs/common';
 import { ReplenishmentPolicy } from './model/replenishment';
 import { type ReplenishmentPolicyRepository } from './replenishment-policy.repository';

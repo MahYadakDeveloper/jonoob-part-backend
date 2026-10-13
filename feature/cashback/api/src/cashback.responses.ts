@@ -1,4 +1,4 @@
-import { GrantedCashback, Money } from "@feature/common";
+import { GrantedCashback, Money } from "@feature/shared";
 
 export type ReversalCashbackResponse =
   | {

@@ -5,7 +5,7 @@ import {
   FitmentSeriesNode,
   FitmentTransmissionNode,
 } from '@feature/catalog.fitment.node-api';
-import { RequiredBy } from '@feature/common';
+import { RequiredBy } from '@feature/shared';
 import { MediaRef } from '@feature/media-api';
 
 export type FitmentNodeType = 'make' | 'model' | 'series' | 'transmission' | 'fuelType';

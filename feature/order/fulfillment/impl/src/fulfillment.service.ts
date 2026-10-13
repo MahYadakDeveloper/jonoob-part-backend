@@ -3,7 +3,7 @@ import {
   LineItems,
   type OutboxRepository,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import {
   FulfillmentApi,
   FulfillmentCanceledByMerchantEventPayload,

@@ -1,4 +1,4 @@
-import { LineItems, RawProduct } from '@feature/common';
+import { LineItems, RawProduct } from '@feature/shared';
 import { ProductDto } from './catalog.dto';
 
 export interface FindProductResponse {

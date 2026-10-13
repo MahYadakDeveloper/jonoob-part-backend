@@ -1,4 +1,4 @@
-import { type OutboxRepository, type TransactionManager } from '@feature/common';
+import { type OutboxRepository, type TransactionManager } from '@feature/shared';
 import {
   PayoffRequestCreatedEventType,
   RefundRequest,

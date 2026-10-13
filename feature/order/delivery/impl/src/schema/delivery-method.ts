@@ -1,6 +1,6 @@
-// import { Money } from '@feature/common';
+// import { Money } from '@feature/shared';
 
-import { Money } from '@feature/common';
+import { Money } from '@feature/shared';
 import { LogoRef } from '@feature/media-api';
 import { z } from 'zod';
 

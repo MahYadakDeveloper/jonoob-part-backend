@@ -1,4 +1,4 @@
-import { AppliedDiscount, CustomerType, LineItems, type Synchronizer } from '@feature/common';
+import { AppliedDiscount, CustomerType, LineItems, type Synchronizer } from '@feature/shared';
 import {
   ApplicableDiscount,
   DiscountApi,

@@ -1,4 +1,4 @@
-import { BaseEventHandler, type EventHandlerRegistry } from '@feature/common';
+import { BaseEventHandler, type EventHandlerRegistry } from '@feature/shared';
 import {
   PackageHandedOverToCourierEventPayload,
   PackageHandedOverToCourierEventType,

@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { FitmentNode } from './fitment-node.types';
 
 export const FitmentNodeDeletedEventType = 'catalog.fitment-node-deleted';

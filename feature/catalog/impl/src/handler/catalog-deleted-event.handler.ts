@@ -8,7 +8,7 @@ import {
   type EventHandlerRegistry,
   type OutboxRepository,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { Injectable } from '@nestjs/common';
 import { type CatalogRepository } from 'repository/catalog.repository';
 

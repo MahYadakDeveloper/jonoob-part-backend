@@ -1,4 +1,4 @@
-import { CustomerType } from '@feature/common/types/customer-type';
+import { CustomerType } from '@feature/shared/types/customer-type';
 
 export type CustomerAddress = { id: string } & (
   | {

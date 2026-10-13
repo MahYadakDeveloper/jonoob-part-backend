@@ -1,4 +1,4 @@
-import { Page, PageCriteria } from '@feature/common';
+import { Page, PageCriteria } from '@feature/shared';
 import { SupplyDocument } from './model/supply-document';
 
 export interface SupplyRepository {

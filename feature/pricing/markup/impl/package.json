@@ -20,7 +20,7 @@
     "@feature/catalog-api": "workspace:*",
     "@feature/catalog-brand-api": "workspace:*",
     "@feature/catalog-category-api": "workspace:*",
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/pricing-markup-api": "workspace:*",
     "@nestjs/common": "^11.1.28"
   }

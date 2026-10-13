@@ -1,4 +1,4 @@
-import { Barcode, PartialBy } from '@feature/common';
+import { Barcode, PartialBy } from '@feature/shared';
 import { CreateProduct, Populate, UpdateProduct } from 'catalog.types';
 
 export interface FindByBarcodeRequest {

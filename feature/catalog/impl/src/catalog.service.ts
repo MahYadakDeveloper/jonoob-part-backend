@@ -25,7 +25,7 @@ import {
   LineItems,
   type OutboxRepository,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { type WarehouseApi } from '@feature/warehouse-api';
 import { Injectable } from '@nestjs/common';
 import {

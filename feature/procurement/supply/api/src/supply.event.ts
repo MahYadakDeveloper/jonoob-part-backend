@@ -1,4 +1,4 @@
-import { LineItems, Money } from '@feature/common';
+import { LineItems, Money } from '@feature/shared';
 
 export const SupplyRecordedEventType = 'procurement:supply-recorded';
 export const SupplyRecordRemovedEventType = 'procurement:supply-record-removed';

@@ -17,7 +17,7 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/media-api": "workspace:*",
     "@feature/order-api": "workspace:*",
     "@feature/order-delivery-api": "workspace:*",

@@ -19,7 +19,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/warehouse": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@infra/db-drizzle": "workspace:*",

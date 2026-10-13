@@ -1,4 +1,4 @@
-import { JobHandle, Money } from '@feature/common';
+import { JobHandle, Money } from '@feature/shared';
 import { Payment, PaymentSessionCreationRequest } from '@feature/order-payment-api';
 
 export type PaymentSession = {

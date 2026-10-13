@@ -4,7 +4,7 @@ import {
   InvoicePayment,
   InvoiceSummary,
   LineItems,
-} from '@feature/common';
+} from '@feature/shared';
 
 export type Sale = {
   id: string;

@@ -1,4 +1,4 @@
-import { Money } from '@feature/common';
+import { Money } from '@feature/shared';
 
 export interface PurchaseRecordDto {
   id: string;

@@ -1,4 +1,4 @@
-import { Money } from "@feature/common";
+import { Money } from "@feature/shared";
 import { TaxCalculationRequest } from "./tax.requests";
 import { TaxCalculationResponse } from "./tax.responses";
 

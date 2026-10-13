@@ -1,4 +1,4 @@
-import { GrantedCashback } from "@feature/common";
+import { GrantedCashback } from "@feature/shared";
 
 export abstract class CashbackError extends Error {
   abstract readonly code: string;

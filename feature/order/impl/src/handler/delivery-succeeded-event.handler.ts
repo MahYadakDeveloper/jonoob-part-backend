@@ -3,7 +3,7 @@ import {
   BaseEventHandler,
   type EventHandlerRegistry,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import {
   OrderDeliverySucceededEventPayload,
   OrderDeliverySucceededEventType,

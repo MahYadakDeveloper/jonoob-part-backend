@@ -1,4 +1,4 @@
-import { PageCriteria, PageResult } from '@feature/common';
+import { PageCriteria, PageResult } from '@feature/shared';
 import { SupplyReturnDocument, SupplyReturnStatus } from './model/supply-return';
 
 export interface SupplyReturnRepository {

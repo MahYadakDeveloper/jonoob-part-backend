@@ -1,4 +1,4 @@
-import { JobHandle } from '@feature/common';
+import { JobHandle } from '@feature/shared';
 import { Payment } from '@feature/order-payment-api';
 import { PaymentSession } from './model/payment-session';
 

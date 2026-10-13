@@ -1,4 +1,4 @@
-import { InvoiceSnapshot } from '@feature/common';
+import { InvoiceSnapshot } from '@feature/shared';
 
 export const SaleRecordedEventType = 'sale.sale-recorded';
 

@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { ProcurementRequest } from './model/procurement-request';
 
 export interface ProcurementRequestRepository {

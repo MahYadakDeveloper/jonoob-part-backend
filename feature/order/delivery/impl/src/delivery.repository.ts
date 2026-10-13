@@ -1,4 +1,4 @@
-import { PartialBy, RequiredBy } from '@feature/common';
+import { PartialBy, RequiredBy } from '@feature/shared';
 import { Delivery, Recipient } from '@feature/order-delivery-api';
 
 /**

@@ -7,7 +7,7 @@ import {
   EventHandlerRegistry,
   OutboxRepository,
   TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { FitmentManyUpdatedEventPayload, FitmentManyUpdatedEventType } from '@feature/fitment-api';
 import { FitmentRepository } from '../repository/fitment.repository';
 

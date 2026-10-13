@@ -1,7 +1,7 @@
 import {
   type OutboxRepository,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { type CustomersApi } from '@feature/customer-api';
 import {
   RegistrationRequestConfirmedEventPayload,

@@ -1,4 +1,4 @@
-import { PartialBy } from '@feature/common';
+import { PartialBy } from '@feature/shared';
 import { MarkupPolicy, MarkupScope } from './model/markup-policy';
 
 export type MarkupPolicyByScope<T extends MarkupScope> = Extract<MarkupPolicy, { scope: T }>;

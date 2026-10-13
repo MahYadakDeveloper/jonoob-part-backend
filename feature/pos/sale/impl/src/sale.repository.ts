@@ -1,4 +1,4 @@
-import { InvoiceSnapshot } from '@feature/common';
+import { InvoiceSnapshot } from '@feature/shared';
 import { Sale } from './model/sale';
 
 export interface SaleRepository {

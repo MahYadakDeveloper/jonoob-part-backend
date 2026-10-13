@@ -3,7 +3,7 @@ import {
   type EventHandlerRegistry,
   type OutboxRepository,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import {
   PaymentSucceededEventPayload,
   PaymentSucceededEventType,

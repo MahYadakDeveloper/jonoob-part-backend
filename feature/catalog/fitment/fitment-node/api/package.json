@@ -18,7 +18,7 @@
   "private": true,
   "dependencies": {
     "@feature/catalog-fitment-api": "workspace:*",
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/media-api": "workspace:*",
     "@nestjs/common": "^11.1.28"
   }

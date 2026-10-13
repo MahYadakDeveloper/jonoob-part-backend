@@ -1,4 +1,4 @@
-import { type SettingsStore, SettingToken } from '@feature/common';
+import { type SettingsStore, SettingToken } from '@feature/shared';
 import { BusinessHoursException, IsOpenResponse, ScheduleApi } from '@feature/schedule-api';
 import { Injectable } from '@nestjs/common';
 import { businessHoursSchema, BusinessHoursType } from './schedule.schema';

@@ -17,7 +17,7 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/settlement-api": "workspace:*",
     "@feature/actors": "workspace:*",
     "@nestjs/common": "^11.1.28"

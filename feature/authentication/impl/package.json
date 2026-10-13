@@ -23,7 +23,7 @@
   "private": true,
   "dependencies": {
     "@feature/actors-api": "workspace:*",
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/order-api": "workspace:*",
     "@infra/crypto-hash": "workspace:*",
     "@infra/crypto-jwt": "workspace:*",

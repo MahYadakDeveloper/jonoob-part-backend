@@ -23,7 +23,7 @@
     "@feature/catalog-category-api": "workspace:*",
     "@feature/catalog-fitment-api": "workspace:*",
     "@feature/catalog-fitment-node-api": "workspace:*",
-    "@feature/common": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/media-api": "workspace:*",
     "@feature/media-image": "workspace:*",
     "@feature/warehouse-api": "workspace:*",

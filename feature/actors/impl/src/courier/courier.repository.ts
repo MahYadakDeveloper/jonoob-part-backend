@@ -1,4 +1,4 @@
-import { OmitPartials } from '@feature/common';
+import { OmitPartials } from '@feature/shared';
 import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
 import {
   actorsRelations,

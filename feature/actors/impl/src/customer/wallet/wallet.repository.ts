@@ -1,4 +1,4 @@
-import { Money, OffsetPagination, PageResult } from '@feature/common';
+import { Money, OffsetPagination, PageResult } from '@feature/shared';
 import {
   DrizzleBaseRepository,
   DrizzleDbProvider,

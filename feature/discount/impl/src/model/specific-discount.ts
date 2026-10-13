@@ -1,4 +1,4 @@
-import { Money } from "@feature/common";
+import { Money } from "@feature/shared";
 import { DiscountUsagePolicy } from "./discount-usage-policy";
 
 export type SpecificDiscount= {

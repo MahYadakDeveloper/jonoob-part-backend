@@ -1,4 +1,4 @@
-import { UnitOfMeasure } from '@feature/common';
+import { UnitOfMeasure } from '@feature/shared';
 
 export type MovementItem = { stockId: string; quantity: number };
 

@@ -10,7 +10,7 @@ import {
   FindManyCategoryResponse,
   type CategoryApi,
 } from '@feature/catalog-category-api';
-import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/common';
+import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/shared';
 import { Injectable } from '@nestjs/common';
 import { type CategoryRepository } from 'category.repository';
 import { CategoryDeletionRequest, CategoryUpdateRequest } from 'category.req';

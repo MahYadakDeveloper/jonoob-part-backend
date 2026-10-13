@@ -1,4 +1,4 @@
-import { Money } from '@feature/common';
+import { Money } from '@feature/shared';
 
 export type UseWallet = { mode: 'full' } | { mode: 'partial'; amount: Money };
 

@@ -1,4 +1,4 @@
-import { type SettingsStore } from '@feature/common';
+import { type SettingsStore } from '@feature/shared';
 import { Delivery, DeliveryApi, Recipient } from '@feature/order-delivery-api';
 import { type CourierApi } from '@feature/order-delivery-courier-api';
 import { type LocationApi } from '@feature/order-delivery-location-api';

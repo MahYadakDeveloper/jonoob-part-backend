@@ -1,4 +1,4 @@
-import { LineItems } from '@feature/common';
+import { LineItems } from '@feature/shared';
 import { Replenishment } from './model/replenishment';
 
 export interface ReplenishmentRepository {

@@ -1,4 +1,4 @@
-import { CustomerType, Money } from '@feature/common';
+import { CustomerType, Money } from '@feature/shared';
 
 export interface RecordSaleRequest {
   cashierId: string;

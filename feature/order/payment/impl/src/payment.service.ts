@@ -8,7 +8,7 @@ import {
   type SettingsStore,
   type Synchronizer,
   type TransactionManager,
-} from '@feature/common';
+} from '@feature/shared';
 import { type WalletApi } from '@feature/customer-wallet-api';
 import {
   InsufficientWalletBalanceError,
