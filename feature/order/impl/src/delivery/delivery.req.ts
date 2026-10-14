@@ -1,3 +1,5 @@
+import type { IntraCityDeliveryFailureReasonType } from './delivery.dto';
+
 export type ReportDeliveryAttemptRequest = {
   courierId: string;
   deliveryId: string;
@@ -24,18 +26,6 @@ export type ReportDeliveryAttemptRequest = {
         }
       | ({
           scope: 'intra_city';
-        } & (
-          | {
-              reason:
-                | 'recipient_absent'
-                | 'recipient_unreachable'
-                | 'invalid_address'
-                | 'recipient_refused';
-            }
-          | {
-              reason: 'other';
-              message: string;
-            }
-        ))
+        } & IntraCityDeliveryFailureReasonType)
     ))
 );

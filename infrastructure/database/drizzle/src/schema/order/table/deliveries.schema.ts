@@ -6,7 +6,7 @@ import { couriers } from '../../actors/tables';
 import { orderSchema } from '../order.schema';
 import { orders } from './orders.schema';
 
-export type IntraCityDeliveryFailureReasonType =
+type IntraCityDeliveryFailureReasonType =
   | {
       reason:
         | 'recipient_absent'
@@ -19,19 +19,21 @@ export type IntraCityDeliveryFailureReasonType =
       message: string;
     };
 
-// Persisted shape; the status-specific narrowing lives in the delivery mapper.
-export type DeliveryRecipient = {
+type IntraCityDeliveryRecipient = Extract<
+  CustomerAddress,
+  { scope: 'intra_city' }
+> & {
+  deliveryConfirmationCode?: string;
+} & IntraCityDeliveryFailureReasonType;
+
+type DeliveryRecipient = {
   customerContact: {
     fullName: string;
     phone: string;
     type: CustomerType;
   };
 } & (
-  | (Extract<CustomerAddress, { scope: 'intra_city' }> & {
-      deliveryConfirmationCode?: string;
-      reason?: string;
-      message?: string;
-    })
+  | IntraCityDeliveryRecipient
   | (Extract<CustomerAddress, { scope: 'inter_city' }> & {
       carrierKey: string;
       trackingNumber?: string;
@@ -40,7 +42,7 @@ export type DeliveryRecipient = {
 );
 
 export const deliveryStatus = orderSchema.enum('delivery_status', [
-  'initial',
+  'pending',
   'courier_requested',
   'canceled',
   'handed_over_to_courier',
@@ -57,12 +59,13 @@ export const deliveries = orderSchema.table(
       .notNull()
       .references(() => orders.id, { onDelete: 'cascade' }),
 
-    status: deliveryStatus('status').notNull().default('initial'),
+    status: deliveryStatus('status').notNull().default('pending'),
 
-    // Shape depends on status and recipient scope; see the Delivery type.
     recipient: jsonb('recipient').$type<DeliveryRecipient>().notNull(),
 
-    courierId: uuid('courier_id').references(() => couriers.id),
+    courierId: uuid('courier_id').references(() => couriers.id, {
+      onDelete: 'set null',
+    }),
 
     requestedAt: timestamp('requested_at', { withTimezone: true }),
     canceledAt: timestamp('canceled_at', { withTimezone: true }),
@@ -81,6 +84,29 @@ export const deliveries = orderSchema.table(
     index('deliveries_order_id_idx').on(t.orderId),
     index('deliveries_status_idx').on(t.status),
     index('deliveries_courier_id_idx').on(t.courierId),
+    check(
+      'deliveries_returned_intra_city_failure_reason',
+      sql`CASE
+        WHEN ${t.status} = 'returned_to_warehouse'
+          AND ${t.recipient}->>'scope' = 'intra_city'
+        THEN COALESCE(
+          (
+            ${t.recipient}->>'reason' IN (
+              'recipient_absent',
+              'recipient_unreachable',
+              'invalid_address',
+              'recipient_refused'
+            )
+            OR (
+              ${t.recipient}->>'reason' = 'other'
+              AND jsonb_typeof(${t.recipient}->'message') = 'string'
+            )
+          ),
+          FALSE
+        )
+        ELSE TRUE
+      END`,
+    ),
     check(
       'deliveries_status_fields',
       sql`(
@@ -102,4 +128,3 @@ export const deliveries = orderSchema.table(
 );
 
 export type DeliveryRow = typeof deliveries.$inferSelect;
-export type NewDeliveryRow = typeof deliveries.$inferInsert;

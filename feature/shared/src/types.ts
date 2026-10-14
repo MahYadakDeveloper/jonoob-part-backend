@@ -10,28 +10,6 @@ export type BankDestination = {
   lastName: string;
 };
 
-export type ProductLeafKind = { kind: 'leaf' };
-export type ProductBundleKind = { kind: 'bundle' };
-export type ProductKind = ProductBundleKind | ProductLeafKind;
-
-export type RawProduct = LeafRawProduct | BundleRawProduct;
-
-export type LeafRawProduct = ProductLeafKind & {
-  id: string;
-  goodId: string;
-};
-
-export type BundleRawProduct = ProductBundleKind & {
-  id: string;
-  items: LineItems<BundleItem>;
-};
-
-export type BundleItem = {
-  productId: string;
-  goodId: string;
-  quantity: number;
-};
-
 export type Duration = {
   value: number;
   unit: 'year' | 'month' | 'week' | 'hour' | 'minute';

@@ -18,6 +18,19 @@ export type Recipient = {
   };
 } & (IntraCityRecipient | InterCityRecipient);
 
+export type IntraCityDeliveryFailureReasonType =
+  | {
+      reason:
+        | 'recipient_absent'
+        | 'recipient_unreachable'
+        | 'invalid_address'
+        | 'recipient_refused';
+    }
+  | {
+      reason: 'other';
+      message: string;
+    };
+
 export type Delivery = { id: string } & (
   | {
       status: 'initial';
@@ -62,19 +75,7 @@ export type Delivery = { id: string } & (
       recipient:
         | (IntraCityRecipient & {
             deliveryConfirmationCode: string;
-          } & (
-              | {
-                  reason:
-                    | 'recipient_absent'
-                    | 'recipient_unreachable'
-                    | 'invalid_address'
-                    | 'recipient_refused';
-                }
-              | {
-                  reason: 'other';
-                  message: string;
-                }
-            ))
+          } & IntraCityDeliveryFailureReasonType)
         | (InterCityRecipient & {
             reasonMessage: string;
           });
