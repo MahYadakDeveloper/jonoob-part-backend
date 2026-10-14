@@ -14,6 +14,9 @@ export default registerAs('authentication', () => {
   const env = envSchema.parse(process.env);
   return {
     adminSecretKey: env.ADMIN_SECRET_KEY,
-    adminPhoneNumbers: env.ADMIN_PHONE_NUMBERS,
+    // OTP tokens carry E.164 numbers, so normalize the local 09xxxxxxxxx format
+    adminPhoneNumbers: env.ADMIN_PHONE_NUMBERS.map((phone) =>
+      phone.replace(/^0/, '+98'),
+    ),
   };
 });

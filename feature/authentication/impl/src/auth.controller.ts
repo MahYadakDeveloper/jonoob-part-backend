@@ -1,13 +1,10 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   HttpCode,
-  HttpException,
   HttpStatus,
   Ip,
   Post,
-  UnauthorizedException,
 } from '@nestjs/common';
 // [ASSUMPTION] adjust the token name to whatever you export next to the API
 import {
@@ -27,13 +24,6 @@ import {
   VerifyTokenSchema,
 } from './auth.dto';
 import { AuthenticationService } from './auth.service';
-
-type Failure = {
-  succeed: false;
-  reason: string;
-  retryAfter?: number;
-  reachedLimit?: string;
-};
 
 /**
  * App-layer controller: depends only on the feature :api contract.
@@ -61,13 +51,7 @@ export class AuthenticationController {
     @Body({ schema: RequestOtpSchema }) dto: RequestOtpDto,
     @Ip() ip: string,
   ) {
-    const result = (await this.auth.request(dto.phoneNumber, ip)) as
-      | Failure
-      | { succeed: true }
-      | undefined;
-
-    // service returns undefined on success today
-    if (result && !result.succeed) throw this.toHttpError(result);
+    await this.auth.request(dto.phoneNumber, ip);
   }
 
   @Post('otp/verify')
@@ -76,14 +60,11 @@ export class AuthenticationController {
     @Body({ schema: VerifyOtpSchema }) dto: VerifyOtpDto,
     @Ip() ip: string,
   ) {
-    const result = (await this.auth.verify({
+    return this.auth.verify({
       phoneNumber: dto.phoneNumber,
       otp: dto.otp,
       ip,
-    })) as Failure | { succeed: true; verifyToken: string };
-
-    if (!result.succeed) throw this.toHttpError(result);
-    return { verifyToken: result.verifyToken };
+    });
   }
 
   // ---------- Customer ----------
@@ -142,29 +123,5 @@ export class AuthenticationController {
   @HttpCode(HttpStatus.OK)
   refresh(@Body({ schema: RefreshSchema }) dto: RefreshDto) {
     return this.auth.refresh({ oldRefreshToken: dto.refreshToken });
-  }
-
-  // ---------- Error mapping ----------
-
-  private toHttpError(failure: Failure): HttpException {
-    switch (failure.reason) {
-      case 'exceeded_attempts':
-      case 'reached_limit':
-        return new HttpException(
-          {
-            statusCode: HttpStatus.TOO_MANY_REQUESTS,
-            error: 'Too Many Requests',
-            reason: failure.reason,
-            retryAfter: failure.retryAfter, // seconds
-          },
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
-      case 'otp_not_found':
-        return new BadRequestException({ reason: failure.reason });
-      case 'invalid_otp':
-        return new UnauthorizedException({ reason: failure.reason });
-      default:
-        return new BadRequestException({ reason: failure.reason });
-    }
   }
 }

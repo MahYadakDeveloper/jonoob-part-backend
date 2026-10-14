@@ -19,6 +19,9 @@ import {
 import { RedlockSynchronizer } from '@infra/synchronizer';
 import { InjectQueue } from '@nestjs/bullmq';
 import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   Logger,
@@ -107,11 +110,10 @@ export class AuthenticationService implements AuthenticationApi {
 
     this.logger.log('before verificationRateLimit check 2');
     if (!verificationRateLimit.allowed)
-      return {
-        succeed: false,
-        reason: 'exceeded_attempts',
-        retryAfter: verificationRateLimit.retryAfter,
-      };
+      throw this.tooManyRequests(
+        'exceeded_attempts',
+        verificationRateLimit.retryAfter,
+      );
 
     this.logger.log('after verificationRateLimit check');
 
@@ -131,12 +133,11 @@ export class AuthenticationService implements AuthenticationApi {
     ]);
 
     if (!result.allowed) {
-      return {
-        succeed: false,
-        reason: 'reached_limit',
-        reachedLimit: result.bucketKey.split(':')[0],
-        retryAfter: result.retryAfter,
-      };
+      throw this.tooManyRequests(
+        'reached_limit',
+        result.retryAfter,
+        result.bucketKey.split(':')[0],
+      );
     }
 
     const otp = this.otpGenerator.generate(this.otpLength);
@@ -180,29 +181,16 @@ export class AuthenticationService implements AuthenticationApi {
 
     if (!result.allowed) {
       await this.otps.delete(phoneNumber);
-      return {
-        succeed: false,
-        reason: 'exceeded_attempts',
-        retryAfter: result.retryAfter,
-      };
+      throw this.tooManyRequests('exceeded_attempts', result.retryAfter);
     }
 
     const record = await this.otps.get(phoneNumber);
 
-    if (!record)
-      return {
-        succeed: false,
-        reason: 'otp_not_found',
-      };
+    if (!record) throw new BadRequestException({ reason: 'otp_not_found' });
 
     const valid = await this.hashService.verify(otp, record.hash);
 
-    if (!valid) {
-      return {
-        succeed: false,
-        reason: 'invalid_otp',
-      };
-    }
+    if (!valid) throw new UnauthorizedException({ reason: 'invalid_otp' });
 
     await this.otps.delete(phoneNumber);
 
@@ -212,10 +200,24 @@ export class AuthenticationService implements AuthenticationApi {
       expiresIn: this.verifyTokenExpiresIn,
     });
 
-    return {
-      succeed: true,
-      verifyToken,
-    };
+    return { verifyToken };
+  }
+
+  private tooManyRequests(
+    reason: string,
+    retryAfter?: number,
+    reachedLimit?: string,
+  ) {
+    return new HttpException(
+      {
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+        error: 'Too Many Requests',
+        reason,
+        retryAfter, // seconds
+        reachedLimit,
+      },
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
   }
 
   /**
@@ -278,17 +280,22 @@ export class AuthenticationService implements AuthenticationApi {
     password: string;
   }) {
     const payload = this.jwtService.decode(verifyToken);
-    if (!payload) throw new Error();
+    if (!payload)
+      throw new UnauthorizedException('Invalid verification token');
     return await this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:courier-sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
-        if (!payload) throw new Error();
+        if (!payload)
+          throw new UnauthorizedException(
+            'Verification token is invalid, expired, or already used',
+          );
 
         const courier = await this.courier.findByPhone(payload.sub);
 
-        const verified = this.hashService.verify(password, courier.password);
-        if (!verified) throw new Error();
+        const verified = await this.hashService.verify(password, courier.password);
+        if (!verified)
+          throw new UnauthorizedException('Invalid credentials');
 
         const accessToken = await this.jwtService.issue({
           type: 'access',
@@ -331,21 +338,26 @@ export class AuthenticationService implements AuthenticationApi {
     password: string;
   }) {
     const payload = this.jwtService.decode(verifyToken);
-    if (!payload) throw new Error();
+    if (!payload)
+      throw new UnauthorizedException('Invalid verification token');
 
     return await this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:manager-sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
-        if (!payload) throw new Error();
+        if (!payload)
+          throw new UnauthorizedException(
+            'Verification token is invalid, expired, or already used',
+          );
 
         const manager = await this.manager.findByPhone(payload.sub);
 
-        const verified = this.hashService.verify(
+        const verified = await this.hashService.verify(
           password,
           manager.hashedPassword,
         );
-        if (!verified) throw new Error();
+        if (!verified)
+          throw new UnauthorizedException('Invalid credentials');
 
         const accessToken = await this.jwtService.issue({
           type: 'access',
@@ -385,22 +397,36 @@ export class AuthenticationService implements AuthenticationApi {
     secretKey: string;
   }) {
     const payload = this.jwtService.decode(verifyToken);
-    if (!payload) throw new Error();
+    if (!payload) {
+      this.logger.warn('Admin sign-in rejected: undecodable verify token');
+      throw new UnauthorizedException('Invalid verification token');
+    }
 
     return await this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:admin-sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
-        if (!payload) throw new Error();
+        if (!payload) {
+          this.logger.warn('Admin sign-in rejected: verify token invalid');
+          throw new UnauthorizedException('Invalid verification token');
+        }
 
         const isAdmin = this.config.adminPhoneNumbers.includes(payload.sub);
-        if (!isAdmin) throw new Error();
+        if (!isAdmin) {
+          this.logger.warn(
+            `Admin sign-in rejected: ${payload.sub} is not in ADMIN_PHONE_NUMBERS`,
+          );
+          throw new UnauthorizedException('Invalid credentials');
+        }
 
         const verified = await this.hashService.verify(
           secretKey,
           this.config.adminSecretKey,
         );
-        if (!verified) throw new Error();
+        if (!verified) {
+          this.logger.warn('Admin sign-in rejected: wrong secret key');
+          throw new UnauthorizedException('Invalid credentials');
+        }
 
         const accessToken = await this.jwtService.issue({
           type: 'access',
@@ -441,16 +467,17 @@ export class AuthenticationService implements AuthenticationApi {
     verifyToken: string;
   }) {
     const payload = this.jwtService.decode(verifyToken);
-    if (!payload) throw new Error();
+    if (!payload)
+      throw new UnauthorizedException('Invalid verification token');
 
     return this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:sign-up:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
-        if (!payload) throw new Error();
-
-        // payload.sub is a phone number, because it comes from verify token
-        const customerExists = await this.customers.findByPhone(payload.sub);
+        if (!payload)
+          throw new UnauthorizedException(
+            'Verification token is invalid, expired, or already used',
+          );
 
         const customerType: CustomerType = 'consumer';
         const { id: customerId } =
@@ -494,7 +521,8 @@ export class AuthenticationService implements AuthenticationApi {
 
   async refresh({ oldRefreshToken }: { oldRefreshToken: string }) {
     const payload = this.jwtService.decode(oldRefreshToken);
-    if (!payload) throw new Error();
+    if (!payload)
+      throw new UnauthorizedException('Invalid refresh token');
 
     return await this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:refresh:${payload.jti}`,
@@ -504,7 +532,10 @@ export class AuthenticationService implements AuthenticationApi {
           'refresh',
         )) as (TokenPayload & RefreshClaim) | null;
 
-        if (!payload) throw new Error();
+        if (!payload)
+          throw new UnauthorizedException(
+            'Refresh token is invalid, expired, or already used',
+          );
 
         let accessToken: string;
         let refreshToken: string;
