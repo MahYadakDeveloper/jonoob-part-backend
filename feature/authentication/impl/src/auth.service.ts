@@ -18,7 +18,12 @@ import {
 } from '@infra/rate-limit';
 import { RedlockSynchronizer } from '@infra/synchronizer';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import authConfig from './auth.config';
@@ -28,6 +33,7 @@ import { SmsSendOtpJobPayload } from './sms/sms-opt.template';
 
 @Injectable()
 export class AuthenticationService implements AuthenticationApi {
+  private readonly logger = new Logger(AuthenticationService.name);
   // otp
   private readonly otpRateLimitConfig: TokenBucketConfig = {
     maxTokens: 1,
@@ -47,7 +53,7 @@ export class AuthenticationService implements AuthenticationApi {
   };
 
   private readonly verificationRateLimitConfig: TokenBucketConfig = {
-    maxTokens: 5,
+    maxTokens: 10,
     refillRate: 1.111e-3,
   };
   private readonly verificationIpRateLimitConfig: TokenBucketConfig = {
@@ -92,12 +98,14 @@ export class AuthenticationService implements AuthenticationApi {
    *
    * [TODO] Add phone number validation inside the endpoint controller
    */
-  async request({ phoneNumber, ip }: { phoneNumber: string; ip: string }) {
+  async request(phone: string, ip: string) {
+    this.logger.log('from otp request method');
     const verificationRateLimit = await this.rateLimit.check(
-      `verification:phone:${phoneNumber}`,
+      `verification:phone:${phone}`,
       this.verificationRateLimitConfig,
     );
 
+    this.logger.log('before verificationRateLimit check 2');
     if (!verificationRateLimit.allowed)
       return {
         succeed: false,
@@ -105,13 +113,15 @@ export class AuthenticationService implements AuthenticationApi {
         retryAfter: verificationRateLimit.retryAfter,
       };
 
+    this.logger.log('after verificationRateLimit check');
+
     const result = await this.rateLimit.attempt([
       {
-        key: `otp:${phoneNumber}`,
+        key: `otp:${phone}`,
         config: this.otpRateLimitConfig,
       },
       {
-        key: `phone:${phoneNumber}`,
+        key: `phone:${phone}`,
         config: this.phoneNumberRateLimitConfig,
       },
       {
@@ -132,7 +142,7 @@ export class AuthenticationService implements AuthenticationApi {
     const otp = this.otpGenerator.generate(this.otpLength);
 
     await this.otps.set(
-      phoneNumber,
+      phone,
       {
         hash: await this.hashService.hash(otp),
       },
@@ -140,7 +150,7 @@ export class AuthenticationService implements AuthenticationApi {
     );
 
     await this.smsQueue.add(SmsJobs.Send, {
-      to: phoneNumber,
+      to: phone,
       template: 'auth.otp',
       data: {
         otp,
@@ -213,13 +223,16 @@ export class AuthenticationService implements AuthenticationApi {
    */
   async signIn({ verifyToken }: { verifyToken: string }) {
     const payload = this.jwtService.decode(verifyToken);
-    if (!payload) throw new Error();
+    if (!payload) throw new UnauthorizedException('Invalid verification token');
 
     return await this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
-        if (!payload) throw new Error();
+        if (!payload)
+          throw new UnauthorizedException(
+            'Verification token is invalid, expired, or already used',
+          );
 
         // payload.sub is a phone number, because it comes from verify token
         const customer = await this.customers.findByPhone(payload.sub);

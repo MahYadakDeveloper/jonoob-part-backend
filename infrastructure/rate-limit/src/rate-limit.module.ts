@@ -1,6 +1,6 @@
 import { RedisModule } from '@infra/db-redis';
 import { Module } from '@nestjs/common';
-import { TokenBucketRateLimitService } from './redis-token-bucket';
+import { TokenBucketRateLimitService } from './redis-token-bucket.service';
 
 @Module({
   imports: [RedisModule],

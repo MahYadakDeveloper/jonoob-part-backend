@@ -39,19 +39,19 @@ export class JwtService {
   }
 
   async verify(token: string, type: TokenType): Promise<TokenPayload | null> {
+    let payload: TokenPayload;
     try {
-      const payload = this.jwt.verify(token, {
+      payload = this.jwt.verify(token, {
         secret: this.config[`${type}Secret`],
       }) as TokenPayload;
-
-      const revoked = await this.redis.get(payload.jti);
-
-      if (revoked !== null) return null;
-
-      return payload;
     } catch {
       return null;
     }
+
+    const revoked = await this.redis.get(payload.jti);
+    if (revoked !== null) return null;
+
+    return payload;
   }
 
   async revoke(token: string, type: TokenType): Promise<void> {

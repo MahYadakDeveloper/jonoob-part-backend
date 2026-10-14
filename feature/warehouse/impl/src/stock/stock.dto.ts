@@ -4,20 +4,14 @@ import { createPageQuerySchema } from '../utils';
 import { stockSortableFields } from './stock.repository';
 import { StockService } from './stock.service';
 
-export const stockPageQuerySchema = createPageQuerySchema(
+export const StockPageQuerySchema = createPageQuerySchema(
   stockSortableFields,
   '-definedAt',
 );
 
-type x = z.output<typeof stockPageQuerySchema>;
-
-export type StockPageQuery = z.infer<typeof stockPageQuerySchema>;
-
-// =============================================================================
-
 type DefineStockInput = Parameters<StockService['define']>[0];
 
-export const stockDefinitionSchema = z.object({
+export const StockDefinitionSchema = z.object({
   barcode: z.object({
     type: z.enum(barcodeType.enumValues),
     value: z.string().min(1),
@@ -26,11 +20,7 @@ export const stockDefinitionSchema = z.object({
   storageLocation: z.string().nullable().default(null),
 }) satisfies z.ZodType<DefineStockInput>;
 
-export type StockDefinition = z.infer<typeof stockDefinitionSchema>;
-
-// =============================================================================
-
-export const stockAdjustmentSchema = z.object({
+export const StockAdjustmentSchema = z.object({
   direction: z.union([z.literal('inbound'), z.literal('outbound')]),
   idempotencyKey: z.uuid(),
   quantity: z.coerce.number().int(),
@@ -40,4 +30,12 @@ export const stockAdjustmentSchema = z.object({
   }),
 });
 
-export type StockAdjustment = z.infer<typeof stockAdjustmentSchema>;
+export interface StockAdjustmentDto extends z.infer<
+  typeof StockAdjustmentSchema
+> {}
+export interface StockPageQueryDto extends z.infer<
+  typeof StockPageQuerySchema
+> {}
+export interface StockDefinitionDto extends z.infer<
+  typeof StockDefinitionSchema
+> {}

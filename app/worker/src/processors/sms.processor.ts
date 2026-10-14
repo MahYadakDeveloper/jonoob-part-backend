@@ -1,7 +1,7 @@
 import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
 import { SmsJobPayload, SmsTemplate } from '@infra/messaging-queue/job-types';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Inject } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import {
   SMS_TEMPLATE_HANDLERS,
@@ -11,6 +11,7 @@ import { SmsService } from '../sms/sms.service';
 
 @Processor(SMS_QUEUE_NAME, { concurrency: 5 })
 export class SmsProcessor extends WorkerHost {
+  private readonly logger = new Logger(SmsProcessor.name);
   private readonly handlers: Map<SmsTemplate, SmsTemplateHandler>;
 
   constructor(
@@ -22,6 +23,8 @@ export class SmsProcessor extends WorkerHost {
   }
 
   async process(job: Job<SmsJobPayload>): Promise<void> {
+    this.logger.log('Processor process method invoked!');
+
     const { to, template, data } = job.data;
 
     const handler = this.handlers.get(template);

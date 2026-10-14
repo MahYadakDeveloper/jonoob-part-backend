@@ -18,13 +18,13 @@ import { StockMovementService } from '../movement/movement.service';
 import { StockManagementPolicyHandler } from './policies/manage-stock.policy-handler';
 import { StockAbilityFactory } from './policies/stock-ability';
 import {
-  type StockAdjustment,
-  stockAdjustmentSchema,
-  type StockDefinition,
-  stockDefinitionSchema,
-  type StockPageQuery,
-  stockPageQuerySchema,
-} from './stock.schemas';
+  type StockAdjustmentDto,
+  StockAdjustmentSchema,
+  type StockDefinitionDto,
+  StockDefinitionSchema,
+  type StockPageQueryDto,
+  StockPageQuerySchema,
+} from './stock.dto';
 import { StockService } from './stock.service';
 
 @UseGuards(AuthenticationGuard, PoliciesGuard)
@@ -49,7 +49,7 @@ export class StockController {
     handlers: [StockManagementPolicyHandler],
   })
   @Get()
-  page(@Query({ schema: stockPageQuerySchema }) criteria: StockPageQuery) {
+  page(@Query({ schema: StockPageQuerySchema }) criteria: StockPageQueryDto) {
     return this.stockService.page(criteria);
   }
 
@@ -58,7 +58,9 @@ export class StockController {
     handlers: [StockManagementPolicyHandler],
   })
   @Post()
-  define(@Body({ schema: stockDefinitionSchema }) definition: StockDefinition) {
+  define(
+    @Body({ schema: StockDefinitionSchema }) definition: StockDefinitionDto,
+  ) {
     return this.stockService.define(definition);
   }
 
@@ -69,8 +71,8 @@ export class StockController {
   @Patch(':id')
   adjust(
     @Param({ schema: z.uuid() }) stockId: string,
-    @Body({ schema: stockAdjustmentSchema })
-    { quantity, ...rest }: StockAdjustment,
+    @Body({ schema: StockAdjustmentSchema })
+    { quantity, ...rest }: StockAdjustmentDto,
   ) {
     this.stockMovementService.adjust({ ...rest, item: { stockId, quantity } });
   }
@@ -82,7 +84,7 @@ export class StockController {
   @Put(':id')
   redefine(
     @Param('id', { schema: z.uuid() }) stockId: string,
-    @Body({ schema: stockDefinitionSchema }) definition: StockDefinition,
+    @Body({ schema: StockDefinitionSchema }) definition: StockDefinitionDto,
   ) {
     return this.stockService.redefine(stockId, definition);
   }

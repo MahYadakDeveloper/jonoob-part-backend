@@ -12,6 +12,8 @@ import {
   TokenBucketConfig,
 } from './rate-limit';
 
+const RATE_LIMIT_KEY_PREFIX = 'rate-limit:';
+
 export class TokenBucketRateLimitService {
   constructor(
     @Inject(REDIS_CLIENT)
@@ -24,7 +26,7 @@ export class TokenBucketRateLimitService {
     const now = Date.now() / 1000; // seconds with fractional precision
 
     const result = (await this.redis.eval(ATTEMPT_SCRIPT, {
-      keys: buckets.map((b) => b.key),
+      keys: buckets.map((b) => this.toRedisKey(b.key)),
       arguments: [
         now.toString(),
         ...buckets.flatMap((b) => [
@@ -42,7 +44,7 @@ export class TokenBucketRateLimitService {
 
     return {
       allowed: false,
-      bucketKey: result[1],
+      bucketKey: result[1].slice(RATE_LIMIT_KEY_PREFIX.length),
       remaining: result[2],
       limit: result[3],
       retryAfter: result[4],
@@ -58,7 +60,7 @@ export class TokenBucketRateLimitService {
     const now = Date.now() / 1000; // seconds with fractional precision
 
     const result = (await this.redis.eval(CONSUME_LUA_SCRIPT, {
-      keys: [key],
+      keys: [this.toRedisKey(key)],
       arguments: [maxTokens.toString(), refillRate.toString(), now.toString()],
     })) as number[];
 
@@ -77,18 +79,22 @@ export class TokenBucketRateLimitService {
     const now = Date.now() / 1000; // seconds with fractional precision
 
     const result = (await this.redis.eval(CHECK_LUA_SCRIPT, {
-      keys: [key],
+      keys: [this.toRedisKey(key)],
       arguments: [maxTokens.toString(), refillRate.toString(), now.toString()],
     })) as number[];
 
-    const remaining = result[1];
-    const retryAfter = result[2];
+    const remaining = result[0];
+    const retryAfter = result[1];
     const allowed = remaining >= 1;
 
     return { allowed, remaining, limit: maxTokens, retryAfter };
   }
 
   async reset(key: string): Promise<void> {
-    await this.redis.del(key);
+    await this.redis.del(this.toRedisKey(key));
+  }
+
+  private toRedisKey(key: string): string {
+    return `${RATE_LIMIT_KEY_PREFIX}${key}`;
   }
 }

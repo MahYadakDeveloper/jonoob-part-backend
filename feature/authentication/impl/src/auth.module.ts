@@ -8,6 +8,7 @@ import { SynchronizerModule } from '@infra/synchronizer';
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import authConfig from './auth.config';
+import { AuthenticationController } from './auth.controller';
 import { AuthenticationService } from './auth.service';
 import { OtpStore } from './otp/otp.store';
 
@@ -33,6 +34,7 @@ import { OtpStore } from './otp/otp.store';
       useFactory: () => new HashService(12),
     },
   ],
+  controllers: [AuthenticationController],
   exports: ['AuthenticationApi'],
 })
 export class AuthenticationModule {
