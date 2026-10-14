@@ -64,6 +64,11 @@ export class AuthenticationService implements AuthenticationApi {
     refillRate: 1.111e-3,
   };
 
+  private readonly hashingRateLimitConfig: TokenBucketConfig = {
+    maxTokens: 3,
+    refillRate: 3.333e-3, // refill a token in 5 min
+  };
+
   private readonly verifyTokenExpiresIn = 300; // 5 min
   private readonly accessTokenExpiresIn = 1800; // 30 min
   private readonly refreshTokenExpiresIn = 604800; // 7 days
@@ -280,8 +285,7 @@ export class AuthenticationService implements AuthenticationApi {
     password: string;
   }) {
     const payload = this.jwtService.decode(verifyToken);
-    if (!payload)
-      throw new UnauthorizedException('Invalid verification token');
+    if (!payload) throw new UnauthorizedException('Invalid verification token');
     return await this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:courier-sign-in:${payload.jti}`,
       async () => {
@@ -293,9 +297,11 @@ export class AuthenticationService implements AuthenticationApi {
 
         const courier = await this.courier.findByPhone(payload.sub);
 
-        const verified = await this.hashService.verify(password, courier.password);
-        if (!verified)
-          throw new UnauthorizedException('Invalid credentials');
+        const verified = await this.hashService.verify(
+          password,
+          courier.password,
+        );
+        if (!verified) throw new UnauthorizedException('Invalid credentials');
 
         const accessToken = await this.jwtService.issue({
           type: 'access',
@@ -338,8 +344,7 @@ export class AuthenticationService implements AuthenticationApi {
     password: string;
   }) {
     const payload = this.jwtService.decode(verifyToken);
-    if (!payload)
-      throw new UnauthorizedException('Invalid verification token');
+    if (!payload) throw new UnauthorizedException('Invalid verification token');
 
     return await this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:manager-sign-in:${payload.jti}`,
@@ -356,8 +361,7 @@ export class AuthenticationService implements AuthenticationApi {
           password,
           manager.hashedPassword,
         );
-        if (!verified)
-          throw new UnauthorizedException('Invalid credentials');
+        if (!verified) throw new UnauthorizedException('Invalid credentials');
 
         const accessToken = await this.jwtService.issue({
           type: 'access',
@@ -467,8 +471,7 @@ export class AuthenticationService implements AuthenticationApi {
     verifyToken: string;
   }) {
     const payload = this.jwtService.decode(verifyToken);
-    if (!payload)
-      throw new UnauthorizedException('Invalid verification token');
+    if (!payload) throw new UnauthorizedException('Invalid verification token');
 
     return this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:sign-up:${payload.jti}`,
@@ -521,8 +524,7 @@ export class AuthenticationService implements AuthenticationApi {
 
   async refresh({ oldRefreshToken }: { oldRefreshToken: string }) {
     const payload = this.jwtService.decode(oldRefreshToken);
-    if (!payload)
-      throw new UnauthorizedException('Invalid refresh token');
+    if (!payload) throw new UnauthorizedException('Invalid refresh token');
 
     return await this.synchronizer.executeExclusive(
       `${AuthenticationService.name}:refresh:${payload.jti}`,
@@ -636,6 +638,22 @@ export class AuthenticationService implements AuthenticationApi {
           accessToken,
           refreshToken,
         };
+      },
+    );
+  }
+
+  async hash(password: string) {
+    return await this.synchronizer.executeExclusive(
+      'auth:hashing',
+      async () => {
+        const result = await this.rateLimit.attempt([
+          { key: 'auth:hashing', config: this.hashingRateLimitConfig },
+        ]);
+
+        if (!result.allowed)
+          throw this.tooManyRequests('rate limited reached max');
+
+        return await this.hashService.hash(password);
       },
     );
   }

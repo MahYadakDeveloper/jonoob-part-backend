@@ -1,8 +1,20 @@
-import { LineItems } from '@feature/shared';
+import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
+import { orderRelations } from '@infra/db-drizzle/schema';
+import { AsyncLocalStorage } from 'async_hooks';
 import { Order } from './model/order';
 
-export interface OrderRepository {
-  findByCustomerId(customerId: string): Promise<Order[]>;
+export class OrderRepository extends DrizzleBaseRepository<
+  typeof orderRelations
+> {
+  constructor(
+    dbProvider: DrizzleDbProvider<typeof orderRelations>,
+    forUpdateCtx: AsyncLocalStorage<'for_update'>,
+  ) {
+    super(dbProvider, forUpdateCtx);
+  }
+
+  findByCustomerId(customerId: string): Promise<Order[]> {}
+
   findById(id: string): Promise<Order | null>;
   findBySessionId(
     sessionId: number,

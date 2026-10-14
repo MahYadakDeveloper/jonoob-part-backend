@@ -1,22 +1,8 @@
-import { type DbProvider } from '@feature/shared';
-import {
-  FindCityByIdRequest,
-  FindCityByIdResponse,
-  FindManyCityByProvinceRequest,
-  FindManyCityByProvinceResponse,
-  FindProvinceByIdRequest,
-  FindProvinceByIdResponse,
-  ListProvinceResponse,
-  LocationApi,
-} from '@feature/order-delivery-location-api';
-import { BaseRepository } from '@infra/common-persistent';
-import { PrismaDbClient } from '@infra/db-prisma';
-import { Injectable } from '@nestjs/common';
-import { readFile } from 'node:fs/promises';
-import { LocationSource, LocationSourceSchema } from './schema';
-
 @Injectable()
-export class LocationRepository extends BaseRepository<PrismaDbClient> implements LocationApi {
+export class LocationRepository
+  extends BaseRepository<PrismaDbClient>
+  implements LocationApi
+{
   constructor(dbProvider: DbProvider<PrismaDbClient>) {
     super(dbProvider);
   }
@@ -33,7 +19,9 @@ export class LocationRepository extends BaseRepository<PrismaDbClient> implement
     };
   }
 
-  async findProvinceById(req: FindProvinceByIdRequest): Promise<FindProvinceByIdResponse> {
+  async findProvinceById(
+    req: FindProvinceByIdRequest,
+  ): Promise<FindProvinceByIdResponse> {
     const province = await this.db.province.findUniqueOrThrow({
       where: {
         id: req.provinceId,
@@ -102,8 +90,12 @@ export class LocationRepository extends BaseRepository<PrismaDbClient> implement
         .replace(/[\u064B-\u065F\u0670]/g, '')
 
         // Persian/Arabic digits -> English digits
-        .replace(/[۰-۹]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 1728))
-        .replace(/[٠-٩]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 1584))
+        .replace(/[۰-۹]/g, (digit) =>
+          String.fromCharCode(digit.charCodeAt(0) - 1728),
+        )
+        .replace(/[٠-٩]/g, (digit) =>
+          String.fromCharCode(digit.charCodeAt(0) - 1584),
+        )
 
         // Normalize whitespace and zero-width chars
         .replace(/[\u200B-\u200D\uFEFF]/g, '')

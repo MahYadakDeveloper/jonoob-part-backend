@@ -17,17 +17,15 @@
   },
   "private": true,
   "dependencies": {
+    "@feature/actors": "workspace:*",
     "@feature/cashback-api": "workspace:*",
     "@feature/catalog-api": "workspace:*",
-    "@feature/shared": "workspace:*",
-    "@feature/actors": "workspace:*",
     "@feature/order-api": "workspace:*",
-    "@feature/order-delivery-api": "workspace:*",
-    "@feature/order-fulfillment-api": "workspace:*",
-    "@feature/order-payment-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
     "@feature/schedule-api": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
+    "@infra/db-drizzle": "workspace:*",
     "@nestjs/common": "catalog:",
     "zod": "catalog:"
   }

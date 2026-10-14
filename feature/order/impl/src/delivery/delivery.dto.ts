@@ -1,5 +1,5 @@
-import { CustomerAddress } from '@feature/customer-address-api';
-import { Customer } from '@feature/customer-api';
+import { CustomerAddress } from '@feature/shared/types/customer-address';
+import { CustomerType } from '@feature/shared/types/customer-type';
 
 export type InterCityRecipient = {
   carrierKey: string;
@@ -11,7 +11,11 @@ export type IntraCityRecipient = Extract<
 >;
 
 export type Recipient = {
-  customerContact: Pick<Customer, 'fullName' | 'phoneNumber' | 'type'>;
+  customerContact: {
+    fullName: string;
+    phone: string;
+    type: CustomerType;
+  };
 } & (IntraCityRecipient | InterCityRecipient);
 
 export type Delivery = { id: string } & (
@@ -76,16 +80,3 @@ export type Delivery = { id: string } & (
           });
     }
 );
-
-export type IntraCityDeliveryFailureReasonType =
-  | {
-      reason:
-        | 'recipient_absent'
-        | 'recipient_unreachable'
-        | 'invalid_address'
-        | 'recipient_refused';
-    }
-  | {
-      reason: 'other';
-      message: string;
-    };

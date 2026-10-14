@@ -10,6 +10,8 @@ import {
 import {
   type AdminSignInDto,
   AdminSignInSchema,
+  type HashRequestDto,
+  HashRequestSchema,
   type PasswordSignInDto,
   PasswordSignInSchema,
   type RefreshDto,
@@ -123,5 +125,12 @@ export class AuthenticationController {
   @HttpCode(HttpStatus.OK)
   refresh(@Body({ schema: RefreshSchema }) dto: RefreshDto) {
     return this.auth.refresh({ oldRefreshToken: dto.refreshToken });
+  }
+
+  // --------- hashing --------
+  @Post('hash')
+  @HttpCode(HttpStatus.OK)
+  hash(@Body({ schema: HashRequestSchema }) dto: HashRequestDto) {
+    return this.auth.hash(dto.password);
   }
 }

@@ -1,31 +1,29 @@
-import { PartialBy, RequiredBy } from '@feature/shared';
-import { Delivery, Recipient } from '@feature/order-delivery-api';
+import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
+import { deliveries, orderRelations } from '@infra/db-drizzle/schema';
+import { Recipient } from './delivery.dto';
+import { AsyncLocalStorage } from 'async_hooks';
 
-/**
- * [NOTE]
- * Required 1-to-1 relation can also be created with a nested write.
- * Prisma creates the related records in the correct order.
- *
- * await prisma.user.create({
- *    data: {
- *    post: {
- *      create: { title: 'Hello' },
- *    },
- *  },
- * });
- *
- * so we don't need create method
- */
-export interface DeliveryRepository {
-  /**
-   * [NOTE]
-   * Create the `Delivery` in initial state
-   */
-  create(orderId: string, recipient: Recipient): Promise<void>;
+export class DeliveryRepository extends DrizzleBaseRepository<
+  typeof orderRelations
+> {
+  constructor(
+    dbProvider: DrizzleDbProvider<typeof orderRelations>,
+    forUpdateCtx: AsyncLocalStorage<'for_update'>,
+  ) {
+    super(dbProvider, forUpdateCtx);
+  }
+
+  create(orderId: string, recipient: Recipient): Promise<void> {
+    return this.db.select().from(deliveries).where();
+  }
 
   getOrderId(deliveryId: string): Promise<{ orderId: string }>;
-  findByOrderId(orderId: string): Promise<{ id: string; orderId: string } & Delivery>;
-  findById(deliveryId: string): Promise<{ id: string; orderId: string } & Delivery>;
+  findByOrderId(
+    orderId: string,
+  ): Promise<{ id: string; orderId: string } & Delivery>;
+  findById(
+    deliveryId: string,
+  ): Promise<{ id: string; orderId: string } & Delivery>;
 
   markAsCourierRequested(
     deliveryId: string,

@@ -2,11 +2,12 @@ import { z } from 'zod';
 
 // ---------- Reusable fields ----------
 
-// E.164 international format, e.g. +46701234567
+// Accept local Iranian phone numbers and normalize to E.164.
 const phoneNumber = z
   .string()
   .trim()
-  .regex(/^\+[1-9]\d{6,14}$/, 'phoneNumber must be in E.164 format');
+  .regex(/^09\d{9}$/, 'phoneNumber must be in Iranian local format (09…)')
+  .transform((phone) => `+98${phone.slice(1)}`);
 
 // keep in sync with AuthenticationService.otpLength
 const otp = z.string().regex(/^\d{4}$/, 'otp must be 4 digits');
@@ -45,6 +46,8 @@ export const AdminSignInSchema = z
 
 export const RefreshSchema = z.object({ refreshToken: jwt }).strict();
 
+export const HashRequestSchema = z.object({ password: z.string() }).strict();
+
 // ---------- Inferred types ----------
 
 export interface RequestOtpDto extends z.infer<typeof RequestOtpSchema> {}
@@ -56,3 +59,4 @@ export interface PasswordSignInDto extends z.infer<
 > {}
 export interface AdminSignInDto extends z.infer<typeof AdminSignInSchema> {}
 export interface RefreshDto extends z.infer<typeof RefreshSchema> {}
+export interface HashRequestDto extends z.infer<typeof HashRequestSchema> {}

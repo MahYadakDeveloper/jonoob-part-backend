@@ -7,16 +7,18 @@ const envSchema = z.object({
   ADMIN_PHONE_NUMBERS: z
     .string()
     .transform((value) => value.split(',').map((phone) => phone.trim()))
-    .pipe(z.array(z.string().regex(/^09\d{9}$/, 'Invalid Iranian phone number'))),
+    .pipe(
+      z.array(
+        z.string().regex(/^09\d{9}$/, 'Phone number must be in 09… format'),
+      ),
+    )
+    .transform((phones) => phones.map((phone) => phone.replace(/^0/, '+98'))),
 });
 
 export default registerAs('authentication', () => {
   const env = envSchema.parse(process.env);
   return {
     adminSecretKey: env.ADMIN_SECRET_KEY,
-    // OTP tokens carry E.164 numbers, so normalize the local 09xxxxxxxxx format
-    adminPhoneNumbers: env.ADMIN_PHONE_NUMBERS.map((phone) =>
-      phone.replace(/^0/, '+98'),
-    ),
+    adminPhoneNumbers: env.ADMIN_PHONE_NUMBERS,
   };
 });
