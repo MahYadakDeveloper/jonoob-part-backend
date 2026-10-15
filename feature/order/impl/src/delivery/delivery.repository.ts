@@ -1,7 +1,9 @@
 import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
 import { deliveries, orderRelations } from '@infra/db-drizzle/schema';
-import { Recipient } from './delivery.dto';
 import { AsyncLocalStorage } from 'async_hooks';
+import { eq } from 'drizzle-orm';
+import { Delivery } from './delivery';
+import { toDelivery } from './delivery.mapper';
 
 export class DeliveryRepository extends DrizzleBaseRepository<
   typeof orderRelations
@@ -13,16 +15,34 @@ export class DeliveryRepository extends DrizzleBaseRepository<
     super(dbProvider, forUpdateCtx);
   }
 
-  create(orderId: string, recipient: Recipient): Promise<void> {
-    return this.db.select().from(deliveries).where();
+  findById(deliveryId: string): Promise<Delivery | null> {
+    return this.db
+      .select()
+      .from(deliveries)
+      .then(([row]) => (!!row ? toDelivery(row) : null));
+  }
+
+  findAll(): Promise<Delivery[]> {
+    return this.db
+      .select()
+      .from(deliveries)
+      .then((rows) => rows.map(toDelivery));
+  }
+
+  update(
+    deliveryId: string,
+    data: Partial<Omit<typeof deliveries.$inferInsert, 'id'>>,
+  ) {
+    return this.db
+      .update(deliveries)
+      .set(data)
+      .where(eq(deliveries.id, deliveryId))
+      .returning({ id: deliveries.id });
   }
 
   getOrderId(deliveryId: string): Promise<{ orderId: string }>;
   findByOrderId(
     orderId: string,
-  ): Promise<{ id: string; orderId: string } & Delivery>;
-  findById(
-    deliveryId: string,
   ): Promise<{ id: string; orderId: string } & Delivery>;
 
   markAsCourierRequested(

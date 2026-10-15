@@ -1,7 +1,15 @@
-import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
-import { orderRelations } from '@infra/db-drizzle/schema';
+import {
+  DrizzleBaseRepository,
+  DrizzleDbProvider,
+  DrizzleTransactionContext,
+} from '@infra/db-drizzle';
+import { orderRelations, orders, payments } from '@infra/db-drizzle/schema';
 import { AsyncLocalStorage } from 'async_hooks';
-import { Order } from './model/order';
+import {
+  CreateOrderData,
+  toOrderInsert,
+  toPaymentInsert,
+} from './order.mapper';
 
 export class OrderRepository extends DrizzleBaseRepository<
   typeof orderRelations
@@ -9,8 +17,22 @@ export class OrderRepository extends DrizzleBaseRepository<
   constructor(
     dbProvider: DrizzleDbProvider<typeof orderRelations>,
     forUpdateCtx: AsyncLocalStorage<'for_update'>,
+    private readonly tx: DrizzleTransactionContext,
   ) {
     super(dbProvider, forUpdateCtx);
+  }
+
+  create(data: CreateOrderData): Promise<{ id: string }> {
+    return this.tx.run(async () => {
+      const [order] = await this.db
+        .insert(orders)
+        .values(toOrderInsert(data))
+        .returning({ id: orders.id });
+      if (!order) throw new Error('Order insert did not return an ID');
+
+      await this.db.insert(payments).values(toPaymentInsert(order.id));
+      return order;
+    });
   }
 
   findByCustomerId(customerId: string): Promise<Order[]> {}
@@ -30,13 +52,6 @@ export class OrderRepository extends DrizzleBaseRepository<
     Order,
     { status: 'handed-over-to-courier'; delivery: { scope: 'intra-city' } }
   > | null>;
-
-  create(
-    data: Omit<
-      Extract<Order, { status: 'settlement' }>,
-      'id' | 'fulfillment' | 'payment' | 'delivery'
-    >,
-  ): Promise<string>;
 
   markAs(orderId: string, status: Order['status']): Promise<void>;
 

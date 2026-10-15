@@ -767,9 +767,9 @@ importers:
 
   feature/order/impl:
     dependencies:
-      '@feature/actors':
+      '@feature/actors-api':
         specifier: workspace:*
-        version: link:../../actors/impl
+        version: link:../../actors/api
       '@feature/cashback-api':
         specifier: workspace:*
         version: link:../../cashback/api
@@ -797,6 +797,9 @@ importers:
       '@nestjs/common':
         specifier: 'catalog:'
         version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.4(@cloudflare/workers-types@5.20260920.1)(@effect/sql-d1@4.0.0-rc.116(effect@4.0.0-rc.112))(@effect/sql-sqlite-do@4.0.0-rc.116(effect@4.0.0-rc.112))(@electric-sql/pglite@0.3.15)(@libsql/client@0.17.4)(@sinclair/typebox@0.34.49)(@types/pg@8.23.1)(arktype@2.2.3)(effect@4.0.0-rc.112)(pg@8.23.0)(valibot@1.2.0(typescript@7.0.2))(zod@4.6.5)
       zod:
         specifier: 'catalog:'
         version: 4.6.5

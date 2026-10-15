@@ -1,23 +1,20 @@
+import type { CustomersApi } from '@feature/actors-api/customer';
 import { type CatalogApi } from '@feature/catalog-api';
+import { type PricingApi } from '@feature/pricing-api';
+import { Money, type SettingsStore } from '@feature/shared';
+import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import {
-  LineItems,
-  Money,
-  type SettingsStore,
-  type TransactionManager,
-} from '@feature/shared';
-import { type CustomersApi } from '@feature/customer-api';
-import { OrderApi } from '@feature/order-api';
-import { type DeliveryApi } from '@feature/order-delivery-api';
-import { type FulfillmentApi } from '@feature/order-fulfillment-api';
-import { type PaymentApi } from '@feature/order-payment-api';
-import { UnpricedInvoiceItem, type PricingApi } from '@feature/pricing-api';
-import { Injectable } from '@nestjs/common';
-import { Order } from './model/order';
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { type OrderRepository } from './order.repository';
 import { OrderSettings, orderSettings } from './order.settings';
 
 @Injectable()
-export class OrderService implements OrderApi {
+export class OrderService {
   constructor(
     private readonly repository: OrderRepository,
     private readonly customers: CustomersApi,
@@ -26,35 +23,25 @@ export class OrderService implements OrderApi {
     private readonly pricing: PricingApi,
     private readonly fulfillment: FulfillmentApi,
     private readonly delivery: DeliveryApi,
-    private readonly tx: TransactionManager,
+    private readonly tx: DrizzleTransactionContext,
     private readonly settings: SettingsStore,
   ) {}
 
-  async findById({ orderId }): Promise<{ order: Order }> {
+  async findById(orderId: string) {
     const order = await this.repository.findById(orderId);
-    if (!order) throw new Error();
+    if (!order) throw new NotFoundException();
 
-    return { order };
+    return order;
   }
 
-  findByCustomerId({ customerId }: { customerId: string }) {
-    return this.repository.findByCustomerId(customerId);
+  async findManyByCustomerId(customerId: string) {
+    const order = await this.repository.findByCustomerId(customerId);
+
+    if (order.length === 0) throw new Error();
+
+    return order;
   }
 
-  /**
-   * [NOTE] Do scope/location validation inside controller
-   * Tip: use zod for parsing inside controller
-   *
-   * [NOTE] The recording order is every time is available but
-   * the delivery is warned to customer if is recording at out of
-   * business hours and the delivery is going to be delivered in
-   * next business hours
-   * Example: Order recorded at 3pm on friday and the friday is
-   * holiday and store is closed[out of business hours] then the
-   * delivery warned to customer the delivery is would be delivered
-   * saturday 8:30am witch would be processed and delivered at
-   * business hour
-   */
   async recordOrder({
     customerId,
     recipient,
@@ -65,66 +52,63 @@ export class OrderService implements OrderApi {
       addressId: string;
       carrierKey: string;
     };
-    items: LineItems<{ productId: string; quantity: number }>;
+    items: { productId: string; quantity: number }[];
   }) {
     // [NOTE]
-    // Order can be happens at any time without exception but the process
-    // and the delivery is scheduled based on business hours the only is
-    // needed before order to warning customer that processing order happens
-    // only in next business hours
-
-    // Check single payment pending order
-    const paymentPendingOrders =
-      await this.repository.findByCustomerIdWithPaymentPendingStatus(
-        customerId,
+    // Only single order with pending payment state at a time
+    const hasPendingPayment =
+      await this.repository.hasPendingPaymentByCustomerId(customerId);
+    if (hasPendingPayment)
+      throw new ConflictException(
+        `Customer has none active none settled order`,
       );
-    if (paymentPendingOrders.size)
-      throw new Error(`Customer has none active none settled order`);
 
-    const { customer } = await this.customers.findById({
-      customerId,
-    });
+    const customer = await this.customers.findById(customerId);
 
-    const { products } = await this.catalog.findMany({
-      productIds: [...items.keys()],
-    });
+    const address = customer.addresses.find(
+      (a) => a.id === recipient.addressId,
+    );
 
-    // Resolve pricing
-    const { pricedInvoice } = await this.pricing.priceInvoice({
-      items: items.transform<UnpricedInvoiceItem>(
-        (item) => {
-          const product = products.getOrThrow(item.productId);
+    if (!address) throw new BadRequestException('Address not found');
+    if (address.scope === 'inter_city' && !recipient.carrierKey)
+      throw new Error();
+
+    const products = await this.catalog.findMany(items.map((i) => i.productId));
+
+    // pricing
+    const { pricedInvoice } = await this.pricing.price(customerId, {
+      items: items.map(
+        ({ productId, quantity }) => {
+          const product = products.find(item.productId);
+          if (!product) throw new UnprocessableEntityException('...');
           if (product.kind === 'bundle')
             return {
               kind: 'bundle',
-              productId: item.productId,
-              description: product.displayName,
-              quantity: item.quantity,
-              items: product.items.toArray().map((_item) => ({
-                description: _item.displayName,
+              productId,
+              quantity,
+              items: product.items.map((bundleItem) => ({
                 kind: 'leaf',
-                productId: _item.productId,
-                quantity: _item.quantity,
+                productId: bundleItem.productId,
+                description: bundleItem.displayName,
+                quantity: bundleItem.quantity,
               })),
             };
 
           return {
             kind: 'leaf',
-            productId: item.productId,
+            productId: productId,
             description: product.displayName,
-            quantity: item.quantity,
+            quantity: quantity,
           };
         },
         (item) => item.description,
       ),
-      customer: { id: customerId, type: customer.type },
     });
 
     const { cancellationFee } = await this.settings.get(orderSettings);
 
     return await this.tx.run(async () => {
       const orderId = await this.repository.create({
-        status: 'settlement',
         customerId,
         items: pricedInvoice.items,
         cancellationTerms: {
@@ -133,16 +117,6 @@ export class OrderService implements OrderApi {
         summary: pricedInvoice.summary,
       });
 
-      // fulfillment
-      await this.fulfillment.create({ orderId, items });
-
-      // delivery
-      const address = customer.addresses.find(
-        (a) => a.id === recipient.addressId,
-      );
-      if (!address) throw new Error();
-      if (address.scope === 'inter_city' && !recipient.carrierKey)
-        throw new Error();
       await this.delivery.create({
         orderId,
         recipient: {

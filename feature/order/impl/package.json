@@ -17,7 +17,7 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/actors": "workspace:*",
+    "@feature/actors-api": "workspace:*",
     "@feature/cashback-api": "workspace:*",
     "@feature/catalog-api": "workspace:*",
     "@feature/order-api": "workspace:*",
@@ -27,6 +27,7 @@
     "@feature/warehouse-api": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@nestjs/common": "catalog:",
+    "drizzle-orm": "catalog:",
     "zod": "catalog:"
   }
 }

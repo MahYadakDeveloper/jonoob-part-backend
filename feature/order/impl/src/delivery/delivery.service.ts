@@ -1,11 +1,15 @@
-import { type SettingsStore } from '@feature/shared';
-import { Delivery, DeliveryApi, Recipient } from '@feature/order-delivery-api';
-import { type CourierApi } from '@feature/order-delivery-courier-api';
+import { type CourierApi } from '@feature/actors-api/courier';
+import { Delivery, Recipient } from '@feature/order-delivery-api';
 import { type LocationApi } from '@feature/order-delivery-location-api';
-import { Inject, Injectable } from '@nestjs/common';
+import { type SettingsStore } from '@feature/shared';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import deliveryConfigs from './delivery.config';
-import { type DeliveryRepository } from './delivery.repository';
+import { DeliveryRepository } from './delivery.repository';
 import { ReportDeliveryAttemptRequest } from './delivery.req';
 import {
   InterCityDeliveryMethod,
@@ -14,7 +18,7 @@ import {
 import { DeliverySettingsToken } from './setting/token';
 
 @Injectable()
-export class DeliveryService implements DeliveryApi {
+export class DeliveryService {
   constructor(
     private readonly settings: SettingsStore,
     private readonly location: LocationApi,
@@ -24,27 +28,23 @@ export class DeliveryService implements DeliveryApi {
     private readonly configs: ConfigType<typeof deliveryConfigs>,
   ) {}
 
-  async findById(req: {
-    deliveryId: string;
-  }): Promise<{ delivery: { id: string } & Delivery }> {
-    const delivery = await this.repository.findById(req.deliveryId);
-    return { delivery };
+  async findById(deliveryId: string): Promise<Delivery> {
+    const delivery = await this.repository.findById(deliveryId);
+    return;
   }
 
-  async create({
-    orderId,
-    recipient,
-  }: {
-    orderId: string;
-    recipient: Recipient;
-  }): Promise<void> {
-    await this.repository.create(orderId, recipient);
+  async findAll(): Promise<Delivery[]> {
+    return this.repository.findAll();
   }
 
-  async deliver({ orderId }: { orderId: string }): Promise<void> {
-    const delivery = await this.repository.findByOrderId(orderId);
-    await this.courier.pickup({ deliveryId: delivery.id });
-    await this.repository.markAsCourierRequested(orderId, {
+  async deliver(deliveryId: string): Promise<void> {
+    const delivery = await this.repository.findById(deliveryId);
+
+    if (!delivery) throw new InternalServerErrorException();
+
+    await this.courier.notifyPickup(delivery.id);
+
+    await this.repository.update(delivery.id, {
       requestedAt: new Date(),
     });
   }
@@ -132,24 +132,5 @@ export class DeliveryService implements DeliveryApi {
 
   async findCitiesByProvinces({ provinceId }: { provinceId: number }) {
     return this.location.findCitiesByProvince({ provinceId });
-  }
-
-  resolveScope({
-    provinceId,
-    cityId,
-  }: {
-    provinceId: number;
-    cityId: number;
-  }): {
-    scope: 'inter_city' | 'intra_city';
-  } {
-    if (provinceId !== this.configs.intraCityProvinceId)
-      // Khuzestan
-      return { scope: 'inter_city' };
-
-    if (this.configs.intraCityIds.some((intraCityId) => intraCityId === cityId))
-      return { scope: 'intra_city' };
-
-    return { scope: 'inter_city' };
   }
 }

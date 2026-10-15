@@ -1,10 +1,21 @@
-import type { DeliveryRow } from '@infra/db-drizzle/schema';
-import type { Delivery } from './delivery.dto';
+import { deliveries, type DeliveryRow } from '@infra/db-drizzle/schema';
+import type { Delivery, Recipient } from './delivery';
 
 type RecipientOf<S extends Delivery['status']> = Extract<
   Delivery,
   { status: S }
 >['recipient'];
+
+export function toDeliveryInsert(
+  orderId: string,
+  recipient: Recipient,
+): typeof deliveries.$inferInsert {
+  return {
+    orderId,
+    status: 'pending',
+    recipient,
+  };
+}
 
 function required<T>(value: T | null, field: string, row: DeliveryRow): T {
   if (value === null) {
@@ -20,7 +31,7 @@ export function toDelivery(row: DeliveryRow): Delivery {
   const { id } = row;
 
   switch (row.status) {
-    case 'initial':
+    case 'pending':
       return {
         id,
         status: 'initial',

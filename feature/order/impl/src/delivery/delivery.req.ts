@@ -1,4 +1,4 @@
-import type { IntraCityDeliveryFailureReasonType } from './delivery.dto';
+import type { IntraCityDeliveryFailureReasonType } from './delivery';
 
 export type ReportDeliveryAttemptRequest = {
   courierId: string;

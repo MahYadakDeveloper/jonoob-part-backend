@@ -1,30 +1,16 @@
-import { CustomerAddress } from '@feature/shared/types/customer-address';
 import { CustomerType } from '@feature/shared/types/customer-type';
 import { sql } from 'drizzle-orm';
-import { check, index, jsonb, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { couriers } from '../../actors/tables';
+import {
+  check,
+  index,
+  jsonb,
+  timestamp,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
+import { couriers, CustomerAddress } from '../../actors/tables';
 import { orderSchema } from '../order.schema';
 import { orders } from './orders.schema';
-
-type IntraCityDeliveryFailureReasonType =
-  | {
-      reason:
-        | 'recipient_absent'
-        | 'recipient_unreachable'
-        | 'invalid_address'
-        | 'recipient_refused';
-    }
-  | {
-      reason: 'other';
-      message: string;
-    };
-
-type IntraCityDeliveryRecipient = Extract<
-  CustomerAddress,
-  { scope: 'intra_city' }
-> & {
-  deliveryConfirmationCode?: string;
-} & IntraCityDeliveryFailureReasonType;
 
 type DeliveryRecipient = {
   customerContact: {
@@ -32,14 +18,7 @@ type DeliveryRecipient = {
     phone: string;
     type: CustomerType;
   };
-} & (
-  | IntraCityDeliveryRecipient
-  | (Extract<CustomerAddress, { scope: 'inter_city' }> & {
-      carrierKey: string;
-      trackingNumber?: string;
-      reasonMessage?: string;
-    })
-);
+} & CustomerAddress;
 
 export const deliveryStatus = orderSchema.enum('delivery_status', [
   'pending',
@@ -66,6 +45,15 @@ export const deliveries = orderSchema.table(
     courierId: uuid('courier_id').references(() => couriers.id, {
       onDelete: 'set null',
     }),
+
+    deliveryConfirmationCode: varchar('delivery_confirmation_code', {
+      length: 6,
+    }),
+
+    carrierKey: varchar('carrier_key', {
+      length: 64,
+    }),
+    trackingNumber: varchar('tracking_number', { length: 128 }),
 
     requestedAt: timestamp('requested_at', { withTimezone: true }),
     canceledAt: timestamp('canceled_at', { withTimezone: true }),
@@ -108,9 +96,33 @@ export const deliveries = orderSchema.table(
       END`,
     ),
     check(
+      'deliveries_scope_fields',
+      sql`CASE
+        WHEN ${t.recipient}->>'scope' = 'intra_city'
+        THEN ${t.carrierKey} IS NULL
+          AND ${t.trackingNumber} IS NULL
+          AND (
+            ${t.status} NOT IN (
+              'handed_over_to_courier',
+              'delivered',
+              'returned_to_warehouse'
+            )
+            OR ${t.deliveryConfirmationCode} IS NOT NULL
+          )
+        WHEN ${t.recipient}->>'scope' = 'inter_city'
+        THEN ${t.carrierKey} IS NOT NULL
+          AND ${t.deliveryConfirmationCode} IS NULL
+          AND (
+            (${t.status} = 'delivered' AND ${t.trackingNumber} IS NOT NULL)
+            OR (${t.status} <> 'delivered' AND ${t.trackingNumber} IS NULL)
+          )
+        ELSE FALSE
+      END`,
+    ),
+    check(
       'deliveries_status_fields',
       sql`(
-        (${t.status} = 'initial'
+        (${t.status} = 'pending'
           AND ${t.courierId} IS NULL)
         OR (${t.status} = 'courier_requested'
           AND ${t.requestedAt} IS NOT NULL AND ${t.courierId} IS NULL)
@@ -126,5 +138,3 @@ export const deliveries = orderSchema.table(
     ),
   ],
 );
-
-export type DeliveryRow = typeof deliveries.$inferSelect;

@@ -2,7 +2,6 @@ import { sql } from 'drizzle-orm';
 import {
   bigint,
   check,
-  doublePrecision,
   index,
   jsonb,
   timestamp,
@@ -11,24 +10,21 @@ import {
 import { customers } from '../../actors/tables';
 import { orderSchema } from '../order.schema';
 
-// All money values are integer toman, matching the wallet tables.
-type Amount = number;
-
 type OrderItemDiscount = {
-  discountPerUnit: Amount;
+  discountPerUnit: number;
   discountedQuantity: number;
-  totalDiscount: Amount;
+  totalDiscount: number;
 };
 
 type OrderItemBase = {
   productId: string;
   description: string;
   quantity: number;
-  unitPrice: Amount;
-  lineTotal: Amount;
+  unitPrice: number;
+  lineTotal: number;
 };
 
-export type OrderItem =
+type OrderItem =
   | (OrderItemBase & {
       kind: 'leaf';
       discount?: OrderItemDiscount;
@@ -44,6 +40,46 @@ export const cancellationFeeType = orderSchema.enum('cancellation_fee_type', [
   'rate',
 ]);
 
+export const orderSummary = orderSchema.table(
+  'order_summary',
+  {
+    orderId: uuid().references(() => orders.id, { onDelete: 'cascade' }),
+    subtotal: bigint('subtotal', { mode: 'number' }).notNull(),
+    discountTotal: bigint('discount_total', { mode: 'number' })
+      .notNull()
+      .default(0),
+    taxTotal: bigint('tax_total', { mode: 'number' }).notNull().default(0),
+    grandTotal: bigint('grand_total', { mode: 'number' }).notNull(),
+
+    cashback: jsonb('cashback').$type<{
+      rate: number;
+      amount: number;
+    }>(),
+  },
+  (t) => [
+    check(
+      'orders_amounts_non_negative',
+      sql`${t.subtotal} >= 0 AND ${t.discountTotal} >= 0
+        AND ${t.taxTotal} >= 0 AND ${t.grandTotal} >= 0`,
+    ),
+    check(
+      'orders_grand_total_balance',
+      sql`${t.grandTotal} = ${t.subtotal} - ${t.discountTotal} + ${t.taxTotal}`,
+    ),
+    check(
+      'orders_cashback_fields',
+      sql`${t.cashback} IS NULL OR CASE
+        WHEN jsonb_typeof(${t.cashback}) = 'object'
+        THEN jsonb_typeof(${t.cashback}->'rate') = 'number'
+          AND (${t.cashback}->>'rate')::numeric >= 0
+          AND jsonb_typeof(${t.cashback}->'amount') = 'number'
+          AND (${t.cashback}->>'amount')::numeric >= 0
+        ELSE FALSE
+      END`,
+    ),
+  ],
+);
+
 // An order is an immutable snapshot of the invoice at the time it was recorded.
 // Its lifecycle status is not stored here; it is derived from the payment,
 // fulfillment and delivery relations.
@@ -58,22 +94,18 @@ export const orders = orderSchema.table(
 
     items: jsonb('items').$type<OrderItem[]>().notNull(),
 
-    subtotal: bigint('subtotal', { mode: 'number' }).notNull(),
-    discountTotal: bigint('discount_total', { mode: 'number' })
-      .notNull()
-      .default(0),
-    taxTotal: bigint('tax_total', { mode: 'number' }).notNull().default(0),
-    grandTotal: bigint('grand_total', { mode: 'number' }).notNull(),
-
-    cashbackRate: doublePrecision('cashback_rate'),
-    cashbackAmount: bigint('cashback_amount', { mode: 'number' }),
-
-    cancellationFeeType: cancellationFeeType('cancellation_fee_type').notNull(),
-    cancellationFeeAmount: bigint('cancellation_fee_amount', {
-      mode: 'number',
-    }),
-    cancellationFeeRate: doublePrecision('cancellation_fee_rate'),
-
+    cancellationFee: jsonb('cancellationTerms')
+      .$type<
+        | {
+            type: 'fixed';
+            amount: number;
+          }
+        | {
+            type: 'rate';
+            rate: number;
+          }
+      >()
+      .notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -81,34 +113,20 @@ export const orders = orderSchema.table(
   (t) => [
     index('orders_customer_id_idx').on(t.customerId),
     index('orders_created_at_idx').on(t.createdAt),
-    check(
-      'orders_amounts_non_negative',
-      sql`${t.subtotal} >= 0 AND ${t.discountTotal} >= 0
-        AND ${t.taxTotal} >= 0 AND ${t.grandTotal} >= 0`,
-    ),
-    check(
-      'orders_grand_total_balance',
-      sql`${t.grandTotal} = ${t.subtotal} - ${t.discountTotal} + ${t.taxTotal}`,
-    ),
-    check(
-      'orders_cashback_pair',
-      sql`(${t.cashbackRate} IS NULL) = (${t.cashbackAmount} IS NULL)
-        AND (${t.cashbackRate} IS NULL
-          OR (${t.cashbackRate} >= 0 AND ${t.cashbackAmount} >= 0))`,
-    ),
+    check('orders_items_is_array', sql`jsonb_typeof(${t.items}) = 'array'`),
     check(
       'orders_cancellation_fee_fields',
-      sql`(
-        (${t.cancellationFeeType} = 'fixed'
-          AND ${t.cancellationFeeAmount} >= 0
-          AND ${t.cancellationFeeRate} IS NULL)
-        OR (${t.cancellationFeeType} = 'rate'
-          AND ${t.cancellationFeeRate} BETWEEN 0 AND 1
-          AND ${t.cancellationFeeAmount} IS NULL)
-      )`,
+      sql`CASE
+        WHEN jsonb_typeof(${t.cancellationFee}) = 'object'
+          AND ${t.cancellationFee}->>'type' = 'fixed'
+        THEN jsonb_typeof(${t.cancellationFee}->'amount') = 'number'
+          AND (${t.cancellationFee}->>'amount')::numeric >= 0
+        WHEN jsonb_typeof(${t.cancellationFee}) = 'object'
+          AND ${t.cancellationFee}->>'type' = 'rate'
+        THEN jsonb_typeof(${t.cancellationFee}->'rate') = 'number'
+          AND (${t.cancellationFee}->>'rate')::numeric BETWEEN 0 AND 1
+        ELSE FALSE
+      END`,
     ),
-    check('orders_items_is_array', sql`jsonb_typeof(${t.items}) = 'array'`),
   ],
 );
-
-export type OrderRow = typeof orders.$inferSelect;

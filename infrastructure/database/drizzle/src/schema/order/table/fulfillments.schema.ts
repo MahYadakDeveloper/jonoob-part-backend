@@ -1,11 +1,12 @@
 import { jsonb, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { unitOfMeasure } from '../../warehouse';
 import { orderSchema } from '../order.schema';
 import { orders } from './orders.schema';
 
 type FulfillmentItem = {
   stockId: string;
-  unitOfMeasure: 'piece' | 'pair' | 'set';
   quantity: number;
+  unitOfMeasure: (typeof unitOfMeasure.enumValues)[number];
 };
 
 export const fulfillmentStatus = orderSchema.enum('fulfillment_status', [
