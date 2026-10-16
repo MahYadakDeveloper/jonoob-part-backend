@@ -1,4 +1,3 @@
-import { CustomerType } from '@feature/shared/types/customer-type';
 import { sql } from 'drizzle-orm';
 import {
   check,
@@ -8,9 +7,29 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { couriers, CustomerAddress } from '../../actors/tables';
+import { addresses, couriers, customerType } from '../../actors/tables';
 import { orderSchema } from '../order.schema';
 import { orders } from './orders.schema';
+
+type CustomerType = (typeof customerType.enumValues)[number];
+type CustomerAddressBase = Omit<
+  typeof addresses.$inferSelect,
+  'scope' | 'provinceId' | 'postalCode' | 'latitude' | 'longitude'
+>;
+type CustomerAddress = CustomerAddressBase &
+  (
+    | {
+        scope: 'inter_city';
+        provinceId: number;
+        postalCode: string;
+      }
+    | {
+        scope: 'intra_city';
+        provinceId: number;
+        latitude: number | null;
+        longitude: number | null;
+      }
+  );
 
 type DeliveryRecipient = {
   customerContact: {

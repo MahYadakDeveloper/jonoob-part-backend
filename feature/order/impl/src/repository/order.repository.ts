@@ -3,8 +3,15 @@ import {
   DrizzleDbProvider,
   DrizzleTransactionContext,
 } from '@infra/db-drizzle';
-import { orderRelations, orders, payments } from '@infra/db-drizzle/schema';
+import {
+  merchandiseLine,
+  orderRelations,
+  orders,
+  payments,
+} from '@infra/db-drizzle/schema';
 import { AsyncLocalStorage } from 'async_hooks';
+import type { MerchandiseLine } from '@feature/shared/types/merchandise-line';
+import { toMerchandiseLineInsertPlans } from '@feature/shared/mappers/to-merchandise-line.mapper';
 import {
   CreateOrderData,
   toOrderInsert,
@@ -22,7 +29,9 @@ export class OrderRepository extends DrizzleBaseRepository<
     super(dbProvider, forUpdateCtx);
   }
 
-  create(data: CreateOrderData): Promise<{ id: string }> {
+  create(
+    data: CreateOrderData & { merchandiseLines: MerchandiseLine[] },
+  ): Promise<{ id: string }> {
     return this.tx.run(async () => {
       const [order] = await this.db
         .insert(orders)
@@ -30,7 +39,38 @@ export class OrderRepository extends DrizzleBaseRepository<
         .returning({ id: orders.id });
       if (!order) throw new Error('Order insert did not return an ID');
 
+      const plans = toMerchandiseLineInsertPlans(
+        { orderId: order.id },
+        data.merchandiseLines,
+      );
+
+      const insertedRoots = await this.db
+        .insert(merchandiseLine)
+        .values(
+          plans.map((plan) => (plan.kind === 'leaf' ? plan.leaf : plan.bundle)),
+        )
+        .returning({ id: merchandiseLine.id });
+      if (insertedRoots.length !== plans.length) {
+        throw new Error('Merchandise line insert did not return all IDs');
+      }
+
+      const bundleItemRows = plans.flatMap((plan, index) => {
+        if (plan.kind !== 'bundle') return [];
+
+        const bundleId = insertedRoots[index].id;
+        return plan.items.map((item) => ({ ...item, bundleId }));
+      });
+
+      // Leaf-only orders have no bundle items, and Drizzle rejects an empty values list.
+      if (bundleItemRows.length > 0) {
+        await this.db.insert(merchandiseLine).values(bundleItemRows);
+      }
+
+      // delivery
+
+      // payment
       await this.db.insert(payments).values(toPaymentInsert(order.id));
+
       return order;
     });
   }

@@ -8,7 +8,6 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  UnprocessableEntityException,
 } from '@nestjs/common';
 import { type OrderRepository } from './order.repository';
 import { OrderSettings, orderSettings } from './order.settings';
@@ -42,7 +41,7 @@ export class OrderService {
     return order;
   }
 
-  async recordOrder({
+  async placeOrder({
     customerId,
     recipient,
     items,
@@ -76,87 +75,27 @@ export class OrderService {
     const products = await this.catalog.findMany(items.map((i) => i.productId));
 
     // pricing
-    const { pricedInvoice } = await this.pricing.price(customerId, {
-      items: items.map(
-        ({ productId, quantity }) => {
-          const product = products.find(item.productId);
-          if (!product) throw new UnprocessableEntityException('...');
-          if (product.kind === 'bundle')
-            return {
-              kind: 'bundle',
-              productId,
-              quantity,
-              items: product.items.map((bundleItem) => ({
-                kind: 'leaf',
-                productId: bundleItem.productId,
-                description: bundleItem.displayName,
-                quantity: bundleItem.quantity,
-              })),
-            };
-
-          return {
-            kind: 'leaf',
-            productId: productId,
-            description: product.displayName,
-            quantity: quantity,
-          };
+    const priceResult = await this.pricing.price(
+      {
+        customer: {
+          id: customer.id,
+          type: customer.type,
         },
-        (item) => item.description,
-      ),
-    });
+        asOf: new Date(),
+      },
+      items,
+    );
 
     const { cancellationFee } = await this.settings.get(orderSettings);
 
-    return await this.tx.run(async () => {
-      const orderId = await this.repository.create({
-        customerId,
-        items: pricedInvoice.items,
-        cancellationTerms: {
-          fee: cancellationFee,
-        },
-        summary: pricedInvoice.summary,
-      });
-
-      await this.delivery.create({
-        orderId,
-        recipient: {
-          customerContact: {
-            fullName: customer.fullName,
-            phoneNumber: customer.phoneNumber,
-            type: customer.type,
-          },
-          ...(address.scope === 'inter_city'
-            ? {
-                ...address,
-                carrierKey: recipient.carrierKey,
-              }
-            : {
-                ...address,
-              }),
-        },
-      });
-
-      // payment
-      await this.payment.create({
-        orderId,
-        customer: {
-          id: customerId,
-          contact: customer,
-        },
-        amount: pricedInvoice.summary.grandTotal,
-        purchasedItems: pricedInvoice.items.transform(
-          (item) => ({
-            productId: item.productId,
-            productName: item.description,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-          }),
-          (x) => x.productId,
-        ),
-      });
+    await this.repository.create({
+      customerId,
+      items: pricedInvoice.items,
+      cancellationTerms: {
+        fee: cancellationFee,
+      },
+      summary: pricedInvoice.summary,
     });
-
-    // No return, just redirect client to payment
   }
 
   /**

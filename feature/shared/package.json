@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@casl/ability": "catalog:",
+    "@infra/db-drizzle": "workspace:*",
     "fastify": "catalog:",
     "zod": "catalog:"
   }

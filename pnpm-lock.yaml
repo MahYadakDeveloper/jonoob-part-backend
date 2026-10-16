@@ -1332,6 +1332,9 @@ importers:
       '@casl/ability':
         specifier: 'catalog:'
         version: 7.0.1
+      '@infra/db-drizzle':
+        specifier: workspace:*
+        version: link:../../infrastructure/database/drizzle
       '@nestjs/common':
         specifier: 'catalog:'
         version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
@@ -1474,9 +1477,6 @@ importers:
 
   infrastructure/database/drizzle:
     dependencies:
-      '@feature/shared':
-        specifier: workspace:*
-        version: link:../../../feature/shared
       '@nestjs/common':
         specifier: 'catalog:'
         version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)

@@ -1,12 +1,17 @@
 import { defineRelationsPart } from 'drizzle-orm';
 import { couriers } from '../actors/tables/couriers.schema';
 import { customers } from '../actors/tables/customers.schema';
+import { merchandiseLine } from '../public';
 import * as schemas from './table';
 
 export const orderRelations = defineRelationsPart(
-  { ...{ ...schemas, couriers, customers } },
+  { ...{ ...schemas, couriers, customers, merchandiseLine } },
   (r) => ({
     orders: {
+      merchandiseLines: r.many.merchandiseLine({
+        from: r.orders.id,
+        to: r.merchandiseLine.orderId,
+      }),
       payment: r.one.payments({
         from: r.orders.id,
         to: r.payments.orderId,

@@ -6,7 +6,12 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { DrizzleDbProvider } from './drizzle-db-provider';
 import { DrizzleTransactionContext } from './drizzle-transaction.context';
 import drizzleConfig from './drizzle.config';
-import { actorsRelations, orderRelations, warehouseRelations } from './schema';
+import {
+  actorsRelations,
+  orderRelations,
+  publicRelations,
+  warehouseRelations,
+} from './schema';
 
 @Global()
 @Module({
@@ -21,6 +26,7 @@ import { actorsRelations, orderRelations, warehouseRelations } from './schema';
           ...warehouseRelations,
           ...orderRelations,
           ...actorsRelations,
+          ...publicRelations,
         },
       }),
     }),
