@@ -1,16 +1,17 @@
 import type { CustomersApi } from '@feature/actors-api/customer';
 import { type CatalogApi } from '@feature/catalog-api';
 import { type PricingApi } from '@feature/pricing-api';
-import { Money, type SettingsStore } from '@feature/shared';
+import type { MerchandiseLine } from '@feature/shared/types/merchandise-line';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
+import { DrizzleSettingsStore } from '@infra/settings-store';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { type OrderRepository } from './order.repository';
 import { OrderSettings, orderSettings } from './order.settings';
+import { OrderRepository } from './repository/order.repository';
 
 @Injectable()
 export class OrderService {
@@ -18,12 +19,9 @@ export class OrderService {
     private readonly repository: OrderRepository,
     private readonly customers: CustomersApi,
     private readonly catalog: CatalogApi,
-    private readonly payment: PaymentApi,
     private readonly pricing: PricingApi,
-    private readonly fulfillment: FulfillmentApi,
-    private readonly delivery: DeliveryApi,
     private readonly tx: DrizzleTransactionContext,
-    private readonly settings: SettingsStore,
+    private readonly settings: DrizzleSettingsStore,
   ) {}
 
   async findById(orderId: string) {
@@ -43,34 +41,29 @@ export class OrderService {
 
   async placeOrder({
     customerId,
-    recipient,
+    delivery,
     items,
   }: {
     customerId: string;
-    recipient: {
+    delivery: {
       addressId: string;
-      carrierKey: string;
+      carrierKey?: string;
     };
     items: { productId: string; quantity: number }[];
-  }) {
-    // [NOTE]
-    // Only single order with pending payment state at a time
-    const hasPendingPayment =
-      await this.repository.hasPendingPaymentByCustomerId(customerId);
-    if (hasPendingPayment)
-      throw new ConflictException(
-        `Customer has none active none settled order`,
-      );
+  }): Promise<{ id: string }> {
+    if (items.length === 0)
+      throw new BadRequestException('Order must contain at least one item');
+    if (items.some((i) => !Number.isInteger(i.quantity) || i.quantity <= 0))
+      throw new BadRequestException('Item quantity must be a positive integer');
 
     const customer = await this.customers.findById(customerId);
 
-    const address = customer.addresses.find(
-      (a) => a.id === recipient.addressId,
-    );
-
+    const address = customer.addresses.find((a) => a.id === delivery.addressId);
     if (!address) throw new BadRequestException('Address not found');
-    if (address.scope === 'inter_city' && !recipient.carrierKey)
-      throw new Error();
+    if (address.scope === 'inter_city' && !delivery.carrierKey)
+      throw new BadRequestException(
+        'Carrier is required for inter-city delivery',
+      );
 
     const products = await this.catalog.findMany(items.map((i) => i.productId));
 
@@ -88,14 +81,86 @@ export class OrderService {
 
     const { cancellationFee } = await this.settings.get(orderSettings);
 
-    await this.repository.create({
-      customerId,
-      items: pricedInvoice.items,
-      cancellationTerms: {
-        fee: cancellationFee,
-      },
-      summary: pricedInvoice.summary,
+    const productsById = new Map(products.map((p) => [p.id, p]));
+    const merchandiseLines = items.map((item, index): MerchandiseLine => {
+      const product = productsById.get(item.productId);
+      const priced = priceResult.items[index];
+      if (!product || !priced || priced.productId !== item.productId)
+        throw new Error(
+          `Pricing result mismatch for product ${item.productId}`,
+        );
+
+      const discount = priced.discount && {
+        discountPerUnit: priced.discount.perUnit,
+        discountedQuantity: priced.discount.quantity,
+        totalDiscount: priced.discount.total,
+      };
+      const base = {
+        productId: product.id,
+        displayName: product.displayName,
+        quantity: priced.quantity,
+        unitPrice: priced.unitPrice,
+        lineTotal: priced.net,
+        ...(discount && { discount }),
+      };
+
+      if (product.kind === 'leaf') return { ...base, kind: 'leaf' };
+
+      const componentsByProductId = new Map(
+        (priced.components ?? []).map((c) => [c.productId, c]),
+      );
+      return {
+        ...base,
+        kind: 'bundle',
+        items: product.items.map((component) => {
+          const pricedComponent = componentsByProductId.get(component.id);
+          if (!pricedComponent)
+            throw new Error(`Missing priced component ${component.id}`);
+
+          return {
+            productId: component.id,
+            displayName: component.displayName,
+            quantity: pricedComponent.quantity,
+            unitPrice: pricedComponent.unitPrice,
+            lineTotal: pricedComponent.lineTotal,
+          };
+        }),
+      };
     });
+
+    const { totals } = priceResult;
+
+    return this.tx.run(() =>
+      this.repository.withLock('order:place', customerId, async () => {
+        // [NOTE]
+        // Only single order with pending payment state at a time
+        if (await this.repository.hasPendingPaymentByCustomerId(customerId))
+          throw new ConflictException(
+            'Customer already has an order awaiting payment',
+          );
+
+        return this.repository.create({
+          customerId,
+          merchandiseLines,
+          cancellationFee,
+          summary: {
+            subtotal: totals.subtotal,
+            discountTotal: totals.discount,
+            taxTotal: 0,
+            grandTotal: totals.net,
+          },
+          recipient: {
+            customerContact: {
+              fullName: customer.fullName,
+              phone: customer.phone,
+              type: customer.type,
+            },
+            ...address,
+          },
+          carrierKey: delivery.carrierKey,
+        });
+      }),
+    );
   }
 
   /**

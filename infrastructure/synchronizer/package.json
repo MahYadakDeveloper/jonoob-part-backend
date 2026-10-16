@@ -16,7 +16,6 @@
     }
   },
   "dependencies": {
-    "@feature/warehouse": "workspace:*",
     "@infra/db-redis": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",

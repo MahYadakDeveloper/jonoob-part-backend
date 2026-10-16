@@ -10,31 +10,6 @@ import {
 import { customers } from '../../actors/tables';
 import { orderSchema } from '../order.schema';
 
-type OrderItemDiscount = {
-  discountPerUnit: number;
-  discountedQuantity: number;
-  totalDiscount: number;
-};
-
-type OrderItemBase = {
-  productId: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
-};
-
-type OrderItem =
-  | (OrderItemBase & {
-      kind: 'leaf';
-      discount?: OrderItemDiscount;
-    })
-  | (OrderItemBase & {
-      kind: 'bundle';
-      discount?: OrderItemDiscount;
-      items: OrderItemBase[];
-    });
-
 export const cancellationFeeType = orderSchema.enum('cancellation_fee_type', [
   'fixed',
   'rate',
@@ -92,8 +67,6 @@ export const orders = orderSchema.table(
       onDelete: 'set null',
     }),
 
-    items: jsonb('items').$type<OrderItem[]>().notNull(),
-
     cancellationFee: jsonb('cancellationTerms')
       .$type<
         | {
@@ -113,7 +86,6 @@ export const orders = orderSchema.table(
   (t) => [
     index('orders_customer_id_idx').on(t.customerId),
     index('orders_created_at_idx').on(t.createdAt),
-    check('orders_items_is_array', sql`jsonb_typeof(${t.items}) = 'array'`),
     check(
       'orders_cancellation_fee_fields',
       sql`CASE

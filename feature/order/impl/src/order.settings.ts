@@ -1,19 +1,14 @@
-import { SettingToken } from '@feature/shared';
 import { z } from 'zod';
-import { CancellationFee } from './order.type';
 
 export const orderSettingsSchema = z.object({
   cancellationFee: z.discriminatedUnion('type', [
     z.object({
       type: z.literal('fixed'),
-      amount: z.object({
-        value: z.number().nonnegative(),
-        unit: z.literal('toman'),
-      }),
+      amount: z.number().int(),
     }),
     z.object({
       type: z.literal('rate'),
-      rate: z.number().min(0).max(100),
+      rate: z.number().min(0).max(1),
     }),
   ]),
 });
@@ -24,16 +19,11 @@ export const orderSettings = {
   defaultValue: {
     cancellationFee: {
       type: 'fixed',
-      amount: {
-        value: 0,
-        unit: 'toman',
-      },
+      amount: 0,
     },
   },
 
   schema: orderSettingsSchema,
-} as const satisfies SettingToken<{
-  cancellationFee: CancellationFee;
-}>;
+} as const;
 
 export type OrderSettings = z.infer<typeof orderSettingsSchema>;

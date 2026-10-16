@@ -125,7 +125,6 @@ export function toMerchandiseLineInsertPlans(
         (item, itemPosition): MerchandiseLineItemInsert => ({
           orderId: null,
           saleId: null,
-          bundleId: null,
           kind: 'leaf',
           position: itemPosition,
           productId: item.productId,

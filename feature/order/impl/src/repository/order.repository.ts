@@ -1,22 +1,20 @@
+import { toMerchandiseLineInsertPlans } from '@feature/shared/mappers/to-merchandise-line.mapper';
+import type { MerchandiseLine } from '@feature/shared/types/merchandise-line';
 import {
   DrizzleBaseRepository,
   DrizzleDbProvider,
   DrizzleTransactionContext,
 } from '@infra/db-drizzle';
 import {
+  deliveries,
   merchandiseLine,
   orderRelations,
   orders,
+  orderSummary,
   payments,
 } from '@infra/db-drizzle/schema';
 import { AsyncLocalStorage } from 'async_hooks';
-import type { MerchandiseLine } from '@feature/shared/types/merchandise-line';
-import { toMerchandiseLineInsertPlans } from '@feature/shared/mappers/to-merchandise-line.mapper';
-import {
-  CreateOrderData,
-  toOrderInsert,
-  toPaymentInsert,
-} from './order.mapper';
+import { and, eq } from 'drizzle-orm';
 
 export class OrderRepository extends DrizzleBaseRepository<
   typeof orderRelations
@@ -29,15 +27,39 @@ export class OrderRepository extends DrizzleBaseRepository<
     super(dbProvider, forUpdateCtx);
   }
 
-  create(
-    data: CreateOrderData & { merchandiseLines: MerchandiseLine[] },
-  ): Promise<{ id: string }> {
+  hasPendingPaymentByCustomerId(customerId: string): Promise<boolean> {
+    return this.db
+      .select({ id: orders.id })
+      .from(orders)
+      .innerJoin(payments, eq(payments.orderId, orders.id))
+      .where(
+        and(eq(orders.customerId, customerId), eq(payments.status, 'pending')),
+      )
+      .limit(1)
+      .then((rows) => rows.length > 0);
+  }
+
+  create(data: {
+    customerId: string;
+    cancellationFee: (typeof orders.$inferInsert)['cancellationFee'];
+    merchandiseLines: MerchandiseLine[];
+    summary: Omit<typeof orderSummary.$inferInsert, 'orderId'>;
+    recipient: (typeof deliveries.$inferInsert)['recipient'];
+    carrierKey?: string;
+  }): Promise<{ id: string }> {
     return this.tx.run(async () => {
       const [order] = await this.db
         .insert(orders)
-        .values(toOrderInsert(data))
+        .values({
+          customerId: data.customerId,
+          cancellationFee: data.cancellationFee,
+        })
         .returning({ id: orders.id });
       if (!order) throw new Error('Order insert did not return an ID');
+
+      await this.db
+        .insert(orderSummary)
+        .values({ ...data.summary, orderId: order.id });
 
       const plans = toMerchandiseLineInsertPlans(
         { orderId: order.id },
@@ -67,9 +89,14 @@ export class OrderRepository extends DrizzleBaseRepository<
       }
 
       // delivery
+      await this.db.insert(deliveries).values({
+        orderId: order.id,
+        recipient: data.recipient,
+        carrierKey: data.carrierKey ?? null,
+      });
 
       // payment
-      await this.db.insert(payments).values(toPaymentInsert(order.id));
+      await this.db.insert(payments).values({ orderId: order.id });
 
       return order;
     });

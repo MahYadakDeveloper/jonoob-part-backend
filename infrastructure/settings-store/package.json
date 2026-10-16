@@ -1,0 +1,25 @@
+{
+  "name": "@infra/settings-store",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@infra/db-drizzle": "workspace:*",
+    "@nestjs/common": "catalog:",
+    "@nestjs/drizzle": "catalog:",
+    "drizzle-orm": "catalog:",
+    "zod": "catalog:"
+  }
+}
