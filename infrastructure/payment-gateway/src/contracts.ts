@@ -15,15 +15,15 @@ export interface PaymentGateway {
   ): Promise<{ paymentUrl: string; ticketId: string }>;
 
   verifyPaymentTicket(
-    providerId: number,
+    paymentId: number,
     ticketId: string,
   ): Promise<TicketStatus>;
 
-  refundPaymentTicket(ticketId: string, providerId: number): Promise<void>;
+  refundPaymentTicket(paymentId: number, ticketId: string): Promise<void>;
 }
 
 export type CreatePaymentTicket = {
-  providerId: number; // payment id
+  paymentId: number; // payment id
   customer: {
     phone: string;
   };

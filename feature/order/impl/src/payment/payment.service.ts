@@ -72,10 +72,10 @@ export class PaymentService {
         if (payment.method === 'wallet') throw new Error();
 
         const gateway = this.gateways.resolve(payment.gatewayKey!);
-        const { status } = await gateway.verifyPaymentTicket({
-          providerId: payment.id,
-          ticketId: payment.trackingCode!,
-        });
+        const status = await gateway.verifyPaymentTicket(
+          payment.id,
+          payment.trackingCode!,
+        );
 
         switch (status) {
           case 'verified':

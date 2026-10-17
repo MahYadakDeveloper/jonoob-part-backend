@@ -9,19 +9,20 @@ export class DigipayGateway implements PaymentGateway {
   supportsPartialPayment: boolean;
   expiryInMinutes: number;
   verificationDeadlineInMinutes: number;
+
+  readonly name: string = 'digipay' as const;
   createPaymentTicket(
     request: CreatePaymentTicket,
   ): Promise<{ paymentUrl: string; ticketId: string }> {
     throw new Error('Method not implemented.');
   }
   verifyPaymentTicket(
-    providerId: number,
+    paymentId: number,
     ticketId: string,
   ): Promise<TicketStatus> {
     throw new Error('Method not implemented.');
   }
-  refundPaymentTicket(ticketId: string, providerId: number): Promise<void> {
+  refundPaymentTicket(paymentId: number, ticketId: string): Promise<void> {
     throw new Error('Method not implemented.');
   }
-  readonly name: string = 'digipay' as const;
 }

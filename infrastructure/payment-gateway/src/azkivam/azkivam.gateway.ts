@@ -49,15 +49,11 @@ export class AzkivamGateway implements PaymentGateway {
     this.setupApiInterceptor();
   }
 
-  refundPaymentTicket(ticketId: string, providerId: number): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-
   async createPaymentTicket({
     amount,
     customer,
     merchandise,
-    providerId,
+    paymentId,
   }: CreatePaymentTicket): Promise<{ paymentUrl: string; ticketId: string }> {
     const items = merchandise.map((item) => ({
       name: item.productName,
@@ -66,12 +62,12 @@ export class AzkivamGateway implements PaymentGateway {
       url: `${this.app.productsUrl}/${item.productId}`,
     }));
 
-    const callback = `${this.app.apiUrl}/payment/azkivam/callback?providerId=${providerId}`;
+    const callback = `${this.app.apiUrl}/payment/azkivam/callback?providerId=${paymentId}`;
 
     const data: AzkivamCreateTicketRequest = {
       amount: amount,
       mobile_number: customer.phone,
-      provider_id: providerId,
+      provider_id: paymentId,
       redirect_uri: callback,
       fallback_uri: callback,
       merchant_id: this.azkivam.merchantId,
@@ -89,16 +85,16 @@ export class AzkivamGateway implements PaymentGateway {
     };
   }
 
-  async verifyPaymentTicket(providerId: number): Promise<TicketStatus>;
+  async verifyPaymentTicket(paymentId: number): Promise<TicketStatus>;
   async verifyPaymentTicket(
-    providerId: number,
+    paymentId: number,
     ticketId: string,
   ): Promise<TicketStatus>;
   async verifyPaymentTicket(
-    providerId: number,
+    paymentId: number,
     ticketId?: string,
   ): Promise<TicketStatus> {
-    ticketId ??= await this.resolveTicketId(providerId);
+    ticketId ??= await this.resolveTicketId(paymentId);
 
     const status = await this.getTicketStatus(ticketId);
 
@@ -132,6 +128,10 @@ export class AzkivamGateway implements PaymentGateway {
       default:
         return 'failed';
     }
+  }
+
+  refundPaymentTicket(paymentId: number, ticketId: string): Promise<void> {
+    throw new Error('Method not implemented.');
   }
 
   // async getTicketStatus({
