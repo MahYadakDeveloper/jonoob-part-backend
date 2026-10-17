@@ -23,7 +23,7 @@
     "@feature/pricing-api": "workspace:*",
     "@feature/pricing-markup-api": "workspace:*",
     "@feature/procurement-api": "workspace:*",
-    "@nestjs/common": "^11.1.27",
+    "@nestjs/common": "catalog:",
     "zod": "^4.4.3"
   }
 }

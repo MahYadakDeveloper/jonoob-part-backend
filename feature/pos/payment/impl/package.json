@@ -20,7 +20,7 @@
     "@feature/shared": "workspace:*",
     "@feature/pos-payment-api": "workspace:*",
     "@feature/actors": "workspace:*",
-    "@nestjs/common": "^11.1.28",
+    "@nestjs/common": "catalog:",
     "zod": "^4.4.3"
   }
 }

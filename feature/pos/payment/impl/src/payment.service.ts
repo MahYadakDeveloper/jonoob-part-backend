@@ -1,6 +1,7 @@
 import {
   addDuration,
   Duration,
+  JOB_SCHEDULER,
   Money,
   Payment,
   SettingToken,
@@ -21,7 +22,7 @@ import {
   type PaymentApi,
 } from '@feature/payment-api';
 import { type WalletApi } from '@feature/wallet-api';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import z from 'zod';
 import { PaymentGatewayResolver } from './payment-gateway.resolver';
 import { type PaymentSessionRepository } from './payment-session.repository';
@@ -66,7 +67,7 @@ export class PaymentService implements PaymentApi {
     private readonly gateways: PaymentGatewayResolver,
     private readonly order: OrderApi,
     private readonly tx: TransactionManager,
-    private readonly job: JobScheduler,
+    @Inject(JOB_SCHEDULER) private readonly job: JobScheduler,
   ) {}
 
   async createPaymentSession(

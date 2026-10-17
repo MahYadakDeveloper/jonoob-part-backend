@@ -18,7 +18,7 @@
   "dependencies": {
     "@feature/media-api": "workspace:*",
     "@feature/media-image": "workspace:*",
-    "@nestjs/common": "^11.1.28",
+    "@nestjs/common": "catalog:",
     "sharp": "^0.35.4"
   }
 }

@@ -20,6 +20,6 @@
     "@feature/shared": "workspace:*",
     "@feature/settlement-api": "workspace:*",
     "@feature/actors": "workspace:*",
-    "@nestjs/common": "^11.1.28"
+    "@nestjs/common": "catalog:"
   }
 }

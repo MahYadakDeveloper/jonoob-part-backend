@@ -11,6 +11,11 @@ export const orderSettingsSchema = z.object({
       rate: z.number().min(0).max(1),
     }),
   ]),
+
+  expiry: z.object({
+    value: z.number().positive(),
+    unit: z.enum(['month', 'year', 'week', 'hour', 'minute']),
+  }),
 });
 
 export const orderSettings = {
@@ -20,6 +25,10 @@ export const orderSettings = {
     cancellationFee: {
       type: 'fixed',
       amount: 0,
+    },
+    expiry: {
+      value: 10,
+      unit: 'minute',
     },
   },
 

@@ -19,6 +19,6 @@
   "dependencies": {
     "@feature/shared": "workspace:*",
     "@feature/procurement-supply-supplier-api": "workspace:*",
-    "@nestjs/common": "^11.1.29"
+    "@nestjs/common": "catalog:"
   }
 }

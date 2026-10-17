@@ -23,7 +23,7 @@
     "@feature/tax": "workspace:*",
     "@feature/warehouse": "workspace:*",
     "@infra/persistent-common": "workspace:*",
-    "@nestjs/common": "^11.1.28",
+    "@nestjs/common": "catalog:",
     "mathjs": "^15.2.0",
     "redis": "^6.0.1"
   }

@@ -22,6 +22,6 @@
     "@feature/catalog-category-api": "workspace:*",
     "@feature/shared": "workspace:*",
     "@feature/pricing-markup-api": "workspace:*",
-    "@nestjs/common": "^11.1.28"
+    "@nestjs/common": "catalog:"
   }
 }

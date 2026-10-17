@@ -19,6 +19,7 @@ export const orderSummary = orderSchema.table(
   'order_summary',
   {
     orderId: uuid().references(() => orders.id, { onDelete: 'cascade' }),
+
     subtotal: bigint('subtotal', { mode: 'number' }).notNull(),
     discountTotal: bigint('discount_total', { mode: 'number' })
       .notNull()

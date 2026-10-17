@@ -10,8 +10,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { OrderRepository } from './order.repository';
 import { OrderSettings, orderSettings } from './order.settings';
-import { OrderRepository } from './repository/order.repository';
+import { BullmqJobScheduler } from '@infra/messaging-job-scheduler';
+import { ExpireOrderJob } from './expire-order.job';
+import { addDuration } from '@feature/shared/utils';
 
 @Injectable()
 export class OrderService {
@@ -22,6 +25,7 @@ export class OrderService {
     private readonly pricing: PricingApi,
     private readonly tx: DrizzleTransactionContext,
     private readonly settings: DrizzleSettingsStore,
+    private readonly job: BullmqJobScheduler,
   ) {}
 
   async findById(orderId: string) {
@@ -79,61 +83,19 @@ export class OrderService {
       items,
     );
 
-    const { cancellationFee } = await this.settings.get(orderSettings);
+    const { cancellationFee, expiry } = await this.settings.get(orderSettings);
 
-    const productsById = new Map(products.map((p) => [p.id, p]));
-    const merchandiseLines = items.map((item, index): MerchandiseLine => {
-      const product = productsById.get(item.productId);
-      const priced = priceResult.items[index];
-      if (!product || !priced || priced.productId !== item.productId)
-        throw new Error(
-          `Pricing result mismatch for product ${item.productId}`,
-        );
-
-      const discount = priced.discount && {
-        discountPerUnit: priced.discount.perUnit,
-        discountedQuantity: priced.discount.quantity,
-        totalDiscount: priced.discount.total,
-      };
-      const base = {
-        productId: product.id,
-        displayName: product.displayName,
-        quantity: priced.quantity,
-        unitPrice: priced.unitPrice,
-        lineTotal: priced.net,
-        ...(discount && { discount }),
-      };
-
-      if (product.kind === 'leaf') return { ...base, kind: 'leaf' };
-
-      const componentsByProductId = new Map(
-        (priced.components ?? []).map((c) => [c.productId, c]),
-      );
-      return {
-        ...base,
-        kind: 'bundle',
-        items: product.items.map((component) => {
-          const pricedComponent = componentsByProductId.get(component.id);
-          if (!pricedComponent)
-            throw new Error(`Missing priced component ${component.id}`);
-
-          return {
-            productId: component.id,
-            displayName: component.displayName,
-            quantity: pricedComponent.quantity,
-            unitPrice: pricedComponent.unitPrice,
-            lineTotal: pricedComponent.lineTotal,
-          };
-        }),
-      };
-    });
+    const merchandiseLines = this.buildMerchandiseLines(
+      items,
+      products,
+      priceResult.items,
+    );
 
     const { totals } = priceResult;
 
     return this.tx.run(() =>
       this.repository.withLock('order:place', customerId, async () => {
-        // [NOTE]
-        // Only single order with pending payment state at a time
+        // [NOTE] Only single order with pending payment state at a time
         if (await this.repository.hasPendingPaymentByCustomerId(customerId))
           throw new ConflictException(
             'Customer already has an order awaiting payment',
@@ -224,5 +186,58 @@ export class OrderService {
 
   async setSettings({ settings }: { settings: OrderSettings }) {
     await this.settings.set(orderSettings, settings);
+  }
+
+  private buildMerchandiseLines(
+    items: { productId: string; quantity: number }[],
+    products: Awaited<ReturnType<CatalogApi['findMany']>>,
+    prices: Awaited<ReturnType<PricingApi['price']>>['items'],
+  ): MerchandiseLine[] {
+    const productsById = new Map(products.map((p) => [p.id, p]));
+    const pricesById = new Map(prices.map((p) => [p.productId, p]));
+    return items.map((i): MerchandiseLine => {
+      const product = productsById.get(i.productId);
+      const priced = pricesById.get(i.productId);
+      if (!product || !priced || priced.productId !== i.productId)
+        throw new Error(`Pricing result mismatch for product ${i.productId}`);
+
+      const discount = priced.discount && {
+        discountPerUnit: priced.discount.perUnit,
+        discountedQuantity: priced.discount.quantity,
+        totalDiscount: priced.discount.total,
+      };
+
+      const base = {
+        productId: product.id,
+        displayName: product.displayName,
+        quantity: priced.quantity,
+        unitPrice: priced.unitPrice,
+        lineTotal: priced.net,
+        ...(discount && { discount }),
+      };
+
+      if (product.kind === 'leaf') return { ...base, kind: 'leaf' };
+
+      const componentsByProductId = new Map(
+        (priced.components ?? []).map((c) => [c.productId, c]),
+      );
+      return {
+        ...base,
+        kind: 'bundle',
+        items: product.items.map((component) => {
+          const pricedComponent = componentsByProductId.get(component.id);
+          if (!pricedComponent)
+            throw new Error(`Missing priced component ${component.id}`);
+
+          return {
+            productId: component.id,
+            displayName: component.displayName,
+            quantity: pricedComponent.quantity,
+            unitPrice: pricedComponent.unitPrice,
+            lineTotal: pricedComponent.lineTotal,
+          };
+        }),
+      };
+    });
   }
 }

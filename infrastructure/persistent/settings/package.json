@@ -21,6 +21,6 @@
   "dependencies": {
     "@feature/shared": "workspace:*",
     "@infra/persistent-common": "workspace:*",
-    "@nestjs/common": "^11.1.26"
+    "@nestjs/common": "catalog:"
   }
 }

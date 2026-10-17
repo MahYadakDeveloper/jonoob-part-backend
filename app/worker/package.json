@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@feature/authentication": "workspace:*",
+    "@infra/messaging-job-scheduler": "workspace:*",
     "@infra/messaging-queue": "workspace:*",
     "@nestjs/axios": "catalog:",
     "@nestjs/bullmq": "catalog:",

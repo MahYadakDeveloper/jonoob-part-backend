@@ -17,6 +17,6 @@
   },
   "dependencies": {
     "@feature/shared": "workspace:*",
-    "@nestjs/common": "^11.1.28"
+    "@nestjs/common": "catalog:"
   }
 }

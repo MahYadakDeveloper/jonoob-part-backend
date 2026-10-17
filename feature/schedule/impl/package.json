@@ -19,7 +19,7 @@
   "dependencies": {
     "@feature/shared": "workspace:*",
     "@feature/schedule-api": "workspace:*",
-    "@nestjs/common": "^12.0.1",
+    "@nestjs/common": "catalog:",
     "zod": "^4.4.3"
   }
 }

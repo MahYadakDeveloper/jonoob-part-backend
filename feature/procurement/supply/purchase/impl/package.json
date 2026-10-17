@@ -19,8 +19,8 @@
   "dependencies": {
     "@feature/shared": "workspace:*",
     "@feature/procurement-supply-purchase-api": "workspace:*",
-    "@nestjs/common": "^11.1.29",
-    "@nestjs/schedule": "^6.1.3",
+    "@nestjs/common": "catalog:",
+    "@nestjs/schedule": "catalog:",
     "zod": "^4.4.3"
   }
 }

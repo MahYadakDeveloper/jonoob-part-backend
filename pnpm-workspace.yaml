@@ -21,6 +21,8 @@ catalog:
   dotenv: ^17.4.2
   "@nestjs/cli": ^12.0.3
   "@nestjs/schedule": ^12.0.2
+  "@nestjs/event-emitter": ^12.0.1
+  "@nestjs/testing": ^12.0.1
   "@nestjs/drizzle": ^0.0.1
   "@nestjs/outbox": ^0.0.1
   bullmq: ^6.3.9
@@ -32,6 +34,7 @@ catalog:
   axios: ^1.20.0
   ioredis: ^6.0.0
   redlock: 5.0.0-beta.2
+  reflect-metadata: ^0.2.2
 
 overrides:
   fastify: "catalog:"

@@ -1,7 +1,13 @@
+import { PaymentGatewayModule } from '@infra/payment-gateway';
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
+import { PaymentCallbackHandler } from './payment/payment-callback.handler';
 
 @Module({
-  imports: [],
+  imports: [
+    PaymentGatewayModule.forRoot({
+      callbackHandler: PaymentCallbackHandler,
+    }),
+  ],
   providers: [],
   controllers: [],
 })
