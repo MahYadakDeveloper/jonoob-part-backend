@@ -22,13 +22,6 @@ export const jobName = (cls: Function): string => {
   return name;
 };
 
-export type JobHandle = {
-  id: string;
-  getExecutionDate(): Promise<Date>;
-  cancel(): Promise<void>;
-  update(date: Date): Promise<void>;
-};
-
 export interface ScheduledJobData {
   payload: unknown;
   runAt: string;

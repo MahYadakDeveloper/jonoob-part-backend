@@ -10,7 +10,10 @@ import { ManageOrderSettingsPolicy } from './policies/manage-settings-policy.han
 import { OrderAbilityFactory } from './policies/order-ability';
 import { ReadOrderPolicy } from './policies/read-order-policy.handler';
 import { RecordOrderPolicy } from './policies/record-order-policy.handler';
-import { recordOrderSchema, type RecordOrderType } from './schema/record-order.schema';
+import {
+  recordOrderSchema,
+  type RecordOrderType,
+} from './schema/record-order.schema';
 
 @Controller('order')
 export class OrderController {
@@ -30,14 +33,20 @@ export class OrderController {
    * handlers, which are resolved dynamically by PoliciesGuard through ModuleRef.
    */
   @UseGuards(AuthenticationGuard, PoliciesGuard)
-  @CheckPolicies({ abilityFactory: OrderAbilityFactory, handlers: [ReadOrderPolicy] })
+  @CheckPolicies({
+    abilityFactory: OrderAbilityFactory,
+    handlers: [ReadOrderPolicy],
+  })
   @Get(':id')
   order(@Param('id', { schema: z.object({}) }) orderId: string) {
     return this.orderService.findById({ orderId }).then(({ order }) => order);
   }
 
   @UseGuards(AuthenticationGuard, PoliciesGuard)
-  @CheckPolicies({ abilityFactory: OrderAbilityFactory, handlers: [RecordOrderPolicy] })
+  @CheckPolicies({
+    abilityFactory: OrderAbilityFactory,
+    handlers: [RecordOrderPolicy],
+  })
   @Post()
   record(
     @Body({ schema: recordOrderSchema }) body: RecordOrderType,
@@ -59,14 +68,20 @@ export class OrderController {
   }
 
   @UseGuards(AuthenticationGuard, PoliciesGuard)
-  @CheckPolicies({ abilityFactory: OrderAbilityFactory, handlers: [CancelOrderPolicy] })
+  @CheckPolicies({
+    abilityFactory: OrderAbilityFactory,
+    handlers: [CancelOrderPolicy],
+  })
   @Post(':id')
   cancel(@Param('id', { schema: z.uuid() }) orderId: string) {
     return this.orderService.cancelOrder({ orderId });
   }
 
   @UseGuards(AuthenticationGuard, PoliciesGuard)
-  @CheckPolicies({ abilityFactory: OrderAbilityFactory, handlers: [ManageOrderSettingsPolicy] })
+  @CheckPolicies({
+    abilityFactory: OrderAbilityFactory,
+    handlers: [ManageOrderSettingsPolicy],
+  })
   @Post()
   setSetting(@Body({ schema: orderSettingsSchema }) settings: OrderSettings) {
     this.orderService.setSettings({ settings });

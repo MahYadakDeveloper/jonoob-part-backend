@@ -49,7 +49,7 @@ export const payments = orderSchema.table(
       onDelete: 'set null',
     }),
 
-    expiryJobId: uuid('expiry_job_id').notNull(),
+    expiryJobId: uuid('expiry_job_id'),
 
     status: paymentStatus('status').notNull().default('pending'),
     method: paymentMethod('method'),

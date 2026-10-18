@@ -10,20 +10,22 @@ export interface PaymentGateway {
    */
   verificationDeadlineInMinutes: number;
 
-  createPaymentTicket(
-    request: CreatePaymentTicket,
-  ): Promise<{ paymentUrl: string; ticketId: string }>;
+  createPayment(
+    request: CreatePayment,
+  ): Promise<{ paymentUrl: string; trackingCode: string }>;
 
-  verifyPaymentTicket(
-    paymentId: number,
-    ticketId: string,
-  ): Promise<TicketStatus>;
+  verifyPayment(
+    providerId: number,
+    trackingCode: string,
+  ): Promise<PaymentStatus>;
 
-  refundPaymentTicket(paymentId: number, ticketId: string): Promise<void>;
+  cancelPayment(providerId: number, trackingCode: string): Promise<void>;
+
+  refundPayment(providerId: number, trackingCode: string): Promise<void>;
 }
 
-export type CreatePaymentTicket = {
-  paymentId: number; // payment id
+export type CreatePayment = {
+  providerId: number;
   customer: {
     phone: string;
   };
@@ -37,7 +39,7 @@ export type CreatePaymentTicket = {
   amount: number;
 };
 
-export type TicketStatus =
+export type PaymentStatus =
   | 'pending'
   | 'verified'
   | 'failed'

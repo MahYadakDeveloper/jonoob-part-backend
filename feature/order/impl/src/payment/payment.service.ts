@@ -1,23 +1,22 @@
 import type { WalletApi } from '@feature/actors-api/customer/wallet';
-import {
-  InvalidWalletPaymentAmountError,
-  Payment,
-  PaymentAllocation,
-  PaymentMethod,
-  RefundRequest,
-  SettleRequest,
-  SettleResponse,
-  WalletUsage,
-} from '@feature/order-payment-api';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
-import { PaymentGatewayResolver } from '@infra/payment-gateway';
+import { BullmqJobScheduler } from '@infra/messaging-job-scheduler';
+import { PaymentGatewayResolver, PaymentStatus } from '@infra/payment-gateway';
 import { RedlockSynchronizer } from '@infra/synchronizer';
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { DeliveryService } from '../delivery/delivery.service';
 import { FulfillmentService } from '../fulfillment/fulfillment.service';
-import { OrderRepository } from '../order.repository';
-import { TicketStatus } from './gateway.interface';
-import { PaymentRepository } from './payment.repository';
+import { ExpirePaymentJob } from './expire-payment.job';
+import { PaymentRepository, PaymentRow } from './payment.repository';
+import { PaymentMethodSelection } from './payment.schema';
+import { RefundRequest, SettlementResult } from './payment.types';
 
 /**
  * [NOTE] If the customer cancels the payment on the IPG, the payment
@@ -31,6 +30,11 @@ import { PaymentRepository } from './payment.repository';
  * The customer can then place the order again if desired.
  */
 
+type Allocation =
+  | { method: 'wallet'; amount: number }
+  | { method: 'gateway'; amount: number }
+  | { method: 'partial'; walletAmount: number; gatewayAmount: number };
+
 @Injectable()
 export class PaymentService {
   constructor(
@@ -39,455 +43,404 @@ export class PaymentService {
     private readonly gateways: PaymentGatewayResolver,
     private readonly tx: DrizzleTransactionContext,
     private readonly synchronizer: RedlockSynchronizer,
-    private readonly orders: OrderRepository,
     private readonly fulfillment: FulfillmentService,
     private readonly delivery: DeliveryService,
+    private readonly job: BullmqJobScheduler,
   ) {}
+
+  findById(paymentId: number) {
+    return this.repository.findById(paymentId);
+  }
+
+  findOwnerId(paymentId: number) {
+    return this.repository.findOwnerId(paymentId);
+  }
+
   findByOrderId(orderId: string) {
     return this.repository.findByOrderId(orderId);
   }
 
-  async expire(paymentId: number) {
-    const payment = await this.repository.findById(paymentId);
-    if (!payment) throw new Error();
-    if (payment.status !== 'pending') throw new Error();
-    if (payment.method === 'wallet') throw new Error();
+  async scheduleExpirePaymentJob(runAt: Date, orderId: string) {
+    const payment = await this.repository.findByOrderId(orderId);
+    if (!payment)
+      throw new NotFoundException(`Payment for order ${orderId} not found`);
 
-    await this.onFailed(
-      payment.id,
-      payment.orderId,
-      payment.method!,
-      payment.customerId!,
-      'expired',
-    );
+    const { jobId } = await this.job.schedule(ExpirePaymentJob, runAt, {
+      paymentId: payment.id,
+    });
+
+    try {
+      const updated = await this.repository.update(payment.id, {
+        expiryJobId: jobId,
+      });
+      if (updated.length === 0)
+        throw new InternalServerErrorException(
+          `Expire job ${jobId} could not be linked to payment ${payment.id}`,
+        );
+    } catch (error) {
+      // Don't leave an orphaned job that would expire a payment we can't track
+      await this.job.cancel(jobId).catch(() => undefined);
+      throw error;
+    }
   }
 
-  async verify(paymentId: number): Promise<TicketStatus> {
-    return this.synchronizer.executeExclusive(
-      `payment:verify:${paymentId}`,
-      async () => {
-        const payment = await this.repository.findById(paymentId);
-        if (!payment) throw new Error();
-        if (payment.status !== 'processing') throw new Error();
-        if (payment.method === 'wallet') throw new Error();
+  async cancelExpirePaymentJob(jobId: string) {
+    await this.job.cancel(jobId);
+  }
 
-        const gateway = this.gateways.resolve(payment.gatewayKey!);
-        const status = await gateway.verifyPaymentTicket(
-          payment.id,
-          payment.trackingCode!,
+  async expire(paymentId: number) {
+    return this.exclusive(paymentId, async () => {
+      const payment = await this.requirePayment(paymentId);
+      this.assertStatus(payment, 'pending');
+
+      await this.onFailed(payment, 'expired');
+    });
+  }
+
+  async verify(paymentId: number): Promise<PaymentStatus> {
+    return this.exclusive(paymentId, async () => {
+      const payment = await this.requirePayment(paymentId);
+      this.assertStatus(payment, 'processing');
+      if (payment.method === 'wallet')
+        throw new InternalServerErrorException(
+          `Wallet payment ${paymentId} cannot be verified`,
         );
 
-        switch (status) {
-          case 'verified':
-          case 'verified-before':
-            await this.onPaid(payment.id, payment.orderId);
-            break;
-          case 'pending':
-            break;
-          case 'expired':
-            await this.onFailed(
-              payment.id,
-              payment.orderId,
-              payment.method!,
-              payment.customerId!,
-              'expired',
-            );
-            break;
-          default:
-            await this.onFailed(
-              payment.id,
-              payment.orderId,
-              payment.method!,
-              payment.customerId!,
-              'failure',
-            );
-        }
+      const gateway = this.gateways.resolve(payment.gatewayKey!);
+      const status = await gateway.verifyPayment(
+        payment.id,
+        payment.trackingCode!,
+      );
 
-        return status;
-      },
-    );
+      switch (status) {
+        case 'verified':
+        case 'verified-before':
+          await this.onPaid(payment.id, payment.orderId);
+          break;
+        case 'pending':
+          break;
+        case 'expired':
+          await this.onFailed(payment, 'expired');
+          break;
+        default:
+          await this.onFailed(payment, 'failure');
+      }
+
+      return status;
+    });
+  }
+
+  async cancel(paymentId: number) {
+    return this.exclusive(paymentId, async () => {
+      const payment = await this.requirePayment(paymentId);
+      this.assertStatus(payment, 'processing');
+      if (payment.method === 'wallet')
+        throw new InternalServerErrorException(
+          `Wallet payment ${paymentId} cannot be canceled`,
+        );
+
+      const gateway = this.gateways.resolve(payment.gatewayKey!);
+      await gateway.cancelPayment(payment.id, payment.trackingCode!);
+
+      await this.tx.run(async () => {
+        if (payment.method === 'partial')
+          await this.refundToWallet(payment, payment.walletAmount!);
+
+        await this.repository.updateStatus(payment.id, { status: 'pending' });
+        await this.delivery.cancelDelivery(payment.orderId);
+      });
+    });
+  }
+
+  async settle(
+    paymentId: number,
+    selection: PaymentMethodSelection,
+  ): Promise<SettlementResult> {
+    return this.exclusive(paymentId, async () => {
+      const context = await this.repository.findSettleContext(paymentId);
+      if (!context)
+        throw new NotFoundException(`Payment ${paymentId} not found`);
+
+      const { payment, amount } = context;
+
+      this.assertStatus(payment, 'pending');
+
+      const allocation = await this.allocate(
+        payment.customerId!,
+        amount,
+        selection,
+      );
+
+      if (allocation.method === 'wallet') {
+        await this.settleWithWallet(payment, payment.customerId!, allocation);
+        return { status: 'paid' };
+      }
+
+      const paymentUrl = await this.settleWithGateway(
+        context,
+        payment.customerId!,
+        (selection as Extract<PaymentMethodSelection, { gatewayKey: string }>)
+          .gatewayKey,
+        allocation,
+      );
+      return { status: 'processing', paymentUrl };
+    });
+  }
+
+  async refund(req: RefundRequest): Promise<void> {
+    return this.exclusive(req.paymentId, async () => {
+      const payment = await this.requirePayment(req.paymentId);
+      this.assertStatus(payment, 'paid');
+
+      if (req.type === 'partial') {
+        const paidTotal =
+          payment.amount ?? payment.walletAmount! + payment.gatewayAmount!;
+        if (!Number.isSafeInteger(req.amount) || req.amount <= 0)
+          throw new BadRequestException(
+            'Refund amount must be a positive integer',
+          );
+        if (req.amount > paidTotal)
+          throw new BadRequestException(
+            `Refund amount ${req.amount} exceeds the paid amount ${paidTotal}`,
+          );
+
+        await this.tx.run(async () => {
+          await this.refundToWallet(payment, req.amount);
+          await this.repository.updateStatus(payment.id, {
+            status: 'refunded',
+            refundType: 'partial',
+            refundDestination: 'wallet',
+            refundedAmount: req.amount,
+          });
+        });
+        return;
+      }
+
+      // A failed gateway refund throws, so nothing is credited twice on retry.
+      if (payment.method !== 'wallet') {
+        const gateway = this.gateways.resolve(payment.gatewayKey!);
+        await gateway.refundPayment(payment.id, payment.trackingCode!);
+      }
+
+      await this.tx.run(async () => {
+        if (payment.method === 'wallet')
+          await this.refundToWallet(payment, payment.amount!);
+        if (payment.method === 'partial')
+          await this.refundToWallet(payment, payment.walletAmount!);
+
+        await this.repository.updateStatus(payment.id, {
+          status: 'refunded',
+          refundType: 'full',
+          refundDestination: payment.method!,
+        });
+      });
+    });
+  }
+
+  private async settleWithWallet(
+    payment: PaymentRow,
+    customerId: string,
+    { amount }: Extract<Allocation, { method: 'wallet' }>,
+  ) {
+    const settledAt = new Date();
+
+    await this.tx.run(async () => {
+      await this.wallet.withdraw({
+        amount,
+        customerId,
+        reason: 'payment',
+        idempotencyKey: this.walletKey(payment.id, settledAt, 'withdraw'),
+      });
+
+      const settled = await this.repository.settle(payment.id, {
+        status: 'paid',
+        method: 'wallet',
+        amount,
+        customerId,
+        settledAt,
+      });
+      if (!settled)
+        throw new ConflictException(
+          `Payment ${payment.id} is no longer pending`,
+        );
+
+      await this.fulfillment.fulfill({ orderId: payment.orderId });
+    });
+
+    if (payment.expiryJobId)
+      await this.cancelExpirePaymentJob(payment.expiryJobId);
+  }
+
+  /** Creates the gateway ticket first, so a gateway failure never costs the wallet. */
+  private async settleWithGateway(
+    context: NonNullable<
+      Awaited<ReturnType<PaymentRepository['findSettleContext']>>
+    >,
+    customerId: string,
+    gatewayKey: string,
+    allocation: Exclude<Allocation, { method: 'wallet' }>,
+  ): Promise<string> {
+    const { payment } = context;
+    const gateway = this.gateways.resolve(gatewayKey);
+    if (allocation.method === 'partial' && !gateway.supportsPartialPayment)
+      throw new BadRequestException(
+        `Gateway ${gatewayKey} does not support partial payment`,
+      );
+
+    if (payment.expiryJobId) {
+      const minutes =
+        gateway.expiryInMinutes + gateway.verificationDeadlineInMinutes;
+      await this.job.update(
+        payment.expiryJobId,
+        new Date(Date.now() + minutes * 60_000),
+      );
+    }
+
+    const { paymentUrl, trackingCode } = await gateway.createPayment({
+      providerId: payment.id,
+      customer: { phone: context.customerPhone },
+      merchandise: context.merchandise,
+      amount:
+        allocation.method === 'partial'
+          ? allocation.gatewayAmount
+          : allocation.amount,
+    });
+
+    const settledAt = new Date();
+    await this.tx.run(async () => {
+      if (allocation.method === 'partial')
+        await this.wallet.withdraw({
+          amount: allocation.walletAmount,
+          customerId,
+          reason: 'payment',
+          idempotencyKey: this.walletKey(payment.id, settledAt, 'withdraw'),
+        });
+
+      const settled = await this.repository.settle(payment.id, {
+        status: 'processing',
+        customerId,
+        settledAt,
+        gatewayKey,
+        trackingCode,
+        ...allocation,
+      });
+      if (!settled)
+        throw new ConflictException(
+          `Payment ${payment.id} is no longer pending`,
+        );
+    });
+
+    return paymentUrl;
+  }
+
+  private async allocate(
+    customerId: string,
+    amount: number,
+    selection: PaymentMethodSelection,
+  ): Promise<Allocation> {
+    if (selection.method === 'gateway') return { method: 'gateway', amount };
+
+    const { available } = await this.wallet.getBalance({
+      customerId: customerId,
+    });
+
+    if (selection.method === 'wallet') {
+      if (available < amount)
+        throw new UnprocessableEntityException(
+          `Insufficient wallet balance: requested ${amount}, available ${available}`,
+        );
+
+      return { method: 'wallet', amount };
+    }
+
+    const walletAmount =
+      selection.walletUsage.mode === 'full'
+        ? Math.min(available, amount)
+        : selection.walletUsage.amount;
+
+    if (!Number.isSafeInteger(walletAmount) || walletAmount <= 0)
+      throw new BadRequestException(
+        'Wallet payment amount must be a positive integer',
+      );
+    if (walletAmount >= amount)
+      throw new BadRequestException(
+        'Wallet covers the whole amount, use the wallet method instead',
+      );
+    if (walletAmount > available)
+      throw new UnprocessableEntityException(
+        `Insufficient wallet balance: requested ${walletAmount}, available ${available}`,
+      );
+
+    return {
+      method: 'partial',
+      walletAmount,
+      gatewayAmount: amount - walletAmount,
+    };
   }
 
   /** Payment and its order side effects commit or roll back together. */
   private async onPaid(paymentId: number, orderId: string) {
     await this.tx.run(async () => {
       await this.repository.updateStatus(paymentId, { status: 'paid' });
-      await this.fulfillment.fulfill({ orderId: orderId });
+      await this.fulfillment.fulfill({ orderId });
     });
   }
 
-  private async onFailed(
-    paymentId: number,
-    orderId: string,
-    method: PaymentMethod,
-    customerId: string,
-    status: 'expired' | 'failure',
-    allocation?: { walletAmount?: number },
-  ) {
+  private async onFailed(payment: PaymentRow, status: 'expired' | 'failure') {
     await this.tx.run(async () => {
-      await this.repository.updateStatus(paymentId, { status });
+      await this.repository.updateStatus(payment.id, { status });
 
-      if (method.method === 'partial' && allocation?.walletAmount) {
-        await this.wallet.deposit({
-          amount: allocation.walletAmount,
-          customerId: customerId,
-          reason: 'refund',
-          idempotencyKey: `payment:expiration:${orderId}`,
-        });
-      }
+      if (payment.method === 'partial')
+        await this.refundToWallet(payment, payment.walletAmount!);
 
-      await this.delivery.cancelDelivery(orderId);
+      await this.delivery.cancelDelivery(payment.orderId);
     });
   }
 
-  async cancel(paymentId: number) {
+  /**
+   * Cancel, failure and refund are mutually exclusive for one settle attempt,
+   * so they share a key; a new attempt gets a new key.
+   */
+  private refundToWallet(payment: PaymentRow, amount: number) {
+    if (!payment.customerId || !payment.settleRequestedAt)
+      throw new InternalServerErrorException(
+        `Payment ${payment.id} has no settled customer to refund`,
+      );
+
+    return this.wallet.deposit({
+      amount,
+      customerId: payment.customerId,
+      reason: 'refund',
+      idempotencyKey: this.walletKey(
+        payment.id,
+        payment.settleRequestedAt,
+        'refund',
+      ),
+    });
+  }
+
+  private walletKey(
+    paymentId: number,
+    settledAt: Date,
+    operation: 'withdraw' | 'refund',
+  ) {
+    return `payment:${paymentId}:${settledAt.getTime()}:${operation}`;
+  }
+
+  private exclusive<T>(paymentId: number, work: () => Promise<T>): Promise<T> {
+    return this.synchronizer.executeExclusive(`payment:${paymentId}`, work);
+  }
+
+  private async requirePayment(paymentId: number): Promise<PaymentRow> {
     const payment = await this.repository.findById(paymentId);
-    if (!payment) throw new Error();
-    if (payment.status !== 'processing') throw new Error();
-    if (payment.method === 'wallet') throw new Error();
-
-    await this.repository.updateStatus(paymentId, { status: 'pending' });
-    if (payment.method === 'partial')
-      await this.wallet.deposit({
-        amount: payment.walletAmount!,
-        customerId: payment.customerId!,
-        reason: 'refund',
-        idempotencyKey: `payment:expiration:${payment.orderId}`,
-      });
+    if (!payment) throw new NotFoundException(`Payment ${paymentId} not found`);
+    return payment;
   }
 
-  async settle<T extends PaymentMethod>(
-    req: SettleRequest<T>,
-  ): Promise<SettleResponse> {
-    return await this.synchronizer.executeExclusive(
-      `payment:settle:${req.sessionId}`,
-      async () => {
-        const payment = await this.repository.findById(req.sessionId);
-        if (!payment) throw new Error();
-        if (payment.status !== 'pending') throw new Error();
-
-        const allocation = await this.allocatePayment({
-          amount: payment.amount,
-          customerId: req.customerId,
-          walletUsage: req.method === 'wallet' ? req.walletUsage : undefined,
-        });
-
-        switch (req.method) {
-          case 'wallet':
-            const walletAllocation = allocation as PaymentAllocation<'wallet'>;
-            return await this.tx.run(async () => {
-              await this.wallet.withdraw({
-                amount: walletAllocation.amount,
-                customerId: req.customerId,
-                reason: 'payment',
-                referenceId: session.orderId,
-                idempotencyKey: `order-payment:${session.orderId}`,
-              });
-
-              await this.repository.updatePaymentStatusTo<'paid'>({
-                sessionId: session.sessionId,
-                status: 'paid',
-                method: 'wallet',
-                allocation: walletAllocation,
-                paidAt: new Date(),
-              });
-
-              return {
-                payment: {
-                  sessionId: session.sessionId,
-                  status: 'paid',
-                  method: 'wallet',
-                  allocation: walletAllocation,
-                  paidAt: new Date(),
-                },
-              };
-            });
-          case 'gateway': {
-            if (!req.gatewayKey) throw new Error();
-
-            const gateway = this.gateways.resolve(req.gatewayKey);
-            const expireAt = new Date();
-            expireAt.setMinutes(
-              expireAt.getMinutes() +
-                gateway.expiryInMinutes +
-                gateway.verificationDeadlineInMinutes,
-            );
-
-            await this.job.update(session.expiryJob.id, expireAt);
-
-            const { paymentUrl, ticketId } = await gateway.createPaymentTicket({
-              providerId: session.sessionId,
-              customerContact: session.customer.contact,
-              purchasedItems: session.purchasedItems,
-              amount:
-                allocation.kind === 'partial'
-                  ? allocation.gatewayAmount
-                  : allocation.amount,
-            });
-
-            return await this.tx.run(async () => {
-              await this.repository.updatePaymentStatusTo<'pending'>({
-                sessionId: session.sessionId,
-                expiryJob: session.expiryJob,
-                trackingCode: ticketId,
-                status: 'pending',
-                allocation: allocation as PaymentAllocation<'gateway'>,
-                gatewayKey: req.gatewayKey,
-                method: req.method,
-              });
-
-              return {
-                payment: {
-                  sessionId: session.sessionId,
-                  status: 'pending',
-                  allocation: allocation as PaymentAllocation<'gateway'>,
-                  gatewayKey: req.gatewayKey,
-                  method: req.method,
-                  trackingCode: ticketId,
-                },
-                paymentUrl,
-              };
-            });
-          }
-
-          case 'partial': {
-            await this.wallet.withdraw({
-              amount: (allocation as PaymentAllocation<'partial'>).walletAmount,
-              customerId: req.customerId,
-              reason: 'payment',
-              referenceId: session.orderId,
-              idempotencyKey: `order-payment:${session.orderId}`,
-            });
-            if (!req.gatewayKey) throw new Error();
-
-            const gateway = this.gateways.resolve(req.gatewayKey);
-            if (!gateway.supportsPartialPayment) throw new Error();
-
-            const expireAt = new Date();
-            expireAt.setMinutes(
-              expireAt.getMinutes() +
-                gateway.expiryInMinutes +
-                gateway.verificationDeadlineInMinutes,
-            );
-
-            await this.job.update(session.expiryJob.id, expireAt);
-
-            const { paymentUrl, ticketId } = await gateway.createPaymentTicket({
-              providerId: session.sessionId,
-              customerContact: session.customer.contact,
-              purchasedItems: session.purchasedItems,
-              amount:
-                allocation.kind === 'partial'
-                  ? allocation.gatewayAmount
-                  : allocation.amount,
-            });
-
-            return await this.tx.run(async () => {
-              await this.repository.updatePaymentStatusTo<'pending'>({
-                sessionId: session.sessionId,
-                expiryJob: session.expiryJob,
-                trackingCode: ticketId,
-                status: 'pending',
-                allocation: allocation as PaymentAllocation<'partial'>,
-                gatewayKey: req.gatewayKey,
-                method: req.method,
-              });
-
-              return {
-                payment: {
-                  sessionId: session.sessionId,
-                  status: 'pending',
-                  allocation: allocation as PaymentAllocation<'partial'>,
-                  gatewayKey: req.gatewayKey,
-                  method: req.method,
-                  trackingCode: ticketId,
-                },
-                paymentUrl,
-              };
-            });
-          }
-          default:
-            throw new Error('Unhandled payment method');
-        }
-      },
-    );
-  }
-
-  async refund(req: RefundRequest): Promise<void> {
-    const { sessionId, customerId } = req;
-    const session = await this.repository.findById(sessionId);
-    if (!session) throw new Error();
-    if (session.status !== 'paid') throw new Error();
-
-    // None full refund amount
-    if (req.type === 'partial') {
-      await this.tx.run(async () => {
-        await this.wallet.deposit({
-          amount: req.amount, // total amount to refund into wallet
-          customerId,
-          reason: 'refund',
-          referenceId: session.orderId,
-          idempotencyKey: `payment:refunded-order-payment:${session.orderId}`,
-        });
-        await this.repository.updatePaymentStatusTo<'refunded'>({
-          ...session,
-          type: 'partial',
-          refundedAt: new Date(),
-          destination: 'wallet',
-          refundedAmount: req.amount,
-          status: 'refunded',
-        });
-      });
-      return;
-    }
-
-    switch (session.method) {
-      case 'partial': {
-        const gateway = this.gateways.resolve(session.gatewayKey);
-        const { result } = await gateway.refundPaymentTicket({
-          providerId: sessionId,
-          ticketId: session.trackingCode,
-        });
-
-        if (result === 'refunded') {
-          await this.tx.run(async () => {
-            await this.wallet.deposit({
-              amount: session.allocation.walletAmount,
-              customerId,
-              reason: 'refund',
-              referenceId: session.orderId,
-              idempotencyKey: `payment:refunded-order-payment:${session.orderId}`,
-            });
-            await this.repository.updatePaymentStatusTo<'refunded'>({
-              ...session,
-              refundedAt: new Date(),
-              type: 'full',
-              destination: 'partial',
-              ...session.allocation,
-              status: 'refunded',
-            });
-          });
-          break;
-        }
-      }
-      /**
-       * this case is also merged to partial if can be refunded the partial gatewayAmount with gateway
-       */
-      case 'wallet': {
-        await this.tx.run(async () => {
-          await this.wallet.deposit({
-            amount: session.amount, // total amount to refund into wallet
-            customerId,
-            reason: 'refund',
-            referenceId: session.orderId,
-            idempotencyKey: `payment:refunded-order-payment:${session.orderId}`,
-          });
-          await this.repository.updatePaymentStatusTo<'refunded'>({
-            ...session,
-            refundedAt: new Date(),
-            type: 'full',
-            destination: 'wallet',
-            status: 'refunded',
-          });
-        });
-        break;
-      }
-      case 'gateway': {
-        const gateway = this.gateways.resolve(session.gatewayKey);
-        const { result } = await gateway.refundPaymentTicket({
-          providerId: sessionId,
-          ticketId: session.trackingCode,
-        });
-
-        if (result === 'refunded') {
-          const data = {
-            ...session,
-            refundedAt: new Date(),
-            type: 'full',
-            destination: 'gateway',
-            status: 'refunded',
-          } satisfies Extract<Payment, { status: 'refunded' }>;
-          await this.repository.updatePaymentStatusTo<'refunded'>(data);
-          break;
-        }
-
-        await this.tx.run(async () => {
-          await this.wallet.deposit({
-            amount: session.allocation.amount,
-            customerId,
-            reason: 'refund',
-            referenceId: session.orderId,
-            idempotencyKey: `order-refunded:${session.orderId}`,
-          });
-
-          await this.repository.updatePaymentStatusTo<'refunded'>({
-            ...session,
-            refundedAt: new Date(),
-            type: 'full',
-            destination: 'wallet',
-            status: 'refunded',
-          });
-        });
-      }
-    }
-  }
-
-  private async allocatePayment({
-    amount,
-    customerId,
-    walletUsage,
-  }: {
-    amount: number;
-    customerId: string;
-    walletUsage?: WalletUsage;
-  }): Promise<PaymentAllocation<PaymentMethod>> {
-    let walletAmount = 0;
-
-    if (walletUsage) {
-      if (walletUsage.mode === 'full') {
-        walletAmount = Math.min(balance.available, amount);
-      } else {
-        if (walletUsage.amount.lte(Money.zero())) {
-          throw new InvalidWalletPaymentAmountError(walletUsage.amount);
-        }
-
-        if (walletUsage.amount.gt(amount)) {
-          throw new Error(`
-            walletUsage.amount,
-            amount,
-            `);
-        }
-
-        if (balance.available.lt(walletUsage.amount)) {
-          throw new Error(`
-            customerId,
-            walletUsage.amount,
-            balance.available,
-            `);
-        }
-
-        walletAmount = walletUsage.amount;
-      }
-    }
-
-    const remaining = amount - walletAmount;
-
-    const allocation: PaymentAllocation<PaymentMethod> = remaining.isZero()
-      ? {
-          kind: 'wallet',
-          amount,
-        }
-      : walletAmount.isZero()
-        ? {
-            kind: 'gateway',
-            amount,
-          }
-        : {
-            kind: 'partial',
-            walletAmount,
-            gatewayAmount: remaining,
-          };
-
-    return allocation;
+  private assertStatus(payment: PaymentRow, expected: PaymentRow['status']) {
+    if (payment.status !== expected)
+      throw new ConflictException(
+        `Payment ${payment.id} is ${payment.status}, expected ${expected}`,
+      );
   }
 }

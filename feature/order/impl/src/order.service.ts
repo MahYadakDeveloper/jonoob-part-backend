@@ -2,6 +2,7 @@ import type { CustomersApi } from '@feature/actors-api/customer';
 import { type CatalogApi } from '@feature/catalog-api';
 import { type PricingApi } from '@feature/pricing-api';
 import type { MerchandiseLine } from '@feature/shared/types/merchandise-line';
+import { addDuration } from '@feature/shared/utils';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { DrizzleSettingsStore } from '@infra/settings-store';
 import {
@@ -12,9 +13,7 @@ import {
 } from '@nestjs/common';
 import { OrderRepository } from './order.repository';
 import { OrderSettings, orderSettings } from './order.settings';
-import { BullmqJobScheduler } from '@infra/messaging-job-scheduler';
-import { ExpireOrderJob } from './expire-order.job';
-import { addDuration } from '@feature/shared/utils';
+import { PaymentService } from './payment/payment.service';
 
 @Injectable()
 export class OrderService {
@@ -23,9 +22,9 @@ export class OrderService {
     private readonly customers: CustomersApi,
     private readonly catalog: CatalogApi,
     private readonly pricing: PricingApi,
+    private readonly payments: PaymentService,
     private readonly tx: DrizzleTransactionContext,
     private readonly settings: DrizzleSettingsStore,
-    private readonly job: BullmqJobScheduler,
   ) {}
 
   async findById(orderId: string) {
@@ -101,7 +100,7 @@ export class OrderService {
             'Customer already has an order awaiting payment',
           );
 
-        return this.repository.create({
+        const { id } = await this.repository.create({
           customerId,
           merchandiseLines,
           cancellationFee,
@@ -121,6 +120,12 @@ export class OrderService {
           },
           carrierKey: delivery.carrierKey,
         });
+
+        const runAt = addDuration(new Date(), expiry);
+
+        await this.payments.scheduleExpirePaymentJob(runAt, id);
+
+        return { id };
       }),
     );
   }

@@ -2,6 +2,8 @@ import {
   CommitFrozenAmountRequest,
   FreezeWalletAmountRequest,
   FrozenBalanceResponse,
+  GetWalletBalanceRequest,
+  GetWalletBalanceResponse,
   ReleaseFrozenAmountRequest,
   WalletApi,
   WalletDepositRequest,
@@ -31,6 +33,20 @@ export class WalletService implements WalletApi {
     criteria: Parameters<WalletRepository['pageTransactions']>[1],
   ) {
     return this.repository.pageTransactions(customerId, criteria);
+  }
+
+  async getBalance({
+    customerId,
+  }: GetWalletBalanceRequest): Promise<GetWalletBalanceResponse> {
+    const wallet = await this.repository.findByCustomerId(customerId);
+    if (!wallet) throw new NotFoundException('Customer has no wallet!');
+
+    const frozen = await this.repository.getFrozenTotal(wallet.id);
+    return {
+      total: wallet.total,
+      frozen,
+      available: wallet.total - frozen,
+    };
   }
 
   deposit(req: WalletDepositRequest): Promise<WalletTransactionResponse> {

@@ -43,7 +43,6 @@ export class OrderRepository extends DrizzleBaseRepository<
     customerId: string;
     cancellationFee: (typeof orders.$inferInsert)['cancellationFee'];
     merchandiseLines: MerchandiseLine[];
-    expiryJobId: string;
     summary: Omit<typeof orderSummary.$inferInsert, 'orderId'>;
     recipient: (typeof deliveries.$inferInsert)['recipient'];
     carrierKey?: string;
@@ -54,7 +53,6 @@ export class OrderRepository extends DrizzleBaseRepository<
         .values({
           customerId: data.customerId,
           cancellationFee: data.cancellationFee,
-          expiryJobId: data.expiryJobId,
         })
         .returning({ id: orders.id });
       if (!order) throw new Error('Order insert did not return an ID');

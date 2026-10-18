@@ -17,6 +17,7 @@
   },
   "private": true,
   "dependencies": {
+    "@casl/ability": "catalog:",
     "@feature/actors-api": "workspace:*",
     "@feature/cashback-api": "workspace:*",
     "@feature/catalog-api": "workspace:*",

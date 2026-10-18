@@ -3,19 +3,17 @@ import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import {
-  CreatePaymentTicket,
-  PaymentGateway,
-  TicketStatus,
-} from '../contracts';
+import { CreatePayment, PaymentGateway, PaymentStatus } from '../contracts';
 import { AzkivamTokenStore } from './azkivam-token.store';
 import { azkivamConfig } from './azkivam.config';
 import {
   AzkivamAuthRequest,
   AzkivamAuthResponse,
+  AzkivamCancelTicketRequest,
   AzkivamCreateTicketRequest,
   AzkivamCreateTicketResponse,
   AzkivamRefreshTokenResponse,
+  AzkivamReverseTicketRequest,
   AzkivamTicketStatus,
   AzkivamTicketStatusRequest,
   AzkivamTicketStatusResponse,
@@ -29,6 +27,7 @@ export class AzkivamGateway implements PaymentGateway {
   readonly key: string = 'azkivam' as const;
   readonly expiryInMinutes: number = 1;
   readonly verificationDeadlineInMinutes: number = 1;
+
   readonly supportsPartialPayment: boolean = false;
 
   private readonly api: HttpService['axiosRef'];
@@ -49,12 +48,12 @@ export class AzkivamGateway implements PaymentGateway {
     this.setupApiInterceptor();
   }
 
-  async createPaymentTicket({
+  async createPayment({
     amount,
     customer,
     merchandise,
-    paymentId,
-  }: CreatePaymentTicket): Promise<{ paymentUrl: string; ticketId: string }> {
+    providerId,
+  }: CreatePayment): Promise<{ paymentUrl: string; trackingCode: string }> {
     const items = merchandise.map((item) => ({
       name: item.productName,
       count: item.quantity,
@@ -62,12 +61,12 @@ export class AzkivamGateway implements PaymentGateway {
       url: `${this.app.productsUrl}/${item.productId}`,
     }));
 
-    const callback = `${this.app.apiUrl}/payment/azkivam/callback?providerId=${paymentId}`;
+    const callback = `${this.app.apiUrl}/payment/azkivam/callback?providerId=${providerId}`;
 
     const data: AzkivamCreateTicketRequest = {
       amount: amount,
       mobile_number: customer.phone,
-      provider_id: paymentId,
+      provider_id: providerId,
       redirect_uri: callback,
       fallback_uri: callback,
       merchant_id: this.azkivam.merchantId,
@@ -81,21 +80,14 @@ export class AzkivamGateway implements PaymentGateway {
 
     return {
       paymentUrl: res.data.result.payment_uri,
-      ticketId: res.data.result.ticket_id,
+      trackingCode: res.data.result.ticket_id,
     };
   }
 
-  async verifyPaymentTicket(paymentId: number): Promise<TicketStatus>;
-  async verifyPaymentTicket(
-    paymentId: number,
+  async verifyPayment(
+    providerId: number,
     ticketId: string,
-  ): Promise<TicketStatus>;
-  async verifyPaymentTicket(
-    paymentId: number,
-    ticketId?: string,
-  ): Promise<TicketStatus> {
-    ticketId ??= await this.resolveTicketId(paymentId);
-
+  ): Promise<PaymentStatus> {
     const status = await this.getTicketStatus(ticketId);
 
     switch (status) {
@@ -130,8 +122,49 @@ export class AzkivamGateway implements PaymentGateway {
     }
   }
 
-  refundPaymentTicket(paymentId: number, ticketId: string): Promise<void> {
-    throw new Error('Method not implemented.');
+  async cancelPayment(providerId: number, ticketId: string): Promise<void> {
+    const status = await this.getTicketStatus(ticketId);
+
+    // Already reversed: retrying a refund must be a no-op.
+    if (status === 'canceled') return;
+    if (status !== 'created') {
+      throw new Error(
+        `Azkivam ticket ${ticketId} (payment ${providerId}) cannot be canceled in status "${status}"`,
+      );
+    }
+
+    const res = await this.api.post(this.azkivam.cancelTicketEndpoint, {
+      ticket_id: ticketId,
+    } satisfies AzkivamCancelTicketRequest);
+
+    if (res.status !== 200) {
+      throw new Error(
+        `Azkivam cancel failed for ticket ${ticketId} (payment ${providerId}): HTTP ${res.status}`,
+      );
+    }
+  }
+
+  async refundPayment(providerId: number, ticketId: string): Promise<void> {
+    const status = await this.getTicketStatus(ticketId);
+
+    // Already reversed: retrying a refund must be a no-op.
+    if (status === 'reversed') return;
+    if (!new Set(['done', 'verified']).has(status)) {
+      throw new Error(
+        `Azkivam ticket ${ticketId} (payment ${providerId}) cannot be reversed in status "${status}"`,
+      );
+    }
+
+    const res = await this.api.post(this.azkivam.reverseTicketEndpoint, {
+      ticket_id: ticketId,
+      provider_id: providerId,
+    } satisfies AzkivamReverseTicketRequest);
+
+    if (res.status !== 200) {
+      throw new Error(
+        `Azkivam reverse failed for ticket ${ticketId} (payment ${providerId}): HTTP ${res.status}`,
+      );
+    }
   }
 
   // async getTicketStatus({
@@ -157,11 +190,6 @@ export class AzkivamGateway implements PaymentGateway {
   //       return { status: 'reversed' };
   //   }
   // }
-
-  private async resolveTicketId(providerId: number): Promise<string> {
-    // TODO: resolve the ticket id from the repository using the provider id.
-    throw new Error(`Ticket id resolution not implemented for ${providerId}`);
-  }
 
   private async getTicketStatus(
     ticketId: string,

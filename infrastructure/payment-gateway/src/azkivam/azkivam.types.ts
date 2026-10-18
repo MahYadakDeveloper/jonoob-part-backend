@@ -25,6 +25,15 @@ export type AzkivamVerifyTicketRequest = {
   ticket_id: string;
 };
 
+export type AzkivamReverseTicketRequest = {
+  ticket_id: string;
+  provider_id: number;
+};
+
+export type AzkivamCancelTicketRequest = {
+  ticket_id: string;
+};
+
 export type AzkivamAuthResponse = {
   accessToken: string;
   refreshToken: string;

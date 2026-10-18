@@ -3,7 +3,6 @@ import { Injectable, Type } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { randomUUID } from 'node:crypto';
 import {
-  JobHandle,
   JobHandler,
   jobName,
   ScheduleArgs,
@@ -22,7 +21,7 @@ export class BullmqJobScheduler {
     job: Type<H>,
     date: Date,
     ...args: ScheduleArgs<H>
-  ): Promise<JobHandle> {
+  ): Promise<{ jobId: string }> {
     const id = randomUUID();
     await this.queue.add(
       jobName(job),
@@ -35,7 +34,7 @@ export class BullmqJobScheduler {
         removeOnComplete: true,
       },
     );
-    return this.handle(id);
+    return { jobId: id };
   }
 
   async getExecutionDate(jobId: string): Promise<Date> {
@@ -62,14 +61,5 @@ export class BullmqJobScheduler {
     const job = await this.queue.getJob(jobId);
     if (!job) throw new Error(`Job ${jobId} not found`);
     return job;
-  }
-
-  handle(id: string): JobHandle {
-    return {
-      id,
-      getExecutionDate: () => this.getExecutionDate(id),
-      cancel: () => this.cancel(id),
-      update: (date) => this.update(id, date),
-    };
   }
 }

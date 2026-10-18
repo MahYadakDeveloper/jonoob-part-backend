@@ -62,6 +62,17 @@ export class WalletRepository extends DrizzleBaseRepository<
     return inserted[0];
   }
 
+  async getFrozenTotal(walletId: string): Promise<number> {
+    const [row] = await this.db
+      .select({
+        frozen: sql<number>`coalesce(sum(${freezedAmounts.amount}), 0)::bigint`,
+      })
+      .from(freezedAmounts)
+      .where(eq(freezedAmounts.walletId, walletId));
+
+    return Number(row?.frozen ?? 0);
+  }
+
   increaseBalance(walletId: string, amount: number) {
     return this.db
       .update(wallets)

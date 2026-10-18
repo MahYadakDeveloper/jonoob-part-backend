@@ -687,6 +687,9 @@ importers:
 
   feature/order/impl:
     dependencies:
+      '@casl/ability':
+        specifier: 'catalog:'
+        version: 7.0.1
       '@feature/actors-api':
         specifier: workspace:*
         version: link:../../actors/api

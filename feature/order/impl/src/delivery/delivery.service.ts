@@ -98,7 +98,7 @@ export class DeliveryService {
     });
   }
 
-  async cancelDelivery(req: { orderId: string }): Promise<void> {
+  async cancelDelivery(orderId: string): Promise<void> {
     const delivery = await this.repository.findByOrderId(req.orderId);
     switch (delivery.status) {
       case 'initial':

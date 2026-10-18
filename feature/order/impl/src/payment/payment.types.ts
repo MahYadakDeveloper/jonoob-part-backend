@@ -15,3 +15,16 @@ export type PaymentAllocation<T extends PaymentMethod> = T extends 'wallet'
         walletAmount: number;
         gatewayAmount: number;
       };
+
+export type RefundRequest =
+  | { type: 'full'; paymentId: number }
+  | { type: 'partial'; paymentId: number; amount: number };
+
+export type SettlementResult =
+  | {
+      status: 'processing';
+      paymentUrl: string;
+    }
+  | {
+      status: 'paid';
+    };

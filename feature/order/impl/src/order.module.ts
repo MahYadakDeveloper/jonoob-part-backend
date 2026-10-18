@@ -1,6 +1,9 @@
 import { PaymentGatewayModule } from '@infra/payment-gateway';
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { PaymentCallbackHandler } from './payment/payment-callback.handler';
+import { PaymentController } from './payment/payment.controller';
+import { PaymentAbilityFactory } from './payment/policy/payment-ability';
+import { SettlementPolicyHandler } from './payment/policy/settlement.policy-handler';
 
 @Module({
   imports: [
@@ -8,8 +11,8 @@ import { PaymentCallbackHandler } from './payment/payment-callback.handler';
       callbackHandler: PaymentCallbackHandler,
     }),
   ],
-  providers: [],
-  controllers: [],
+  providers: [PaymentAbilityFactory, SettlementPolicyHandler],
+  controllers: [PaymentController],
 })
 export class OrderModule {
   static forRoot(options: ModuleMetadata): DynamicModule {

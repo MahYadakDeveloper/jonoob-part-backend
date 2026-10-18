@@ -7,10 +7,10 @@ import { PaymentService } from './payment.service';
 
 @Injectable()
 @ScheduledJob('order.expire-payment')
-export class ExpirePaymentJob implements JobHandler<{ orderId: string }> {
+export class ExpirePaymentJob implements JobHandler<{ paymentId: number }> {
   constructor(private readonly payments: PaymentService) {}
-  async handle(payload: { orderId: string }): Promise<void> {
-    const payment = await this.payments.findByOrderId(payload.orderId);
+  async handle(payload: { paymentId: number }): Promise<void> {
+    const payment = await this.payments.findById(payload.paymentId);
 
     switch (payment.status) {
       case 'pending':
