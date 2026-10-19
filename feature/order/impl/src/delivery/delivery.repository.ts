@@ -1,5 +1,9 @@
 import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
-import { deliveries, orderRelations } from '@infra/db-drizzle/schema';
+import {
+  deliveries,
+  deliveryAttemptReports,
+  orderRelations,
+} from '@infra/db-drizzle/schema';
 import { AsyncLocalStorage } from 'async_hooks';
 import { eq } from 'drizzle-orm';
 import { Delivery } from './delivery';
@@ -15,18 +19,22 @@ export class DeliveryRepository extends DrizzleBaseRepository<
     super(dbProvider, forUpdateCtx);
   }
 
-  findById(deliveryId: string): Promise<Delivery | null> {
-    return this.db
-      .select()
-      .from(deliveries)
-      .then(([row]) => (!!row ? toDelivery(row) : null));
+  findById(id: string) {
+    return this.db.query.deliveries
+      .findFirst({
+        where: {
+          id,
+        },
+        with: {
+          attempts: true,
+          courier: true,
+        },
+      })
+      .then((d) => d ?? null);
   }
 
-  findAll(): Promise<Delivery[]> {
-    return this.db
-      .select()
-      .from(deliveries)
-      .then((rows) => rows.map(toDelivery));
+  findAll() {
+    return this.db.select().from(deliveries);
   }
 
   update(
@@ -38,6 +46,27 @@ export class DeliveryRepository extends DrizzleBaseRepository<
       .set(data)
       .where(eq(deliveries.id, deliveryId))
       .returning({ id: deliveries.id });
+  }
+
+  createDeliveryAttemptReport(
+    report: Omit<typeof deliveryAttemptReports.$inferInsert, 'scope'>,
+  ) {
+    return this.db
+      .select({ scope: deliveries.scope })
+      .from(deliveries)
+      .where(eq(deliveries.id, report.deliveryId))
+      .then(([delivery]) => {
+        if (!delivery?.scope) {
+          throw new Error(
+            `Cannot create delivery attempt report: delivery ${report.deliveryId} was not found`,
+          );
+        }
+
+        return this.db
+          .insert(deliveryAttemptReports)
+          .values({ ...report, scope: delivery.scope })
+          .returning({ id: deliveryAttemptReports.id });
+      });
   }
 
   getOrderId(deliveryId: string): Promise<{ orderId: string }>;

@@ -56,11 +56,11 @@ export class FulfillmentService implements FulfillmentApi {
     await this.repository.enqueue(req.orderId);
   }
 
-  list() {
-    return this.repository.list();
+  findAll() {
+    // return this.repository.list();
   }
 
-  async markAsFulfilled({
+  async fulfilled({
     orderId,
     pickedStocks,
   }: {
@@ -96,7 +96,7 @@ export class FulfillmentService implements FulfillmentApi {
     });
   }
 
-  async markAsCanceledByMerchant({
+  async managerCancel({
     orderId,
     reason,
   }: {

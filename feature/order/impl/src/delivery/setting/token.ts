@@ -1,11 +1,11 @@
-import { SettingToken } from '@feature/shared';
+import { SettingToken } from '@infra/settings-store';
 import { z } from 'zod';
 import {
   InterCityDeliveryMethod,
   InterCityDeliveryMethodSchema,
   IntraCityDeliveryMethod,
   IntraCityDeliveryMethodSchema,
-} from '../schema/delivery-method';
+} from '../delivery.schema';
 
 export const DeliverySettingsToken: SettingToken<
   [] | [IntraCityDeliveryMethod, ...InterCityDeliveryMethod[]]

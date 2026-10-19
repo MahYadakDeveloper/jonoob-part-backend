@@ -1,10 +1,5 @@
-import { deliveries, type DeliveryRow } from '@infra/db-drizzle/schema';
-import type { Delivery, Recipient } from './delivery';
-
-type RecipientOf<S extends Delivery['status']> = Extract<
-  Delivery,
-  { status: S }
->['recipient'];
+import { deliveries } from '@infra/db-drizzle/schema';
+import type { Recipient } from './delivery';
 
 export function toDeliveryInsert(
   orderId: string,
@@ -17,7 +12,11 @@ export function toDeliveryInsert(
   };
 }
 
-function required<T>(value: T | null, field: string, row: DeliveryRow): T {
+function required<T>(
+  value: T | null,
+  field: string,
+  row: typeof deliveries.$inferSelect,
+): T {
   if (value === null) {
     throw new Error(
       `Delivery ${row.id} in status "${row.status}" is missing "${field}"`,
@@ -27,7 +26,7 @@ function required<T>(value: T | null, field: string, row: DeliveryRow): T {
 }
 
 // Recipient is stored as unvalidated jsonb, so its per-status shape is trusted here.
-export function toDelivery(row: DeliveryRow): Delivery {
+export function toDelivery(row: typeof deliveries.$inferSelect) {
   const { id } = row;
 
   switch (row.status) {

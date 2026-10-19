@@ -1,5 +1,6 @@
 import { PaymentGatewayModule } from '@infra/payment-gateway';
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
+import { DeliveryAttemptReportPipe } from './delivery/delivery-attempt-report.pipe';
 import { PaymentCallbackHandler } from './payment/payment-callback.handler';
 import { PaymentController } from './payment/payment.controller';
 import { PaymentAbilityFactory } from './payment/policy/payment-ability';
@@ -11,7 +12,11 @@ import { SettlementPolicyHandler } from './payment/policy/settlement.policy-hand
       callbackHandler: PaymentCallbackHandler,
     }),
   ],
-  providers: [PaymentAbilityFactory, SettlementPolicyHandler],
+  providers: [
+    DeliveryAttemptReportPipe,
+    PaymentAbilityFactory,
+    SettlementPolicyHandler,
+  ],
   controllers: [PaymentController],
 })
 export class OrderModule {

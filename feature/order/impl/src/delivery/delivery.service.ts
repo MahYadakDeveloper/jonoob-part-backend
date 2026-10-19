@@ -1,39 +1,55 @@
-import { type CourierApi } from '@feature/actors-api/courier';
-import { Delivery, Recipient } from '@feature/order-delivery-api';
-import { type LocationApi } from '@feature/order-delivery-location-api';
-import { type SettingsStore } from '@feature/shared';
+import type { CourierApi } from '@feature/actors-api/courier';
+import { DrizzleTransactionContext } from '@infra/db-drizzle';
+import { deliveries } from '@infra/db-drizzle/schema';
+import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
+import { SmsJobs } from '@infra/messaging-queue/job-types';
+import { DrizzleSettingsStore } from '@infra/settings-store';
+import { InjectQueue } from '@nestjs/bullmq';
 import {
+  BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
+import { Outbox } from '@nestjs/outbox';
+import { Queue } from 'bullmq';
+import { randomInt } from 'node:crypto';
+import { z } from 'zod';
+import { LocationsService } from '../locations/locations.service';
+import { SmsDeliveryOutForDeliveryJobPayload } from '../sms/sms-opt.template';
+import { assertReportAllowedForScope } from './delivery.asserts';
 import deliveryConfigs from './delivery.config';
 import { DeliveryRepository } from './delivery.repository';
-import { ReportDeliveryAttemptRequest } from './delivery.req';
-import {
-  InterCityDeliveryMethod,
-  IntraCityDeliveryMethod,
-} from './schema/delivery-method';
+import { DeliveryAttemptReportDto } from './delivery.schema';
 import { DeliverySettingsToken } from './setting/token';
 
 @Injectable()
 export class DeliveryService {
   constructor(
-    private readonly settings: SettingsStore,
-    private readonly location: LocationApi,
-    private readonly repository: DeliveryRepository,
     private readonly courier: CourierApi,
+    private readonly settingsStore: DrizzleSettingsStore,
+    private readonly location: LocationsService,
+    private readonly repository: DeliveryRepository,
     @Inject(deliveryConfigs.KEY)
     private readonly configs: ConfigType<typeof deliveryConfigs>,
+    private readonly tx: DrizzleTransactionContext,
+    @InjectQueue(SMS_QUEUE_NAME) private readonly smsQueue: Queue,
+    private readonly outbox: Outbox,
   ) {}
 
-  async findById(deliveryId: string): Promise<Delivery> {
+  async findById(deliveryId: string) {
     const delivery = await this.repository.findById(deliveryId);
-    return;
+    if (!delivery)
+      throw new NotFoundException(`Delivery not found: ${deliveryId}`);
+
+    return delivery;
   }
 
-  async findAll(): Promise<Delivery[]> {
+  async findAll() {
     return this.repository.findAll();
   }
 
@@ -49,88 +65,180 @@ export class DeliveryService {
     });
   }
 
-  async confirmPickup(deliveryId: string, courierId: string) {}
+  async confirmPickup(deliveryId: string, courierId: string) {
+    await this.tx.run(async () =>
+      this.repository.withLock(
+        'delivery',
+        `pickup-confirm:${deliveryId}`,
+        async () => {
+          const delivery = await this.repository.findById(deliveryId);
 
-  async reportDeliveryAttempt(req: ReportDeliveryAttemptRequest) {
-    const delivery = await this.courier.getDelivery(
-      req.courierId,
-      req.deliveryId,
+          this.assertDeliveryExists(delivery);
+
+          if (delivery.status !== 'courier_requested') {
+            throw new ConflictException('Delivery is already picked up');
+          }
+
+          const confirmationCode = this.generateCode(6);
+
+          await this.smsQueue.add(SmsJobs.Send, {
+            to: delivery.recipient.customerContact.phone,
+            template: 'delivery.out-for-delivery',
+            data: {
+              confirmationCode,
+            },
+          } satisfies SmsDeliveryOutForDeliveryJobPayload);
+
+          await this.repository.update(deliveryId, {
+            courierId,
+            handedOverAt: new Date(),
+            confirmationCode,
+          });
+        },
+      ),
     );
-    if (delivery.status !== 'handed_over_to_courier') throw new Error();
+  }
 
-    if (req.result === 'delivered') {
-      if (delivery.recipient.scope === 'intra_city') {
-        if (req.scope !== delivery.recipient.scope) throw new Error();
+  async reportDeliveryAttempt(
+    deliveryId: string,
+    report: DeliveryAttemptReportDto,
+  ) {
+    return this.tx.run(async () =>
+      this.repository.withLock(
+        'delivery',
+        `report_attempt:${deliveryId}`,
+        async () => {
+          const delivery = await this.repository.findById(deliveryId);
 
-        if (
-          delivery.recipient.deliveryConfirmationCode !== req.confirmationCode
-        )
-          throw new Error();
+          this.assertDeliveryExists(delivery);
 
-        await this.outbox.save({
-          type: DeliverySucceededEventType,
-          payload: {
-            deliveryId: req.deliveryId,
-            scope: 'intra_city',
-          } satisfies DeliverySucceededEventPayload,
+          assertReportAllowedForScope(delivery.recipient.scope, report);
+
+          if (report.outcome === 'failed') {
+            const inserted = await this.repository.createDeliveryAttemptReport({
+              deliveryId,
+              outcome: 'failed',
+              reason: report.reason,
+              reasonMessage: report.reasonMessage,
+            });
+
+            if (inserted.length === 0)
+              throw new UnprocessableEntityException(
+                'Delivery attempt report not created. try again!',
+              );
+
+            return;
+          }
+
+          if (delivery.recipient.scope === 'intra_city') {
+            if (delivery.confirmationCode !== report.confirmationCode!)
+              throw new BadRequestException('');
+          }
+
+          await this.repository.createDeliveryAttemptReport({
+            deliveryId,
+            outcome: 'delivered',
+          });
+
+          await this.repository.update(delivery.id, {
+            status: 'delivered',
+            deliveredAt: new Date(),
+            trackingNumber: report.trackingNumber,
+          });
+
+          await this.outbox.add(this.tx.current, {
+            topic: 'delivery:delivered',
+            payload: { orderId: delivery.orderId },
+          });
+        },
+      ),
+    );
+  }
+
+  async receiveReturnedDelivery(deliveryId: string) {
+    await this.tx.run(async () =>
+      this.repository.withLock(
+        'delivery',
+        `returning_to_warehouse:${deliveryId}`,
+        async () => {
+          const delivery = await this.repository.findById(deliveryId);
+
+          this.assertDeliveryExists(delivery);
+
+          await this.repository.update(delivery.id, {
+            status: 'returned_to_warehouse',
+            returnedAt: new Date(),
+          });
+
+          await this.outbox.add(this.tx.current, {
+            topic: 'delivery:returned_to_warehouse',
+            payload: { orderId: delivery.orderId },
+          });
+        },
+      ),
+    );
+  }
+
+  async cancelDelivery(deliveryId: string): Promise<void> {
+    const delivery = await this.repository.findById(deliveryId);
+    this.assertDeliveryExists(delivery);
+
+    switch (delivery.status) {
+      case 'pending':
+      case 'courier_requested': {
+        await this.repository.update(delivery.id, {
+          status: 'canceled',
+          canceledAt: new Date(),
         });
         return;
       }
 
-      if (req.scope !== delivery.recipient.scope) throw new Error();
-      await this.outbox.save({
-        type: DeliverySucceededEventType,
-        payload: {
-          deliveryId: req.deliveryId,
-          scope: 'inter_city',
-          trackingNumber: req.trackingNumber,
-        } satisfies DeliverySucceededEventPayload,
-      });
-
-      return;
-    }
-
-    await this.outbox.save({
-      type: DeliveryFailedEventType,
-      payload: {
-        ...req,
-      } satisfies DeliveryFailedEventPayload,
-    });
-  }
-
-  async cancelDelivery(orderId: string): Promise<void> {
-    const delivery = await this.repository.findByOrderId(req.orderId);
-    switch (delivery.status) {
-      case 'initial':
-      case 'courier_requested':
-        await this.repository.markAsCanceled(delivery.id, {
-          canceledAt: new Date(),
-        });
+      case 'canceled':
         return;
-      default:
-        throw new Error('This feature not implemented yet!');
+
+      case 'handed_over_to_courier':
+      case 'delivered':
+      case 'returned_to_warehouse':
+        throw new ConflictException(
+          `Delivery cannot be canceled in status "${delivery.status}"`,
+        );
+
+      default: {
+        const _exhaustive: never = delivery.status;
+        throw new Error(`Unhandled delivery status: ${String(_exhaustive)}`);
+      }
     }
   }
 
-  async setMethods({
-    methods,
-  }: {
-    methods: [] | [IntraCityDeliveryMethod, ...InterCityDeliveryMethod[]];
-  }) {
-    // [TODO] Do this parsing line below in controller endpoint
-    // z.array(DeliveryMethodSchema).parse(methods);
-    await this.settings.set(DeliverySettingsToken, methods);
+  async setSettings(settings: z.infer<typeof DeliverySettingsToken.schema>) {
+    await this.settingsStore.set(DeliverySettingsToken, settings);
   }
 
-  async getMethods() {
-    await this.settings.get(DeliverySettingsToken);
+  async getSettings() {
+    await this.settingsStore.get(DeliverySettingsToken);
   }
 
-  findAllProvinces() {
-    return this.location.listProvince();
+  listProvinces() {
+    return this.location.listProvinces();
   }
 
-  async findCitiesByProvinces({ provinceId }: { provinceId: number }) {
-    return this.location.findCitiesByProvince({ provinceId });
+  listCitiesByProvinceId(provinceId: number) {
+    return this.location.listCitiesByProvinceId(provinceId);
+  }
+
+  private assertDeliveryExists(
+    delivery: typeof deliveries.$inferSelect | null | undefined,
+  ): asserts delivery is typeof deliveries.$inferSelect {
+    if (!delivery) throw new NotFoundException('Delivery not found');
+  }
+
+  private generateCode(length = 4): string {
+    if (length < 4 || length > 9) {
+      throw new Error('OTP length must be between 4 and 9');
+    }
+
+    const max = 10 ** length;
+
+    return randomInt(0, max).toString().padStart(length, '0');
   }
 }

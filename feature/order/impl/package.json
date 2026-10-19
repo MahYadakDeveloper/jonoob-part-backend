@@ -21,6 +21,7 @@
     "@feature/actors-api": "workspace:*",
     "@feature/cashback-api": "workspace:*",
     "@feature/catalog-api": "workspace:*",
+    "@feature/media-api": "workspace:*",
     "@feature/order-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
     "@feature/schedule-api": "workspace:*",
@@ -28,10 +29,15 @@
     "@feature/warehouse-api": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/messaging-job-scheduler": "workspace:*",
+    "@infra/messaging-queue": "workspace:*",
     "@infra/payment-gateway": "workspace:*",
     "@infra/settings-store": "workspace:*",
     "@infra/synchronizer": "workspace:*",
+    "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "@nestjs/outbox": "catalog:",
+    "bullmq": "catalog:",
     "drizzle-orm": "catalog:",
     "zod": "catalog:"
   }

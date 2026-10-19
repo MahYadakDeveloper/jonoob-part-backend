@@ -1,9 +1,12 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
+  foreignKey,
   index,
   jsonb,
+  text,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -48,6 +51,63 @@ export const deliveryStatus = orderSchema.enum('delivery_status', [
   'returned_to_warehouse',
 ]);
 
+export const intraCityDeliveryFailureReasons = orderSchema.enum(
+  'intra_city_delivery_failure_reasons',
+  [
+    'recipient_absent',
+    'recipient_unreachable',
+    'invalid_address',
+    'recipient_refused',
+    'other',
+  ],
+);
+
+export const deliveryAttemptReports = orderSchema.table(
+  'delivery_attempt_reports',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    deliveryId: uuid('delivery_id').notNull(),
+
+    // Mirrors deliveries.scope through the composite foreign key below.
+    scope: varchar('scope', { length: 16 })
+      .$type<CustomerAddress['scope']>()
+      .notNull(),
+
+    outcome: varchar('outcome', { length: 12 })
+      .$type<'delivered' | 'failed'>()
+      .notNull(),
+
+    reason: intraCityDeliveryFailureReasons('reason'),
+    reasonMessage: text('reason_message'),
+
+    reportedAt: timestamp('reported_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [
+    foreignKey({
+      name: 'delivery_attempt_reports_delivery_scope_fk',
+      columns: [t.deliveryId, t.scope],
+      foreignColumns: [deliveries.id, deliveries.scope],
+    }).onDelete('cascade'),
+    check(
+      'delivery_attempt_reports_reason_scope',
+      sql`${t.reason} IS NULL OR (${t.outcome} = 'failed' AND ${t.scope} = 'intra_city')`,
+    ),
+    check(
+      'delivery_attempt_reports_reason_message',
+      sql`${t.reasonMessage} IS NULL OR (
+        ${t.outcome} = 'failed'
+        AND (
+          (${t.scope} = 'intra_city' AND ${t.reason} = 'other')
+          OR (${t.scope} = 'inter_city' AND ${t.reason} IS NULL)
+        )
+      )`,
+    ),
+  ],
+);
+
 export const deliveries = orderSchema.table(
   'deliveries',
   {
@@ -61,11 +121,15 @@ export const deliveries = orderSchema.table(
 
     recipient: jsonb('recipient').$type<DeliveryRecipient>().notNull(),
 
+    scope: varchar('scope', { length: 16 })
+      .$type<CustomerAddress['scope']>()
+      .generatedAlwaysAs(sql`recipient->>'scope'`),
+
     courierId: uuid('courier_id').references(() => couriers.id, {
       onDelete: 'set null',
     }),
 
-    deliveryConfirmationCode: varchar('delivery_confirmation_code', {
+    confirmationCode: varchar('delivery_confirmation_code', {
       length: 6,
     }),
 
@@ -88,6 +152,7 @@ export const deliveries = orderSchema.table(
     ),
   },
   (t) => [
+    unique('deliveries_id_scope_unique').on(t.id, t.scope),
     index('deliveries_order_id_idx').on(t.orderId),
     index('deliveries_status_idx').on(t.status),
     index('deliveries_courier_id_idx').on(t.courierId),
@@ -126,11 +191,11 @@ export const deliveries = orderSchema.table(
               'delivered',
               'returned_to_warehouse'
             )
-            OR ${t.deliveryConfirmationCode} IS NOT NULL
+            OR ${t.confirmationCode} IS NOT NULL
           )
         WHEN ${t.recipient}->>'scope' = 'inter_city'
         THEN ${t.carrierKey} IS NOT NULL
-          AND ${t.deliveryConfirmationCode} IS NULL
+          AND ${t.confirmationCode} IS NULL
           AND (
             (${t.status} = 'delivered' AND ${t.trackingNumber} IS NOT NULL)
             OR (${t.status} <> 'delivered' AND ${t.trackingNumber} IS NULL)

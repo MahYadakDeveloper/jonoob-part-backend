@@ -1,5 +1,6 @@
 import { CustomerAddress } from '@feature/shared/types/customer-address';
 import { CustomerType } from '@feature/shared/types/customer-type';
+import { InterCityDeliveryFailureReasons } from './delivery.schema';
 
 export type InterCityRecipient = {
   carrierKey: string;
@@ -17,19 +18,6 @@ export type Recipient = {
     type: CustomerType;
   };
 } & (IntraCityRecipient | InterCityRecipient);
-
-export type IntraCityDeliveryFailureReasonType =
-  | {
-      reason:
-        | 'recipient_absent'
-        | 'recipient_unreachable'
-        | 'invalid_address'
-        | 'recipient_refused';
-    }
-  | {
-      reason: 'other';
-      message: string;
-    };
 
 export type Delivery = { id: string } & (
   | {
@@ -75,7 +63,8 @@ export type Delivery = { id: string } & (
       recipient:
         | (IntraCityRecipient & {
             deliveryConfirmationCode: string;
-          } & IntraCityDeliveryFailureReasonType)
+            reason: InterCityDeliveryFailureReasons;
+          })
         | (InterCityRecipient & {
             reasonMessage: string;
           });
