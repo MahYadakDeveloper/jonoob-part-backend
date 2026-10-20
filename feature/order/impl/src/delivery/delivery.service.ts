@@ -19,7 +19,7 @@ import { Outbox } from '@nestjs/outbox';
 import { Queue } from 'bullmq';
 import { randomInt } from 'node:crypto';
 import { z } from 'zod';
-import { LocationsService } from '../locations/locations.service';
+import { LocationsQuery } from '../locations/locations.query';
 import { SmsDeliveryOutForDeliveryJobPayload } from '../sms/sms-opt.template';
 import { assertReportAllowedForScope } from './delivery.asserts';
 import deliveryConfigs from './delivery.config';
@@ -32,7 +32,7 @@ export class DeliveryService {
   constructor(
     private readonly courier: CourierApi,
     private readonly settingsStore: DrizzleSettingsStore,
-    private readonly location: LocationsService,
+    private readonly location: LocationsQuery,
     private readonly repository: DeliveryRepository,
     @Inject(deliveryConfigs.KEY)
     private readonly configs: ConfigType<typeof deliveryConfigs>,
@@ -40,6 +40,14 @@ export class DeliveryService {
     @InjectQueue(SMS_QUEUE_NAME) private readonly smsQueue: Queue,
     private readonly outbox: Outbox,
   ) {}
+
+  async getAssignedCourierId(deliveryId: string) {
+    const courierId = await this.repository.findAssignedCourierId(deliveryId);
+    if (!courierId)
+      throw new UnprocessableEntityException('Courier not assigned');
+
+    return courierId;
+  }
 
   async findById(deliveryId: string) {
     const delivery = await this.repository.findById(deliveryId);

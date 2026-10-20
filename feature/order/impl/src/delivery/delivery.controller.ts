@@ -1,4 +1,7 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { CheckPolicies } from '@feature/shared/decorators/check-policies.decorator';
+import { AuthenticationGuard } from '@feature/shared/guards/auth.guard';
+import { PoliciesGuard } from '@feature/shared/guards/policies.guard';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import {
   ConfirmPickupSchema,
@@ -7,7 +10,12 @@ import {
   type DeliveryAttemptReportDto,
 } from './delivery.schema';
 import { DeliveryService } from './delivery.service';
+import { ConfirmPickupPolicyHandler } from './policies/confirm-pickup.policy';
+import { DeliveryAbilityFactory } from './policies/delivery-ability';
+import { ReceiveReturnedDeliveryPolicyHandler } from './policies/receive-returned-delivery.policy';
+import { ReportDeliveryAttemptPolicyHandler } from './policies/report-delivery-attempt.policy';
 
+@UseGuards(AuthenticationGuard, PoliciesGuard)
 @Controller()
 export class DeliveryController {
   constructor(private readonly delivery: DeliveryService) {}
@@ -16,7 +24,10 @@ export class DeliveryController {
     return this.delivery.findAll();
   }
 
-  // [TODO] Add guard and ability
+  @CheckPolicies({
+    abilityFactory: DeliveryAbilityFactory,
+    handlers: [ConfirmPickupPolicyHandler],
+  })
   @Post(':id/confirm-pickup')
   confirmPickup(
     @Param('id', { schema: z.uuid() }) id: string,
@@ -25,6 +36,10 @@ export class DeliveryController {
     return this.delivery.confirmPickup(id, dto.courierId);
   }
 
+  @CheckPolicies({
+    abilityFactory: DeliveryAbilityFactory,
+    handlers: [ReportDeliveryAttemptPolicyHandler],
+  })
   @Post(':id/attempts')
   reportDeliveryAttempt(
     @Param('id', { schema: z.uuid() }) deliveryId: string,
@@ -34,7 +49,10 @@ export class DeliveryController {
     return this.delivery.reportDeliveryAttempt(deliveryId, report);
   }
 
-  // manager only access
+  @CheckPolicies({
+    abilityFactory: DeliveryAbilityFactory,
+    handlers: [ReceiveReturnedDeliveryPolicyHandler],
+  })
   @Post(':id/receive-return')
   receiveReturnedDelivery(
     @Param('id', { schema: z.uuid() }) deliveryId: string,

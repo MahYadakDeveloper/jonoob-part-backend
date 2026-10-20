@@ -8,7 +8,7 @@ import {
   SettlementRequestSchema,
 } from './payment.schema';
 import { PaymentService } from './payment.service';
-import { CancellationPolicyHandler } from './policy/cancellation.policy-handler copy';
+import { CancellationPolicyHandler } from './policy/cancellation.policy-handler';
 import { PaymentAbilityFactory } from './policy/payment-ability';
 import { SettlementPolicyHandler } from './policy/settlement.policy-handler';
 

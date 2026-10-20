@@ -4,6 +4,8 @@
   "scripts": {
     "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc",
+    "cli": "ts-node -r tsconfig-paths/register src/cli/main.ts",
+    "seed:locations": "pnpm cli seed locations --file data/locations.json",
     "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
   },
   "main": "./dist/index.js",
@@ -36,9 +38,14 @@
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
+    "@nestjs/drizzle": "catalog:",
     "@nestjs/outbox": "catalog:",
     "bullmq": "catalog:",
     "drizzle-orm": "catalog:",
+    "nest-commander": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
   }
 }

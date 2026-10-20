@@ -7,18 +7,6 @@ import * as schemas from './table';
 export const orderRelations = defineRelationsPart(
   { ...{ ...schemas, couriers, customers, merchandiseLine } },
   (r) => ({
-    provinces: {
-      cities: r.many.cities({
-        from: r.provinces.id,
-        to: r.cities.provinceId,
-      }),
-    },
-    cities: {
-      province: r.one.provinces({
-        from: r.cities.provinceId,
-        to: r.provinces.id,
-      }),
-    },
     deliveryAttemptReports: {},
     merchandiseLine: {},
     orders: {

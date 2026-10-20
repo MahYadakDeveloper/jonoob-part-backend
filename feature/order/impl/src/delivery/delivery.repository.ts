@@ -19,6 +19,14 @@ export class DeliveryRepository extends DrizzleBaseRepository<
     super(dbProvider, forUpdateCtx);
   }
 
+  findAssignedCourierId(deliveryId: string): Promise<string | null> {
+    return this.db
+      .select({ courierId: deliveries.courierId })
+      .from(deliveries)
+      .where(eq(deliveries.id, deliveryId))
+      .then(([row]) => row.courierId);
+  }
+
   findById(id: string) {
     return this.db.query.deliveries
       .findFirst({
