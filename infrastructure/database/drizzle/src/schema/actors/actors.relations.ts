@@ -8,7 +8,16 @@ export const actorsRelations = defineRelationsPart(
   },
   (r) => ({
     walletTransactions: {},
-    wallets: {},
+    freezedAmounts: {},
+    wallets: {
+      freezedAmounts: r.many.freezedAmounts({
+        from: r.wallets.id,
+        to: r.freezedAmounts.walletId,
+        where: {
+          status: 'active',
+        },
+      }),
+    },
     addresses: {},
     managers: {},
     customers: {

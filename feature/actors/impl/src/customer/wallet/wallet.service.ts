@@ -10,6 +10,7 @@ import {
   WalletReleaseFreezeInput,
   WalletTransactionResult,
 } from '@feature/actors-api/customer';
+import { assertFound } from '@feature/shared/utils/assertions';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import {
   BadRequestException,
@@ -56,7 +57,10 @@ export class WalletService implements WalletApi {
         idempotencyKey,
         async () => {
           const wallet = await this.repository.findByCustomerId(customerId);
-          if (!wallet) throw new NotFoundException('Customer has no wallet!');
+          assertFound(
+            wallet,
+            () => new NotFoundException('Customer has no wallet!'),
+          );
 
           const existing =
             await this.repository.findTransactionByIdempotencyKeyAndWalletId(
@@ -65,15 +69,8 @@ export class WalletService implements WalletApi {
             );
 
           if (existing) {
-            if (
-              existing.type !== 'freeze' ||
-              existing.amount !== amount ||
-              existing.reason !== reason
-            ) {
-              throw new ConflictException(
-                'Idempotency key reused with a different payload',
-              );
-            }
+            existing.type;
+            assertIdempotentReplay({});
 
             if (!existing.freezedAmountId)
               throw new InternalServerErrorException();
@@ -283,6 +280,25 @@ export class WalletService implements WalletApi {
           return { transactionId };
         },
       ),
+    );
+  }
+}
+
+function assertIdempotentReplay(
+  existing: { type: string; amount: number; reason: string },
+  expected: {
+    type: 'freeze' | 'credit' | 'debit' | 'commit_freeze';
+    amount: number;
+    reason: string;
+  },
+): void {
+  if (
+    existing.type !== expected.type ||
+    existing.amount !== expected.amount ||
+    existing.reason !== expected.reason
+  ) {
+    throw new ConflictException(
+      'Idempotency key reused with a different payload',
     );
   }
 }
