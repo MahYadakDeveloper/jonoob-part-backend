@@ -34,37 +34,32 @@ export class CustomerRepository extends DrizzleBaseRepository<
     super(dbProvider, forUpdateCtx);
   }
 
-  findById(id: string): Promise<Customer | null> {
-    return this.db.query.customers
-      .findFirst({
-        where: {
-          id,
-        },
-        with: {
-          ...withAddresses,
-        },
-      })
-      .then((c) => c ?? null);
+  findById(id: string) {
+    return this.db.query.customers.findFirst({
+      where: {
+        id,
+      },
+      with: {
+        ...withAddresses,
+      },
+    });
   }
 
-  findByPhone(phone: string): Promise<Customer | null> {
-    return this.db.query.customers
-      .findFirst({
-        where: {
-          phone,
-        },
-        with: {
-          ...withAddresses,
-        },
-      })
-      .then((c) => c ?? null);
+  findByPhone(phone: string) {
+    return this.db.query.customers.findFirst({
+      where: {
+        phone,
+      },
+      with: {
+        ...withAddresses,
+      },
+    });
   }
 
-  create(customer: typeof customers.$inferInsert): Promise<{ id: string }> {
+  create(customer: typeof customers.$inferInsert) {
     return this.db
       .insert(customers)
       .values(customer)
-      .returning({ id: customers.id })
-      .then(([row]) => row);
+      .returning({ id: customers.id });
   }
 }

@@ -17,16 +17,16 @@
   },
   "private": true,
   "dependencies": {
-    "@infra/db-redis": "workspace:*",
-    "redis": "catalog:",
     "@infra/config": "workspace:*",
+    "@infra/db-redis": "workspace:*",
     "@nestjs/axios": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/schedule": "catalog:",
     "axios": "catalog:",
     "fastify": "catalog:",
+    "redis": "catalog:",
     "rxjs": "catalog:",
-    "zod": "catalog:"
+    "zod": "4.6.7"
   }
 }

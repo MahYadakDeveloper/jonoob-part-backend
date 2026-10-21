@@ -26,6 +26,6 @@
     "@nestjs/config": "catalog:",
     "@nestjs/outbox": "catalog:",
     "rxjs": "catalog:",
-    "zod": "catalog:"
+    "zod": "4.6.7"
   }
 }

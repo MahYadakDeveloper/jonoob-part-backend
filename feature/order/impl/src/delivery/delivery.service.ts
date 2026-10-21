@@ -1,16 +1,19 @@
 import type { CourierApi } from '@feature/actors-api/courier';
+import {
+  assertFound,
+  assertNever,
+  assertSafeEqual,
+} from '@feature/shared/utils/assertions';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
-import { deliveries } from '@infra/db-drizzle/schema';
 import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
 import { SmsJobs } from '@infra/messaging-queue/job-types';
 import { DrizzleSettingsStore } from '@infra/settings-store';
 import { InjectQueue } from '@nestjs/bullmq';
 import {
-  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -21,10 +24,10 @@ import { randomInt } from 'node:crypto';
 import { z } from 'zod';
 import { LocationsQuery } from '../locations/locations.query';
 import { SmsDeliveryOutForDeliveryJobPayload } from '../sms/sms-opt.template';
-import { assertReportAllowedForScope } from './delivery.asserts';
 import deliveryConfigs from './delivery.config';
+import { DeliveryAttemptReportDto } from './delivery.dto';
+import { deliveredEvent } from './delivery.events';
 import { DeliveryRepository } from './delivery.repository';
-import { DeliveryAttemptReportDto } from './delivery.schema';
 import { DeliverySettingsToken } from './setting/token';
 
 @Injectable()
@@ -64,7 +67,7 @@ export class DeliveryService {
   async deliver(deliveryId: string): Promise<void> {
     const delivery = await this.repository.findById(deliveryId);
 
-    if (!delivery) throw new InternalServerErrorException();
+    assertDeliveryFound(delivery);
 
     await this.courier.notifyPickup(delivery.id);
 
@@ -75,123 +78,108 @@ export class DeliveryService {
 
   async confirmPickup(deliveryId: string, courierId: string) {
     await this.tx.run(async () =>
-      this.repository.withLock(
-        'delivery',
-        `pickup-confirm:${deliveryId}`,
-        async () => {
-          const delivery = await this.repository.findById(deliveryId);
+      this.repository.withForUpdate(async () => {
+        const delivery = await this.repository.findById(deliveryId);
 
-          this.assertDeliveryExists(delivery);
+        assertDeliveryFound(delivery);
 
-          if (delivery.status !== 'courier_requested') {
-            throw new ConflictException('Delivery is already picked up');
-          }
+        if (delivery.status !== 'courier_requested') {
+          throw new ConflictException('Delivery is already picked up');
+        }
 
-          const confirmationCode = this.generateCode(6);
+        const confirmationCode = this.generateCode(6);
 
-          await this.smsQueue.add(SmsJobs.Send, {
-            to: delivery.recipient.customerContact.phone,
-            template: 'delivery.out-for-delivery',
-            data: {
-              confirmationCode,
-            },
-          } satisfies SmsDeliveryOutForDeliveryJobPayload);
-
-          await this.repository.update(deliveryId, {
-            courierId,
-            handedOverAt: new Date(),
+        await this.smsQueue.add(SmsJobs.Send, {
+          to: delivery.recipient.customerContact.phone,
+          template: 'delivery.out-for-delivery',
+          data: {
             confirmationCode,
-          });
-        },
-      ),
+          },
+        } satisfies SmsDeliveryOutForDeliveryJobPayload);
+
+        await this.repository.update(deliveryId, {
+          courierId,
+          handedOverAt: new Date(),
+          confirmationCode,
+        });
+      }),
     );
   }
 
   async reportDeliveryAttempt(
     deliveryId: string,
-    report: DeliveryAttemptReportDto,
+    attempt: DeliveryAttemptReportDto,
   ) {
     return this.tx.run(async () =>
-      this.repository.withLock(
-        'delivery',
-        `report_attempt:${deliveryId}`,
-        async () => {
-          const delivery = await this.repository.findById(deliveryId);
+      this.repository.withForUpdate(async () => {
+        const delivery = await this.repository.findById(deliveryId);
 
-          this.assertDeliveryExists(delivery);
+        assertDeliveryFound(delivery);
 
-          assertReportAllowedForScope(delivery.recipient.scope, report);
-
-          if (report.outcome === 'failed') {
-            const inserted = await this.repository.createDeliveryAttemptReport({
-              deliveryId,
-              outcome: 'failed',
-              reason: report.reason,
-              reasonMessage: report.reasonMessage,
-            });
-
-            if (inserted.length === 0)
-              throw new UnprocessableEntityException(
-                'Delivery attempt report not created. try again!',
-              );
-
-            return;
-          }
-
-          if (delivery.recipient.scope === 'intra_city') {
-            if (delivery.confirmationCode !== report.confirmationCode!)
-              throw new BadRequestException('');
-          }
-
-          await this.repository.createDeliveryAttemptReport({
+        if (attempt.report.outcome === 'failed') {
+          await this.repository.recordDeliveryAttemptFailure({
             deliveryId,
-            outcome: 'delivered',
+            ...attempt.report,
           });
 
-          await this.repository.update(delivery.id, {
-            status: 'delivered',
-            deliveredAt: new Date(),
-            trackingNumber: report.trackingNumber,
-          });
+          return;
+        }
 
-          await this.outbox.add(this.tx.current, {
-            topic: 'delivery:delivered',
-            payload: { orderId: delivery.orderId },
-          });
-        },
-      ),
+        if (delivery.scope !== attempt.scope) {
+          throw new Error();
+        }
+
+        if (attempt.scope === 'intra_city')
+          assertSafeEqual(
+            delivery.confirmationCode!,
+            attempt.report.confirmationCode,
+            () => new ForbiddenException('Invalid confirmation code'),
+          );
+
+        const { outcome: _, ...data } = attempt.report;
+
+        await this.repository.update(delivery.id, {
+          status: 'delivered',
+          deliveredAt: new Date(),
+          ...data,
+        });
+
+        await this.outbox.add(
+          this.tx.current,
+          deliveredEvent.create({ orderId: delivery.orderId }),
+        );
+      }),
     );
   }
 
   async receiveReturnedDelivery(deliveryId: string) {
     await this.tx.run(async () =>
-      this.repository.withLock(
-        'delivery',
-        `returning_to_warehouse:${deliveryId}`,
-        async () => {
-          const delivery = await this.repository.findById(deliveryId);
+      this.repository.withForUpdate(async () => {
+        const delivery = await this.repository.findById(deliveryId);
 
-          this.assertDeliveryExists(delivery);
+        assertDeliveryFound(delivery);
 
-          await this.repository.update(delivery.id, {
-            status: 'returned_to_warehouse',
-            returnedAt: new Date(),
-          });
+        await this.repository.update(delivery.id, {
+          status: 'returned_to_warehouse',
+          returnedAt: new Date(),
+        });
 
-          await this.outbox.add(this.tx.current, {
-            topic: 'delivery:returned_to_warehouse',
-            payload: { orderId: delivery.orderId },
-          });
-        },
-      ),
+        await this.outbox.add(this.tx.current, {
+          topic: 'delivery.returned_to_warehouse',
+          payload: { orderId: delivery.orderId },
+        });
+      }),
     );
   }
 
   async cancelDelivery(deliveryId: string): Promise<void> {
     const delivery = await this.repository.findById(deliveryId);
-    this.assertDeliveryExists(delivery);
+
+    assertDeliveryFound(delivery);
 
     switch (delivery.status) {
+      case 'canceled':
+        return;
       case 'pending':
       case 'courier_requested': {
         await this.repository.update(delivery.id, {
@@ -200,21 +188,14 @@ export class DeliveryService {
         });
         return;
       }
-
-      case 'canceled':
-        return;
-
       case 'handed_over_to_courier':
       case 'delivered':
       case 'returned_to_warehouse':
         throw new ConflictException(
           `Delivery cannot be canceled in status "${delivery.status}"`,
         );
-
-      default: {
-        const _exhaustive: never = delivery.status;
-        throw new Error(`Unhandled delivery status: ${String(_exhaustive)}`);
-      }
+      default:
+        assertNever(delivery.status);
     }
   }
 
@@ -234,12 +215,6 @@ export class DeliveryService {
     return this.location.listCitiesByProvinceId(provinceId);
   }
 
-  private assertDeliveryExists(
-    delivery: typeof deliveries.$inferSelect | null | undefined,
-  ): asserts delivery is typeof deliveries.$inferSelect {
-    if (!delivery) throw new NotFoundException('Delivery not found');
-  }
-
   private generateCode(length = 4): string {
     if (length < 4 || length > 9) {
       throw new Error('OTP length must be between 4 and 9');
@@ -249,4 +224,12 @@ export class DeliveryService {
 
     return randomInt(0, max).toString().padStart(length, '0');
   }
+}
+
+function assertDeliveryFound(
+  delivery: Awaited<ReturnType<DeliveryRepository['findById']>>,
+): asserts delivery is NonNullable<
+  Awaited<ReturnType<DeliveryRepository['findById']>>
+> {
+  assertFound(delivery, () => new NotFoundException('Delivery not found'));
 }

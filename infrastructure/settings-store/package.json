@@ -20,6 +20,6 @@
     "@nestjs/common": "catalog:",
     "@nestjs/drizzle": "catalog:",
     "drizzle-orm": "catalog:",
-    "zod": "catalog:"
+    "zod": "4.6.7"
   }
 }

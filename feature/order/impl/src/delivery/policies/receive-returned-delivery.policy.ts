@@ -9,6 +9,6 @@ export class ReceiveReturnedDeliveryPolicyHandler implements PolicyHandler<Deliv
     ability: DeliveryAbility,
     context: PolicyContext,
   ): Promise<boolean> {
-    return ability.can('report-delivery-attempt', 'Delivery');
+    return ability.can('receive-delivery-returned', 'Delivery');
   }
 }

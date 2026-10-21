@@ -1,187 +1,222 @@
-import type { CatalogApi, FindManyProductResponse } from '@feature/catalog-api';
+import type { CatalogApi } from '@feature/catalog-api';
 import {
-  LineItems,
-  type OutboxRepository,
-  type TransactionManager,
-} from '@feature/shared';
+  assertFirst,
+  assertFound,
+  assertNever,
+  ensureFound,
+} from '@feature/shared/utils/assertions';
 import {
-  FulfillmentApi,
-  FulfillmentCanceledByMerchantEventPayload,
-  FulfillmentCanceledByMerchantEventType,
-  FulfillmentDoneEventPayload,
-  FulfillmentDoneEventType,
-} from '@feature/order-fulfillment-api';
-import type { WarehouseApi } from '@feature/warehouse-api';
-import type { StockReserverApi } from '@feature/warehouse-reserve-api';
-import { Injectable } from '@nestjs/common';
+  type StockMovementApi,
+  type StockReservationApi,
+  STOCK_MOVEMENT_API,
+  STOCK_RESERVATION_API,
+} from '@feature/warehouse-api';
+import { DrizzleTransactionContext } from '@infra/db-drizzle';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Outbox } from '@nestjs/outbox';
+import { canceledByManagerEvent, fulfilledEvent } from './fulfillment.events';
 import type { FulfillmentRepository } from './fulfillment.repository';
 
-/**
- * [NOTE] for checking out reserve items have to use getReservedItems from order service
- */
 @Injectable()
-export class FulfillmentService implements FulfillmentApi {
+export class FulfillmentService {
   constructor(
     private readonly repository: FulfillmentRepository,
     private readonly catalog: CatalogApi,
-    private readonly warehouse: WarehouseApi,
-    private readonly tx: TransactionManager,
-    private readonly outbox: OutboxRepository,
-    private readonly reserver: StockReserverApi,
+    @Inject(STOCK_RESERVATION_API)
+    private readonly reservation: StockReservationApi,
+    @Inject(STOCK_MOVEMENT_API)
+    private readonly movement: StockMovementApi,
+    private readonly tx: DrizzleTransactionContext,
+    private readonly outbox: Outbox,
   ) {}
 
-  async create({
-    orderId,
-    items,
-  }: {
-    orderId: string;
-    items: LineItems<{ productId: string; quantity: number }>;
-  }): Promise<void> {
-    const { products } = await this.catalog.findMany({
-      productIds: [...items.keys()],
-    });
-    const reserve = this.calculateReserveStock(items, products);
-    await this.tx.run(async () => {
-      // Reserve stocks
-      await this.reserver.reserve({
-        referenceId: orderId,
-        items: reserve,
-      });
-
-      await this.repository.create(orderId, reserve);
-    });
+  getById(id: string) {
+    return this.repository
+      .findById(id)
+      .then((f) =>
+        ensureFound(f, () => new NotFoundException(`Fulfillment not found.`)),
+      );
   }
 
-  async fulfill(req: { orderId: string }): Promise<void> {
-    await this.repository.enqueue(req.orderId);
+  list() {
+    return this.repository.list();
   }
 
-  findAll() {
-    // return this.repository.list();
-  }
+  async fulfill(fulfillmentId: string) {
+    await this.tx.run(async () =>
+      this.repository.withForUpdate(async () => {
+        const fulfillment = await this.repository.findById(fulfillmentId);
 
-  async fulfilled({
-    orderId,
-    pickedStocks,
-  }: {
-    orderId: string;
-    pickedStocks: LineItems<{ stockId: string; qty: number }>;
-  }) {
-    const fulfill = await this.repository.find(orderId);
-    if (!fulfill) throw new Error();
+        assertFulfillmentFound(fulfillment);
 
-    if (!fulfill.items.equals(pickedStocks, (a, b) => a.qty === b.qty)) {
-      throw new Error('Processed stocks do not match required stocks');
-    }
+        if (fulfillment.status !== 'pending')
+          throw new ConflictException(
+            `Fulfillment ${fulfillmentId} is "${fulfillment.status}", cannot move to processing`,
+          );
 
-    await this.tx.run(async () => {
-      await this.reserver.release({
-        referenceId: orderId,
-        items: pickedStocks,
-      });
+        assertFirst(
+          await this.repository.update(fulfillmentId, {
+            status: 'processing',
+          }),
+          () =>
+            new ConflictException(
+              `Fulfillment ${fulfillmentId} cannot move to processing`,
+            ),
+        );
 
-      await this.warehouse.issue({
-        reference: { source: 'order', id: orderId },
-        items: pickedStocks,
-      });
-
-      await this.repository.dequeue(orderId, { status: 'fulfilled' });
-
-      await this.outbox.save({
-        type: FulfillmentDoneEventType,
-        payload: {
-          orderId,
-        } satisfies FulfillmentDoneEventPayload,
-      });
-    });
-  }
-
-  async managerCancel({
-    orderId,
-    reason,
-  }: {
-    orderId: string;
-    reason: string;
-  }) {
-    const fulfill = await this.repository.find(orderId);
-    if (!fulfill) throw new Error();
-
-    await this.tx.run(async () => {
-      await this.repository.dequeue(orderId, {
-        status: 'canceled_by_merchant',
-        reason,
-      });
-
-      await this.reserver.release({
-        referenceId: orderId,
-        items: fulfill.items,
-      });
-
-      await this.outbox.save({
-        type: FulfillmentCanceledByMerchantEventType,
-        payload: {
-          orderId,
-        } satisfies FulfillmentCanceledByMerchantEventPayload,
-      });
-    });
-  }
-
-  async cancel({ orderId }: { orderId: string; reason: string }) {
-    const fulfill = await this.repository.find(orderId);
-    if (!fulfill) throw new Error();
-
-    switch (fulfill.status) {
-      case 'initial':
-      case 'processing':
-      case 'fulfilled':
-        await this.tx.run(async () => {
-          await this.repository.dequeue(orderId, {
-            status: 'canceled_by_customer',
-          });
-
-          await this.reserver.release({
-            referenceId: orderId,
-            items: fulfill.items,
-          });
-        });
-        break;
-    }
-  }
-
-  private calculateReserveStock(
-    items: LineItems<{ productId: string; quantity: number }>,
-    products: FindManyProductResponse['products'],
-  ): LineItems<{ stockId: string; qty: number }> {
-    const reserve = new LineItems<{ stockId: string; qty: number }>(
-      (s) => s.stockId,
+        // TODO add notification, notify managers
+      }),
     );
-    for (const item of items) {
-      const product = products.getOrThrow(item.productId);
-      if (product.kind === 'leaf') {
-        const alreadyAdded = reserve.get(item.productId);
-        if (alreadyAdded)
-          reserve.set({
-            stockId: product.goodId,
-            qty: alreadyAdded.qty + item.quantity,
-          });
-        else reserve.set({ stockId: product.goodId, qty: item.quantity });
-        continue;
-      }
-
-      for (const bundleItem of product.items) {
-        const alreadyAdded = reserve.get(bundleItem.productId);
-        if (alreadyAdded)
-          reserve.set({
-            stockId: bundleItem.goodId,
-            qty: alreadyAdded.qty + bundleItem.quantity * item.quantity,
-          });
-        else
-          reserve.set({
-            stockId: bundleItem.goodId,
-            qty: bundleItem.quantity * item.quantity,
-          });
-      }
-    }
-    return reserve;
   }
+
+  async complete(
+    fulfillmentId: string,
+    picked: { stockId: string; quantity: number }[],
+  ) {
+    await this.tx.run(async () =>
+      this.repository.withForUpdate(async () => {
+        const fulfillment = await this.repository.findById(fulfillmentId);
+
+        assertFulfillmentFound(fulfillment);
+
+        const required = this.sumByStock(
+          fulfillment.merchandiseLines.flatMap((line) =>
+            line.kind === 'bundle'
+              ? line.items.map((item) => ({
+                  stockId: item.stockId,
+                  quantity: item.quantity * line.quantity,
+                }))
+              : [{ stockId: line.stockId, quantity: line.quantity }],
+          ),
+        );
+
+        const actual = this.sumByStock(picked);
+
+        const mismatches = this.diffStocks(required, actual);
+        if (mismatches.length > 0) {
+          throw new BadRequestException({
+            message: 'Picked stocks do not match required stocks',
+            mismatches,
+          });
+        }
+
+        await this.tx.run(async () => {
+          await this.reservation.release(fulfillment.reservationId);
+
+          await this.movement.issue({
+            idempotencyKey: `fulfillment:issue:${fulfillment.id}`,
+            items: [...required].map(([stockId, quantity]) => ({
+              stockId,
+              quantity,
+            })),
+            source: {
+              boundary: 'order',
+              referenceId: fulfillment.orderId,
+              type: 'sales',
+            },
+          });
+
+          await this.repository.update(fulfillment.id, {
+            status: 'fulfilled',
+          });
+
+          await this.outbox.add(
+            this.tx.current,
+            fulfilledEvent.create({ orderId: fulfillment.orderId }),
+          );
+        });
+      }),
+    );
+  }
+
+  async cancelByManager(fulfillmentId: string, reason: string) {
+    await this.tx.run(async () =>
+      this.repository.withForUpdate(async () => {
+        const fulfillment = await this.repository.findById(fulfillmentId);
+
+        assertFulfillmentFound(fulfillment);
+
+        await this.repository.update(fulfillmentId, {
+          status: 'canceled_by_merchant',
+          reason,
+        });
+
+        await this.reservation.release(fulfillment.reservationId);
+
+        await this.outbox.add(
+          this.tx.current,
+          canceledByManagerEvent.create({ orderId: fulfillment.orderId }),
+        );
+      }),
+    );
+  }
+
+  async cancel(fulfillmentId: string) {
+    await this.tx.run(async () =>
+      this.repository.withForUpdate(async () => {
+        const fulfillment = await this.repository.findById(fulfillmentId);
+
+        assertFulfillmentFound(fulfillment);
+
+        switch (fulfillment.status) {
+          case 'canceled_by_customer':
+            return;
+          case 'pending':
+          case 'processing':
+            break;
+          case 'fulfilled':
+          case 'canceled_by_manager':
+            throw new ConflictException(
+              `Fulfillment ${fulfillmentId} cannot be canceled in status "${fulfillment.status}"`,
+            );
+          default:
+            assertNever(fulfillment.status);
+        }
+      }),
+    );
+  }
+
+  private sumByStock(
+    lines: { stockId: string | null; quantity: number }[],
+  ): Map<string, number> {
+    const result = new Map<string, number>();
+    for (const { stockId, quantity } of lines) {
+      if (stockId === null) {
+        throw new Error('Merchandise line has no stock assigned');
+      }
+      result.set(stockId, (result.get(stockId) ?? 0) + quantity);
+    }
+    return result;
+  }
+
+  private diffStocks(
+    required: Map<string, number>,
+    actual: Map<string, number>,
+  ) {
+    const ids = new Set([...required.keys(), ...actual.keys()]);
+    return [...ids]
+      .map((stockId) => ({
+        stockId,
+        required: required.get(stockId) ?? 0,
+        picked: actual.get(stockId) ?? 0,
+      }))
+      .filter((d) => d.required !== d.picked);
+  }
+}
+
+function assertFulfillmentFound(
+  fulfillment: Awaited<ReturnType<FulfillmentRepository['findById']>>,
+): asserts fulfillment is NonNullable<
+  Awaited<ReturnType<FulfillmentRepository['findById']>>
+> {
+  assertFound(
+    fulfillment,
+    () => new NotFoundException('Fulfillment not found'),
+  );
 }

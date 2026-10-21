@@ -1,5 +1,5 @@
 import { deliveries } from '@infra/db-drizzle/schema';
-import type { Recipient } from './delivery';
+import type { Recipient, RecipientOf } from './delivery';
 
 export function toDeliveryInsert(
   orderId: string,

@@ -35,6 +35,7 @@ export const merchandiseLine = pgTable(
     orderId: uuid('order_id').references(() => orders.id, {
       onDelete: 'cascade',
     }),
+
     saleId: uuid('sale_id').references(() => sales.id, {
       onDelete: 'cascade',
     }),
@@ -50,6 +51,8 @@ export const merchandiseLine = pgTable(
     unitPrice: money('unit_price').notNull(),
     lineTotal: money('line_total').notNull(),
 
+    stockId: uuid('stock_id'),
+
     discount: jsonb('discount').$type<MerchandiseLineDiscount>(),
   },
   (t) => [
@@ -63,6 +66,10 @@ export const merchandiseLine = pgTable(
     index('merchandise_line_order_idx').on(t.orderId),
     index('merchandise_line_sale_idx').on(t.saleId),
 
+    check(
+      'merchandise_line_stock_only_for_leaf',
+      sql`${t.stockId} IS NULL OR ${t.kind} = 'leaf'`,
+    ),
     check(
       'merchandise_lines_single_owner',
       sql`num_nonnulls(${t.orderId}, ${t.saleId}, ${t.bundleId}) = 1`,

@@ -1,6 +1,6 @@
 import { CustomerAddress } from '@feature/shared/types/customer-address';
 import { CustomerType } from '@feature/shared/types/customer-type';
-import { InterCityDeliveryFailureReasons } from './delivery.schema';
+import { InterCityDeliveryFailureReasons } from './delivery.dto';
 
 export type InterCityRecipient = {
   carrierKey: string;
@@ -70,3 +70,8 @@ export type Delivery = { id: string } & (
           });
     }
 );
+
+export type RecipientOf<S extends Delivery['status']> = Extract<
+  Delivery,
+  { status: S }
+>['recipient'];

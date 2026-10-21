@@ -1,4 +1,4 @@
-import { Duration } from './types';
+import { Duration } from '../types';
 
 export type PartialBy<T, K extends keyof T> = T extends unknown
   ? Omit<T, K> & Partial<Pick<T, K>>

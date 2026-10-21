@@ -23,11 +23,11 @@
     "@feature/catalog-category-api": "workspace:*",
     "@feature/catalog-fitment-api": "workspace:*",
     "@feature/catalog-fitment-node-api": "workspace:*",
-    "@feature/shared": "workspace:*",
     "@feature/media-api": "workspace:*",
     "@feature/media-image": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
     "@nestjs/common": "catalog:",
-    "zod": "catalog:"
+    "zod": "4.6.7"
   }
 }

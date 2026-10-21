@@ -17,10 +17,10 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@feature/pos-payment-api": "workspace:*",
     "@feature/actors": "workspace:*",
+    "@feature/pos-payment-api": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@nestjs/common": "catalog:",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   }
 }

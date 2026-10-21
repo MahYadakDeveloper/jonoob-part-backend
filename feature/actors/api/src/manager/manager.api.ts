@@ -1,7 +1,7 @@
 import { Manager } from './manager.type';
 
-export const MANAGER_API = Symbol('ManagerApi');
+export const MANAGER_API = Symbol('MANAGER_API');
 export interface ManagerApi {
-  findById(managerId: string): Promise<Manager>;
-  findByPhone(phone: string): Promise<Manager>;
+  getById(managerId: string): Promise<Manager>;
+  getByPhone(phone: string): Promise<Manager>;
 }

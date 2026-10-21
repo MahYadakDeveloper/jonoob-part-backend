@@ -21,6 +21,6 @@
     "@infra/object-storage-s3-client": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   }
 }

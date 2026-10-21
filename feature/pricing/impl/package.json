@@ -18,12 +18,12 @@
   "private": true,
   "dependencies": {
     "@feature/catalog-api": "workspace:*",
-    "@feature/shared": "workspace:*",
     "@feature/discount-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
     "@feature/pricing-markup-api": "workspace:*",
     "@feature/procurement-api": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@nestjs/common": "catalog:",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   }
 }

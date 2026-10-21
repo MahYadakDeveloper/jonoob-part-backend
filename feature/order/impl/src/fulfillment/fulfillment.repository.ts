@@ -1,28 +1,44 @@
-import { LineItems } from '@feature/shared';
-import { Fulfillment } from '@feature/order-fulfillment-api';
+import { DrizzleBaseRepository } from '@infra/db-drizzle';
+import { fulfillments, orderRelations } from '@infra/db-drizzle/schema';
+import { DBQueryConfigWith, eq } from 'drizzle-orm';
 
-export interface FulfillmentRepository {
-  create(
-    orderId: string,
-    items: LineItems<{ stockId: string; qty: number }>,
-  ): Promise<void>;
-  find(orderId: string): Promise<Fulfillment | null>;
-  enqueue(orderId: string): Promise<void>;
+const withItems = {
+  merchandiseLines: {
+    with: {
+      items: true,
+    },
+  },
+} satisfies DBQueryConfigWith<
+  typeof orderRelations,
+  typeof orderRelations.fulfillments.relations
+>;
 
-  /**
-   * fulfilledAt assigning is done repository impl
-   */
-  dequeue(
-    orderId: string,
-    as:
-      | { status: 'fulfilled' }
-      | { status: 'canceled_by_merchant'; reason: string }
-      | { status: 'canceled_by_customer' },
-  ): Promise<void>;
-  list(): Promise<LineItems<Fulfillment>>;
+export class FulfillmentRepository extends DrizzleBaseRepository<
+  typeof orderRelations
+> {
+  findById(id: string) {
+    return this.db.query.fulfillments.findFirst({
+      where: {
+        id,
+      },
+      with: { ...withItems },
+    });
+  }
+
+  list() {
+    return this.db.query.fulfillments.findMany({
+      with: { ...withItems },
+    });
+  }
+
+  update(
+    id: string,
+    data: Pick<typeof fulfillments.$inferInsert, 'status', 'reason'>,
+  ) {
+    return this.db
+      .update(fulfillments)
+      .set(data)
+      .where(eq(fulfillments.id, id))
+      .returning({ id: fulfillments.id });
+  }
 }
-
-/**
- * model in prisma their id would be orderId
- *
- */

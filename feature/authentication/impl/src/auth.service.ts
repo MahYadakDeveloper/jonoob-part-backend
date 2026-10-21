@@ -1,9 +1,5 @@
 import { type CourierApi, COURIER_API } from '@feature/actors-api/courier';
-import {
-  type CustomersApi,
-  CUSTOMER_API,
-  CustomerType,
-} from '@feature/actors-api/customer';
+import { type CustomersApi, CUSTOMER_API } from '@feature/actors-api/customer';
 import { type ManagerApi, MANAGER_API } from '@feature/actors-api/manager';
 import { AuthenticationApi } from '@feature/shared/contracts/authentication.api';
 import { AuthenticatedUser } from '@feature/shared/types/authenticated-user';
@@ -30,9 +26,10 @@ import {
 import { type ConfigType } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import authConfig from './auth.config';
-import { RefreshClaim } from './auth.type';
 import { OtpStore } from './otp/otp.store';
 import { SmsSendOtpJobPayload } from './sms/sms-opt.template';
+
+export type RefreshClaim = AuthenticatedUser;
 
 @Injectable()
 export class AuthenticationService implements AuthenticationApi {
@@ -251,9 +248,6 @@ export class AuthenticationService implements AuthenticationApi {
           claims: {
             role: 'customer',
             id: customer.id,
-            type: customer.type,
-            fullName: customer.fullName,
-            phone: customer.phone,
           } satisfies AuthenticatedUser,
         });
 
@@ -482,7 +476,6 @@ export class AuthenticationService implements AuthenticationApi {
             'Verification token is invalid, expired, or already used',
           );
 
-        const customerType: CustomerType = 'consumer';
         const { id: customerId } =
           await this.customers.createConsumerTypeCustomer({
             fullName,
@@ -496,9 +489,6 @@ export class AuthenticationService implements AuthenticationApi {
           claims: {
             role: 'customer',
             id: customerId,
-            fullName,
-            phone: payload.sub,
-            type: customerType,
           } satisfies AuthenticatedUser,
         });
 

@@ -1,8 +1,14 @@
-import { Courier } from './courier';
+export interface Courier {
+  id: string;
+  fullName: string;
+  phone: string;
+  password: string;
+}
 
 export const COURIER_API = Symbol('CourierApi');
+
 export interface CourierApi {
-  findById(courierId: string): Promise<Courier>;
-  findByPhone(phone: string): Promise<Courier>;
+  getById(courierId: string): Promise<Courier>;
+  getByPhone(phone: string): Promise<Courier>;
   notifyPickup(deliveryId: string): Promise<void>;
 }

@@ -7,10 +7,29 @@ import * as schemas from './table';
 export const orderRelations = defineRelationsPart(
   { ...{ ...schemas, couriers, customers, merchandiseLine } },
   (r) => ({
-    deliveryAttemptReports: {},
-    merchandiseLine: {},
+    deliveryAttemptFailures: {},
+    merchandiseLine: {
+      items: r.many.merchandiseLine({
+        from: r.merchandiseLine.id,
+        to: r.merchandiseLine.bundleId,
+        where: { kind: 'leaf' },
+        alias: 'bundle_items',
+      }),
+      bundle: r.one.merchandiseLine({
+        from: r.merchandiseLine.bundleId,
+        to: r.merchandiseLine.id,
+        optional: true,
+        alias: 'bundle_items',
+      }),
+    },
+    fulfillments: {
+      merchandiseLines: r.many.merchandiseLine({
+        from: r.fulfillments.orderId,
+        to: r.merchandiseLine.orderId,
+      }),
+    },
     orders: {
-      merchandise: r.many.merchandiseLine({
+      merchandiseLines: r.many.merchandiseLine({
         from: r.orders.id,
         to: r.merchandiseLine.orderId,
       }),
@@ -39,9 +58,9 @@ export const orderRelations = defineRelationsPart(
         from: r.deliveries.courierId,
         to: r.couriers.id,
       }),
-      attempts: r.many.deliveryAttemptReports({
+      attempts: r.many.deliveryAttemptFailures({
         from: r.deliveries.id,
-        to: r.deliveryAttemptReports.deliveryId,
+        to: r.deliveryAttemptFailures.deliveryId,
       }),
     },
     payments: {

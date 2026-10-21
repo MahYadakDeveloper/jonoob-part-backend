@@ -1,4 +1,5 @@
 import { Manager, ManagerApi } from '@feature/actors-api/manager';
+import { ensureFound } from '@feature/shared/utils/assertions';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ManagerRepository } from './manager.repository';
 
@@ -6,24 +7,24 @@ import { ManagerRepository } from './manager.repository';
 export class ManagerService implements ManagerApi {
   constructor(private readonly repository: ManagerRepository) {}
 
-  findById(managerId: string): Promise<Manager> {
-    return this.repository.findById(managerId).then((m) => {
-      if (!m) throw new NotFoundException(`Manager ${managerId} not found`);
-      return m;
-    });
+  getById(managerId: string) {
+    return this.repository
+      .findById(managerId)
+      .then((m) =>
+        ensureFound(m, () => new NotFoundException('Manager not found')),
+      );
   }
 
-  findByPhone(phone: string): Promise<Manager> {
-    return this.repository.findByPhone(phone).then((m) => {
-      if (!m)
-        throw new NotFoundException(`Manager not found with ${phone} number`);
-      return m;
-    });
+  getByPhone(phone: string) {
+    return this.repository
+      .findByPhone(phone)
+      .then((m) =>
+        ensureFound(
+          m,
+          () => new NotFoundException(`Manager not found with ${phone} number`),
+        ),
+      );
   }
 
-  /**
-   * [NOTE]
-   * Admin only access.
-   */
   create({ data }: { data: Omit<Manager, 'id'> }) {}
 }

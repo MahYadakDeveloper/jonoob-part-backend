@@ -10,37 +10,19 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { addresses, couriers, customerType } from '../../actors/tables';
+import { addresses, couriers } from '../../actors/tables';
 import { orderSchema } from '../order.schema';
 import { orders } from './orders.schema';
 
-type CustomerType = (typeof customerType.enumValues)[number];
-type CustomerAddressBase = Omit<
-  typeof addresses.$inferSelect,
-  'scope' | 'provinceId' | 'postalCode' | 'latitude' | 'longitude'
->;
-type CustomerAddress = CustomerAddressBase &
-  (
-    | {
-        scope: 'inter_city';
-        provinceId: number;
-        postalCode: string;
-      }
-    | {
-        scope: 'intra_city';
-        provinceId: number;
-        latitude: number | null;
-        longitude: number | null;
-      }
-  );
+type DeliveryScope = (typeof deliveryScope.enumValues)[number];
 
 type DeliveryRecipient = {
-  customerContact: {
+  contact: {
     fullName: string;
     phone: string;
-    type: CustomerType;
   };
-} & CustomerAddress;
+  address: typeof addresses.$inferSelect;
+};
 
 export const deliveryStatus = orderSchema.enum('delivery_status', [
   'pending',
@@ -49,6 +31,11 @@ export const deliveryStatus = orderSchema.enum('delivery_status', [
   'handed_over_to_courier',
   'delivered',
   'returned_to_warehouse',
+]);
+
+export const deliveryScope = orderSchema.enum('address_scope', [
+  'intra_city',
+  'inter_city',
 ]);
 
 export const intraCityDeliveryFailureReasons = orderSchema.enum(
@@ -62,23 +49,18 @@ export const intraCityDeliveryFailureReasons = orderSchema.enum(
   ],
 );
 
-export const deliveryAttemptReports = orderSchema.table(
-  'delivery_attempt_reports',
+export const deliveryAttemptFailures = orderSchema.table(
+  'delivery_attempt_failures',
   {
     id: uuid('id').defaultRandom().primaryKey(),
 
     deliveryId: uuid('delivery_id').notNull(),
 
-    // Mirrors deliveries.scope through the composite foreign key below.
-    scope: varchar('scope', { length: 16 })
-      .$type<CustomerAddress['scope']>()
-      .notNull(),
-
-    outcome: varchar('outcome', { length: 12 })
-      .$type<'delivered' | 'failed'>()
-      .notNull(),
+    // Mirrors deliveries.scope through the composite foreign key.
+    scope: varchar('scope', { length: 16 }).$type<DeliveryScope>().notNull(),
 
     reason: intraCityDeliveryFailureReasons('reason'),
+
     reasonMessage: text('reason_message'),
 
     reportedAt: timestamp('reported_at', { withTimezone: true })
@@ -87,23 +69,39 @@ export const deliveryAttemptReports = orderSchema.table(
   },
   (t) => [
     foreignKey({
-      name: 'delivery_attempt_reports_delivery_scope_fk',
+      name: 'delivery_attempt_failures_delivery_scope_fk',
       columns: [t.deliveryId, t.scope],
       foreignColumns: [deliveries.id, deliveries.scope],
     }).onDelete('cascade'),
+
     check(
-      'delivery_attempt_reports_reason_scope',
-      sql`${t.reason} IS NULL OR (${t.outcome} = 'failed' AND ${t.scope} = 'intra_city')`,
+      'delivery_attempt_failures_scope_check',
+      sql`${t.scope} IN ('intra_city', 'inter_city')`,
     ),
+
     check(
-      'delivery_attempt_reports_reason_message',
-      sql`${t.reasonMessage} IS NULL OR (
-        ${t.outcome} = 'failed'
-        AND (
-          (${t.scope} = 'intra_city' AND ${t.reason} = 'other')
-          OR (${t.scope} = 'inter_city' AND ${t.reason} IS NULL)
+      'delivery_attempt_failures_reason_consistency',
+      sql`
+        (
+          ${t.scope} = 'intra_city'
+          AND (
+            (
+              ${t.reason} = 'other'
+              AND ${t.reasonMessage} IS NOT NULL
+            )
+            OR (
+              ${t.reason} IS NOT NULL
+              AND ${t.reason} <> 'other'
+              AND ${t.reasonMessage} IS NULL
+            )
+          )
         )
-      )`,
+        OR (
+          ${t.scope} = 'inter_city'
+          AND ${t.reason} IS NULL
+          AND ${t.reasonMessage} IS NOT NULL
+        )
+      `,
     ),
   ],
 );
@@ -121,9 +119,7 @@ export const deliveries = orderSchema.table(
 
     recipient: jsonb('recipient').$type<DeliveryRecipient>().notNull(),
 
-    scope: varchar('scope', { length: 16 })
-      .$type<CustomerAddress['scope']>()
-      .generatedAlwaysAs(sql`recipient->>'scope'`),
+    scope: deliveryScope('delivery_scope').notNull(),
 
     courierId: uuid('courier_id').references(() => couriers.id, {
       onDelete: 'set null',
@@ -133,7 +129,7 @@ export const deliveries = orderSchema.table(
       length: 6,
     }),
 
-    carrierKey: varchar('carrier_key', {
+    freight: varchar('freight', {
       length: 64,
     }),
     trackingNumber: varchar('tracking_number', { length: 128 }),
@@ -156,34 +152,12 @@ export const deliveries = orderSchema.table(
     index('deliveries_order_id_idx').on(t.orderId),
     index('deliveries_status_idx').on(t.status),
     index('deliveries_courier_id_idx').on(t.courierId),
-    check(
-      'deliveries_returned_intra_city_failure_reason',
-      sql`CASE
-        WHEN ${t.status} = 'returned_to_warehouse'
-          AND ${t.recipient}->>'scope' = 'intra_city'
-        THEN COALESCE(
-          (
-            ${t.recipient}->>'reason' IN (
-              'recipient_absent',
-              'recipient_unreachable',
-              'invalid_address',
-              'recipient_refused'
-            )
-            OR (
-              ${t.recipient}->>'reason' = 'other'
-              AND jsonb_typeof(${t.recipient}->'message') = 'string'
-            )
-          ),
-          FALSE
-        )
-        ELSE TRUE
-      END`,
-    ),
+
     check(
       'deliveries_scope_fields',
       sql`CASE
-        WHEN ${t.recipient}->>'scope' = 'intra_city'
-        THEN ${t.carrierKey} IS NULL
+        WHEN ${t.scope} = 'intra_city'
+        THEN ${t.freight} IS NULL
           AND ${t.trackingNumber} IS NULL
           AND (
             ${t.status} NOT IN (
@@ -193,8 +167,8 @@ export const deliveries = orderSchema.table(
             )
             OR ${t.confirmationCode} IS NOT NULL
           )
-        WHEN ${t.recipient}->>'scope' = 'inter_city'
-        THEN ${t.carrierKey} IS NOT NULL
+        WHEN ${t.scope} = 'inter_city'
+        THEN ${t.freight} IS NOT NULL
           AND ${t.confirmationCode} IS NULL
           AND (
             (${t.status} = 'delivered' AND ${t.trackingNumber} IS NOT NULL)

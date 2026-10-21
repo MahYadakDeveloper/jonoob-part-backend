@@ -1,14 +1,14 @@
 import { CheckPolicies } from '@feature/shared/decorators/check-policies.decorator';
+import { User } from '@feature/shared/decorators/user.decorator';
 import { AuthenticationGuard } from '@feature/shared/guards/auth.guard';
 import { PoliciesGuard } from '@feature/shared/guards/policies.guard';
+import { type AuthenticatedUser } from '@feature/shared/types/authenticated-user';
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import {
-  ConfirmPickupSchema,
-  DeliveryAttemptReportSchema,
-  type ConfirmPickupDto,
+  deliveryAttemptReportSchema,
   type DeliveryAttemptReportDto,
-} from './delivery.schema';
+} from './delivery.dto';
 import { DeliveryService } from './delivery.service';
 import { ConfirmPickupPolicyHandler } from './policies/confirm-pickup.policy';
 import { DeliveryAbilityFactory } from './policies/delivery-ability';
@@ -31,9 +31,12 @@ export class DeliveryController {
   @Post(':id/confirm-pickup')
   confirmPickup(
     @Param('id', { schema: z.uuid() }) id: string,
-    @Body({ schema: ConfirmPickupSchema }) dto: ConfirmPickupDto,
+    @User() user: AuthenticatedUser,
   ) {
-    return this.delivery.confirmPickup(id, dto.courierId);
+    return this.delivery.confirmPickup(
+      id,
+      (user as Extract<AuthenticatedUser, { role: 'courier' }>).id,
+    );
   }
 
   @CheckPolicies({
@@ -42,11 +45,11 @@ export class DeliveryController {
   })
   @Post(':id/attempts')
   reportDeliveryAttempt(
-    @Param('id', { schema: z.uuid() }) deliveryId: string,
-    @Body({ schema: DeliveryAttemptReportSchema })
-    report: DeliveryAttemptReportDto,
+    @Param('id', { schema: z.uuid() }) id: string,
+    @Body({ schema: deliveryAttemptReportSchema })
+    dto: DeliveryAttemptReportDto,
   ) {
-    return this.delivery.reportDeliveryAttempt(deliveryId, report);
+    return this.delivery.reportDeliveryAttempt(id, dto);
   }
 
   @CheckPolicies({
@@ -54,9 +57,7 @@ export class DeliveryController {
     handlers: [ReceiveReturnedDeliveryPolicyHandler],
   })
   @Post(':id/receive-return')
-  receiveReturnedDelivery(
-    @Param('id', { schema: z.uuid() }) deliveryId: string,
-  ) {
-    return this.delivery.receiveReturnedDelivery(deliveryId);
+  receiveReturnedDelivery(@Param('id', { schema: z.uuid() }) id: string) {
+    return this.delivery.receiveReturnedDelivery(id);
   }
 }

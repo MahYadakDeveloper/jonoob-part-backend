@@ -10,6 +10,7 @@ export const actorsRelations = defineRelationsPart(
     walletTransactions: {},
     wallets: {},
     addresses: {},
+    managers: {},
     customers: {
       addresses: r.many.addresses({
         from: r.customers.id,

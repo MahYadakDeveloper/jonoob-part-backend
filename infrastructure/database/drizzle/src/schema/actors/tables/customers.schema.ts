@@ -92,43 +92,44 @@ export const wallets = actorsSchema.table(
   (t) => [check('chk_wallets_total_non_negative', sql`${t.total} >= 0`)],
 );
 
-export const addressScope = actorsSchema.enum('address_scope', [
-  'intra_city',
-  'inter_city',
-]);
-
 export const addresses = actorsSchema.table(
   'addresses',
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
+
     customerId: uuid('customer_id')
       .notNull()
       .references(() => customers.id, { onDelete: 'cascade' }),
-    scope: addressScope().notNull(),
-    cityId: integer('city_id').notNull(),
-    address: text('address').notNull(),
 
-    // inter_city only
-    provinceId: integer('province_id'),
+    cityId: integer('city_id').notNull(),
+    provinceId: integer('province_id').notNull(),
+
+    address: text('address'),
     postalCode: varchar('postal_code'),
 
-    // intra_city only (optional)
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
   },
   (t) => [
     index('idx_addresses_customer_id').on(t.customerId),
+
     check(
-      'chk_addresses_inter_city_required',
-      sql`${t.scope} <> 'inter_city' OR (${t.provinceId} IS NOT NULL AND ${t.postalCode} IS NOT NULL)`,
-    ),
-    check(
-      'chk_addresses_coordinate_pair',
-      sql`(${t.latitude} IS NULL) = (${t.longitude} IS NULL)`,
-    ),
-    check(
-      'chk_addresses_coordinate_intra_only',
-      sql`${t.scope} = 'intra_city' OR ${t.latitude} IS NULL`,
+      'addresses_location_or_postal_address_check',
+      sql`
+        (
+          ${t.latitude} IS NOT NULL
+          AND ${t.longitude} IS NOT NULL
+          AND ${t.address} IS NULL
+          AND ${t.postalCode} IS NULL
+        )
+        OR
+        (
+          ${t.latitude} IS NULL
+          AND ${t.longitude} IS NULL
+          AND ${t.address} IS NOT NULL
+          AND ${t.postalCode} IS NOT NULL
+        )
+      `,
     ),
   ],
 );

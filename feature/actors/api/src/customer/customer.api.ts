@@ -1,17 +1,31 @@
-import { Customer, CustomerType } from './customer.type';
+import { CustomerType } from '@feature/shared/types/customer-type';
 
-export const CUSTOMER_API = Symbol('CustomersApi');
+export type Customer = {
+  id: string;
+  fullName: string;
+  phone: string;
+  type: CustomerType;
+};
+
+export type CustomerContact = {
+  type: CustomerType;
+  phone: string;
+  fullName: string;
+};
+
+export interface CreateConsumerTypeCustomerInput {
+  fullName: string;
+  phone: string;
+}
+
+export const CUSTOMERS_API = Symbol('CUSTOMERS_API');
+
 export interface CustomersApi {
-  findById(customerId: string): Promise<Customer>;
+  getById(id: string): Promise<Customer>;
 
-  findByPhone(phone: string): Promise<Customer>;
+  getByPhone(phone: string): Promise<Customer>;
 
-  getContact(
-    customerId: string,
-  ): Promise<{ type: CustomerType; phone: string; fullName: string }>;
-
-  createConsumerTypeCustomer(customer: {
-    phone: string;
-    fullName: string;
-  }): Promise<{ id: string }>;
+  createConsumerTypeCustomer(
+    input: CreateConsumerTypeCustomerInput,
+  ): Promise<{ id: string }>;
 }

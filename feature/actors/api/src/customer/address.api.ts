@@ -1,10 +1,13 @@
-import { CustomerAddress } from './customer.type';
+import { CustomerAddress } from '@feature/shared/types/customer-address';
+
+export interface GetCustomerAddressInput {
+  id: string;
+  customerId: string;
+}
+
+export const CUSTOMER_ADDRESS_API = Symbol('CUSTOMER_ADDRESS_API');
 
 export interface CustomerAddressApi {
-  findManyByCustomerId(customerId: string): Promise<CustomerAddress[]>;
-
-  findByIdAndCustomerId(
-    addressId: string,
-    customerId: string,
-  ): Promise<CustomerAddress>;
+  get(input: GetCustomerAddressInput): Promise<CustomerAddress>;
+  list(customerId: string): Promise<CustomerAddress[]>;
 }

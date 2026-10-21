@@ -23,8 +23,8 @@
   "private": true,
   "dependencies": {
     "@feature/actors-api": "workspace:*",
-    "@feature/shared": "workspace:*",
     "@feature/order-api": "workspace:*",
+    "@feature/shared": "workspace:*",
     "@infra/crypto-hash": "workspace:*",
     "@infra/crypto-jwt": "workspace:*",
     "@infra/crypto-otp": "workspace:*",
@@ -39,6 +39,6 @@
     "bullmq": "catalog:",
     "redis": "catalog:",
     "rxjs": "catalog:",
-    "zod": "catalog:"
+    "zod": "4.6.7"
   }
 }

@@ -1,37 +1,37 @@
 import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
-import { managers } from '@infra/db-drizzle/schema';
+import { actorsRelations, managers } from '@infra/db-drizzle/schema';
 import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { eq } from 'drizzle-orm';
 
-export type Manager = typeof managers.$inferSelect;
-
 @Injectable()
-export class ManagerRepository extends DrizzleBaseRepository {
+export class ManagerRepository extends DrizzleBaseRepository<
+  typeof actorsRelations
+> {
   constructor(
-    dbProvider: DrizzleDbProvider,
+    dbProvider: DrizzleDbProvider<typeof actorsRelations>,
     forUpdateCtx: AsyncLocalStorage<'for_update'>,
   ) {
     super(dbProvider, forUpdateCtx);
   }
 
-  findById(id: string): Promise<Manager | null> {
-    return this.db
-      .select()
-      .from(managers)
-      .where(eq(managers.id, id))
-      .then((rows) => rows[0] ?? null);
+  findById(id: string) {
+    return this.db.query.managers.findFirst({
+      where: { id },
+    });
   }
 
-  findByPhone(phone: string): Promise<Manager | null> {
-    return this.db
-      .select()
-      .from(managers)
-      .where(eq(managers.phone, phone))
-      .then((rows) => rows[0] ?? null);
+  findByPhone(phone: string) {
+    return this.db.query.managers.findFirst({
+      where: { phone },
+    });
   }
 
-  async create(manager: typeof managers.$inferInsert) {
-    await this.db.insert(managers).values(manager);
+  create(manager: typeof managers.$inferInsert) {
+    return this.db.insert(managers).values(manager);
+  }
+
+  delete(id: string) {
+    return this.db.delete(managers).where(eq(managers.id, id));
   }
 }
