@@ -36,6 +36,7 @@ catalog:
   redlock: 5.0.0-beta.2
   reflect-metadata: ^0.2.2
   nest-commander: ^3.21.0
+  '@nestjs/idempotency': ^0.0.2
 
 overrides:
   fastify: "catalog:"

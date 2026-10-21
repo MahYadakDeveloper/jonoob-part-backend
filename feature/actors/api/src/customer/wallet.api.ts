@@ -19,12 +19,6 @@ export interface WalletDebitInput extends WalletCommandInput {
     | 'manual_adjustment';
 }
 
-export interface WalletRefundInput extends WalletCommandInput {
-  readonly amount: number;
-
-  readonly originalTransactionId: string;
-}
-
 export interface WalletFreezeInput extends WalletCommandInput {
   readonly amount: number;
   readonly reason: 'payout_request' | 'manual';
@@ -63,7 +57,6 @@ export interface WalletApi {
 
   credit(input: WalletCreditInput): Promise<WalletTransactionResult>;
   debit(input: WalletDebitInput): Promise<WalletTransactionResult>;
-  refund(input: WalletRefundInput): Promise<WalletTransactionResult>;
 
   freeze(input: WalletFreezeInput): Promise<WalletFreezeResult>;
   commitFreeze(

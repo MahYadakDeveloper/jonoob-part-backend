@@ -1,5 +1,5 @@
 import { COURIER_API } from '@feature/actors-api/courier';
-import { CUSTOMER_API } from '@feature/actors-api/customer';
+import { CUSTOMERS_API } from '@feature/actors-api/customer';
 import { MANAGER_API } from '@feature/actors-api/manager';
 import { DrizzleDbModule } from '@infra/db-drizzle';
 import { QueueModule } from '@infra/messaging-queue';
@@ -31,11 +31,11 @@ import { ManagerService } from './manager/manager.service';
       useClass: ManagerService,
     },
     {
-      provide: CUSTOMER_API,
+      provide: CUSTOMERS_API,
       useClass: CustomersApiImpl,
     },
   ],
-  exports: [COURIER_API, MANAGER_API, CUSTOMER_API],
+  exports: [COURIER_API, MANAGER_API, CUSTOMERS_API],
 })
 export class ActorsModule {
   static forRoot(options: ModuleMetadata): DynamicModule {

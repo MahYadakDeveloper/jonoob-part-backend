@@ -9,21 +9,21 @@ import {
 // [ASSUMPTION] adjust the token name to whatever you export next to the API
 import {
   type AdminSignInDto,
-  AdminSignInSchema,
+  adminSignInSchema,
   type HashRequestDto,
-  HashRequestSchema,
+  hashRequestSchema,
   type PasswordSignInDto,
-  PasswordSignInSchema,
+  passwordSignInSchema,
   type RefreshDto,
-  RefreshSchema,
+  refreshSchema,
   type RequestOtpDto,
-  RequestOtpSchema,
+  requestOtpSchema,
   type SignUpDto,
-  SignUpSchema,
+  signUpSchema,
   type VerifyOtpDto,
-  VerifyOtpSchema,
+  verifyOtpSchema,
   type VerifyTokenDto,
-  VerifyTokenSchema,
+  verifyTokenSchema,
 } from './auth.dto';
 import { AuthenticationService } from './auth.service';
 
@@ -50,7 +50,7 @@ export class AuthenticationController {
   @Post('otp/request')
   @HttpCode(HttpStatus.NO_CONTENT)
   async requestOtp(
-    @Body({ schema: RequestOtpSchema }) dto: RequestOtpDto,
+    @Body({ schema: requestOtpSchema }) dto: RequestOtpDto,
     @Ip() ip: string,
   ) {
     await this.auth.request(dto.phoneNumber, ip);
@@ -59,7 +59,7 @@ export class AuthenticationController {
   @Post('otp/verify')
   @HttpCode(HttpStatus.OK)
   async verifyOtp(
-    @Body({ schema: VerifyOtpSchema }) dto: VerifyOtpDto,
+    @Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto,
     @Ip() ip: string,
   ) {
     return this.auth.verify({
@@ -73,13 +73,13 @@ export class AuthenticationController {
 
   @Post('customer/sign-in')
   @HttpCode(HttpStatus.OK)
-  customerSignIn(@Body({ schema: VerifyTokenSchema }) dto: VerifyTokenDto) {
+  customerSignIn(@Body({ schema: verifyTokenSchema }) dto: VerifyTokenDto) {
     return this.auth.signIn({ verifyToken: dto.verifyToken });
   }
 
   @Post('customer/sign-up')
   @HttpCode(HttpStatus.CREATED)
-  customerSignUp(@Body({ schema: SignUpSchema }) dto: SignUpDto) {
+  customerSignUp(@Body({ schema: signUpSchema }) dto: SignUpDto) {
     return this.auth.signUp({
       verifyToken: dto.verifyToken,
       fullName: dto.fullName,
@@ -91,7 +91,7 @@ export class AuthenticationController {
   @Post('courier/sign-in')
   @HttpCode(HttpStatus.OK)
   courierSignIn(
-    @Body({ schema: PasswordSignInSchema }) dto: PasswordSignInDto,
+    @Body({ schema: passwordSignInSchema }) dto: PasswordSignInDto,
   ) {
     return this.auth.courierSingIn({
       verifyToken: dto.verifyToken,
@@ -102,7 +102,7 @@ export class AuthenticationController {
   @Post('manager/sign-in')
   @HttpCode(HttpStatus.OK)
   managerSignIn(
-    @Body({ schema: PasswordSignInSchema }) dto: PasswordSignInDto,
+    @Body({ schema: passwordSignInSchema }) dto: PasswordSignInDto,
   ) {
     return this.auth.managerSignIn({
       verifyToken: dto.verifyToken,
@@ -112,7 +112,7 @@ export class AuthenticationController {
 
   @Post('admin/sign-in')
   @HttpCode(HttpStatus.OK)
-  adminSignIn(@Body({ schema: AdminSignInSchema }) dto: AdminSignInDto) {
+  adminSignIn(@Body({ schema: adminSignInSchema }) dto: AdminSignInDto) {
     return this.auth.adminSignIn({
       verifyToken: dto.verifyToken,
       secretKey: dto.secretKey,
@@ -123,14 +123,14 @@ export class AuthenticationController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  refresh(@Body({ schema: RefreshSchema }) dto: RefreshDto) {
+  refresh(@Body({ schema: refreshSchema }) dto: RefreshDto) {
     return this.auth.refresh({ oldRefreshToken: dto.refreshToken });
   }
 
   // --------- hashing --------
   @Post('hash')
   @HttpCode(HttpStatus.OK)
-  hash(@Body({ schema: HashRequestSchema }) dto: HashRequestDto) {
-    return this.auth.hash(dto.password);
+  hash(@Body({ schema: hashRequestSchema }) dto: HashRequestDto) {
+    return this.auth.hash(dto);
   }
 }

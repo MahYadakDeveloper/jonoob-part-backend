@@ -1,15 +1,15 @@
 import {
-  CommitFrozenAmountRequest,
-  FreezeWalletAmountRequest,
-  FrozenBalanceResponse,
-  GetWalletBalanceRequest,
-  GetWalletBalanceResponse,
-  ReleaseFrozenAmountRequest,
+  GetWalletBalanceInput,
   WalletApi,
-  WalletDepositRequest,
-  WalletTransactionResponse,
-  WalletWithdrawRequest,
-} from '@feature/actors-api/customer/wallet';
+  WalletBalanceResult,
+  WalletCommitFreezeInput,
+  WalletCreditInput,
+  WalletDebitInput,
+  WalletFreezeInput,
+  WalletFreezeResult,
+  WalletReleaseFreezeInput,
+  WalletTransactionResult,
+} from '@feature/actors-api/customer';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import {
   BadRequestException,
@@ -28,35 +28,14 @@ export class WalletService implements WalletApi {
     private readonly tx: DrizzleTransactionContext,
   ) {}
 
-  pageTransactions(
-    customerId: string,
-    criteria: Parameters<WalletRepository['pageTransactions']>[1],
-  ) {
-    return this.repository.pageTransactions(customerId, criteria);
-  }
-
-  async getBalance({
-    customerId,
-  }: GetWalletBalanceRequest): Promise<GetWalletBalanceResponse> {
-    const wallet = await this.repository.findByCustomerId(customerId);
-    if (!wallet) throw new NotFoundException('Customer has no wallet!');
-
-    const frozen = await this.repository.getFrozenTotal(wallet.id);
-    return {
-      total: wallet.total,
-      frozen,
-      available: wallet.total - frozen,
-    };
-  }
-
-  deposit(req: WalletDepositRequest): Promise<WalletTransactionResponse> {
-    return this.runIdempotently('deposit', req, (walletId, amount) =>
+  credit(input: WalletCreditInput): Promise<WalletTransactionResult> {
+    return this.runIdempotently('deposit', input, (walletId, amount) =>
       this.repository.increaseBalance(walletId, amount),
     );
   }
 
-  withdraw(req: WalletWithdrawRequest): Promise<WalletTransactionResponse> {
-    return this.runIdempotently('withdraw', req, (walletId, amount) =>
+  debit(input: WalletDebitInput): Promise<WalletTransactionResult> {
+    return this.runIdempotently('withdraw', input, (walletId, amount) =>
       this.repository.decreaseBalance(walletId, amount),
     );
   }
@@ -66,8 +45,7 @@ export class WalletService implements WalletApi {
     customerId,
     idempotencyKey,
     reason,
-    description,
-  }: FreezeWalletAmountRequest): Promise<FrozenBalanceResponse> {
+  }: WalletFreezeInput): Promise<WalletFreezeResult> {
     if (!Number.isSafeInteger(amount) || amount <= 0) {
       throw new BadRequestException('Amount must be a positive integer');
     }
@@ -127,12 +105,12 @@ export class WalletService implements WalletApi {
     );
   }
 
-  commitFrozen({
-    freezeId,
+  commitFreeze({
     customerId,
+    freezeId,
     idempotencyKey,
-    description,
-  }: CommitFrozenAmountRequest): Promise<WalletTransactionResponse> {
+    note,
+  }: WalletCommitFreezeInput): Promise<WalletTransactionResult> {
     return this.tx.run(async () =>
       this.repository.withLock(
         'wallet-transaction',
@@ -173,14 +151,15 @@ export class WalletService implements WalletApi {
           if (!updated)
             throw new UnprocessableEntityException('Insufficient funds');
 
-          const { id: transactionId } = await this.repository.recordTransaction({
-            type: 'withdraw',
-            amount: frozen.amount,
-            walletId: frozen.walletId,
-            idempotencyKey,
-            reason: frozen.reason,
-            description,
-          });
+          const { id: transactionId } = await this.repository.recordTransaction(
+            {
+              type: 'withdraw',
+              amount: frozen.amount,
+              walletId: frozen.walletId,
+              idempotencyKey,
+              reason: frozen.reason,
+            },
+          );
 
           return { transactionId };
         },
@@ -188,9 +167,7 @@ export class WalletService implements WalletApi {
     );
   }
 
-  releaseFrozen({ freezeId }: ReleaseFrozenAmountRequest): Promise<void> {
-    const idempotencyKey = `unfreeze:${freezeId}`;
-
+  releaseFreeze(input: WalletReleaseFreezeInput): Promise<WalletFreezeResult> {
     return this.tx.run(async () =>
       this.repository.withLock(
         'wallet-transaction',
@@ -218,6 +195,29 @@ export class WalletService implements WalletApi {
       ),
     );
   }
+
+  pageTransactions(
+    customerId: string,
+    criteria: Parameters<WalletRepository['pageTransactions']>[1],
+  ) {
+    return this.repository.pageTransactions(customerId, criteria);
+  }
+
+  async getBalance({
+    customerId,
+  }: GetWalletBalanceInput): Promise<WalletBalanceResult> {
+    const wallet = await this.repository.findByCustomerId(customerId);
+    if (!wallet) throw new NotFoundException('Customer has no wallet!');
+
+    const frozen = await this.repository.getFrozenTotal(wallet.id);
+    return {
+      total: wallet.total,
+      frozen,
+      available: wallet.total - frozen,
+    };
+  }
+
+  async payout(customerId: string, { amount }: { amount: number }) {}
 
   private runIdempotently(
     type: Extract<WalletTransaction['type'], 'withdraw' | 'deposit'>,

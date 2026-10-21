@@ -1,7 +1,11 @@
-import { type CourierApi, COURIER_API } from '@feature/actors-api/courier';
-import { type CustomersApi, CUSTOMER_API } from '@feature/actors-api/customer';
-import { type ManagerApi, MANAGER_API } from '@feature/actors-api/manager';
-import { AuthenticationApi } from '@feature/shared/contracts/authentication.api';
+import { COURIER_API, type CourierApi } from '@feature/actors-api/courier';
+import { CUSTOMERS_API, type CustomersApi } from '@feature/actors-api/customer';
+import { MANAGER_API, type ManagerApi } from '@feature/actors-api/manager';
+import {
+  AuthenticationApi,
+  AuthenticationInput,
+  AuthenticationResult,
+} from '@feature/shared/contracts/authentication.api';
 import { AuthenticatedUser } from '@feature/shared/types/authenticated-user';
 import { HashService } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
@@ -71,9 +75,9 @@ export class AuthenticationService implements AuthenticationApi {
   private readonly refreshTokenExpiresIn = 604800; // 7 days
 
   constructor(
-    @Inject(CUSTOMER_API) private readonly customers: CustomersApi,
     @Inject(MANAGER_API) private readonly manager: ManagerApi,
     @Inject(COURIER_API) private readonly courier: CourierApi,
+    @Inject(CUSTOMERS_API) private readonly customers: CustomersApi,
     private readonly otps: OtpStore,
     private readonly jwtService: JwtService,
     private readonly hashService: HashService,
@@ -87,11 +91,9 @@ export class AuthenticationService implements AuthenticationApi {
 
   async authenticate({
     token,
-  }: {
-    token: string;
-  }): Promise<{ user: AuthenticatedUser } | null> {
+  }: AuthenticationInput): Promise<AuthenticationResult> {
     const payload = await this.jwtService.verify(token, 'access');
-    if (!payload) return null;
+    if (!payload) return { user: null };
 
     return { user: payload as unknown as AuthenticatedUser };
   }
@@ -239,7 +241,9 @@ export class AuthenticationService implements AuthenticationApi {
           );
 
         // payload.sub is a phone number, because it comes from verify token
-        const customer = await this.customers.findByPhone(payload.sub);
+        const customer = await this.customers.getByPhone({
+          phone: payload.sub,
+        });
 
         const accessToken = await this.jwtService.issue({
           type: 'access',
@@ -289,12 +293,13 @@ export class AuthenticationService implements AuthenticationApi {
             'Verification token is invalid, expired, or already used',
           );
 
-        const courier = await this.courier.findByPhone(payload.sub);
+        const courier = await this.courier.getByPhone({ phone: payload.sub });
 
         const verified = await this.hashService.verify(
           password,
           courier.password,
         );
+
         if (!verified) throw new UnauthorizedException('Invalid credentials');
 
         const accessToken = await this.jwtService.issue({
@@ -349,7 +354,7 @@ export class AuthenticationService implements AuthenticationApi {
             'Verification token is invalid, expired, or already used',
           );
 
-        const manager = await this.manager.findByPhone(payload.sub);
+        const manager = await this.manager.getByPhone({ phone: payload.sub });
 
         const verified = await this.hashService.verify(
           password,
@@ -405,7 +410,6 @@ export class AuthenticationService implements AuthenticationApi {
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) {
-          this.logger.warn('Admin sign-in rejected: verify token invalid');
           throw new UnauthorizedException('Invalid verification token');
         }
 
@@ -422,7 +426,6 @@ export class AuthenticationService implements AuthenticationApi {
           this.config.adminSecretKey,
         );
         if (!verified) {
-          this.logger.warn('Admin sign-in rejected: wrong secret key');
           throw new UnauthorizedException('Invalid credentials');
         }
 
@@ -552,7 +555,9 @@ export class AuthenticationService implements AuthenticationApi {
             });
             break;
           case 'manager':
-            const manager = await this.manager.findById(payload.id);
+            const manager = await this.manager.getById({
+              managerId: payload.id,
+            });
 
             accessToken = await this.jwtService.issue({
               type: 'access',
@@ -575,7 +580,9 @@ export class AuthenticationService implements AuthenticationApi {
             });
             break;
           case 'courier':
-            const courier = await this.courier.findById(payload.id);
+            const courier = await this.courier.getById({
+              courierId: payload.id,
+            });
 
             accessToken = await this.jwtService.issue({
               type: 'access',
@@ -599,7 +606,9 @@ export class AuthenticationService implements AuthenticationApi {
             break;
           case 'customer':
             // sub here is customer id, because it comes from refresh token
-            const customer = await this.customers.findById(payload.sub);
+            const customer = await this.customers.getById({
+              customerId: payload.sub,
+            });
 
             accessToken = await this.jwtService.issue({
               type: 'access',
@@ -632,7 +641,7 @@ export class AuthenticationService implements AuthenticationApi {
     );
   }
 
-  async hash(password: string) {
+  async hash({ password }: { password: string }) {
     return await this.synchronizer.executeExclusive(
       'auth:hashing',
       async () => {

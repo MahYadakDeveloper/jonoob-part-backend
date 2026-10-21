@@ -1,2 +1,3 @@
+export * from './address.api';
 export * from './customer.api';
-export * from './customer.type';
+export * from './wallet.api';

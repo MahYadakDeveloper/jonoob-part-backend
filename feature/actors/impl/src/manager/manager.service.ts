@@ -1,4 +1,9 @@
-import { Manager, ManagerApi } from '@feature/actors-api/manager';
+import {
+  GetManagerByIdInput,
+  GetManagerByPhoneInput,
+  Manager,
+  ManagerApi,
+} from '@feature/actors-api/manager';
 import { ensureFound } from '@feature/shared/utils/assertions';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ManagerRepository } from './manager.repository';
@@ -7,7 +12,7 @@ import { ManagerRepository } from './manager.repository';
 export class ManagerService implements ManagerApi {
   constructor(private readonly repository: ManagerRepository) {}
 
-  getById(managerId: string) {
+  getById({ managerId }: GetManagerByIdInput) {
     return this.repository
       .findById(managerId)
       .then((m) =>
@@ -15,7 +20,7 @@ export class ManagerService implements ManagerApi {
       );
   }
 
-  getByPhone(phone: string) {
+  getByPhone({ phone }: GetManagerByPhoneInput) {
     return this.repository
       .findByPhone(phone)
       .then((m) =>

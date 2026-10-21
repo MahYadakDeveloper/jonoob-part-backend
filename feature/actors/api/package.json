@@ -6,28 +6,21 @@
     "build": "pnpm exec tsc",
     "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
+    "./courier": {
+      "types": "./dist/courier.api.d.ts",
+      "import": "./dist/courier.api.js",
+      "require": "./dist/courier.api.js"
+    },
+    "./manager": {
+      "types": "./dist/manager.api.d.ts",
+      "import": "./dist/manager.api.js",
+      "require": "./dist/manager.api.js"
+    },
     "./customer": {
       "types": "./dist/customer/index.d.ts",
       "import": "./dist/customer/index.js",
       "require": "./dist/customer/index.js"
-    },
-    "./customer/wallet": {
-      "types": "./dist/customer/wallet/index.d.ts",
-      "import": "./dist/customer/wallet/index.js",
-      "require": "./dist/customer/wallet/index.js"
-    },
-    "./manager": {
-      "types": "./dist/manager/index.d.ts",
-      "import": "./dist/manager/index.js",
-      "require": "./dist/manager/index.js"
-    },
-    "./courier": {
-      "types": "./dist/courier/index.d.ts",
-      "import": "./dist/courier/index.js",
-      "require": "./dist/courier/index.js"
     }
   },
   "private": true,

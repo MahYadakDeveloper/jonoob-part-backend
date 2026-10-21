@@ -18,13 +18,19 @@ export interface CreateConsumerTypeCustomerInput {
   phone: string;
 }
 
+export interface GetCustomerByIdInput {
+  customerId: string;
+}
+
+export interface GetCustomerByPhoneInput {
+  phone: string;
+}
+
 export const CUSTOMERS_API = Symbol('CUSTOMERS_API');
 
 export interface CustomersApi {
-  getById(id: string): Promise<Customer>;
-
-  getByPhone(phone: string): Promise<Customer>;
-
+  getById(input: GetCustomerByIdInput): Promise<Customer>;
+  getByPhone(input: GetCustomerByPhoneInput): Promise<Customer>;
   createConsumerTypeCustomer(
     input: CreateConsumerTypeCustomerInput,
   ): Promise<{ id: string }>;

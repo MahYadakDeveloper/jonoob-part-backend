@@ -1,4 +1,10 @@
-import { Customer, CustomersApi } from '@feature/actors-api/customer';
+import {
+  CreateConsumerTypeCustomerInput,
+  Customer,
+  CustomersApi,
+  GetCustomerByIdInput,
+  GetCustomerByPhoneInput,
+} from '@feature/actors-api/customer';
 import { ensureFound, ensureOne } from '@feature/shared/utils/assertions';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CustomerRepository } from './customer.repository';
@@ -7,7 +13,7 @@ import { CustomerRepository } from './customer.repository';
 export class CustomersApiImpl implements CustomersApi {
   constructor(private readonly repository: CustomerRepository) {}
 
-  getById(customerId: string): Promise<Customer> {
+  getById({ customerId }: GetCustomerByIdInput): Promise<Customer> {
     return this.repository
       .findById(customerId)
       .then((c) =>
@@ -15,7 +21,7 @@ export class CustomersApiImpl implements CustomersApi {
       );
   }
 
-  getByPhone(phone: string): Promise<Customer> {
+  getByPhone({ phone }: GetCustomerByPhoneInput): Promise<Customer> {
     return this.repository
       .findByPhone(phone)
       .then((c) =>
@@ -23,10 +29,10 @@ export class CustomersApiImpl implements CustomersApi {
       );
   }
 
-  createConsumerTypeCustomer(
-    phone: string,
-    fullName: string,
-  ): Promise<{ id: string }> {
+  createConsumerTypeCustomer({
+    fullName,
+    phone,
+  }: CreateConsumerTypeCustomerInput): Promise<{ id: string }> {
     return this.repository
       .create({
         fullName,

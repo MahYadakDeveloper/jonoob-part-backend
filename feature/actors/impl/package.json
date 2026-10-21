@@ -21,11 +21,14 @@
     "@feature/shared": "workspace:*",
     "@infra/crypto-hash": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
+    "@infra/idempotency": "workspace:*",
     "@infra/messaging-queue": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
+    "@nestjs/idempotency": "catalog:",
     "bullmq": "catalog:",
     "drizzle-orm": "catalog:",
-    "rxjs": "catalog:"
+    "rxjs": "catalog:",
+    "zod": "catalog:"
   }
 }

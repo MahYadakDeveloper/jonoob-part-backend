@@ -6,12 +6,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
-import type { AuthenticationApi } from '../contracts/authentication.api';
+import {
+  AUTHENTICATION_API,
+  type AuthenticationApi,
+} from '../contracts/authentication.api';
 
 @Injectable()
-export class AuthenticationGuard implements CanActivate {
+export class AuthGuard implements CanActivate {
   constructor(
-    @Inject('AuthenticationApi')
+    @Inject(AUTHENTICATION_API)
     private readonly authentication: AuthenticationApi,
   ) {}
 
@@ -24,15 +27,15 @@ export class AuthenticationGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    const authentication = await this.authentication.authenticate({
+    const { user } = await this.authentication.authenticate({
       token,
     });
 
-    if (!authentication) {
+    if (!user) {
       throw new UnauthorizedException();
     }
 
-    request.user = authentication.user;
+    request.user = user;
 
     return true;
   }

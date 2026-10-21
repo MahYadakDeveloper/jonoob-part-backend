@@ -39,6 +39,9 @@ catalogs:
     '@nestjs/event-emitter':
       specifier: ^12.0.1
       version: 12.0.1
+    '@nestjs/idempotency':
+      specifier: ^0.0.2
+      version: 0.0.2
     '@nestjs/jwt':
       specifier: ^12.0.2
       version: 12.0.2
@@ -84,6 +87,9 @@ catalogs:
     typescript:
       specifier: ^6.0.3
       version: 6.0.3
+    zod:
+      specifier: ^4.6.7
+      version: 4.6.7
 
 overrides:
   fastify: 5.12.5
@@ -149,6 +155,9 @@ importers:
       '@feature/authentication':
         specifier: workspace:*
         version: link:../../feature/authentication/impl
+      '@feature/shared':
+        specifier: workspace:*
+        version: link:../../feature/shared
       '@feature/warehouse':
         specifier: workspace:*
         version: link:../../feature/warehouse/impl
@@ -161,6 +170,9 @@ importers:
       '@infra/db-redis':
         specifier: workspace:*
         version: link:../../infrastructure/database/redis
+      '@infra/idempotency':
+        specifier: workspace:*
+        version: link:../../infrastructure/idempotency
       '@infra/messaging-outbox':
         specifier: workspace:*
         version: link:../../infrastructure/messaging/outbox
@@ -182,6 +194,9 @@ importers:
       '@nestjs/core':
         specifier: 'catalog:'
         version: 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      '@nestjs/idempotency':
+        specifier: 'catalog:'
+        version: 0.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.1)
       '@nestjs/platform-fastify':
         specifier: 'catalog:'
         version: 12.0.3(@fastify/static@10.1.3)(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3)
@@ -364,6 +379,9 @@ importers:
       '@infra/db-drizzle':
         specifier: workspace:*
         version: link:../../../infrastructure/database/drizzle
+      '@infra/idempotency':
+        specifier: workspace:*
+        version: link:../../../infrastructure/idempotency
       '@infra/messaging-queue':
         specifier: workspace:*
         version: link:../../../infrastructure/messaging/queue
@@ -373,6 +391,9 @@ importers:
       '@nestjs/common':
         specifier: 'catalog:'
         version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      '@nestjs/idempotency':
+        specifier: 'catalog:'
+        version: 0.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.1)
       bullmq:
         specifier: 'catalog:'
         version: 6.3.9(ioredis@6.0.0)(pg@8.23.0)(redis@6.3.0)
@@ -382,6 +403,9 @@ importers:
       rxjs:
         specifier: 'catalog:'
         version: 7.8.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
 
   feature/authentication/impl:
     dependencies:
@@ -1216,19 +1240,19 @@ importers:
         version: link:../../infrastructure/database/drizzle
       '@nestjs/common':
         specifier: 'catalog:'
-        version: 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
       '@nestjs/core':
         specifier: 'catalog:'
-        version: 12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.1)
+        version: 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.1)
       '@nestjs/outbox':
         specifier: 'catalog:'
-        version: 0.0.1(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.1)
+        version: 0.0.1(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.1)
       fastify:
         specifier: 5.12.5
         version: 5.12.5
       rxjs:
         specifier: 'catalog:'
-        version: 7.8.2
+        version: 7.8.1
       zod:
         specifier: 4.6.7
         version: 4.6.7
@@ -1432,6 +1456,21 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+
+  infrastructure/idempotency:
+    dependencies:
+      '@infra/db-redis':
+        specifier: workspace:*
+        version: link:../database/redis
+      '@nestjs/common':
+        specifier: 'catalog:'
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/idempotency':
+        specifier: 'catalog:'
+        version: 0.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      redis:
+        specifier: 'catalog:'
+        version: 6.3.0
 
   infrastructure/media/image-processor:
     dependencies:
@@ -2978,6 +3017,22 @@ packages:
     peerDependencies:
       '@nestjs/common': ^11.0.0 || ^12.0.0
       '@nestjs/core': ^11.0.0 || ^12.0.0
+
+  '@nestjs/idempotency@0.0.2':
+    resolution: {integrity: sha512-aWGHHv/n2BADOvOGv0EoQGQhkVwr2M696KN2/wyLVsmomQpTUCBXmDwM54Jai0n+DdxtbCOjl7Lcn+w/hjysZw==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      '@nestjs/common': ^11.0.0 || ^12.0.0
+      '@nestjs/core': ^11.0.0 || ^12.0.0
+      '@nestjs/microservices': ^11.0.0 || ^12.0.0
+      graphql: ^16.0.0 || ^17.0.0
+      reflect-metadata: ^0.1.13 || ^0.2.0
+      rxjs: ^7.1.0
+    peerDependenciesMeta:
+      '@nestjs/microservices':
+        optional: true
+      graphql:
+        optional: true
 
   '@nestjs/jwt@12.0.2':
     resolution: {integrity: sha512-1crs22hB7pNf7FnfRRRXvFTo595Rgx+JLyIuWInsyd5Ov/z0N8CCJPqMlTy41D5XTWe8CVr9miwB+2OXxVX9RA==}
@@ -8049,19 +8104,6 @@ snapshots:
     optionalDependencies:
       '@nestjs/platform-express': 12.1.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3)
 
-  '@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.1)':
-    dependencies:
-      '@nestjs/common': 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      fast-safe-stringify: 2.1.1
-      iterare: 1.2.1
-      path-to-regexp: 8.4.2
-      reflect-metadata: 0.2.2
-      rxjs: 7.8.1
-      tslib: 2.8.1
-      uid: 2.0.2
-    optionalDependencies:
-      '@nestjs/platform-express': 12.1.2(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3)
-
   '@nestjs/core@12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
     dependencies:
       '@nestjs/common': 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -8102,6 +8144,20 @@ snapshots:
       '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       eventemitter2: 6.4.9
 
+  '@nestjs/idempotency@0.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.1)':
+    dependencies:
+      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.1)
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.1
+
+  '@nestjs/idempotency@0.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
+    dependencies:
+      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      reflect-metadata: 0.2.2
+      rxjs: 7.8.2
+
   '@nestjs/jwt@12.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))':
     dependencies:
       '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -8136,13 +8192,6 @@ snapshots:
       '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       reflect-metadata: 0.2.2
       rxjs: 7.8.2
-
-  '@nestjs/outbox@0.0.1(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.1)':
-    dependencies:
-      '@nestjs/common': 12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 12.0.3(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.1)
-      reflect-metadata: 0.2.2
-      rxjs: 7.8.1
 
   '@nestjs/platform-express@12.1.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3)':
     dependencies:
