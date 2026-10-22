@@ -1,19 +1,22 @@
 import { Inject } from '@nestjs/common';
+import { InjectDrizzle } from '@nestjs/drizzle';
 import { AsyncLocalStorage } from 'async_hooks';
 import { sql, TablesRelationalConfig } from 'drizzle-orm';
-import { Database, DbTransaction } from './drizzle';
+import { type Database, DbTransaction } from './drizzle';
 import { DrizzleTransactionContext } from './drizzle-transaction.context';
 
 export abstract class DrizzleBaseRepository<
   TRelations extends TablesRelationalConfig = {},
 > {
+  @InjectDrizzle()
+  private readonly _db: Database<TRelations>;
   @Inject()
   private readonly transactionCtx: DrizzleTransactionContext<TRelations>;
-  @Inject('DRIZZLE_ALS_FOR_UPDATE')
+  @Inject('FOR_UPDATE_ALS')
   private readonly forUpdateCtx: AsyncLocalStorage<'for_update'>;
 
   protected get db(): Database<TRelations> | DbTransaction<TRelations> {
-    return this.transactionCtx.current ?? this.db;
+    return this.transactionCtx.current ?? this._db;
   }
 
   protected get ranForUpdate() {
@@ -24,7 +27,7 @@ export abstract class DrizzleBaseRepository<
     const curr = this.transactionCtx.current;
     if (curr) return fn(curr);
 
-    return this.db.transaction((tx) => fn(tx));
+    return this._db.transaction((tx) => fn(tx));
   }
 
   withForUpdate<T>(fn: () => Promise<T>): Promise<T> {

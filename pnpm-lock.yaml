@@ -1464,13 +1464,16 @@ importers:
         version: link:../database/redis
       '@nestjs/common':
         specifier: 'catalog:'
-        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1)
       '@nestjs/idempotency':
         specifier: 'catalog:'
-        version: 0.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 0.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.1)
       redis:
         specifier: 'catalog:'
         version: 6.3.0
+      rxjs:
+        specifier: 'catalog:'
+        version: 7.8.1
 
   infrastructure/media/image-processor:
     dependencies:
@@ -8150,13 +8153,6 @@ snapshots:
       '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.1))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.1)
       reflect-metadata: 0.2.2
       rxjs: 7.8.1
-
-  '@nestjs/idempotency@0.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)':
-    dependencies:
-      '@nestjs/common': 12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 12.0.3(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@12.1.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      reflect-metadata: 0.2.2
-      rxjs: 7.8.2
 
   '@nestjs/jwt@12.0.2(@nestjs/common@12.0.3(reflect-metadata@0.2.2)(rxjs@7.8.2))':
     dependencies:

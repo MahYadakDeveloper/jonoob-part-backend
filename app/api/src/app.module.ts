@@ -1,7 +1,5 @@
 // import { BullModule } from '@nestjs/bullmq';
-import { ActorsModule } from '@feature/actors';
-import { AuthenticationModule } from '@feature/authentication';
-import { AuthenticatedUser } from '@feature/shared/types/authenticated-user';
+import { AuthenticatedUser } from '@feature/shared/contracts/authentication';
 import { WarehouseModule } from '@feature/warehouse';
 import { IdempotencyStoreModule } from '@infra/idempotency';
 import { Module } from '@nestjs/common';
@@ -10,18 +8,19 @@ import { IdempotencyModule } from '@nestjs/idempotency';
 import path from 'node:path';
 // import { ScheduleModule } from '@nestjs/schedule';
 
-const authenticationModule = AuthenticationModule.forRoot({
-  imports: [ActorsModule],
-});
+// const authenticationModule = AuthenticationModule.forRoot({
+//   imports: [ActorsModule],
+// });
 
 @Module({
   imports: [
-    IdempotencyStoreModule,
     IdempotencyModule.forRoot({
+      isGlobal: true,
       // Runs after guards, so req.user is set. Keys never collide across users.
       scope: (req: { user: AuthenticatedUser }) =>
         req.user.role !== 'admin' ? req.user.id : undefined,
     }),
+    IdempotencyStoreModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [
@@ -36,8 +35,8 @@ const authenticationModule = AuthenticationModule.forRoot({
     //   },
     // }),
     // ScheduleModule.forRoot(),
-    authenticationModule,
-    WarehouseModule.forRoot({ imports: [authenticationModule] }),
+    // authenticationModule,
+    WarehouseModule.forRoot({}),
   ],
 })
 export class AppModule {}

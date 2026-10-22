@@ -33,11 +33,15 @@ import {
 
   providers: [
     {
-      provide: 'DRIZZLE_ALS_FOR_UPDATE',
+      provide: 'FOR_UPDATE_ALS',
+      useValue: new AsyncLocalStorage(),
+    },
+    {
+      provide: AsyncLocalStorage,
       useValue: new AsyncLocalStorage(),
     },
     DrizzleTransactionContext,
   ],
-  exports: [AsyncLocalStorage, DrizzleTransactionContext],
+  exports: ['FOR_UPDATE_ALS', AsyncLocalStorage, DrizzleTransactionContext],
 })
 export class DrizzleDbModule {}

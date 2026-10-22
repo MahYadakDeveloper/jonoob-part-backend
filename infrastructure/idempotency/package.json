@@ -19,6 +19,7 @@
     "@infra/db-redis": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/idempotency": "catalog:",
-    "redis": "catalog:"
+    "redis": "catalog:",
+    "rxjs": "catalog:"
   }
 }
