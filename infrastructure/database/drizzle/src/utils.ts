@@ -1,4 +1,11 @@
-import { Column, getColumns, sql, Table, type SQL } from 'drizzle-orm';
+import {
+  Column,
+  DBQueryConfigOrderByObject,
+  getColumns,
+  sql,
+  Table,
+  type SQL,
+} from 'drizzle-orm';
 
 export function sqlCase<T>(
   cases: Array<{
@@ -18,7 +25,9 @@ export function sqlCase<T>(
   `;
 }
 
-type NonSortable = 'json' | 'array' | 'buffer';
+const NON_SORTABLE = ['json', 'array', 'buffer'] as const;
+type NonSortable = (typeof NON_SORTABLE)[number];
+const NON_SORTABLE_SET: ReadonlySet<string> = new Set(NON_SORTABLE);
 
 export type SortableKeys<T extends Table> = {
   [K in keyof T['_']['columns']]: T['_']['columns'][K]['_']['dataType'] extends NonSortable
@@ -35,11 +44,9 @@ export type PageCriteria<TTable extends Table> = {
   size: number;
 };
 
-const NON_SORTABLE = new Set(['json', 'array', 'buffer']);
-
 export const sortableFields = <T extends Table>(table: T) => {
   const fields = Object.entries(getColumns(table) as Record<string, Column>)
-    .filter(([, col]) => !NON_SORTABLE.has(col.dataType))
+    .filter(([, col]) => !NON_SORTABLE_SET.has(col.dataType))
     .map(([name]) => name);
 
   if (fields.length === 0) {
@@ -51,11 +58,12 @@ export const sortableFields = <T extends Table>(table: T) => {
 
 export const orderBy = <TTable extends Table>(
   sort: { field: SortableKeys<TTable>; direction: 'asc' | 'desc' }[],
-) => {
-  const _orderBy: Partial<Record<SortableKeys<TTable>, 'asc' | 'desc'>> = {};
+): DBQueryConfigOrderByObject<TTable['_']['columns']> => {
+  const result: DBQueryConfigOrderByObject<TTable['_']['columns']> = {};
+
   for (const { field, direction } of sort) {
-    _orderBy[field] ??= direction; // first occurrence of a field wins
+    if (!(field in result)) result[field] = direction;
   }
 
-  return _orderBy;
+  return result;
 };

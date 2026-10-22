@@ -1,20 +1,21 @@
 import { StrictOmit } from '@feature/shared/types/utils';
 import { assertOne } from '@feature/shared/utils/assertions';
+import { DrizzleBaseRepository } from '@infra/db-drizzle';
 import {
-    DrizzleBaseRepository,
-    DrizzleDbProvider,
-    DrizzleTransactionContext,
-} from '@infra/db-drizzle';
-import {
-    actorsRelations,
-    freezedAmounts,
-    wallets,
-    walletTransactionReason,
-    walletTransactions,
-    walletTransactionType,
+  actorsRelations,
+  freezedAmounts,
+  wallets,
+  walletTransactionReason,
+  walletTransactions,
+  walletTransactionType,
 } from '@infra/db-drizzle/schema';
-import { AsyncLocalStorage } from 'async_hooks';
-import { and, DBQueryConfigWith, eq, sql } from 'drizzle-orm';
+import {
+  and,
+  DBQueryConfigOrderBy,
+  DBQueryConfigWith,
+  eq,
+  sql,
+} from 'drizzle-orm';
 
 /**
  * Wallet repository contract.
@@ -39,8 +40,16 @@ export interface WalletBalance {
   total: number; // available + frozen
 }
 
-interface WalletTxData extends StrictOmit<typeof walletTransactions.$inferSelect, 'id' | '' >
- {}
+interface CreditMovement extends StrictOmit<
+  typeof walletTransactions.$inferSelect,
+  | 'id'
+  | 'adjustedBy'
+  | 'walletId'
+  | 'createdAt'
+  | 'freezedAmountId'
+  | 'type'
+  | 'availableBalanceAfter'
+> {}
 
 export interface MoveCommand extends WalletTxData {
   amount: number; // > 0
@@ -91,19 +100,11 @@ const withFreezed = {
   typeof actorsRelations.wallets.relations
 >;
 
-
 export class WalletRepository extends DrizzleBaseRepository<
   typeof actorsRelations
 > {
-  constructor(
-    dbProvider: DrizzleDbProvider<typeof actorsRelations>,
-    forUpdateCtx: AsyncLocalStorage<'for_update'>,
-    private readonly tx: DrizzleTransactionContext,
-  ) {
-    super(dbProvider, forUpdateCtx);
-  }
-
   findById(id: string) {
+    this.ranForUpdate ? 
     return this.db.query.wallets.findFirst({
       where: {
         id,
@@ -169,12 +170,13 @@ export class WalletRepository extends DrizzleBaseRepository<
   ): Promise<WalletTransaction[]> {}
 
   /* ---- movements (each atomic + idempotent) ---- */
-  credit(walletId: string, {
-    idempotencyKey,
-    amount,
-    reason,
-  }: ): Promise<MovementResult> {
-    return this.tx.run(async () => {
+  credit(walletId: string, movement: CreditMovement): Promise<MovementResult> {
+    this.db.query.addresses.findFirst({
+      orderBy: {
+        id: 'asc',
+      },
+    });
+    return this.dbProvider.current(async () => {
       await this.lock('wallet', `credit:${idempotencyKey}`);
 
       const walletTx = await this.db.query.walletTransactions.findFirst({
@@ -192,8 +194,8 @@ export class WalletRepository extends DrizzleBaseRepository<
           throw new IdempotencyConflictError(
             'Idempotency key reused with a different payload',
           );
-        
-        return walletTx
+
+        return walletTx;
       }
     });
   }
@@ -216,3 +218,7 @@ export class FreezeNotFoundError extends Error {}
 export class FreezeNotActiveError extends Error {}
 export class InsufficientBalanceError extends Error {}
 export class IdempotencyConflictError extends Error {}
+
+const x: DBQueryConfigOrderBy<typeof wallets, typeof wallets._.columns> = {
+  id: 'asc',
+};

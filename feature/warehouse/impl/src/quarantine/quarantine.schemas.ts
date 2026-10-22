@@ -4,7 +4,7 @@ import { quarantineSortableFields } from './quarantine.repository';
 
 export const quarantinesPageQuerySchema = createPageQuerySchema(
   quarantineSortableFields,
-  '-createdAt',
+  ['-createdAt', 'id'],
 );
 
 export type QuarantinesPageQuery = z.infer<typeof quarantinesPageQuerySchema>;

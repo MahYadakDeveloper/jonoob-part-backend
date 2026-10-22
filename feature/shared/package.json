@@ -7,29 +7,29 @@
   },
   "exports": {
     "./contracts/*": {
-      "types": "./dist/contracts/*.d.ts",
-      "import": "./dist/contracts/*.js",
-      "require": "./dist/contracts/*.js"
+      "types": "./dist/src/contracts/*.d.ts",
+      "import": "./dist/src/contracts/*.js",
+      "require": "./dist/src/contracts/*.js"
     },
     "./decorators/*": {
-      "types": "./dist/decorators/*.d.ts",
-      "import": "./dist/decorators/*.js",
-      "require": "./dist/decorators/*.js"
+      "types": "./dist/src/decorators/*.d.ts",
+      "import": "./dist/src/decorators/*.js",
+      "require": "./dist/src/decorators/*.js"
     },
     "./guards/*": {
-      "types": "./dist/guards/*.d.ts",
-      "import": "./dist/guards/*.js",
-      "require": "./dist/guards/*.js"
+      "types": "./dist/src/guards/*.d.ts",
+      "import": "./dist/src/guards/*.js",
+      "require": "./dist/src/guards/*.js"
     },
     "./types/*": {
-      "types": "./dist/types/*.d.ts",
-      "import": "./dist/types/*.js",
-      "require": "./dist/types/*.js"
+      "types": "./dist/src/types/*.d.ts",
+      "import": "./dist/src/types/*.js",
+      "require": "./dist/src/types/*.js"
     },
     "./utils/*": {
-      "types": "./dist/utils/*.d.ts",
-      "import": "./dist/utils/*.js",
-      "require": "./dist/utils/*.js"
+      "types": "./dist/src/utils/*.d.ts",
+      "import": "./dist/src/utils/*.js",
+      "require": "./dist/src/utils/*.js"
     }
   },
   "private": true,

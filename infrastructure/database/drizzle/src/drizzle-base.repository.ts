@@ -1,22 +1,34 @@
+import { Inject } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { sql, TablesRelationalConfig } from 'drizzle-orm';
 import { Database, DbTransaction } from './drizzle';
-import { DrizzleDbProvider } from './drizzle-db-provider';
+import { DrizzleTransactionContext } from './drizzle-transaction.context';
 
 export abstract class DrizzleBaseRepository<
-  TRelation extends TablesRelationalConfig = {},
+  TRelations extends TablesRelationalConfig = {},
 > {
-  constructor(
-    protected readonly dbProvider: DrizzleDbProvider<TRelation>,
-    protected readonly forUpdateCtx: AsyncLocalStorage<'for_update'>,
-  ) {}
+  @Inject()
+  private readonly transactionCtx: DrizzleTransactionContext<TRelations>;
+  @Inject('DRIZZLE_ALS_FOR_UPDATE')
+  private readonly forUpdateCtx: AsyncLocalStorage<'for_update'>;
 
-  protected get db(): Database<TRelation> | DbTransaction<TRelation> {
-    return this.dbProvider.current;
+  protected get db(): Database<TRelations> | DbTransaction<TRelations> {
+    return this.transactionCtx.current ?? this.db;
+  }
+
+  protected get ranForUpdate() {
+    return this.forUpdateCtx.getStore() === 'for_update';
+  }
+
+  protected transaction<T>(fn: (tx: DbTransaction<TRelations>) => Promise<T>) {
+    const curr = this.transactionCtx.current;
+    if (curr) return fn(curr);
+
+    return this.db.transaction((tx) => fn(tx));
   }
 
   withForUpdate<T>(fn: () => Promise<T>): Promise<T> {
-    assertTransaction(this.dbProvider.current, 'withForUpdate');
+    assertTransaction(this.db, 'withForUpdate');
 
     return this.forUpdateCtx.run('for_update', fn);
   }
@@ -31,7 +43,7 @@ export abstract class DrizzleBaseRepository<
   }
 
   protected async lock(namespace: string, key: string): Promise<void> {
-    assertTransaction(this.dbProvider.current, 'withLock');
+    assertTransaction(this.db, 'withLock');
 
     // timeout
     // await this.db.execute(sql`SET LOCAL lock_timeout = '5s'`);

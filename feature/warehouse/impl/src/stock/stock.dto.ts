@@ -1,13 +1,13 @@
+import { createPageQuerySchema } from '@feature/shared/utils/pagination';
 import { barcodeType, unitOfMeasure } from '@infra/db-drizzle/schema';
 import { z } from 'zod';
-import { createPageQuerySchema } from '../utils';
 import { stockSortableFields } from './stock.repository';
 import { StockService } from './stock.service';
 
-export const StockPageQuerySchema = createPageQuerySchema(
-  stockSortableFields,
+export const StockPageQuerySchema = createPageQuerySchema(stockSortableFields, [
   '-definedAt',
-);
+  '-id',
+]);
 
 type DefineStockInput = Parameters<StockService['define']>[0];
 
