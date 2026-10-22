@@ -9,7 +9,7 @@ import { FastifyRequest } from 'fastify';
 import {
   AUTHENTICATION_API,
   type AuthenticationApi,
-} from '../contracts/authentication.api';
+} from '../contracts/authentication';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

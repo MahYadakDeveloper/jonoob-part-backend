@@ -182,8 +182,7 @@ export const walletTransactions = actorsSchema.table(
       mode: 'number',
     }).notNull(),
 
-    // admin/actor who triggered a manual adjustment (add FK to your user table)
-    createdBy: uuid('created_by'),
+    performedBy: uuid('performed_by'),
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -227,7 +226,7 @@ export const walletTransactions = actorsSchema.table(
     check(
       'chk_wallet_tx_manual_adjustment',
       sql`${t.reason} <> 'manual_adjustment'
-          OR (${t.note} IS NOT NULL AND ${t.createdBy} IS NOT NULL)`,
+          OR (${t.note} IS NOT NULL AND ${t.performedBy} IS NOT NULL)`,
     ),
 
     // each freeze row has exactly one 'freeze' tx ...

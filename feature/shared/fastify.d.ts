@@ -1,5 +1,4 @@
-import 'fastify';
-import type { AuthenticatedUser } from './types/authenticated-user';
+import { AuthenticatedUser } from './src/contracts/authentication';
 
 declare module 'fastify' {
   interface FastifyRequest {

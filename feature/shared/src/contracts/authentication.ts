@@ -1,4 +1,20 @@
-import { AuthenticatedUser } from '../types/authenticated-user';
+export type AuthenticatedUser =
+  | ({
+      id: string;
+    } & (
+      | {
+          role: 'customer';
+        }
+      | {
+          role: 'courier';
+        }
+      | {
+          role: 'manager';
+        }
+    ))
+  | {
+      role: 'admin';
+    };
 
 export interface AuthenticationInput {
   token: string;

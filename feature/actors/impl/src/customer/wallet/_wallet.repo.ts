@@ -1,14 +1,18 @@
+import { StrictOmit } from '@feature/shared/types/utils';
 import { assertOne } from '@feature/shared/utils/assertions';
-import { DrizzleBaseRepository, DrizzleDbProvider } from '@infra/db-drizzle';
 import {
-  actorsRelations,
-  freezedAmounts,
-  wallets,
-  walletTransactionReason,
-  walletTransactions,
-  walletTransactionType,
+    DrizzleBaseRepository,
+    DrizzleDbProvider,
+    DrizzleTransactionContext,
+} from '@infra/db-drizzle';
+import {
+    actorsRelations,
+    freezedAmounts,
+    wallets,
+    walletTransactionReason,
+    walletTransactions,
+    walletTransactionType,
 } from '@infra/db-drizzle/schema';
-import { NotFoundException } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { and, DBQueryConfigWith, eq, sql } from 'drizzle-orm';
 
@@ -28,35 +32,27 @@ export type WalletTxReason =
   (typeof walletTransactionReason.enumValues)[number];
 export type WalletTxType = (typeof walletTransactionType.enumValues)[number];
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
+
 export interface WalletBalance {
   available: number;
   frozen: number; // SUM(amount) of active freezes
   total: number; // available + frozen
 }
 
-/* ------------------------------- commands -------------------------------- */
+interface WalletTxData extends StrictOmit<typeof walletTransactions.$inferSelect, 'id' | '' >
+ {}
 
-interface BaseCommand {
-  walletId: string;
-  idempotencyKey: string;
-  reason: WalletTxReason;
-  note?: string;
-  reference?: { type: string; id: string }; // both or none
-  createdBy?: string; // required when reason = manual_adjustment
-}
-
-export interface MoveCommand extends BaseCommand {
+export interface MoveCommand extends WalletTxData {
   amount: number; // > 0
 }
 
 /** commit/unfreeze take no amount: the whole hold is settled. */
-export interface SettleFreezeCommand extends BaseCommand {
+export interface SettleFreezeCommand {
   freezeId: string;
 }
 
 export interface MovementResult {
   transaction: WalletTransaction;
-  balanceAfter: WalletBalance;
   replayed: boolean;
 }
 
@@ -95,12 +91,14 @@ const withFreezed = {
   typeof actorsRelations.wallets.relations
 >;
 
+
 export class WalletRepository extends DrizzleBaseRepository<
   typeof actorsRelations
 > {
   constructor(
     dbProvider: DrizzleDbProvider<typeof actorsRelations>,
     forUpdateCtx: AsyncLocalStorage<'for_update'>,
+    private readonly tx: DrizzleTransactionContext,
   ) {
     super(dbProvider, forUpdateCtx);
   }
@@ -171,7 +169,34 @@ export class WalletRepository extends DrizzleBaseRepository<
   ): Promise<WalletTransaction[]> {}
 
   /* ---- movements (each atomic + idempotent) ---- */
-  credit(cmd: MoveCommand): Promise<MovementResult> {}
+  credit(walletId: string, {
+    idempotencyKey,
+    amount,
+    reason,
+  }: ): Promise<MovementResult> {
+    return this.tx.run(async () => {
+      await this.lock('wallet', `credit:${idempotencyKey}`);
+
+      const walletTx = await this.db.query.walletTransactions.findFirst({
+        where: {
+          idempotencyKey,
+        },
+      });
+
+      if (walletTx) {
+        if (
+          walletTx.type !== 'credit' ||
+          walletTx.amount !== amount ||
+          walletTx.reason !== reason
+        )
+          throw new IdempotencyConflictError(
+            'Idempotency key reused with a different payload',
+          );
+        
+        return walletTx
+      }
+    });
+  }
 
   /** Throws InsufficientBalanceError. */
   debit(cmd: MoveCommand): Promise<MovementResult> {}

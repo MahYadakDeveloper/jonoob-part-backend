@@ -1,6 +1,6 @@
 import { MongoAbility } from '@casl/ability';
 import { SetMetadata } from '@nestjs/common';
-import { PolicyDefinition } from '../contracts/policy-definition';
+import { PolicyDefinition } from '../contracts/policy';
 
 export const CHECK_POLICIES_KEY = 'check_policy';
 

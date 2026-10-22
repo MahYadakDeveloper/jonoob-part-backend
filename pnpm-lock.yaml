@@ -1254,7 +1254,7 @@ importers:
         specifier: 'catalog:'
         version: 7.8.1
       zod:
-        specifier: 4.6.7
+        specifier: 'catalog:'
         version: 4.6.7
 
   feature/tax/api:

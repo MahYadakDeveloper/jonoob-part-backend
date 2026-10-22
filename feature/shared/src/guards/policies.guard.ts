@@ -2,8 +2,7 @@ import { MongoAbility } from '@casl/ability';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
-import { PolicyContext } from '../contracts/policy-context';
-import { PolicyDefinition } from '../contracts/policy-definition';
+import { PolicyContext, PolicyDefinition } from '../contracts/policy';
 import { CHECK_POLICIES_KEY } from '../decorators/check-policies.decorator';
 
 @Injectable()

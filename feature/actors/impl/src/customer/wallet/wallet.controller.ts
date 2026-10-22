@@ -1,6 +1,6 @@
+import { AuthenticatedUser } from '@feature/shared/contracts/authentication';
 import { User } from '@feature/shared/decorators/user.decorator';
 import { AuthGuard } from '@feature/shared/guards/auth.guard';
-import { type AuthenticatedUser } from '@feature/shared/types/authenticated-user';
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { Idempotent } from '@nestjs/idempotency';
 import { payoutRequestSchema, type PayoutRequestDto } from './wallet.dto';

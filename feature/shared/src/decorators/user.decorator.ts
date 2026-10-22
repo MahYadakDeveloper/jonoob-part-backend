@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
-import { AuthenticatedUser } from '../types/authenticated-user';
+import { AuthenticatedUser } from '../contracts/authentication';
 
 export const User = createParamDecorator(
   (_data, ctx: ExecutionContext): AuthenticatedUser => {
