@@ -1,5 +1,5 @@
+import { createPageQuerySchema } from '@feature/shared/utils/pagination';
 import { z } from 'zod';
-import { createPageQuerySchema } from '../utils';
 import { quarantineSortableFields } from './quarantine.repository';
 
 export const quarantinesPageQuerySchema = createPageQuerySchema(

@@ -14,10 +14,6 @@ import { StockQuarantineRepository } from './quarantine/quarantine.repository';
 import { StockQuarantineService } from './quarantine/quarantine.service';
 import { StockReservationApiImpl } from './reservation/reservation.api';
 import { StockReservationRepository } from './reservation/reservation.repository';
-import { QuarantineAbilityFactory } from './quarantine/policies/quarantine-ability';
-import { QuarantineManagePolicyHandler } from './quarantine/policies/read.policy-handler';
-import { StockManagementPolicyHandler } from './stock/policies/manage-stock.policy-handler';
-import { StockAbilityFactory } from './stock/policies/stock-ability';
 import { StockController } from './stock/stock.controller';
 import { StockRepository } from './stock/stock.repository';
 import { StockService } from './stock/stock.service';
@@ -26,10 +22,10 @@ import { StockService } from './stock/stock.service';
   imports: [DrizzleDbModule, DrizzleOutboxModule],
   providers: [
     { provide: AsyncLocalStorage, useValue: new AsyncLocalStorage() },
-    StockAbilityFactory,
-    StockManagementPolicyHandler,
-    QuarantineAbilityFactory,
-    QuarantineManagePolicyHandler,
+    // StockAbilityFactory,
+    // StockManagementPolicyHandler,
+    // QuarantineAbilityFactory,
+    // QuarantineManagePolicyHandler,
     StockRepository,
     StockMovementRepository,
     StockQuarantineRepository,

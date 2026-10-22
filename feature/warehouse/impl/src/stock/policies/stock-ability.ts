@@ -4,8 +4,8 @@ import {
   type MongoAbility,
   type MongoQuery,
 } from '@casl/ability';
-import { AbilityFactory } from '@feature/shared/contracts/ability-factory';
-import { AuthenticatedUser } from '@feature/shared/types/authenticated-user';
+import { AuthenticatedUser } from '@feature/shared/contracts/authentication';
+import { AbilityFactory } from '@feature/shared/contracts/policy';
 import { Logger } from '@nestjs/common';
 
 export type StockAction = 'manage';

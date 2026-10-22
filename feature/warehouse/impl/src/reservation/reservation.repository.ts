@@ -1,8 +1,6 @@
-import { OffsetPagination, PageResult } from '@feature/shared/pagination';
+import { OffsetPagination, PageResult } from '@feature/shared/types/pagination';
 import {
   DrizzleBaseRepository,
-  DrizzleDbProvider,
-  DrizzleTransactionContext,
   orderBy,
   PageCriteria,
 } from '@infra/db-drizzle';
@@ -11,7 +9,6 @@ import {
   reservations,
   warehouseRelations,
 } from '@infra/db-drizzle/schema';
-import { AsyncLocalStorage } from 'async_hooks';
 import { count, DBQueryConfigWith, eq } from 'drizzle-orm';
 
 export type Reservation = typeof reservations.$inferSelect & {
@@ -32,18 +29,8 @@ const withItems = {
 export class StockReservationRepository extends DrizzleBaseRepository<
   typeof warehouseRelations
 > {
-  constructor(
-    dbProvider: DrizzleDbProvider<typeof warehouseRelations>,
-    lockContext: AsyncLocalStorage<'for_update'>,
-    private readonly tx: DrizzleTransactionContext,
-    // private readonly cache: StockCache,
-  ) {
-    super(dbProvider, lockContext);
-  }
-
   async findById(reservationId: string): Promise<Reservation | null> {
-    if (this.forUpdateCtx.getStore() === 'for_update')
-      await this.lock('reservations', reservationId);
+    // if (this.ranForUpdate)
 
     return this.db.query.reservations
       .findFirst({
@@ -58,8 +45,7 @@ export class StockReservationRepository extends DrizzleBaseRepository<
   async findByIdempotencyKey(
     idempotencyKey: string,
   ): Promise<Reservation | null> {
-    if (this.forUpdateCtx.getStore() === 'for_update')
-      await this.lock('reservations', idempotencyKey);
+    // if (this.ranForUpdate)
 
     return this.db.query.reservations
       .findFirst({
@@ -114,7 +100,7 @@ export class StockReservationRepository extends DrizzleBaseRepository<
     items: Omit<typeof reservationItems.$inferInsert, 'reservationId'>[],
     idempotencyKey: string,
   ): Promise<{ reservationId: string }> {
-    return this.tx.run(async () => {
+    return this.transaction(async () => {
       const [row] = await this.db
         .insert(reservations)
         .values([{ idempotencyKey }])

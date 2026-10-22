@@ -1,10 +1,8 @@
-import { OmitPartials } from '@feature/shared/utils';
-import { PageResult, OffsetPagination } from '@feature/shared/pagination';
+import { OffsetPagination, PageResult } from '@feature/shared/types/pagination';
+import { OmitPartials } from '@feature/shared/types/utils';
 import { Barcode } from '@feature/warehouse-api';
 import {
   DrizzleBaseRepository,
-  DrizzleDbProvider,
-  DrizzleTransactionContext,
   orderBy,
   PageCriteria,
   sortableFields,
@@ -17,7 +15,6 @@ import {
   warehouseRelations,
 } from '@infra/db-drizzle/schema';
 import { Injectable } from '@nestjs/common';
-import { AsyncLocalStorage } from 'async_hooks';
 import { count, eq, inArray, sql } from 'drizzle-orm';
 
 type StockDefinition = OmitPartials<
@@ -38,19 +35,8 @@ export const stockSortableFields = sortableFields(stocks);
 export class StockRepository extends DrizzleBaseRepository<
   typeof warehouseRelations
 > {
-  constructor(
-    dbProvider: DrizzleDbProvider<typeof warehouseRelations>,
-    forUpdateCtx: AsyncLocalStorage<'for_update'>,
-    private readonly tx: DrizzleTransactionContext,
-    // private readonly cache: StockCache,
-  ) {
-    super(dbProvider, forUpdateCtx);
-  }
-
-  async findById(id: string): Promise<Stock | null> {
-    if (this.forUpdateCtx.getStore() === 'for_update')
-      await this.lock('stocks', id);
-
+  async findById(id: string) {
+    // if (this.ranForUpdate)
     return this.db.query.stocks
       .findFirst({
         where: {
@@ -234,7 +220,7 @@ export class StockRepository extends DrizzleBaseRepository<
     barcode: _barcode,
     ...rest
   }: StockDefinition): Promise<{ id: string }> {
-    return this.tx.run(async () => {
+    return this.transaction(async () => {
       const [row] = await this.db.insert(stocks).values(rest).returning({
         id: stocks.id,
       });
@@ -249,7 +235,7 @@ export class StockRepository extends DrizzleBaseRepository<
     id: string,
     { barcode: _barcode, ...rest }: StockDefinition,
   ): Promise<void> {
-    return this.tx.run(async () => {
+    return this.transaction(async () => {
       await this.db.update(stocks).set(rest).where(eq(stocks.id, id));
 
       await this.db

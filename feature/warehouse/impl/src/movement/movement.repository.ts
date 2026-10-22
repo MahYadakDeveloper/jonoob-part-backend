@@ -1,13 +1,11 @@
-import { OffsetPagination, PageResult } from '@feature/shared/pagination';
-import { OmitPartials } from '@feature/shared/utils';
+import { OffsetPagination, PageResult } from '@feature/shared/types/pagination';
+import { OmitPartials } from '@feature/shared/types/utils';
 import {
   DrizzleBaseRepository,
-  DrizzleDbProvider,
   orderBy,
   PageCriteria,
 } from '@infra/db-drizzle';
 import { movements, warehouseRelations } from '@infra/db-drizzle/schema';
-import { AsyncLocalStorage } from 'async_hooks';
 import { count, eq, sql } from 'drizzle-orm';
 
 type Movement = Omit<typeof movements.$inferSelect, 'sourceType'>;
@@ -15,16 +13,8 @@ type Movement = Omit<typeof movements.$inferSelect, 'sourceType'>;
 export class StockMovementRepository extends DrizzleBaseRepository<
   typeof warehouseRelations
 > {
-  constructor(
-    dbProvider: DrizzleDbProvider<typeof warehouseRelations>,
-    lockContext: AsyncLocalStorage<'for_update'>,
-  ) {
-    super(dbProvider, lockContext);
-  }
-
   async findById(id: string): Promise<Movement | null> {
-    if (this.forUpdateCtx.getStore() === 'for_update')
-      await this.lock('movements', id);
+    // if (this.ranForUpdate)
     return this.db.query.movements
       .findFirst({
         where: {
@@ -38,8 +28,7 @@ export class StockMovementRepository extends DrizzleBaseRepository<
   }
 
   async findByIdempotencyKey(key: string): Promise<Movement | null> {
-    if (this.forUpdateCtx.getStore() === 'for_update')
-      await this.lock('movements', key);
+    // if (this.ranForUpdate)
 
     return this.db.query.movements
       .findFirst({

@@ -1,5 +1,4 @@
-import { PolicyContext } from '@feature/shared/contracts/policy-context';
-import { PolicyHandler } from '@feature/shared/contracts/policy-handler';
+import { PolicyContext, PolicyHandler } from '@feature/shared/contracts/policy';
 import { QuarantineAbility } from './quarantine-ability';
 
 export class QuarantineManagePolicyHandler implements PolicyHandler<QuarantineAbility> {

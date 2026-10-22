@@ -1,8 +1,7 @@
-import { OmitPartials } from '@feature/shared/utils';
-import { PageResult, OffsetPagination } from '@feature/shared/pagination';
+import { OffsetPagination, PageResult } from '@feature/shared/types/pagination';
+import { OmitPartials } from '@feature/shared/types/utils';
 import {
   DrizzleBaseRepository,
-  DrizzleDbProvider,
   orderBy,
   PageCriteria,
   sortableFields,
@@ -13,7 +12,6 @@ import {
   stocks,
   warehouseRelations,
 } from '@infra/db-drizzle/schema';
-import { AsyncLocalStorage } from 'async_hooks';
 import { count, eq } from 'drizzle-orm';
 
 type Quarantine = Omit<
@@ -29,13 +27,6 @@ export const quarantineSortableFields = sortableFields(quarantines);
 export class StockQuarantineRepository extends DrizzleBaseRepository<
   typeof warehouseRelations
 > {
-  constructor(
-    dbProvider: DrizzleDbProvider<typeof warehouseRelations>,
-    lockContext: AsyncLocalStorage<'for_update'>,
-  ) {
-    super(dbProvider, lockContext);
-  }
-
   async page({
     page,
     size,

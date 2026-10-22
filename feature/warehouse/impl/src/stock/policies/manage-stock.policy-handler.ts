@@ -1,7 +1,6 @@
-import { PolicyContext } from '@feature/shared/contracts/policy-context';
-import { PolicyHandler } from '@feature/shared/contracts/policy-handler';
-import { StockAbility } from './stock-ability';
+import { PolicyContext, PolicyHandler } from '@feature/shared/contracts/policy';
 import { Logger } from '@nestjs/common';
+import { StockAbility } from './stock-ability';
 
 export class StockManagementPolicyHandler implements PolicyHandler<StockAbility> {
   private readonly Logger = new Logger(StockManagementPolicyHandler.name);
