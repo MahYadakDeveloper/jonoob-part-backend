@@ -10,12 +10,13 @@ import {
   sqlCase,
 } from '@infra/db-drizzle';
 import {
+  reservationItems,
   stocks,
   unitOfMeasure,
   warehouseRelations,
 } from '@infra/db-drizzle/schema';
 import { Injectable } from '@nestjs/common';
-import { and, count, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, inArray, sql } from 'drizzle-orm';
 
 export type Stock = {
   id: string;
@@ -23,6 +24,7 @@ export type Stock = {
   quantity: number;
   unitOfMeasure: (typeof unitOfMeasure.enumValues)[number];
   storageLocation: string | null;
+  reservedQuantity: number | null;
 };
 
 export type CreateStockData = StrictOmit<Stock, 'id'>;
@@ -33,20 +35,36 @@ export const stockSortableFields = sortableFields(stocks);
 export class StockRepository extends DrizzleBaseRepository<
   typeof warehouseRelations
 > {
+  private selectStock() {
+    const reservedQuantity = sql<number>`(
+      select coalesce(sum(${reservationItems.quantity}), 0)
+      from ${reservationItems}
+      where ${reservationItems.stockId} = ${stocks.id}}
+  )`.mapWith(Number);
+
+    return this.db
+      .select({
+        ...getColumns(stocks),
+        reservedQuantity,
+      })
+      .from(stocks);
+  }
+
   async findById(id: string): Promise<Stock | undefined> {
     const [row] = await this.applyForUpdateConditionally(
-      this.db.select().from(stocks).where(eq(stocks.id, id)),
+      this.selectStock().where(eq(stocks.id, id)),
+      stocks,
     );
 
     return row && toStock(row);
   }
 
-  findManyById(ids: string[]): Promise<Stock[]> {
-    return this.db
-      .select()
-      .from(stocks)
-      .where(inArray(stocks.id, ids))
-      .then((rows) => rows.map(toStock));
+  async findManyById(ids: string[]): Promise<Stock[]> {
+    const rows = await this.applyForUpdateConditionally(
+      this.selectStock().where(inArray(stocks.id, ids)),
+    );
+
+    return rows.map(toStock);
   }
 
   async findByBarcode(barcode: Barcode): Promise<Stock | undefined> {

@@ -1,12 +1,8 @@
-import {
-  Barcode,
-  Stock as StockDto,
-  StockQueryApi,
-} from '@feature/warehouse-api';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { Outbox } from '@nestjs/outbox';
-import { StockRepository } from './stock.repository';
+import { Stock, StockRepository } from './stock.repository';
+import { StockQueryApi } from '@feature/warehouse-api/stock-query.api';
 
 @Injectable()
 export class StockService implements StockQueryApi {
@@ -16,7 +12,7 @@ export class StockService implements StockQueryApi {
     private readonly outbox: Outbox,
   ) {}
 
-  findById(stockId: string): Promise<StockDto> {
+  findById(stockId: string): Promise<Stock> {
     return this.repository.findById(stockId).then((stock) => {
       if (!stock) throw new Error('');
       return stock;

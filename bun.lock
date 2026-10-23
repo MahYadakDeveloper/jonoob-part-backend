@@ -617,6 +617,7 @@
       "dependencies": {
         "@feature/shared": "workspace:*",
         "@jonoob-part/contracts": "workspace:*",
+        "zod": "catalog:",
       },
     },
     "feature/warehouse/impl": {

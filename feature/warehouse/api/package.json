@@ -1,23 +1,13 @@
 {
   "name": "@feature/warehouse-api",
   "type": "commonjs",
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
+    "./*": "./src/*.ts"
   },
   "private": true,
   "dependencies": {
     "@feature/shared": "workspace:*",
-    "@jonoob-part/contracts": "workspace:*"
+    "@jonoob-part/contracts": "workspace:*",
+    "zod": "catalog:"
   }
 }

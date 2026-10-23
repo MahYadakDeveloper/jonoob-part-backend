@@ -1,10 +1,16 @@
-export const IssuedEventType = 'warehouse.goods-issued';
-export const StocksReceiptedEventType = 'warehouse.goods-receipted';
+import { defineEvent } from '@feature/shared/contracts/outbox-event';
+import { z } from 'zod';
 
-export interface GoodsIssuedEventPayload {
-  goodIds: string[];
-}
+export const StocksIssuedEvent = defineEvent(
+  'warehouse.stocks-issued',
+  z.object({
+    goodIds: z.array(z.string()),
+  }),
+);
 
-export interface GoodsReceiptedEventPayload {
-  goodIds: string[];
-}
+export const StocksReceiptedEvent = defineEvent(
+  'warehouse.stocks-receipted',
+  z.object({
+    goodIds: z.array(z.string()),
+  }),
+);
