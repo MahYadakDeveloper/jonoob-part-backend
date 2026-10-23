@@ -2,28 +2,16 @@
   "name": "@infra/db-drizzle",
   "private": true,
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
-  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./schema": {
-      "types": "./dist/schema/index.d.ts",
-      "import": "./dist/schema/index.js",
-      "require": "./dist/schema/index.js"
-    }
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
   },
   "typesVersions": {
     "*": {
       "schema": [
-        "./dist/schema/index.d.ts"
+        "./src/schema/index.ts"
       ]
     }
   },
@@ -34,7 +22,7 @@
     "@nestjs/outbox": "catalog:",
     "drizzle-orm": "catalog:",
     "pg": "catalog:",
-    "zod": "4.6.7"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1"

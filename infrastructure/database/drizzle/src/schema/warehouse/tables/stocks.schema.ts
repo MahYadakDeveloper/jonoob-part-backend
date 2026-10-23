@@ -18,25 +18,21 @@ export const unitOfMeasure = warehouseSchema.enum('unit_of_measure', [
   'set',
 ]);
 
-export const barcodes = warehouseSchema.table(
-  'barcode',
+export const stocks = warehouseSchema.table(
+  'stocks',
   {
-    stockId: uuid('stock_id')
-      .primaryKey()
-      .references(() => stocks.id, { onDelete: 'cascade' }),
-    type: barcodeType('type').notNull(),
-    value: text('value').notNull(),
+    id: uuid('id').defaultRandom().primaryKey().notNull(),
+    barcodeType: barcodeType('barcode_type').notNull(),
+    barcodeValue: text('barcode_value').notNull(),
+    quantity: integer('quantity').default(0).notNull(),
+    unitOfMeasure: unitOfMeasure('unit_of_measure').notNull(),
+    storageLocation: text('storage_location'),
+    definedAt: timestamp('defined_at', { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
   },
-  (t) => [unique('uq_type_value').on(t.type, t.value)],
+  (t) => [
+    unique('uq_barcode_type_barcode_value').on(t.barcodeType, t.barcodeValue),
+  ],
 );
-
-export const stocks = warehouseSchema.table('stocks', {
-  id: uuid('id').defaultRandom().primaryKey().notNull(),
-  quantity: integer('quantity').default(0).notNull(),
-  unitOfMeasure: unitOfMeasure('unit_of_measure').notNull(),
-  storageLocation: text('storage_location'),
-  definedAt: timestamp('defined_at', { withTimezone: true })
-    .defaultNow()
-    .notNull()
-    .$onUpdate(() => new Date()),
-});

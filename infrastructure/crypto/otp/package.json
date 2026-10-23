@@ -2,21 +2,5 @@
   "name": "@infra/crypto-otp",
   "private": true,
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
-  },
-  "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@nestjs/common": "catalog:"
-  }
+  "exports": "./src/crypto-otp-generator.ts"
 }

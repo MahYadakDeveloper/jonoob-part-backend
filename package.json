@@ -1,24 +1,53 @@
 {
-  "scripts": {
-    "start:dev": "concurrently -k \" pnpm --filter @app/api exec nest start --watch\"  \"pnpm --parallel -r --filter @app/api^... dev \" ",
-    "dev": "concurrently -n \"packages,api\" -c \"cyan,green\" \"pnpm -r --parallel --filter=!./apps/api run dev\" \"pnpm --filter ./apps/api exec nest start --watch\"",
-    "start:dev:api": "pnpm --filter @app/api exec nest start --watch",
-    "start:dev:deps": "pnpm --parallel -r --filter @app/api^... dev",
-    "start:build:deps": "pnpm --parallel -r --filter @app/api^... build",
-    "build": "pnpm -r build"
-  },
+  "scripts": {},
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^24.13.3",
-    "concurrently": "^10.0.5",
+    "@types/bun": "^1.4.3",
+    "@types/node": "^26.6.5",
     "dotenv": "catalog:",
     "drizzle-kit": "1.0.0-rc.4",
-    "drizzle-orm": "catalog:",
-    "eslint": "^9.39.5",
-    "globals": "^17.11.0",
-    "jiti": "^2.7.0",
-    "typescript": "catalog:",
-    "typescript-eslint": "^8.67.0"
+    "typescript": "catalog:"
+  },
+  "workspaces": {
+    "packages": [
+      "app/*",
+      "feature/*/**",
+      "infrastructure/*/**",
+      "packages/*"
+    ],
+    "catalog": {
+      "typescript": "^7.0.2",
+      "@nestjs/common": "12.2.0",
+      "@nestjs/core": "12.2.0",
+      "@nestjs/config": "^12.0.1",
+      "@nestjs/platform-fastify": "^12.0.3",
+      "rxjs": "7.8.2",
+      "fastify": "5.12.7",
+      "@fastify/multipart": "10.1.6",
+      "zod": "^4.6.7",
+      "@casl/ability": "^7.0.1",
+      "pg": "^8.23.0",
+      "drizzle-orm": "1.0.0-rc.4",
+      "drizzle-kit": "1.0.0-rc.4",
+      "dotenv": "^17.4.2",
+      "@nestjs/cli": "^12.0.3",
+      "@nestjs/schedule": "^12.0.2",
+      "@nestjs/drizzle": "^0.0.2",
+      "@nestjs/outbox": "^0.1.3",
+      "bullmq": "^6.3.9",
+      "@nestjs/bullmq": "^12.0.0",
+      "@fastify/formbody": "^9.0.0",
+      "redis": "^6.3.0",
+      "@nestjs/jwt": "^12.0.2",
+      "@nestjs/axios": "^12.0.1",
+      "axios": "^1.20.0",
+      "ioredis": "^6.0.0",
+      "redlock": "5.0.0-beta.2",
+      "reflect-metadata": "^0.2.2",
+      "nest-commander": "^3.21.0",
+      "@nestjs/idempotency": "^0.0.2"
+    }
+  },
+  "overrides": {
+    "fastify": "catalog:"
   }
 }

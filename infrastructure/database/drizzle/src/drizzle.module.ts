@@ -1,8 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DrizzleModule } from '@nestjs/drizzle';
-import { AsyncLocalStorage } from 'async_hooks';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { drizzle } from 'drizzle-orm/bun-sql/postgres';
 import { DrizzleTransactionContext } from './drizzle-transaction.context';
 import drizzleConfig from './drizzle.config';
 import {

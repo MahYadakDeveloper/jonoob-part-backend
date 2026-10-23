@@ -2,10 +2,10 @@ import { REDIS_CLIENT } from '@infra/db-redis';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
-import { randomUUID } from 'crypto';
+import { randomUUIDv7 } from 'bun';
 import { type RedisClientType } from 'redis';
-import tokenConfig from './jwt.config';
 import { IssueTokenOptions, TokenPayload, TokenType } from './jwt';
+import tokenConfig from './jwt.config';
 
 @Injectable()
 export class JwtService {
@@ -19,7 +19,7 @@ export class JwtService {
 
   async issue(options: IssueTokenOptions): Promise<string> {
     return this.jwt.sign(options.claims ?? {}, {
-      jwtid: randomUUID(),
+      jwtid: randomUUIDv7(),
       expiresIn: `${options.expiresIn || '604800'}s`,
       subject: options.subject,
       secret: this.config[`${options.type}Secret`],

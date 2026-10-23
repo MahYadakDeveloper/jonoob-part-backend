@@ -1,6 +1,4 @@
-// functions only
-
-import { Duration } from '../types';
+import { Duration } from '../types/_';
 
 export function subtractDuration(date: Date, duration: Duration): Date {
   const result = new Date(date);

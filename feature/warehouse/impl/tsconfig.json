@@ -1,11 +1,4 @@
+// Only for vscode editor use purpose
 {
-  "extends": "../../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "sourceRoot": "./src",
-    "paths": {}
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  "extends": "./../../../tsconfig.json"
 }

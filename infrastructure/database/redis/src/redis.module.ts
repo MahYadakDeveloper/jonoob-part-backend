@@ -20,7 +20,9 @@ import { RedisLifecycle } from './redis.lifecycle';
           socket: {
             host: config.host,
             port: config.port,
-            ...(config.tls ? { tls: true as const } : {}),
+            ...(Bun.env.NODE_ENV === 'production'
+              ? { tls: true }
+              : { tls: false }),
           },
         });
       },

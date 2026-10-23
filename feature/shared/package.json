@@ -1,38 +1,14 @@
 {
   "name": "@feature/shared",
   "type": "commonjs",
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
-  },
-  "exports": {
-    "./contracts/*": {
-      "types": "./dist/src/contracts/*.d.ts",
-      "import": "./dist/src/contracts/*.js",
-      "require": "./dist/src/contracts/*.js"
-    },
-    "./decorators/*": {
-      "types": "./dist/src/decorators/*.d.ts",
-      "import": "./dist/src/decorators/*.js",
-      "require": "./dist/src/decorators/*.js"
-    },
-    "./guards/*": {
-      "types": "./dist/src/guards/*.d.ts",
-      "import": "./dist/src/guards/*.js",
-      "require": "./dist/src/guards/*.js"
-    },
-    "./types/*": {
-      "types": "./dist/src/types/*.d.ts",
-      "import": "./dist/src/types/*.js",
-      "require": "./dist/src/types/*.js"
-    },
-    "./utils/*": {
-      "types": "./dist/src/utils/*.d.ts",
-      "import": "./dist/src/utils/*.js",
-      "require": "./dist/src/utils/*.js"
-    }
-  },
   "private": true,
+  "exports": {
+    "./contracts/*": "./src/contracts/*.ts",
+    "./decorators/*": "./src/decorators/*.ts",
+    "./guards/*": "./src/guards/*.ts",
+    "./types/*": "./src/types/*.ts",
+    "./utils/*": "./src/utils/*.ts"
+  },
   "peerDependencies": {
     "@nestjs/common": "catalog:",
     "@nestjs/core": "catalog:",

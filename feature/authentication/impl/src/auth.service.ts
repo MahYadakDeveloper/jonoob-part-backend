@@ -1,13 +1,7 @@
 import { COURIER_API, type CourierApi } from '@feature/actors-api/courier';
 import { CUSTOMERS_API, type CustomersApi } from '@feature/actors-api/customer';
 import { MANAGER_API, type ManagerApi } from '@feature/actors-api/manager';
-import {
-  AuthenticationApi,
-  AuthenticationInput,
-  AuthenticationResult,
-} from '@feature/shared/contracts/authentication.api';
-import { AuthenticatedUser } from '@feature/shared/types/authenticated-user';
-import { HashService } from '@infra/crypto-hash';
+import { BcryptHasher } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
 import { OtpGenerator } from '@infra/crypto-otp';
 import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
@@ -32,6 +26,12 @@ import { Queue } from 'bullmq';
 import authConfig from './auth.config';
 import { OtpStore } from './otp/otp.store';
 import { SmsSendOtpJobPayload } from './sms/sms-opt.template';
+import {
+  AuthenticatedUser,
+  AuthenticationApi,
+  AuthenticationInput,
+  AuthenticationResult,
+} from '@feature/shared/contracts/authentication';
 
 export type RefreshClaim = AuthenticatedUser;
 
@@ -80,7 +80,7 @@ export class AuthenticationService implements AuthenticationApi {
     @Inject(CUSTOMERS_API) private readonly customers: CustomersApi,
     private readonly otps: OtpStore,
     private readonly jwtService: JwtService,
-    private readonly hashService: HashService,
+    private readonly hasher: BcryptHasher,
     private readonly rateLimit: TokenBucketRateLimitService,
     private readonly otpGenerator: OtpGenerator,
     private readonly synchronizer: RedlockSynchronizer,
@@ -149,7 +149,7 @@ export class AuthenticationService implements AuthenticationApi {
     await this.otps.set(
       phone,
       {
-        hash: await this.hashService.hash(otp),
+        hash: await this.hasher.hash(otp),
       },
       this.otpTtlSeconds,
     );
@@ -192,7 +192,7 @@ export class AuthenticationService implements AuthenticationApi {
 
     if (!record) throw new BadRequestException({ reason: 'otp_not_found' });
 
-    const valid = await this.hashService.verify(otp, record.hash);
+    const valid = await this.hasher.verify(otp, record.hash);
 
     if (!valid) throw new UnauthorizedException({ reason: 'invalid_otp' });
 
@@ -295,10 +295,7 @@ export class AuthenticationService implements AuthenticationApi {
 
         const courier = await this.courier.getByPhone({ phone: payload.sub });
 
-        const verified = await this.hashService.verify(
-          password,
-          courier.password,
-        );
+        const verified = await this.hasher.verify(password, courier.password);
 
         if (!verified) throw new UnauthorizedException('Invalid credentials');
 
@@ -356,7 +353,7 @@ export class AuthenticationService implements AuthenticationApi {
 
         const manager = await this.manager.getByPhone({ phone: payload.sub });
 
-        const verified = await this.hashService.verify(
+        const verified = await this.hasher.verify(
           password,
           manager.hashedPassword,
         );
@@ -421,7 +418,7 @@ export class AuthenticationService implements AuthenticationApi {
           throw new UnauthorizedException('Invalid credentials');
         }
 
-        const verified = await this.hashService.verify(
+        const verified = await this.hasher.verify(
           secretKey,
           this.config.adminSecretKey,
         );
@@ -652,7 +649,7 @@ export class AuthenticationService implements AuthenticationApi {
         if (!result.allowed)
           throw this.tooManyRequests('rate limited reached max');
 
-        return await this.hashService.hash(password);
+        return await this.hasher.hash(password);
       },
     );
   }

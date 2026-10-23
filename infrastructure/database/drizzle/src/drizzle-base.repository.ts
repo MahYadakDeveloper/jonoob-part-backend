@@ -1,7 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
-import { AsyncLocalStorage } from 'async_hooks';
 import { sql, TablesRelationalConfig } from 'drizzle-orm';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { type Database, DbTransaction } from './drizzle';
 import { DrizzleTransactionContext } from './drizzle-transaction.context';
 
@@ -34,6 +34,12 @@ export abstract class DrizzleBaseRepository<
     assertTransaction(this.db, 'withForUpdate');
 
     return this.forUpdateCtx.run('for_update', fn);
+  }
+
+  protected applyForUpdateConditionally<R>(
+    query: PromiseLike<R> & { for: (strength: 'update') => PromiseLike<R> },
+  ): PromiseLike<R> {
+    return this.ranForUpdate ? query.for('update') : query;
   }
 
   async withLock<T>(

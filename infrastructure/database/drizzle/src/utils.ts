@@ -1,6 +1,8 @@
 import {
+  asc,
   Column,
   DBQueryConfigOrderByObject,
+  desc,
   getColumns,
   sql,
   Table,
@@ -56,7 +58,7 @@ export const sortableFields = <T extends Table>(table: T) => {
   return fields as unknown as readonly [SortableKeys<T>, ...SortableKeys<T>[]];
 };
 
-export const orderBy = <TTable extends Table>(
+export const orderByQuery = <TTable extends Table>(
   sort: { field: SortableKeys<TTable>; direction: 'asc' | 'desc' }[],
 ): DBQueryConfigOrderByObject<TTable['_']['columns']> => {
   const result: DBQueryConfigOrderByObject<TTable['_']['columns']> = {};
@@ -66,4 +68,21 @@ export const orderBy = <TTable extends Table>(
   }
 
   return result;
+};
+
+export const orderBy = <TTable extends Table>(
+  table: TTable,
+  sort: { field: SortableKeys<TTable>; direction: 'asc' | 'desc' }[],
+): SQL[] => {
+  const columns = getColumns(table) as Record<string, Column>;
+
+  return sort.map(({ field, direction }) => {
+    const column = columns[field as string];
+
+    if (!column) {
+      throw new Error(`Unknown sort field: ${String(field)}`);
+    }
+
+    return direction === 'asc' ? asc(column) : desc(column);
+  });
 };

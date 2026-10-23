@@ -2,18 +2,10 @@
   "name": "@infra/crypto-jwt",
   "private": true,
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
-  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@feature/shared": "workspace:*",
@@ -22,6 +14,6 @@
     "@nestjs/config": "catalog:",
     "@nestjs/jwt": "catalog:",
     "redis": "catalog:",
-    "zod": "4.6.7"
+    "zod": "catalog:"
   }
 }

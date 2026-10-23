@@ -1,6 +1,7 @@
+import { Barcode } from '@feature/shared/types/barcode';
 import { OffsetPagination, PageResult } from '@feature/shared/types/pagination';
-import { OmitPartials } from '@feature/shared/types/utils';
-import { Barcode } from '@feature/warehouse-api';
+import { StrictOmit } from '@feature/shared/types/utils';
+import { ensureOne } from '@feature/shared/utils/assertions';
 import {
   DrizzleBaseRepository,
   orderBy,
@@ -9,25 +10,22 @@ import {
   sqlCase,
 } from '@infra/db-drizzle';
 import {
-  barcodes,
-  reservationItems,
   stocks,
+  unitOfMeasure,
   warehouseRelations,
 } from '@infra/db-drizzle/schema';
 import { Injectable } from '@nestjs/common';
-import { count, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, sql } from 'drizzle-orm';
 
-type StockDefinition = OmitPartials<
-  typeof stocks.$inferInsert & {
-    barcode: Omit<typeof barcodes.$inferInsert, 'stockId'>;
-  },
-  'storageLocation'
->;
-
-export type Stock = typeof stocks.$inferSelect & {
-  barcode: Omit<typeof barcodes.$inferSelect, 'stockId'>;
-  reservedQty: number;
+export type Stock = {
+  id: string;
+  barcode: Barcode;
+  quantity: number;
+  unitOfMeasure: (typeof unitOfMeasure.enumValues)[number];
+  storageLocation: string | null;
 };
+
+export type CreateStockData = StrictOmit<Stock, 'id'>;
 
 export const stockSortableFields = sortableFields(stocks);
 
@@ -35,83 +33,36 @@ export const stockSortableFields = sortableFields(stocks);
 export class StockRepository extends DrizzleBaseRepository<
   typeof warehouseRelations
 > {
-  async findById(id: string) {
-    // if (this.ranForUpdate)
-    return this.db.query.stocks
-      .findFirst({
-        where: {
-          id: id,
-        },
-        with: {
-          barcode: {
-            columns: {
-              stockId: false,
-            },
-          },
-        },
-        extras: {
-          reservedQty: (_stocks, { sql }) =>
-            sql<number>`coalesce((
-              select sum(${reservationItems.quantity})::int
-              from ${reservationItems}
-              where ${reservationItems.stockId} = ${_stocks.id}
-            ), 0)`,
-        },
-      })
-      .then((stock) => stock ?? null);
+  async findById(id: string): Promise<Stock | undefined> {
+    const [row] = await this.applyForUpdateConditionally(
+      this.db.select().from(stocks).where(eq(stocks.id, id)),
+    );
+
+    return row && toStock(row);
   }
 
   findManyById(ids: string[]): Promise<Stock[]> {
-    return this.db.query.stocks.findMany({
-      where: {
-        id: {
-          in: ids,
-        },
-      },
-      with: {
-        barcode: {
-          columns: {
-            stockId: false,
-          },
-        },
-      },
-      extras: {
-        reservedQty: (stocks, { sql }) =>
-          sql<number>`coalesce((
-              select sum(${reservationItems.quantity})::int
-              from ${reservationItems}
-              where ${reservationItems.stockId} = ${stocks.id}
-            ), 0)`,
-      },
-    });
+    return this.db
+      .select()
+      .from(stocks)
+      .where(inArray(stocks.id, ids))
+      .then((rows) => rows.map(toStock));
   }
 
-  findByBarcode(barcode: Barcode): Promise<Stock | null> {
-    return this.db.query.stocks
-      .findFirst({
-        where: {
-          barcode: {
-            type: barcode.type,
-            value: barcode.value,
-          },
-        },
-        with: {
-          barcode: {
-            columns: {
-              stockId: false,
-            },
-          },
-        },
-        extras: {
-          reservedQty: (stocks, { sql }) =>
-            sql<number>`coalesce((
-              select sum(${reservationItems.quantity})::int
-              from ${reservationItems}
-              where ${reservationItems.stockId} = ${stocks.id}
-            ), 0)`,
-        },
-      })
-      .then((stock) => stock ?? null);
+  async findByBarcode(barcode: Barcode): Promise<Stock | undefined> {
+    const [row] = await this.applyForUpdateConditionally(
+      this.db
+        .select()
+        .from(stocks)
+        .where(
+          and(
+            eq(stocks.barcodeType, barcode.type),
+            eq(stocks.barcodeValue, barcode.value),
+          ),
+        ),
+    );
+
+    return row && toStock(row);
   }
 
   async page({
@@ -123,27 +74,13 @@ export class StockRepository extends DrizzleBaseRepository<
   > {
     const offset = (page - 1) * size;
 
-    const [_stocks, [{ totalItems }]] = await Promise.all([
-      this.db.query.stocks.findMany({
-        orderBy: orderBy(sort),
-        offset,
-        with: {
-          barcode: {
-            columns: {
-              stockId: false,
-            },
-          },
-        },
-        limit: size,
-        extras: {
-          reservedQty: (stocks, { sql }) =>
-            sql<number>`coalesce((
-              select sum(${reservationItems.quantity})::int
-              from ${reservationItems}
-              where ${reservationItems.stockId} = ${stocks.id}
-            ), 0)`,
-        },
-      }),
+    const [stocksRows, [totalItemsRow]] = await Promise.all([
+      this.db
+        .select()
+        .from(stocks)
+        .offset(offset)
+        .limit(size)
+        .orderBy(...orderBy(stocks, sort)),
       this.db
         .select({
           totalItems: count(),
@@ -151,11 +88,12 @@ export class StockRepository extends DrizzleBaseRepository<
         .from(stocks),
     ]);
 
+    const totalItems = totalItemsRow!.totalItems;
     const totalPages = Math.ceil(totalItems / size);
 
     return {
       page: {
-        items: _stocks,
+        items: stocksRows.map(toStock),
         number: page,
         size,
         totalItems,
@@ -216,36 +154,50 @@ export class StockRepository extends DrizzleBaseRepository<
       .where(inArray(stocks.id, ids));
   }
 
-  define({
-    barcode: _barcode,
-    ...rest
-  }: StockDefinition): Promise<{ id: string }> {
-    return this.transaction(async () => {
-      const [row] = await this.db.insert(stocks).values(rest).returning({
+  create({ barcode, ...data }: CreateStockData): Promise<{ id: string }> {
+    return this.db
+      .insert(stocks)
+      .values({
+        ...data,
+        barcodeType: barcode.type,
+        barcodeValue: barcode.value,
+      })
+      .returning({
         id: stocks.id,
-      });
-
-      await this.db.insert(barcodes).values({ ..._barcode, stockId: row.id });
-
-      return row;
-    });
+      })
+      .then((rows) => ensureOne(rows, () => new Error())[0]);
   }
 
-  async redefine(
-    id: string,
-    { barcode: _barcode, ...rest }: StockDefinition,
-  ): Promise<void> {
-    return this.transaction(async () => {
-      await this.db.update(stocks).set(rest).where(eq(stocks.id, id));
+  async update(id: string, data: Partial<CreateStockData>): Promise<void> {
+    const updated = await this.db
+      .update(stocks)
+      .set(data)
+      .where(eq(stocks.id, id))
+      .returning({ id: stocks.id });
 
-      await this.db
-        .update(barcodes)
-        .set(_barcode)
-        .where(eq(barcodes.stockId, id));
-    });
+    ensureOne(updated, () => new Error());
   }
 
-  delete(id: string) {
-    return this.db.delete(stocks).where(eq(stocks.id, id));
+  async delete(id: string): Promise<void> {
+    const deleted = await this.db
+      .delete(stocks)
+      .where(eq(stocks.id, id))
+      .returning({ id: stocks.id });
+
+    ensureOne(deleted, () => new Error());
   }
+}
+
+function toStock({
+  barcodeType,
+  barcodeValue,
+  ...row
+}: typeof stocks.$inferSelect): Stock {
+  return {
+    ...row,
+    barcode: {
+      type: barcodeType,
+      value: barcodeValue,
+    },
+  };
 }

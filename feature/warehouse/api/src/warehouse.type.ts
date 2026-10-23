@@ -1,4 +1,5 @@
-import { UnitOfMeasure } from '@feature/shared';
+import { Barcode } from '@feature/shared/types/barcode';
+import { UnitOfMeasure } from '@feature/shared/types/unit-of-measure';
 
 export type MovementItem = { stockId: string; quantity: number };
 
@@ -61,21 +62,6 @@ export type OutboundMovementSource = {
         type: 'sales';
         boundary: 'pos' | 'order';
       };
-};
-
-export type BarcodeType =
-  | 'UPC_A'
-  | 'UPC_E'
-  | 'EAN_13'
-  | 'EAN_8'
-  | 'Code39'
-  | 'Code93'
-  | 'Code128'
-  | 'Codabar';
-
-export type Barcode = {
-  type: BarcodeType;
-  value: string;
 };
 
 export type Stock = {

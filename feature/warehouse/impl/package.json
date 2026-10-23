@@ -1,19 +1,10 @@
 {
   "name": "@feature/warehouse",
   "type": "commonjs",
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
+    ".": "./src/index.ts"
   },
   "private": true,
   "dependencies": {
@@ -25,7 +16,8 @@
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/outbox": "catalog:",
+    "drizzle-orm": "catalog:",
     "rxjs": "catalog:",
-    "zod": "4.6.7"
+    "zod": "catalog:"
   }
 }

@@ -20,7 +20,6 @@
     "@feature/shared": "workspace:*",
     "@feature/discount-api": "workspace:*",
     "@feature/pricing-api": "workspace:*",
-    "@nestjs/common": "catalog:",
-    "@nestjs/event-emitter": "catalog:"
+    "@nestjs/common": "catalog:"
   }
 }

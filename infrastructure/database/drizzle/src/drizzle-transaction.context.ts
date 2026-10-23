@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
-import { AsyncLocalStorage } from 'async_hooks';
-import type { Database, DbTransaction } from './drizzle';
 import { TablesRelationalConfig } from 'drizzle-orm';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import type { Database, DbTransaction } from './drizzle';
 
 @Injectable()
 export class DrizzleTransactionContext<T extends TablesRelationalConfig = {}> {
