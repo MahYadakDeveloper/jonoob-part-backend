@@ -1,38 +1,27 @@
-import { StrictOmit } from '@feature/shared/types/utils';
+import { RequiredBy, StrictOmit } from '@feature/shared/types/utils';
 import { movementItems, movements } from '@feature/warehouse-schema';
 
 type MovementItem = StrictOmit<typeof movementItems.$inferSelect, 'movementId'>;
 
-type ReturnReason =
-  | 'changed_mind'
-  | 'wrong_item'
-  | 'defective'
-  | 'damaged'
-  | 'not_as_described'
-  | 'other';
+type MovementSource = (typeof movements.source.enumValues)[number];
 
-export type ReturnMovementItem =
-  | {
-      packaging: 'sealed';
-      reason: Exclude<ReturnReason, 'damaged' | 'defective'>;
-    }
-  | {
-      packaging: 'opened';
-      reason: ReturnReason;
-      note?: string;
-    };
+interface MovementInput<S extends MovementSource> extends StrictOmit<
+  RequiredBy<typeof movements.$inferInsert, 'referenceId'>,
+  'id' | 'idempotencyKey' | 'movedAt' | 'direction' | 'source'
+> {
+  source: S;
+}
 
-interface MovementInput extends StrictOmit<
-  typeof movements.$inferInsert,
-  'id' | 'idempotencyKey' | 'movedAt' | 'direction'
-> {}
-
-export interface IssueMovementInput extends MovementInput {
+export interface IssueMovementInput extends MovementInput<'order' | 'pos'> {
   items: MovementItem[];
 }
 
-export interface ReceiptMovementInput extends MovementInput {
+export interface ReceiptMovementInput extends MovementInput<'procurement'> {
   items: MovementItem[];
+}
+
+export interface ReturnMovementInput extends MovementInput<'return'> {
+  items: (MovementItem & { quarantine: boolean })[];
 }
 
 export interface UndoMovementInput {
@@ -49,11 +38,7 @@ export interface MovementApi {
 
   receipt(input: ReceiptMovementInput): Promise<{ movementId: string }>;
 
-  // return(input: {
-  //   items: ReturnMovementItem[];
-  //   source: ReturnMovementSource;
-  //   idempotencyKey: string;
-  // }): Promise<{ movementId: string }>;
+  return(input: ReturnMovementInput): Promise<{ movementId: string }>;
 
   /**
    * Undoes the stock effects of a movement and permanently removes its record.

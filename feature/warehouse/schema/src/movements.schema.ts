@@ -9,6 +9,7 @@ export const movementDirection = warehouseSchema.enum('movement_direction', [
 export const movementSource = warehouseSchema.enum('movement_source', [
   'order',
   'pos',
+  'return', // Quarantine is created and related to the movement and all movement items is record and the only none quarantined is only restocked
   'procurement',
   'quarantine',
   'adjustment',
@@ -33,6 +34,7 @@ export const movements = warehouseSchema.table('movements', {
   direction: movementDirection('direction').notNull(),
 
   source: movementSource('source').notNull(),
+  referenceId: uuid('reference_id'),
 
   movedAt: timestamp('moved_at', { withTimezone: true }).defaultNow().notNull(),
 });

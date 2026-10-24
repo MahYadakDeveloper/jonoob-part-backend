@@ -10,7 +10,8 @@
     "./types/*": "./src/types/*.ts",
     "./utils/*": "./src/utils/*.ts",
     "./command": "./src/command.ts",
-    "./errors": "./src/errors.ts"
+    "./errors": "./src/errors.ts",
+    "./pagination": "./src/pagination.ts"
   },
   "peerDependencies": {
     "@nestjs/common": "catalog:",

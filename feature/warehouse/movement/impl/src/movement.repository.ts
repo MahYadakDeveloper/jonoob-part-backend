@@ -1,33 +1,35 @@
-import { OffsetPagination, PageResult } from '@feature/shared/types/pagination';
+import {
+  OffsetPagination,
+  orderBy,
+  PageCriteria,
+  PageResult,
+} from '@feature/shared/pagination';
 import { StrictOmit } from '@feature/shared/types/utils';
 import {
   assertFirst,
   assertLength,
   assertSamePayload,
+  assertString,
   ensureOne,
 } from '@feature/shared/utils/assertions';
 import { unordered } from '@feature/shared/utils/canonical';
+import { groupMap } from '@feature/shared/utils/collections';
+import { sqlCase } from '@feature/shared/utils/common';
 import { movementItems, movements, stocks } from '@feature/warehouse-schema';
-import {
-  DrizzleBaseRepository,
-  orderBy,
-  PageCriteria,
-  sqlCase,
-} from '@infra/db-drizzle';
+import { DrizzleBaseRepository } from '@infra/db-drizzle';
 import { InternalServerErrorException } from '@nestjs/common';
-import { count, eq, inArray, sql } from 'drizzle-orm';
+import { count, eq, getColumns, inArray, sql } from 'drizzle-orm';
 
 type MovementRow = {
   movements: typeof movements.$inferSelect;
   movement_items: typeof movementItems.$inferSelect | null;
 };
-
 type Movement = StrictOmit<typeof movements.$inferInsert, 'id' | 'movedAt'>;
 type MovementItem = StrictOmit<typeof movementItems.$inferInsert, 'movementId'>;
 
 export type MovementRecord = StrictOmit<
   typeof movements.$inferSelect,
-  'id' | 'idempotencyKey'
+  'idempotencyKey'
 > & {
   items: MovementItem[];
 };
@@ -42,14 +44,6 @@ export interface MovementResult {
 }
 
 export class MovementRepository extends DrizzleBaseRepository {
-  async findById(id: string): Promise<MovementRecord | undefined> {
-    return this.db
-      .select()
-      .from(movements)
-      .where(eq(movements.id, id))
-      .then(([row]) => row && toMovementRecord(row));
-  }
-
   async page({
     page,
     size,
@@ -59,13 +53,25 @@ export class MovementRepository extends DrizzleBaseRepository {
   > {
     const offset = (page - 1) * size;
 
+    const paginatedMovements = this.db
+      .select()
+      .from(movements)
+      .orderBy(...orderBy(movements, sort))
+      .offset(offset)
+      .limit(size)
+      .as('paginated_movement');
+
     const [movementRows, totalItemsRows] = await Promise.all([
       this.db
-        .select()
-        .from(movements)
-        .orderBy(...orderBy(movements, sort))
-        .offset(offset)
-        .limit(size),
+        .select({
+          movements: getColumns(paginatedMovements),
+          movement_items: movementItems,
+        })
+        .from(paginatedMovements)
+        .leftJoin(
+          movementItems,
+          eq(movementItems.movementId, paginatedMovements.id),
+        ),
       this.db
         .select({
           totalItems: count(),
@@ -81,14 +87,14 @@ export class MovementRepository extends DrizzleBaseRepository {
               new InternalServerErrorException(
                 'Count record is 0 while some records is found',
               ),
-          )[0].totalItems
+          ).totalItems
         : 0;
 
     const totalPages = Math.ceil(totalItems / size);
 
     return {
       page: {
-        items: movementRows.map(toMovementRecord),
+        items: groupMap(movementRows, (m) => m.movements.id, toMovementRecord),
         number: page,
         size,
         totalItems,
@@ -108,11 +114,13 @@ export class MovementRepository extends DrizzleBaseRepository {
         .returning({ id: movements.id });
 
       if (!inserted) {
+        assertString(movement.idempotencyKey, () => new CreationFailureError());
+
         const rows = await tx
           .select()
           .from(movements)
           .leftJoin(movementItems, eq(movementItems.movementId, movements.id))
-          .where(eq(movements.idempotencyKey, movement.idempotencyKey!));
+          .where(eq(movements.idempotencyKey, movement.idempotencyKey));
 
         assertFirst(rows, () => new CreationFailureError());
 
@@ -121,7 +129,7 @@ export class MovementRepository extends DrizzleBaseRepository {
         assertSamePayload(
           movement,
           existing,
-          () => new IdempotencyConflictError(key),
+          () => new IdempotencyConflictError(),
           ({ direction, source, items }) => ({
             direction,
             source,

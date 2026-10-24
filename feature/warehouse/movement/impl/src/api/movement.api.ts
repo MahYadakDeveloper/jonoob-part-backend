@@ -6,5 +6,6 @@ export class MovementApiImpl implements MovementApi {
 
   issue = (i: MovementApiIn<'issue'>) => this.cmds.issue.execute(i);
   receipt = (i: MovementApiIn<'receipt'>) => this.cmds.receipt.execute(i);
+  return = (i: MovementApiIn<'return'>) => this.cmds.return.execute(i);
   undo = (i: MovementApiIn<'undo'>) => this.cmds.undo.execute(i);
 }

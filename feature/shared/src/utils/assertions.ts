@@ -77,6 +77,32 @@ export function assertAllExist<T, S>(
   }
 }
 
+export function assertString(
+  value: unknown,
+  exception: () => Error,
+  {
+    minLength = 1,
+    maxLength,
+    pattern,
+    notBlank = false,
+  }: {
+    minLength?: number;
+    maxLength?: number;
+    pattern?: RegExp;
+    notBlank?: boolean;
+  } = {},
+): asserts value is string {
+  if (
+    typeof value !== 'string' ||
+    value.length < minLength ||
+    (maxLength !== undefined && value.length > maxLength) ||
+    (notBlank && value.trim().length === 0) ||
+    (pattern !== undefined && !pattern.test(value))
+  ) {
+    throw exception();
+  }
+}
+
 export function assertNever(value: never): never {
   throw new Error(`Unexpected value: ${String(value)}`);
 }

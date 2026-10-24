@@ -5,9 +5,9 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class ReceiptMovementCommand implements ApiCommand<
   MovementApi,
-  'issue'
+  'receipt'
 > {
   async execute(
-    input: ApiInput<MovementApi, 'issue'>,
-  ): Promise<ApiOutput<MovementApi, 'issue'>> {}
+    input: ApiInput<MovementApi, 'receipt'>,
+  ): Promise<ApiOutput<MovementApi, 'receipt'>> {}
 }
