@@ -2,11 +2,12 @@
   "name": "@feature/warehouse-api",
   "type": "commonjs",
   "exports": {
-    "./*": "./src/*.ts"
+    ".": "./src/index.ts"
   },
   "private": true,
   "dependencies": {
     "@feature/shared": "workspace:*",
+    "@feature/warehouse-schema": "workspace:*",
     "@jonoob-part/contracts": "workspace:*",
     "zod": "catalog:"
   }

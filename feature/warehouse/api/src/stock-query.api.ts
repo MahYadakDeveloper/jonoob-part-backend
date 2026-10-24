@@ -7,7 +7,7 @@ export type Stock = {
   barcode: Barcode;
   unitOfMeasure: UnitOfMeasure;
   storageLocation: string | null;
-  reservedQty: number;
+  reservedQuantity: number | null;
 };
 
 export const STOCK_QUERY_API = Symbol('StockQueryApi');
@@ -16,9 +16,9 @@ export interface StockQueryApi {
   /**
    *
    */
-  findById(input: { stockId: string }): Promise<Stock>;
-  findManyById(input: { stockIds: string[] }): Promise<Stock[]>;
-  findByBarcode(input: { barcode: Barcode }): Promise<Stock>;
+  getById(input: { stockId: string }): Promise<Stock>;
+  getManyById(input: { stockIds: string[] }): Promise<Stock[]>;
+  getByBarcode(input: { barcode: Barcode }): Promise<Stock>;
 
   /**
    *

@@ -1,16 +1,10 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DrizzleModule } from '@nestjs/drizzle';
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { drizzle } from 'drizzle-orm/bun-sql/postgres';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { DrizzleTransactionContext } from './drizzle-transaction.context';
 import drizzleConfig from './drizzle.config';
-import {
-  actorsRelations,
-  orderRelations,
-  publicRelations,
-  warehouseRelations,
-} from './schema';
 
 @Global()
 @Module({
@@ -21,12 +15,6 @@ import {
       useFactory: (config: ConfigService) => ({
         drizzle,
         connection: config.getOrThrow<string>('drizzle.databaseUrl'),
-        relations: {
-          ...warehouseRelations,
-          ...orderRelations,
-          ...actorsRelations,
-          ...publicRelations,
-        },
       }),
     }),
   ],

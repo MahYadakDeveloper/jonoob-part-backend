@@ -19,10 +19,7 @@ export class DrizzleTransactionContext<T extends TablesRelationalConfig = {}> {
   }
 
   async run<T>(fn: () => Promise<T>): Promise<T> {
-    // propagation = REQUIRED
-    if (this.ctx.getStore()) {
-      return fn();
-    }
+    if (this.ctx.getStore()) return fn(); // propagation = REQUIRED
 
     return this.db.transaction(async (tx) => {
       return this.ctx.run(tx, fn);

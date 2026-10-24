@@ -28,7 +28,7 @@ export abstract class DrizzleBaseRepository<
     const curr = this.transactionCtx.current;
     if (curr) return fn(curr);
 
-    return this._db.transaction((tx) => fn(tx));
+    return this.transactionCtx.run(() => fn(this.transactionCtx.current!));
   }
 
   withForUpdate<T>(fn: () => Promise<T>): Promise<T> {

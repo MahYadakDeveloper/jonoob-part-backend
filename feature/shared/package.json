@@ -4,10 +4,13 @@
   "private": true,
   "exports": {
     "./contracts/*": "./src/contracts/*.ts",
+    "./schema/*": "./src/schema/*.ts",
     "./decorators/*": "./src/decorators/*.ts",
     "./guards/*": "./src/guards/*.ts",
     "./types/*": "./src/types/*.ts",
-    "./utils/*": "./src/utils/*.ts"
+    "./utils/*": "./src/utils/*.ts",
+    "./command": "./src/command.ts",
+    "./errors": "./src/errors.ts"
   },
   "peerDependencies": {
     "@nestjs/common": "catalog:",
@@ -16,8 +19,8 @@
   },
   "dependencies": {
     "@casl/ability": "catalog:",
-    "@infra/db-drizzle": "workspace:*",
     "@nestjs/outbox": "catalog:",
+    "drizzle-orm": "catalog:",
     "fastify": "catalog:",
     "zod": "catalog:"
   }

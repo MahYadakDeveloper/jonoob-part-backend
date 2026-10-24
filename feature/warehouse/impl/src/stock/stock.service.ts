@@ -1,44 +1,36 @@
+import { Barcode } from '@feature/shared/types/barcode';
+import { ensureFound } from '@feature/shared/utils/assertions';
 import { DrizzleTransactionContext } from '@infra/db-drizzle';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Outbox } from '@nestjs/outbox';
-import { Stock, StockRepository } from './stock.repository';
-import { StockQueryApi } from '@feature/warehouse-api/stock-query.api';
+import { StockPageQueryDto } from './stock.dto';
+import { StockRepository } from './stock.repository';
 
 @Injectable()
-export class StockService implements StockQueryApi {
+export class StockService {
   constructor(
     private readonly repository: StockRepository,
     private readonly tx: DrizzleTransactionContext,
     private readonly outbox: Outbox,
   ) {}
 
-  findById(stockId: string): Promise<Stock> {
-    return this.repository.findById(stockId).then((stock) => {
-      if (!stock) throw new Error('');
-      return stock;
-    });
-  }
-
-  findManyById(stockIds: string[]): Promise<StockDto[]> {
-    return this.repository.findManyById(stockIds).then((stocks) => {
-      assertAllExist(
-        stockIds,
-        stocks.map((s) => s.id),
-        'stocks',
+  getById(stockId: string) {
+    return this.repository
+      .findById(stockId)
+      .then((s) =>
+        ensureFound(s, () => new NotFoundException('Stock not found')),
       );
-
-      return stocks;
-    });
   }
 
-  findByBarcode(barcode: Barcode): Promise<StockDto> {
-    return this.repository.findByBarcode(barcode).then((stock) => {
-      if (!stock) throw new Error('');
-      return stock;
-    });
+  getByBarcode(barcode: Barcode) {
+    return this.repository
+      .findByBarcode(barcode)
+      .then((s) =>
+        ensureFound(s, () => new NotFoundException('Stock not found')),
+      );
   }
 
-  page(criteria: Parameters<typeof this.repository.page>[0]) {
+  page(criteria: StockPageQueryDto) {
     return this.repository.page(criteria);
   }
 
@@ -112,19 +104,6 @@ export class StockService implements StockQueryApi {
 
   delete(id: string) {
     return this.repository.delete(id);
-  }
-}
-
-function assertAllExist(
-  target: string[],
-  source: string[],
-  label: string,
-): void {
-  const existing = new Set(source);
-  const missing = [...new Set(target)].filter((id) => !existing.has(id));
-
-  if (missing.length > 0) {
-    throw new Error(`${label} not found: ${missing.join(', ')}`);
   }
 }
 

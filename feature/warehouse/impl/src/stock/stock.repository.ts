@@ -24,7 +24,7 @@ export type Stock = {
   quantity: number;
   unitOfMeasure: (typeof unitOfMeasure.enumValues)[number];
   storageLocation: string | null;
-  reservedQuantity: number | null;
+  reservedQuantity: number;
 };
 
 export type CreateStockData = StrictOmit<Stock, 'id'>;
@@ -69,15 +69,12 @@ export class StockRepository extends DrizzleBaseRepository<
 
   async findByBarcode(barcode: Barcode): Promise<Stock | undefined> {
     const [row] = await this.applyForUpdateConditionally(
-      this.db
-        .select()
-        .from(stocks)
-        .where(
-          and(
-            eq(stocks.barcodeType, barcode.type),
-            eq(stocks.barcodeValue, barcode.value),
-          ),
+      this.selectStock().where(
+        and(
+          eq(stocks.barcodeType, barcode.type),
+          eq(stocks.barcodeValue, barcode.value),
         ),
+      ),
     );
 
     return row && toStock(row);
@@ -93,9 +90,7 @@ export class StockRepository extends DrizzleBaseRepository<
     const offset = (page - 1) * size;
 
     const [stocksRows, [totalItemsRow]] = await Promise.all([
-      this.db
-        .select()
-        .from(stocks)
+      this.selectStock()
         .offset(offset)
         .limit(size)
         .orderBy(...orderBy(stocks, sort)),
@@ -120,46 +115,6 @@ export class StockRepository extends DrizzleBaseRepository<
         hasPrevious: page > 1,
       },
     };
-  }
-
-  async increase(items: { id: string; quantity: number }[]): Promise<void> {
-    await this.db
-      .update(stocks)
-      .set({
-        quantity: sql`${stocks.quantity} + ${sqlCase<number>(
-          items.map((s) => ({
-            when: eq(stocks.id, s.id),
-            then: sql`${s.quantity}`,
-          })),
-          sql`0`,
-        )}`,
-      })
-      .where(
-        inArray(
-          stocks.id,
-          items.map(({ id }) => id),
-        ),
-      );
-  }
-
-  async decrease(items: { id: string; quantity: number }[]): Promise<void> {
-    await this.db
-      .update(stocks)
-      .set({
-        quantity: sql`${stocks.quantity} - ${sqlCase<number>(
-          items.map((s) => ({
-            when: eq(stocks.id, s.id),
-            then: sql`${s.quantity}`,
-          })),
-          sql`0`,
-        )}`,
-      })
-      .where(
-        inArray(
-          stocks.id,
-          items.map(({ id }) => id),
-        ),
-      );
   }
 
   available(ids: string[]): Promise<{ id: string; available: boolean }[]> {
@@ -206,11 +161,9 @@ export class StockRepository extends DrizzleBaseRepository<
   }
 }
 
-function toStock({
-  barcodeType,
-  barcodeValue,
-  ...row
-}: typeof stocks.$inferSelect): Stock {
+type StockRow = typeof stocks.$inferSelect & { reservedQuantity: number };
+
+function toStock({ barcodeType, barcodeValue, ...row }: StockRow): Stock {
   return {
     ...row,
     barcode: {
