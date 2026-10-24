@@ -1,20 +1,13 @@
+import { sortableFields } from '@feature/shared/pagination';
 import { Barcode } from '@feature/shared/types/barcode';
-import { OffsetPagination, PageResult } from '@feature/shared/types/pagination';
 import { StrictOmit } from '@feature/shared/types/utils';
 import { ensureOne } from '@feature/shared/utils/assertions';
 import {
-  DrizzleBaseRepository,
-  orderBy,
-  PageCriteria,
-  sortableFields,
-  sqlCase,
-} from '@infra/db-drizzle';
-import {
-  reservationItems,
-  stocks,
-  unitOfMeasure,
-  warehouseRelations,
-} from '@infra/db-drizzle/schema';
+    reservationItems,
+    stocks,
+    unitOfMeasure,
+} from '@feature/warehouse-schema';
+import { DrizzleBaseRepository } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { and, count, eq, getColumns, inArray, sql } from 'drizzle-orm';
 
@@ -32,22 +25,27 @@ export type CreateStockData = StrictOmit<Stock, 'id'>;
 export const stockSortableFields = sortableFields(stocks);
 
 @Injectable()
-export class StockRepository extends DrizzleBaseRepository<
-  typeof warehouseRelations
-> {
+export class StockRepository extends DrizzleBaseRepository {
   private selectStock() {
-    const reservedQuantity = sql<number>`(
-      select coalesce(sum(${reservationItems.quantity}), 0)
-      from ${reservationItems}
-      where ${reservationItems.stockId} = ${stocks.id}}
-  )`.mapWith(Number);
+    const reservedQuantity = this.db
+      .select({
+        reservedQty: sql<number>`coalesce(sum(${reservationItems.quantity}), 0)`.mapWith(Number),
+      })
+      .from(reservationItems)
+      .where(eq(reservationItems.stockId, stocks.id))
+      .as('reserved_quantity');
+    //   sql<number>`(
+    //     select coalesce(sum(${reservationItems.quantity}), 0)
+    //     from ${reservationItems}
+    //     where ${reservationItems.stockId} = ${stocks.id}}
+    // )`.mapWith(Number);
 
     return this.db
       .select({
         ...getColumns(stocks),
-        reservedQuantity,
+        ...getColumns(reservedQuantity),
       })
-      .from(stocks);
+      .from(stocks).then(rows => )
   }
 
   async findById(id: string): Promise<Stock | undefined> {
@@ -159,16 +157,4 @@ export class StockRepository extends DrizzleBaseRepository<
 
     ensureOne(deleted, () => new Error());
   }
-}
-
-type StockRow = typeof stocks.$inferSelect & { reservedQuantity: number };
-
-function toStock({ barcodeType, barcodeValue, ...row }: StockRow): Stock {
-  return {
-    ...row,
-    barcode: {
-      type: barcodeType,
-      value: barcodeValue,
-    },
-  };
 }

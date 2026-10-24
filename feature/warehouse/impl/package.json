@@ -11,6 +11,7 @@
     "@casl/ability": "catalog:",
     "@feature/shared": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
+    "@feature/warehouse-schema": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/messaging-outbox": "workspace:*",
     "@nestjs/common": "catalog:",

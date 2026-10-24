@@ -1,29 +1,34 @@
-import { Barcode } from '@feature/shared/types/barcode';
-import { UnitOfMeasure } from '@feature/shared/types/unit-of-measure';
+import { barcodeType, stocks } from '@feature/warehouse-schema';
 
-export type Stock = {
-  id: string;
-  quantity: number;
-  barcode: Barcode;
-  unitOfMeasure: UnitOfMeasure;
-  storageLocation: string | null;
-  reservedQuantity: number | null;
-};
+export type Stock = typeof stocks.$inferSelect;
 
-export const STOCK_QUERY_API = Symbol('StockQueryApi');
+export interface GetByIdInput {
+  stockId: string;
+}
+
+export interface GetManyByIdInput {
+  stockIds: string[];
+}
+
+export interface GetByBarcodeInput {
+  barcodeType: (typeof barcodeType.enumValues)[number];
+  barcodeValue: string;
+}
+
+export interface AvailableInput {
+  stockIds: string[];
+}
+
+export interface AvailableResult {
+  available: { stockId: string; available: boolean }[];
+}
+
+export const STOCK_QUERY_API = Symbol('WAREHOUSE_STOCK_QUERY_API');
 
 export interface StockQueryApi {
-  /**
-   *
-   */
-  getById(input: { stockId: string }): Promise<Stock>;
-  getManyById(input: { stockIds: string[] }): Promise<Stock[]>;
-  getByBarcode(input: { barcode: Barcode }): Promise<Stock>;
+  getById(input: GetByIdInput): Promise<Stock>;
+  getManyById(input: GetManyByIdInput): Promise<Stock[]>;
+  getByBarcode(input: GetByBarcodeInput): Promise<Stock>;
 
-  /**
-   *
-   */
-  available(input: {
-    stockIds: string[];
-  }): Promise<{ stockId: string; available: boolean }[]>;
+  available(input: AvailableInput): Promise<AvailableResult>;
 }

@@ -1,2 +1,2 @@
-export const MOVEMENT_INTERNAL_API = Symbol('MOVEMENT_INTERNAL_API');
-export interface MovementInternalApi {}
+export const MOVEMENT_INTERNAL_API = Symbol('MOVEMENT_API');
+export interface MovementApi {}
