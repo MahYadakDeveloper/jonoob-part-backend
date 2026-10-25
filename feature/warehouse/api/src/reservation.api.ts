@@ -1,12 +1,17 @@
-export interface StockReservationItem {
-  stockId: string;
-  quantity: number;
-}
+import { StrictOmit } from '@feature/shared/types/utils';
+import { reservationItems } from '@feature/warehouse-schema';
+
+interface StockReservationItem extends StrictOmit<
+  typeof reservationItems.$inferInsert,
+  'reservationId'
+> {}
 
 export interface ReserveStocksInput {
-  idempotencyKey: string;
-
   items: StockReservationItem[];
+}
+
+export interface ReleaseReservationInput {
+  reservationId: string;
 }
 
 export const RESERVATION_API = Symbol('WAREHOUSE_RESERVATION_API');
@@ -16,5 +21,5 @@ export interface ReservationApi {
   reserve(input: ReserveStocksInput): Promise<{ reservationId: string }>;
 
   /** Cancels an active reservation. No-op if released; fails if consumed. */
-  release(input: { reservationId: string }): Promise<void>;
+  release(input: ReleaseReservationInput): Promise<void>;
 }

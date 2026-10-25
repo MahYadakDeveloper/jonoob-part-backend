@@ -1,9 +1,4 @@
-import { Database, DbTransaction } from '@infra/db-drizzle';
-import {
-  outboxDeadLetters,
-  outboxInbox,
-  outboxMessages,
-} from '@infra/db-drizzle/schema';
+import { type Database, DbTransaction } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { InjectDrizzle } from '@nestjs/drizzle';
 import {
@@ -35,19 +30,25 @@ import {
   sql,
   type SQL,
 } from 'drizzle-orm';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { alias } from 'drizzle-orm/pg-core';
 import { createHash } from 'node:crypto';
+import {
+  outboxDeadLetters,
+  outboxInbox,
+  outboxMessages,
+} from './outbox.drizzle.schema';
 
 /** Advisory lock classes (the two-number form): any two numbers no other code of yours locks on. */
 const CLAIM_LOCK = 20_260_901;
 const KEY_LOCK = 20_260_902;
 
 @Injectable()
-export class DrizzleOutboxStore implements OutboxStore, OutboxInboxStore {
+export class DrizzleOutboxStore
+  implements OutboxStore<DbTransaction<{}>>, OutboxInboxStore<DbTransaction<{}>>
+{
   constructor(
     @InjectDrizzle()
-    private readonly db: NodePgDatabase,
+    private readonly db: Database<{}>,
     storage: OutboxStorage,
   ) {
     storage.registerSource({ messages: this, inbox: this });

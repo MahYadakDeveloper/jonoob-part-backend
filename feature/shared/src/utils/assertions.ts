@@ -58,6 +58,23 @@ export function assertSafeEqual(
   }
 }
 
+export function assertMaps<K, A, E>(
+  actual: Map<K, A>,
+  expected: Map<K, E>,
+  compare: (actual: A, expected: E, key: K) => boolean,
+  exception: () => Error,
+): void {
+  if (actual.size !== expected.size) {
+    throw exception();
+  }
+
+  for (const [key, exp] of expected) {
+    if (!actual.has(key) || !compare(actual.get(key) as A, exp, key)) {
+      throw exception();
+    }
+  }
+}
+
 export function assertAllExist<T, S>(
   target: readonly T[],
   source: readonly S[],

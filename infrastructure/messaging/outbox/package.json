@@ -1,30 +1,17 @@
 {
   "name": "@infra/messaging-outbox",
   "private": true,
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
-  },
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
+    ".": "./src/index.ts"
   },
   "dependencies": {
-    "@feature/shared": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
-    "@infra/persistent-common": "workspace:*",
-    "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/drizzle": "catalog:",
     "@nestjs/outbox": "catalog:",
-    "@nestjs/schedule": "catalog:",
-    "bullmq": "catalog:",
     "drizzle-orm": "catalog:",
     "rxjs": "catalog:"
   }

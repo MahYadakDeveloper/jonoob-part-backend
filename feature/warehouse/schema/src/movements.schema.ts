@@ -1,4 +1,4 @@
-import { integer, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { integer, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { warehouseSchema } from './warehouse.schema';
 
 export const movementDirection = warehouseSchema.enum('movement_direction', [
@@ -8,8 +8,8 @@ export const movementDirection = warehouseSchema.enum('movement_direction', [
 
 export const movementSource = warehouseSchema.enum('movement_source', [
   'order',
-  'pos',
-  'return', // Quarantine is created and related to the movement and all movement items is record and the only none quarantined is only restocked
+  'sale',
+  'return',
   'procurement',
   'quarantine',
   'adjustment',
@@ -28,8 +28,6 @@ export const movementItems = warehouseSchema.table('movement_items', {
 
 export const movements = warehouseSchema.table('movements', {
   id: uuid('id').defaultRandom().primaryKey(),
-
-  idempotencyKey: text('idempotency_key').unique(),
 
   direction: movementDirection('direction').notNull(),
 

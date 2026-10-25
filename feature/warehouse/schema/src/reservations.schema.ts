@@ -4,7 +4,6 @@ import {
   index,
   integer,
   primaryKey,
-  text,
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -13,7 +12,6 @@ import { warehouseSchema } from './warehouse.schema';
 
 export const reservations = warehouseSchema.table('reservations', {
   id: uuid('id').defaultRandom().primaryKey().notNull(),
-  idempotencyKey: text('idempotency_key').unique().notNull(),
 
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
@@ -28,7 +26,7 @@ export const reservationItems = warehouseSchema.table(
       .references(() => reservations.id, { onDelete: 'cascade' }),
     stockId: uuid('stock_id')
       .notNull()
-      .references(() => stocks.id),
+      .references(() => stocks.id, { onDelete: 'restrict' }),
     quantity: integer('quantity').notNull(),
   },
   (t) => [

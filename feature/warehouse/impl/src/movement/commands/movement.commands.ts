@@ -1,11 +1,12 @@
 import {
+  type ApiCommand,
+  ApiCommands,
   ApiInput,
   ApiOutput,
-  Commands,
   MethodKeys,
 } from '@feature/shared/command';
 import { MovementApi } from '@feature/warehouse-api';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IssueMovementCommand } from './issue.cmd';
 import { ReceiptMovementCommand } from './receipt.cmd';
 import { ReturnMovementCommand } from './return.cmd';
@@ -22,14 +23,13 @@ export type MovementApiOut<M extends MethodKeys<MovementApi>> = ApiOutput<
 >;
 
 @Injectable()
-export class MovementCommands implements Commands<MovementApi> {
-  readonly return: ReturnMovementCommand;
-  constructor(
-    returnMovement: ReturnMovementCommand,
-    readonly issue: IssueMovementCommand,
-    readonly receipt: ReceiptMovementCommand,
-    readonly undo: UndoMovementCommand,
-  ) {
-    this.return = returnMovement;
-  }
+export class MovementCommands implements ApiCommands<MovementApi> {
+  @Inject(IssueMovementCommand)
+  readonly issue: ApiCommand<MovementApi, 'issue'>;
+  @Inject(ReceiptMovementCommand)
+  readonly receipt: ApiCommand<MovementApi, 'receipt'>;
+  @Inject(ReturnMovementCommand)
+  readonly return: ApiCommand<MovementApi, 'return'>;
+  @Inject(UndoMovementCommand)
+  readonly undo: ApiCommand<MovementApi, 'undo'>;
 }

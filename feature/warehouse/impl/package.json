@@ -1,5 +1,5 @@
 {
-  "name": "@feature/warehouse",
+  "name": "@feature/warehouse-impl",
   "type": "commonjs",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

@@ -7,12 +7,12 @@ type MovementSource = (typeof movements.source.enumValues)[number];
 
 interface MovementInput<S extends MovementSource> extends StrictOmit<
   RequiredBy<typeof movements.$inferInsert, 'referenceId'>,
-  'id' | 'idempotencyKey' | 'movedAt' | 'direction' | 'source'
+  'id' | 'movedAt' | 'direction' | 'source'
 > {
   source: S;
 }
 
-export interface IssueMovementInput extends MovementInput<'order' | 'pos'> {
+export interface IssueMovementInput extends MovementInput<'order' | 'sale'> {
   items: MovementItem[];
 }
 
@@ -21,7 +21,15 @@ export interface ReceiptMovementInput extends MovementInput<'procurement'> {
 }
 
 export interface ReturnMovementInput extends MovementInput<'return'> {
-  items: (MovementItem & { quarantine: boolean })[];
+  items: ({ stockId: string } & (
+    | {
+        quarantine: false;
+      }
+    | {
+        quarantine: true;
+        note: string | null;
+      }
+  ))[];
 }
 
 export interface UndoMovementInput {

@@ -22,7 +22,7 @@
         "@feature/actors-api": "workspace:*",
         "@feature/authentication": "workspace:*",
         "@feature/shared": "workspace:*",
-        "@feature/warehouse": "workspace:*",
+        "@feature/warehouse-impl": "workspace:*",
         "@infra/crypto-hash": "workspace:*",
         "@infra/crypto-jwt": "workspace:*",
         "@infra/db-redis": "workspace:*",
@@ -638,7 +638,7 @@
       },
     },
     "feature/warehouse/impl": {
-      "name": "@feature/warehouse",
+      "name": "@feature/warehouse-impl",
       "dependencies": {
         "@casl/ability": "catalog:",
         "@feature/shared": "workspace:*",
@@ -787,11 +787,7 @@
         "@nestjs/drizzle": "catalog:",
         "@nestjs/outbox": "catalog:",
         "drizzle-orm": "catalog:",
-        "pg": "catalog:",
         "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@types/pg": "^8.23.1",
       },
     },
     "infrastructure/database/elasticsearch": {
@@ -810,10 +806,6 @@
     "infrastructure/evaluator": {
       "name": "@infra/evaluator",
       "dependencies": {
-        "@feature/shared": "workspace:*",
-        "@feature/tax": "workspace:*",
-        "@feature/warehouse": "workspace:*",
-        "@infra/persistent-common": "workspace:*",
         "@nestjs/common": "catalog:",
         "mathjs": "^15.2.0",
         "redis": "^6.0.1",
@@ -856,15 +848,10 @@
     "infrastructure/messaging/outbox": {
       "name": "@infra/messaging-outbox",
       "dependencies": {
-        "@feature/shared": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
-        "@infra/persistent-common": "workspace:*",
-        "@nestjs/bullmq": "catalog:",
         "@nestjs/common": "catalog:",
         "@nestjs/drizzle": "catalog:",
         "@nestjs/outbox": "catalog:",
-        "@nestjs/schedule": "catalog:",
-        "bullmq": "catalog:",
         "drizzle-orm": "catalog:",
         "rxjs": "catalog:",
       },
@@ -913,46 +900,6 @@
         "redis": "catalog:",
         "rxjs": "catalog:",
         "zod": "4.6.7",
-      },
-    },
-    "infrastructure/persistent/common": {
-      "name": "@infra/persistent-common",
-      "dependencies": {
-        "@feature/shared": "workspace:*",
-        "@nestjs/common": "catalog:",
-      },
-    },
-    "infrastructure/persistent/settings": {
-      "name": "@infra/persistent-settings",
-      "dependencies": {
-        "@feature/shared": "workspace:*",
-        "@infra/persistent-common": "workspace:*",
-        "@nestjs/common": "catalog:",
-      },
-      "devDependencies": {
-        "typescript": "^6.0.3",
-      },
-    },
-    "infrastructure/persistent/tax": {
-      "name": "@infra/persistent-tax",
-      "dependencies": {
-        "@feature/tax": "workspace:*",
-      },
-    },
-    "infrastructure/persistent/warehouse": {
-      "name": "@infra/persistent-warehouse",
-      "dependencies": {
-        "@feature/shared": "workspace:*",
-        "@feature/warehouse": "workspace:*",
-        "@feature/warehouse-api": "workspace:*",
-        "@infra/db-drizzle": "workspace:*",
-        "@infra/persistent-common": "workspace:*",
-        "@nestjs/common": "catalog:",
-        "drizzle-orm": "catalog:",
-        "redis": "^6.0.1",
-      },
-      "devDependencies": {
-        "typescript": "^6.0.3",
       },
     },
     "infrastructure/rate-limit": {
@@ -1303,11 +1250,11 @@
 
     "@feature/tax-api": ["@feature/tax-api@workspace:feature/tax/api"],
 
-    "@feature/warehouse": ["@feature/warehouse@workspace:feature/warehouse/impl"],
-
     "@feature/warehouse-api": ["@feature/warehouse-api@workspace:feature/warehouse/api"],
 
     "@feature/warehouse-http": ["@feature/warehouse-http@workspace:feature/warehouse/http"],
+
+    "@feature/warehouse-impl": ["@feature/warehouse-impl@workspace:feature/warehouse/impl"],
 
     "@feature/warehouse-movement-api": ["@feature/warehouse-movement-api@workspace:feature/warehouse/movement/api"],
 
@@ -1420,14 +1367,6 @@
     "@infra/object-storage-s3-media": ["@infra/object-storage-s3-media@workspace:infrastructure/object-storage/s3/media"],
 
     "@infra/payment-gateway": ["@infra/payment-gateway@workspace:infrastructure/payment-gateway"],
-
-    "@infra/persistent-common": ["@infra/persistent-common@workspace:infrastructure/persistent/common"],
-
-    "@infra/persistent-settings": ["@infra/persistent-settings@workspace:infrastructure/persistent/settings"],
-
-    "@infra/persistent-tax": ["@infra/persistent-tax@workspace:infrastructure/persistent/tax"],
-
-    "@infra/persistent-warehouse": ["@infra/persistent-warehouse@workspace:infrastructure/persistent/warehouse"],
 
     "@infra/rate-limit": ["@infra/rate-limit@workspace:infrastructure/rate-limit"],
 
@@ -1610,8 +1549,6 @@
     "@types/ms": ["@types/ms@2.1.0", "", {}, "sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA=="],
 
     "@types/node": ["@types/node@26.6.5", "", { "dependencies": { "undici-types": "~8.9.0" } }, "sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg=="],
-
-    "@types/pg": ["@types/pg@8.23.1", "", { "dependencies": { "@types/node": "*", "pg-protocol": "*", "pg-types": "^2.2.0" } }, "sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A=="],
 
     "@types/qs": ["@types/qs@6.15.1", "", {}, "sha512-GZHUBZR9hckSUhrxmp1nG6NwdpM9fCunJwyThLW1X3AyHgd9IlHb6VANpQQqDr2o/qQp6McZ3y/IA2rVzKzSbw=="],
 
@@ -2173,22 +2110,6 @@
 
     "path-type": ["path-type@4.0.0", "", {}, "sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw=="],
 
-    "pg": ["pg@8.23.1", "", { "dependencies": { "pg-connection-string": "^2.14.1", "pg-pool": "^3.14.0", "pg-protocol": "^1.16.1", "pg-types": "2.2.0", "pgpass": "1.0.5" }, "optionalDependencies": { "pg-cloudflare": "^1.4.1" }, "peerDependencies": { "pg-native": ">=3.0.1" }, "optionalPeers": ["pg-native"] }, "sha512-aL96AHANtWjPLDOLqnhx+ngp9+UK7ETEU8VJrDCGvsSSi/mGLcWYsS6Herg7lmaBJe4uwrfqsa7gTEFaSizDoQ=="],
-
-    "pg-cloudflare": ["pg-cloudflare@1.4.1", "", {}, "sha512-6PQbsFWZcp9EmJEwy5cGQ2La+AMWpP46lgbb8X+U/XsHIUweYDNCpeuKck5RxL2MdVFi7krbbEi5nX4Zh7JhrQ=="],
-
-    "pg-connection-string": ["pg-connection-string@2.14.1", "", {}, "sha512-qR3kGNPBLpCNtz0evbKA0Y/MRFXwSSdT+pTJvYp/bXTcReZbvX1kzF0IyTc1QnxqF7AZbOeBhNL8R5mYQZV/MA=="],
-
-    "pg-int8": ["pg-int8@1.0.1", "", {}, "sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw=="],
-
-    "pg-pool": ["pg-pool@3.14.0", "", { "peerDependencies": { "pg": ">=8.0" } }, "sha512-gKtPkFdQPU3DksooVLi9LsjZxrsBUZIpa+7aVx+LV5pNh0KzP4Zleud2po+ConrxbuXGBJ6Hfer6hdgpIBpBaw=="],
-
-    "pg-protocol": ["pg-protocol@1.16.1", "", {}, "sha512-p9VOFMiHB/ZbJATetbg+99PxssTVSQRnyuPSQ67mN1+1KBOjZaZ83ZQzltnxPhJwSsC3nwVjJ10DVJlerbFzLg=="],
-
-    "pg-types": ["pg-types@2.2.0", "", { "dependencies": { "pg-int8": "1.0.1", "postgres-array": "~2.0.0", "postgres-bytea": "~1.0.0", "postgres-date": "~1.0.4", "postgres-interval": "^1.1.0" } }, "sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA=="],
-
-    "pgpass": ["pgpass@1.0.5", "", { "dependencies": { "split2": "^4.1.0" } }, "sha512-FdW9r/jQZhSeohs1Z3sI1yxFQNFvMcnmfuj4WBMUTxOrAyLMaTcE1aAMBiTlbMNaXvBCQuVi0R7hd8udDSP7ug=="],
-
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
     "picomatch": ["picomatch@4.0.7", "", {}, "sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA=="],
@@ -2200,14 +2121,6 @@
     "pino-std-serializers": ["pino-std-serializers@7.1.0", "", {}, "sha512-BndPH67/JxGExRgiX1dX0w1FvZck5Wa4aal9198SrRhZjH3GxKQUKIBnYJTdj2HDN3UQAS06HlfcSbQj2OHmaw=="],
 
     "pluralize": ["pluralize@8.0.0", "", {}, "sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA=="],
-
-    "postgres-array": ["postgres-array@2.0.0", "", {}, "sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA=="],
-
-    "postgres-bytea": ["postgres-bytea@1.0.1", "", {}, "sha512-5+5HqXnsZPE65IJZSMkZtURARZelel2oXUEO8rH83VS/hxH5vv1uHquPg5wZs8yMAfdv971IU+kcPUczi7NVBQ=="],
-
-    "postgres-date": ["postgres-date@1.0.7", "", {}, "sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q=="],
-
-    "postgres-interval": ["postgres-interval@1.2.0", "", { "dependencies": { "xtend": "^4.0.0" } }, "sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ=="],
 
     "prelude-ls": ["prelude-ls@1.2.1", "", {}, "sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g=="],
 
@@ -2389,8 +2302,6 @@
 
     "wrap-ansi": ["wrap-ansi@6.2.0", "", { "dependencies": { "ansi-styles": "^4.0.0", "string-width": "^4.1.0", "strip-ansi": "^6.0.0" } }, "sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA=="],
 
-    "xtend": ["xtend@4.0.2", "", {}, "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ=="],
-
     "yn": ["yn@3.1.1", "", {}, "sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q=="],
 
     "yocto-queue": ["yocto-queue@0.1.0", "", {}, "sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q=="],
@@ -2424,10 +2335,6 @@
     "@feature/procurement-supply/@eslint/js": ["@eslint/js@10.0.1", "", { "peerDependencies": { "eslint": "^10.0.0" }, "optionalPeers": ["eslint"] }, "sha512-zeR9k5pd4gxjZ0abRoIaxdc7I3nDktoXZk2qOv9gCNWx3mVwEn32VRhyLaRsDiJjTs0xq/T8mfPtyuXu7GWBcA=="],
 
     "@infra/evaluator/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
-
-    "@infra/persistent-settings/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
-
-    "@infra/persistent-warehouse/typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
     "@inquirer/external-editor/chardet": ["chardet@2.2.0", "", {}, "sha512-rddelWYNPRrXq6PtNEN2S3f6t9ILzvqaN5pVgi4kqt9jHQaXIial9PznB5iSPVlQSLNaaH22ItWz3EJtQ10+OA=="],
 

@@ -24,11 +24,11 @@ export abstract class DrizzleBaseRepository<
     return this.forUpdateCtx.getStore() === 'for_update';
   }
 
-  protected transaction<T>(fn: (tx: DbTransaction<TRelations>) => Promise<T>) {
+  transaction<T>(fn: () => Promise<T>) {
     const curr = this.transactionCtx.current;
-    if (curr) return fn(curr);
+    if (curr) return fn();
 
-    return this.transactionCtx.run(() => fn(this.transactionCtx.current!));
+    return this.transactionCtx.run(() => fn());
   }
 
   withForUpdate<T>(fn: () => Promise<T>): Promise<T> {

@@ -15,7 +15,7 @@
     "@feature/actors-api": "workspace:*",
     "@feature/authentication": "workspace:*",
     "@feature/shared": "workspace:*",
-    "@feature/warehouse": "workspace:*",
+    "@feature/warehouse-impl": "workspace:*",
     "@infra/crypto-hash": "workspace:*",
     "@infra/crypto-jwt": "workspace:*",
     "@infra/db-redis": "workspace:*",
