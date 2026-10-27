@@ -4,7 +4,7 @@ import {
   BunSQLTransaction,
 } from 'drizzle-orm/bun-sql/postgres';
 
-export type Database<T extends TablesRelationalConfig> = BunSQLDatabase<T>;
+export type Database<T extends TablesRelationalConfig = {}> = BunSQLDatabase<T>;
 
-export type DbTransaction<T extends TablesRelationalConfig> =
+export type DbTransaction<T extends TablesRelationalConfig = {}> =
   BunSQLTransaction<T>;

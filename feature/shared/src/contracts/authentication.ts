@@ -1,3 +1,5 @@
+import { SetMetadata } from '@nestjs/common';
+
 export type AuthenticatedUser =
   | ({
       id: string;
@@ -16,16 +18,14 @@ export type AuthenticatedUser =
       role: 'admin';
     };
 
-export interface AuthenticationInput {
-  token: string;
+export enum AuthPolicy {
+  Required = 'required', // Default
+  Optional = 'optional',
+  Public = 'public',
 }
 
-export interface AuthenticationResult {
-  user: AuthenticatedUser | null;
-}
+export const AUTH_POLICY = 'auth:policy';
 
-export const AUTHENTICATION_API = Symbol('AUTHENTICATION_API');
-
-export interface AuthenticationApi {
-  authenticate(input: AuthenticationInput): Promise<AuthenticationResult>;
-}
+export const Required = () => SetMetadata(AUTH_POLICY, AuthPolicy.Required);
+export const OptionalAuth = () => SetMetadata(AUTH_POLICY, AuthPolicy.Optional);
+export const Public = () => SetMetadata(AUTH_POLICY, AuthPolicy.Public);

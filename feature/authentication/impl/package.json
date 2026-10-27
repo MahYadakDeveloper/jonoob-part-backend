@@ -25,7 +25,13 @@
     "@nestjs/config": "catalog:",
     "bullmq": "catalog:",
     "redis": "catalog:",
-    "rxjs": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "fastify": "catalog:"
+  },
+  "peerDependencies": {
+    "@nestjs/core": "catalog:",
+    "rxjs": "catalog:"
   }
 }

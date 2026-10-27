@@ -7,9 +7,11 @@ import { RateLimitModule } from '@infra/rate-limit';
 import { SynchronizerModule } from '@infra/synchronizer';
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import authConfig from './auth.config';
 import { AuthenticationController } from './auth.controller';
-import { AuthenticationService } from './auth.service';
+import { AuthGuard } from './auth.guard';
+import { AuthService } from './auth.service';
 import { OtpStore } from './otp/otp.store';
 
 @Module({
@@ -24,15 +26,12 @@ import { OtpStore } from './otp/otp.store';
   providers: [
     OtpStore,
     OtpGenerator,
-    AuthenticationService,
-    {
-      provide: 'AuthenticationApi',
-      useExisting: AuthenticationService,
-    },
+    AuthService,
     {
       provide: HashService,
       useFactory: () => new HashService(12),
     },
+    { provide: APP_GUARD, useClass: AuthGuard },
   ],
   controllers: [AuthenticationController],
   exports: ['AuthenticationApi'],

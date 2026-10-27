@@ -1,35 +1,35 @@
-import { ApiCommand } from '@feature/shared/command';
-import { MovementApi } from '@feature/warehouse-api/';
-import { DrizzleTransactionContext } from '@infra/db-drizzle';
+import { CommandOf, InputOf, OutputOf } from '@feature/shared/cqrs';
+import { MovementApi } from '@feature/warehouse-api/movement';
+import { DrizzleTransactionAls } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
-import { StockRepository } from '../../stock.repository';
+import { QuarantineRepository } from '../../quarantine.repository';
+import { StockService } from '../../stock.service';
 import { MovementRepository } from '../movement.repository';
-import { MovementApiIn, MovementApiOut } from './movement.commands';
 
 @Injectable()
-export class ReturnMovementCommand implements ApiCommand<
-  MovementApi,
-  'return'
-> {
+export class ReturnMovementCommand implements CommandOf<MovementApi, 'return'> {
   constructor(
-    private readonly movements: MovementRepository,
-    private readonly stocks: StockRepository,
+    private readonly repository: MovementRepository,
+    private readonly quarantines: QuarantineRepository,
+    private readonly stocks: StockService,
+    private readonly tx: DrizzleTransactionAls,
   ) {}
 
   async execute(
-    input: MovementApiIn<'return'>,
-  ): Promise<MovementApiOut<'return'>> {
-    return this.movements.transaction(async () => {
-      const {
-        true: toBeQuarantinedInput = [],
-        false: toBeRestockedInput = [],
-      } = Object.groupBy(input.items, (s) => String(s.quarantine)) as {
-        true?: Extract<(typeof input.items)[number], { quarantine: true }>[];
-        false?: Extract<(typeof input.items)[number], { quarantine: false }>[];
-      };
+    input: InputOf<MovementApi, 'return'>,
+  ): OutputOf<MovementApi, 'return'> {
+    return this.tx.run(async () => {
+      const { true: quarantineStocksInput = [], false: restockInput = [] } =
+        Object.groupBy(input.items, (s) => String(s.quarantine)) as {
+          true?: Extract<(typeof input.items)[number], { quarantine: true }>[];
+          false?: Extract<
+            (typeof input.items)[number],
+            { quarantine: false }
+          >[];
+        };
 
-      const toBeRestocked = [
-        ...toBeRestockedInput
+      const restock = [
+        ...restockInput
           .map(({ quarantine, ...s }) => ({ ...s, quantity: 0 }))
           .toMap('stockId', (a, b) => ({
             ...a,
@@ -38,19 +38,19 @@ export class ReturnMovementCommand implements ApiCommand<
           .values(),
       ];
 
-      await this.stocks.increase(toBeRestocked);
+      await this.stocks.increase(restock);
 
       const { items, ...m } = input;
-      const { movementId } = await this.movements.record({
+      const { movementId } = await this.repository.create({
         ...m,
-        items: toBeRestocked,
+        items: restock,
         direction: 'inbound',
       });
 
-      const toBeQuarantined = toBeQuarantinedInput.map(
+      const quarantineStocks = quarantineStocksInput.map(
         ({ quarantine, ...q }) => ({ ...q, movementId }),
       );
-      await this.movements.quarantine(toBeQuarantined);
+      await this.quarantines.quarantine(quarantineStocks);
 
       return { movementId };
     });

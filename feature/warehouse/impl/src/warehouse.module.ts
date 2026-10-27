@@ -8,7 +8,7 @@ import { DrizzleOutboxModule } from '@infra/messaging-outbox';
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { StockMovementRepository } from './movement/movement.repository';
-import { StockMovementService } from './movement/movement.service';
+import { StockMovementService } from './movement/movement.repository';
 import { StockQuarantineController } from './quarantine/quarantine.controller';
 import { StockQuarantineRepository } from './quarantine/quarantine.repository';
 import { StockQuarantineService } from './quarantine/quarantine.service';

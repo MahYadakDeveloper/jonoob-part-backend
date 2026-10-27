@@ -16,7 +16,8 @@
     "Khuzestan",
     "Mahshahr",
     "metatype",
-    "tipax"
+    "tipax",
+    "Undoable"
   ],
   "todo-tree.ripgrep.ripgrep": "/usr/bin/rg",
   "todo-tree.tree.showBadges": true,

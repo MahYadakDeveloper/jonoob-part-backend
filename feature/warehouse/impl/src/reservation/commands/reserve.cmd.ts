@@ -1,42 +1,30 @@
-import { ApiCommand } from '@feature/shared/command';
-import { assertMaps } from '@feature/shared/utils/assertions';
-import { ReservationApi, ReserveStocksInput } from '@feature/warehouse-api';
-import { ConflictException } from '@nestjs/common';
-import { StockRepository } from '../../stock.repository';
+import { ApiCommand } from '@feature/shared/cqrs';
+import {
+  ReservationApi,
+  ReserveStocksInput,
+} from '@feature/warehouse-api/reservation';
+import { DrizzleTransactionAls } from '@infra/db-drizzle';
+import { StockService } from '../../stock.service';
 import { ReservationRepository } from '../reservation.repository';
 
-export class ReserveCommand implements ApiCommand<ReservationApi, 'reserve'> {
+export class ReserveApiCommand implements ApiCommand<
+  ReservationApi,
+  'reserve'
+> {
   constructor(
-    private readonly reservations: ReservationRepository,
-    private readonly stocks: StockRepository,
+    private readonly repository: ReservationRepository,
+    private readonly stocks: StockService,
+    private readonly tx: DrizzleTransactionAls,
   ) {}
   execute(input: ReserveStocksInput): Promise<{ reservationId: string }> {
-    return this.reservations.transaction(async () =>
-      this.reservations.withForUpdate(async () => {
-        const requested = input.items.toMap('stockId', (a, b) => ({
-          ...a,
-          quantity: a.quantity + b.quantity,
-        }));
+    return this.tx.run(async () => {
+      await this.stocks.decrease(input.items);
 
-        const stocks = await this.stocks.findManyStockById([
-          ...requested.keys(),
-        ]);
+      const { reservationId } = await this.repository.create(input.items);
 
-        assertMaps(
-          requested,
-          stocks.toMap('id'),
-          (r, s) => r.quantity <= s.quantity,
-          () => new ConflictException('Insufficient stock'),
-        );
-
-        await this.stocks.decrease(input.items);
-
-        const { reservationId } = await this.reservations.reserve(input.items);
-
-        return {
-          reservationId,
-        };
-      }),
-    );
+      return {
+        reservationId,
+      };
+    });
   }
 }

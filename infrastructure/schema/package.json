@@ -1,0 +1,14 @@
+{
+  "name": "@infra/schema",
+  "private": true,
+  "type": "commonjs",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@infra/db-drizzle": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "@nestjs/outbox": "catalog:",
+    "rxjs": "catalog:"
+  }
+}

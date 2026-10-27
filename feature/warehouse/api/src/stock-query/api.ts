@@ -1,4 +1,4 @@
-import { barcodeType, stocks } from '@feature/warehouse-schema';
+import { barcodeType, stocks } from '@infra/schema/warehouse/stocks.schema';
 
 export type Stock = typeof stocks.$inferSelect;
 

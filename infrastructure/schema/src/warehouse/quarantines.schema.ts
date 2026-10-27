@@ -9,7 +9,6 @@ export const quarantines = warehouseSchema.table('quarantines', {
     .references(() => stocks.id, { onDelete: 'restrict' }),
 
   movementId: uuid('movement_id')
-    .unique()
     .references(() => movements.id, {
       onDelete: 'restrict',
     })

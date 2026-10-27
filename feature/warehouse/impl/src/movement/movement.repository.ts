@@ -1,102 +1,80 @@
 import { StrictOmit } from '@feature/shared/types/utils';
-import { assertLength, ensureOne } from '@feature/shared/utils/assertions';
+import { assertOne } from '@feature/shared/utils/assertions';
+import { StockNotFoundError } from '@feature/warehouse-api/errors';
 import {
+  DuplicateStockError,
+  MalformedInputError,
+  NonPositiveQuantityError,
+  ReferenceSourceMismatchError,
+} from '@feature/warehouse-api/movement';
+import { DbErrors, DrizzleBaseRepository, onFk, onPk } from '@infra/db-drizzle';
+import {
+  MOVEMENT_CHECKS,
   movementItems,
   movements,
-  quarantines,
-} from '@feature/warehouse-schema';
-import { DrizzleBaseRepository } from '@infra/db-drizzle';
+} from '@infra/schema/warehouse/movements.schema';
+import { Injectable } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 
-type RecordMovement = StrictOmit<typeof movements.$inferInsert, 'id'> & {
+type CreateMovement = StrictOmit<typeof movements.$inferInsert, 'id'> & {
   items: StrictOmit<typeof movementItems.$inferInsert, 'movementId'>[];
 };
 
-type QuarantineItem = typeof quarantines.$inferSelect;
-
+@Injectable()
+@DbErrors({
+  constraints: {
+    ...onFk(
+      movementItems,
+      'stockId',
+      ({ stockId }) => new StockNotFoundError(stockId),
+    ),
+    ...onPk(movementItems, DuplicateStockError),
+    [MOVEMENT_CHECKS.itemQuantityPositive]: NonPositiveQuantityError,
+    [MOVEMENT_CHECKS.referenceMatchesSource]: ReferenceSourceMismatchError,
+  },
+  kinds: { invalidInput: MalformedInputError },
+})
 export class MovementRepository extends DrizzleBaseRepository {
-  async record(movement: RecordMovement) {
-    const inserted = await this.db
-      .insert(movements)
-      .values(movement)
-      .returning({ id: movements.id })
-      .then((rows) => ensureOne(rows, () => new CreationFailureError()));
-
-    const insertedItems = await this.db
-      .insert(movementItems)
-      .values(movement.items.map((i) => ({ movementId: inserted.id, ...i })))
-      .returning({ id: movementItems.stockId });
-
-    assertLength(
-      insertedItems,
-      movement.items.length,
-      () => new CreationFailureError(),
-    );
-
-    return {
-      movementId: inserted.id,
-    };
+  async findById(id: string) {
+    return this.applyLockConditionally(
+      this.db
+        .select()
+        .from(movements)
+        .where(eq(movements.id, id))
+        .leftJoin(movementItems, eq(movementItems.movementId, movements.id)),
+      movements,
+    ).then((rows) => {
+      assertOne(rows, Error);
+      const { movements: m } = rows[0];
+      return {
+        ...m,
+        items: rows.flatMap((r) =>
+          r.movement_items ? [r.movement_items] : [],
+        ),
+      };
+    });
   }
 
-  async quarantine(items: QuarantineItem[]) {
-    await this.db.insert(quarantines).values(items);
+  async create(movement: CreateMovement) {
+    return this.transaction(async () => {
+      const [inserted] = await this.db
+        .insert(movements)
+        .values(movement)
+        .returning({ id: movements.id });
+
+      await this.db
+        .insert(movementItems)
+        .values(
+          movement.items.map((i) => ({ movementId: inserted!.id, ...i })),
+        );
+
+      return {
+        movementId: inserted!.id,
+      };
+    });
   }
 
-  // create(movement: RecordMovement): Promise<MovementResult> {
-  //   return this.transaction<MovementResult>(async (tx) => {
-  //     const [inserted] = await tx
-  //       .insert(movements)
-  //       .values(movement)
-  //       .returning({ id: movements.id });
-
-  //     if (!inserted) {
-  //       assertString(movement.idempotencyKey, () => new CreationFailureError());
-
-  //       const rows = await tx
-  //         .select()
-  //         .from(movements)
-  //         .leftJoin(movementItems, eq(movementItems.movementId, movements.id))
-  //         .where(eq(movements.idempotencyKey, movement.idempotencyKey));
-
-  //       assertFirst(rows, () => new CreationFailureError());
-
-  //       const existing = toMovementRecord(rows);
-
-  //       assertSamePayload(
-  //         movement,
-  //         existing,
-  //         () => new IdempotencyConflictError(),
-  //         ({ direction, source, items }) => ({
-  //           direction,
-  //           source,
-  //           items: unordered(
-  //             items.map(({ stockId, quantity }) => ({ stockId, quantity })),
-  //           ),
-  //         }),
-  //       );
-
-  //       return {
-  //         movementId: existing.id,
-  //         created: false,
-  //       };
-  //     }
-
-  //     const insertedItems = await tx
-  //       .insert(movementItems)
-  //       .values(movement.items.map((i) => ({ movementId: inserted.id, ...i })))
-  //       .returning({ id: movementItems.stockId });
-
-  //     assertLength(
-  //       insertedItems,
-  //       movement.items.length,
-  //       () => new CreationFailureError(),
-  //     );
-
-  //     return {
-  //       movementId: inserted.id,
-  //       created: true,
-  //     };
-  //   });
-  // }
+  async delete(movementId: string) {
+    await this.db.delete(movements).where(eq(movements.id, movementId));
+  }
 }
-
-export class CreationFailureError extends Error {}

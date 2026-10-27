@@ -1,35 +1,19 @@
-import {
-  type ApiCommand,
-  ApiCommands,
-  ApiInput,
-  ApiOutput,
-  MethodKeys,
-} from '@feature/shared/command';
-import { MovementApi } from '@feature/warehouse-api';
+import { type CommandOf, CommandsOf } from '@feature/shared/cqrs';
+import { MovementApi } from '@feature/warehouse-api/movement';
 import { Inject, Injectable } from '@nestjs/common';
 import { IssueMovementCommand } from './issue.cmd';
 import { ReceiptMovementCommand } from './receipt.cmd';
 import { ReturnMovementCommand } from './return.cmd';
 import { UndoMovementCommand } from './undo.cmd';
 
-export type MovementApiIn<M extends MethodKeys<MovementApi>> = ApiInput<
-  MovementApi,
-  M
->;
-
-export type MovementApiOut<M extends MethodKeys<MovementApi>> = ApiOutput<
-  MovementApi,
-  M
->;
-
 @Injectable()
-export class MovementCommands implements ApiCommands<MovementApi> {
+export class MovementCommands implements CommandsOf<MovementApi> {
   @Inject(IssueMovementCommand)
-  readonly issue: ApiCommand<MovementApi, 'issue'>;
+  readonly issue: CommandOf<MovementApi, 'issue'>;
   @Inject(ReceiptMovementCommand)
-  readonly receipt: ApiCommand<MovementApi, 'receipt'>;
+  readonly receipt: CommandOf<MovementApi, 'receipt'>;
   @Inject(ReturnMovementCommand)
-  readonly return: ApiCommand<MovementApi, 'return'>;
+  readonly return: CommandOf<MovementApi, 'return'>;
   @Inject(UndoMovementCommand)
-  readonly undo: ApiCommand<MovementApi, 'undo'>;
+  readonly undo: CommandOf<MovementApi, 'undo'>;
 }

@@ -8,7 +8,6 @@
   "dependencies": {
     "@feature/shared": "workspace:*",
     "@feature/warehouse-movement-http": "workspace:*",
-    "@feature/warehouse-schema": "workspace:*",
     "@feature/warehouse-stocks-http": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/messaging-outbox": "workspace:*",

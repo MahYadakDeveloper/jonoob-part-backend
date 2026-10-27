@@ -9,7 +9,6 @@
   "private": true,
   "dependencies": {
     "@feature/shared": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@feature/warehouse-schema": "workspace:*"
+    "@feature/warehouse-api": "workspace:*"
   }
 }

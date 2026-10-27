@@ -10,6 +10,10 @@ import {
 import { stocks } from './stocks.schema';
 import { warehouseSchema } from './warehouse.schema';
 
+export const RESERVATIONS_CHECKS = {
+  reservationItemsQtyPositive: 'reservation_items_qty_positive',
+} as const;
+
 export const reservations = warehouseSchema.table('reservations', {
   id: uuid('id').defaultRandom().primaryKey().notNull(),
 
@@ -32,6 +36,9 @@ export const reservationItems = warehouseSchema.table(
   (t) => [
     primaryKey({ columns: [t.reservationId, t.stockId] }),
     index('idx_reservation_items_stock').on(t.stockId),
-    check('reservation_items_qty_positive', sql`${t.quantity} > 0`),
+    check(
+      RESERVATIONS_CHECKS.reservationItemsQtyPositive,
+      sql`${t.quantity} > 0`,
+    ),
   ],
 );

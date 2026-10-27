@@ -1,1 +1,1 @@
-export class AdjustMovementCommend
+export class AdjustmentMovementCommand implements ControllerCommand

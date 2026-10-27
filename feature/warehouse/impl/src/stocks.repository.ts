@@ -1,21 +1,25 @@
 import { sqlCase } from '@feature/shared/utils/common';
-import { stocks } from '@feature/warehouse-schema';
-import { DrizzleBaseRepository } from '@infra/db-drizzle';
+import { InsufficientStockError } from '@feature/warehouse-api/errors';
+import { DbErrors, DrizzleBaseRepository } from '@infra/db-drizzle';
+import {
+  STOCK_CONSTRAINTS,
+  stocks,
+} from '@infra/schema/warehouse/stocks.schema';
 import { eq, inArray, sql } from 'drizzle-orm';
 
-interface IncreaseItem {
+export type StockQuantityChange = {
   stockId: string;
   quantity: number;
-}
+};
 
-interface DecreaseItem {
-  stockId: string;
-  quantity: number;
-}
-
+@DbErrors({
+  constraints: {
+    [STOCK_CONSTRAINTS.quantityNonNegative]: InsufficientStockError,
+  },
+})
 export class StockRepository extends DrizzleBaseRepository {
-  findManyStockById(stockIds: string[]) {
-    return this.applyForUpdateConditionally(
+  findManyById(stockIds: string[]) {
+    return this.applyLockConditionally(
       this.db
         .select({
           id: stocks.id,
@@ -25,7 +29,8 @@ export class StockRepository extends DrizzleBaseRepository {
         .where(inArray(stocks.id, stockIds)),
     );
   }
-  async increase(items: IncreaseItem[]): Promise<void> {
+
+  async increase(items: StockQuantityChange[]): Promise<void> {
     await this.db
       .update(stocks)
       .set({
@@ -45,7 +50,7 @@ export class StockRepository extends DrizzleBaseRepository {
       );
   }
 
-  async decrease(items: DecreaseItem[]): Promise<void> {
+  async decrease(items: StockQuantityChange[]): Promise<void> {
     await this.db
       .update(stocks)
       .set({

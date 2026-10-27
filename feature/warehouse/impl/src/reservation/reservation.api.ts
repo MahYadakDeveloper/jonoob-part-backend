@@ -1,10 +1,10 @@
+import { Injectable } from '@nestjs/common';
+import { ReservationApiCommands } from './commands/reservation.commands';
 import {
   ReleaseReservationInput,
   ReservationApi,
   ReserveStocksInput,
-} from '@feature/warehouse-api';
-import { Injectable } from '@nestjs/common';
-import { ReservationApiCommands } from './commands/reservation.commands';
+} from '@feature/warehouse-api/reservation';
 
 @Injectable()
 export class ReservationApiImpl implements ReservationApi {

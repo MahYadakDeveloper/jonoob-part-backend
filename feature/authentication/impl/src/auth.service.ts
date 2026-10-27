@@ -1,6 +1,11 @@
 import { COURIER_API, type CourierApi } from '@feature/actors-api/courier';
 import { CUSTOMERS_API, type CustomersApi } from '@feature/actors-api/customer';
 import { MANAGER_API, type ManagerApi } from '@feature/actors-api/manager';
+import {
+  AuthenticatedUser,
+  AuthenticationInput,
+  AuthenticationResult,
+} from '@feature/shared/contracts/authentication';
 import { BcryptHasher } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
 import { OtpGenerator } from '@infra/crypto-otp';
@@ -26,18 +31,12 @@ import { Queue } from 'bullmq';
 import authConfig from './auth.config';
 import { OtpStore } from './otp/otp.store';
 import { SmsSendOtpJobPayload } from './sms/sms-opt.template';
-import {
-  AuthenticatedUser,
-  AuthenticationApi,
-  AuthenticationInput,
-  AuthenticationResult,
-} from '@feature/shared/contracts/authentication';
 
 export type RefreshClaim = AuthenticatedUser;
 
 @Injectable()
-export class AuthenticationService implements AuthenticationApi {
-  private readonly logger = new Logger(AuthenticationService.name);
+export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   // otp
   private readonly otpRateLimitConfig: TokenBucketConfig = {
     maxTokens: 1,

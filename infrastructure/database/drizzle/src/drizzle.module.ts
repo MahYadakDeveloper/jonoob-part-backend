@@ -2,8 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DrizzleModule } from '@nestjs/drizzle';
 import { drizzle } from 'drizzle-orm/bun-sql/postgres';
-import { AsyncLocalStorage } from 'node:async_hooks';
-import { DrizzleTransactionContext } from './drizzle-transaction.context';
+import { DrizzleTransactionAls } from './drizzle-transaction.als';
 import drizzleConfig from './drizzle.config';
 
 @Global()
@@ -18,18 +17,7 @@ import drizzleConfig from './drizzle.config';
       }),
     }),
   ],
-
-  providers: [
-    {
-      provide: 'FOR_UPDATE_ALS',
-      useValue: new AsyncLocalStorage(),
-    },
-    {
-      provide: AsyncLocalStorage,
-      useValue: new AsyncLocalStorage(),
-    },
-    DrizzleTransactionContext,
-  ],
-  exports: ['FOR_UPDATE_ALS', AsyncLocalStorage, DrizzleTransactionContext],
+  providers: [DrizzleTransactionAls], // default scope = singleton
+  exports: [DrizzleTransactionAls],
 })
 export class DrizzleDbModule {}

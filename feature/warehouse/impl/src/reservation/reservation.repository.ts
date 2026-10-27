@@ -1,7 +1,15 @@
 import { StrictOmit } from '@feature/shared/types/utils';
-import { ensureOne } from '@feature/shared/utils/assertions';
-import { reservationItems, reservations } from '@feature/warehouse-schema';
-import { DrizzleBaseRepository } from '@infra/db-drizzle';
+import {
+  DuplicateStockError,
+  MalformedInputError,
+  NonPositiveQuantityError,
+} from '@feature/warehouse-api/reservation';
+import { DbErrors, DrizzleBaseRepository, onFk, onPk } from '@infra/db-drizzle';
+import {
+  reservationItems,
+  reservations,
+  RESERVATIONS_CHECKS,
+} from '@infra/schema/warehouse/reservations.schema';
 import { eq } from 'drizzle-orm';
 
 type ReserveItem = StrictOmit<
@@ -9,9 +17,21 @@ type ReserveItem = StrictOmit<
   'reservationId'
 >;
 
+@DbErrors({
+  constraints: {
+    ...onFk(
+      reservationItems,
+      'stockId',
+      ({ stockId }) => new StockNotFoundError(stockId),
+    ),
+    ...onPk(reservationItems, DuplicateStockError),
+    [RESERVATIONS_CHECKS.reservationItemsQtyPositive]: NonPositiveQuantityError,
+  },
+  kinds: { invalidInput: MalformedInputError },
+})
 export class ReservationRepository extends DrizzleBaseRepository {
-  async findReservedItems(reservationId: string) {
-    return this.applyForUpdateConditionally(
+  async findById(reservationId: string) {
+    return this.applyLockConditionally(
       this.db
         .select()
         .from(reservationItems)
@@ -19,29 +39,24 @@ export class ReservationRepository extends DrizzleBaseRepository {
     );
   }
 
-  async reserve(items: ReserveItem[]) {
-    const { reservationId } = ensureOne(
-      await this.db
-        .insert(reservations)
-        .values({})
-        .returning({ reservationId: reservations.id }),
-      () => new ReservationFailed(),
-    );
+  async create(items: ReserveItem[]) {
+    const [inserted] = await this.db
+      .insert(reservations)
+      .values({})
+      .returning({ id: reservations.id });
 
     await this.db
       .insert(reservationItems)
-      .values(items.map((s) => ({ ...s, reservationId })));
+      .values(items.map((s) => ({ ...s, reservationId: inserted!.id })));
 
     return {
-      reservationId,
+      reservationId: inserted!.id,
     };
   }
 
-  async release(reservationId: string): Promise<void> {
+  async delete(reservationId: string): Promise<void> {
     await this.db
       .delete(reservations)
       .where(eq(reservations.id, reservationId));
   }
 }
-
-export class ReservationFailed extends Error {}

@@ -1,26 +1,28 @@
-import { ApiCommand, ApiInput, ApiOutput } from '@feature/shared/command';
-import { MovementApi } from '@feature/warehouse-api';
+import { CommandOf, InputOf, OutputOf } from '@feature/shared/cqrs';
+import { MovementApi } from '@feature/warehouse-api/movement';
+import { DrizzleTransactionAls } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
-import { StockRepository } from '../../stock.repository';
+import { StockService } from '../../stock.service';
 import { MovementRepository } from '../movement.repository';
 
 @Injectable()
-export class ReceiptMovementCommand implements ApiCommand<
+export class ReceiptMovementCommand implements CommandOf<
   MovementApi,
   'receipt'
 > {
   constructor(
-    private readonly movements: MovementRepository,
-    private readonly stocks: StockRepository,
+    private readonly repository: MovementRepository,
+    private readonly stocks: StockService,
+    private readonly tx: DrizzleTransactionAls,
   ) {}
 
-  async execute(
-    input: ApiInput<MovementApi, 'receipt'>,
-  ): Promise<ApiOutput<MovementApi, 'receipt'>> {
-    return this.movements.transaction(async () => {
+  execute(
+    input: InputOf<MovementApi, 'receipt'>,
+  ): OutputOf<MovementApi, 'receipt'> {
+    return this.tx.run(async () => {
       await this.stocks.increase(input.items);
 
-      const { movementId } = await this.movements.record({
+      const { movementId } = await this.repository.create({
         ...input,
         direction: 'inbound',
       });

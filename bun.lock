@@ -123,8 +123,14 @@
         "@nestjs/config": "catalog:",
         "bullmq": "catalog:",
         "redis": "catalog:",
-        "rxjs": "catalog:",
         "zod": "catalog:",
+      },
+      "devDependencies": {
+        "fastify": "catalog:",
+      },
+      "peerDependencies": {
+        "@nestjs/core": "catalog:",
+        "rxjs": "catalog:",
       },
     },
     "feature/cashback/api": {
@@ -616,7 +622,7 @@
       "name": "@feature/warehouse-api",
       "dependencies": {
         "@feature/shared": "workspace:*",
-        "@feature/warehouse-schema": "workspace:*",
+        "@infra/schema": "workspace:*",
         "@jonoob-part/contracts": "workspace:*",
         "zod": "catalog:",
       },
@@ -626,7 +632,6 @@
       "dependencies": {
         "@feature/shared": "workspace:*",
         "@feature/warehouse-movement-http": "workspace:*",
-        "@feature/warehouse-schema": "workspace:*",
         "@feature/warehouse-stocks-http": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/messaging-outbox": "workspace:*",
@@ -643,9 +648,9 @@
         "@casl/ability": "catalog:",
         "@feature/shared": "workspace:*",
         "@feature/warehouse-api": "workspace:*",
-        "@feature/warehouse-schema": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/messaging-outbox": "workspace:*",
+        "@infra/schema": "workspace:*",
         "@nestjs/common": "catalog:",
         "@nestjs/config": "catalog:",
         "@nestjs/outbox": "catalog:",
@@ -660,7 +665,6 @@
         "@casl/ability": "catalog:",
         "@feature/shared": "workspace:*",
         "@feature/warehouse-api": "workspace:*",
-        "@feature/warehouse-schema": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/messaging-outbox": "workspace:*",
         "@nestjs/common": "catalog:",
@@ -676,9 +680,9 @@
       "dependencies": {
         "@casl/ability": "catalog:",
         "@feature/shared": "workspace:*",
-        "@feature/warehouse-schema": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/messaging-outbox": "workspace:*",
+        "@infra/schema": "workspace:*",
         "@nestjs/common": "catalog:",
         "@nestjs/config": "catalog:",
         "@nestjs/outbox": "catalog:",
@@ -691,7 +695,6 @@
       "name": "@feature/warehouse-movement-impl",
       "dependencies": {
         "@feature/shared": "workspace:*",
-        "@feature/warehouse-schema": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/messaging-outbox": "workspace:*",
         "@nestjs/common": "catalog:",
@@ -701,20 +704,11 @@
         "zod": "catalog:",
       },
     },
-    "feature/warehouse/schema": {
-      "name": "@feature/warehouse-schema",
-      "dependencies": {
-        "@feature/shared": "workspace:*",
-        "@infra/db-drizzle": "workspace:*",
-        "drizzle-orm": "catalog:",
-      },
-    },
     "feature/warehouse/stocks/api": {
       "name": "@feature/warehouse-stocks-api",
       "dependencies": {
         "@feature/shared": "workspace:*",
         "@feature/warehouse-api": "workspace:*",
-        "@feature/warehouse-schema": "workspace:*",
       },
     },
     "feature/warehouse/stocks/http": {
@@ -722,7 +716,6 @@
       "dependencies": {
         "@casl/ability": "catalog:",
         "@feature/shared": "workspace:*",
-        "@feature/warehouse-schema": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/messaging-outbox": "workspace:*",
         "@nestjs/common": "catalog:",
@@ -738,7 +731,6 @@
       "dependencies": {
         "@casl/ability": "catalog:",
         "@feature/shared": "workspace:*",
-        "@feature/warehouse-schema": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/messaging-outbox": "workspace:*",
         "@nestjs/common": "catalog:",
@@ -909,6 +901,15 @@
         "@nestjs/common": "catalog:",
         "@nestjs/config": "catalog:",
         "redis": "catalog:",
+      },
+    },
+    "infrastructure/schema": {
+      "name": "@infra/schema",
+      "dependencies": {
+        "@infra/db-drizzle": "workspace:*",
+        "@nestjs/outbox": "catalog:",
+        "drizzle-orm": "catalog:",
+        "rxjs": "catalog:",
       },
     },
     "infrastructure/settings-store": {
@@ -1262,8 +1263,6 @@
 
     "@feature/warehouse-movement-impl": ["@feature/warehouse-movement-impl@workspace:feature/warehouse/movement/impl"],
 
-    "@feature/warehouse-schema": ["@feature/warehouse-schema@workspace:feature/warehouse/schema"],
-
     "@feature/warehouse-stocks": ["@feature/warehouse-stocks@workspace:feature/warehouse/stocks/impl"],
 
     "@feature/warehouse-stocks-api": ["@feature/warehouse-stocks-api@workspace:feature/warehouse/stocks/api"],
@@ -1369,6 +1368,8 @@
     "@infra/payment-gateway": ["@infra/payment-gateway@workspace:infrastructure/payment-gateway"],
 
     "@infra/rate-limit": ["@infra/rate-limit@workspace:infrastructure/rate-limit"],
+
+    "@infra/schema": ["@infra/schema@workspace:infrastructure/schema"],
 
     "@infra/settings-store": ["@infra/settings-store@workspace:infrastructure/settings-store"],
 

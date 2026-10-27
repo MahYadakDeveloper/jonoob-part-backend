@@ -9,7 +9,6 @@
   "private": true,
   "dependencies": {
     "@feature/shared": "workspace:*",
-    "@feature/warehouse-schema": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/messaging-outbox": "workspace:*",
     "@nestjs/common": "catalog:",

@@ -1,9 +1,10 @@
-import { ApiCommand } from '@feature/shared/command';
+import { ApiCommand } from '@feature/shared/cqrs';
 import {
   ReleaseReservationInput,
   ReservationApi,
-} from '@feature/warehouse-api';
-import { StockRepository } from '../../stock.repository';
+} from '@feature/warehouse-api/reservation';
+import { DrizzleTransactionAls } from '@infra/db-drizzle';
+import { StockService } from '../../stock.service';
 import { ReservationRepository } from '../reservation.repository';
 
 export class ReleaseApiCommand implements ApiCommand<
@@ -11,20 +12,19 @@ export class ReleaseApiCommand implements ApiCommand<
   'release'
 > {
   constructor(
-    private readonly reservations: ReservationRepository,
-    private readonly stocks: StockRepository,
+    private readonly repository: ReservationRepository,
+    private readonly stocks: StockService,
+    private readonly tx: DrizzleTransactionAls,
   ) {}
   execute(input: ReleaseReservationInput): Promise<void> {
-    return this.reservations.transaction(() =>
-      this.reservations.withForUpdate(async () => {
-        const reservedItems = await this.reservations.findReservedItems(
-          input.reservationId,
-        );
+    return this.tx.run(async (lock) => {
+      const reservedItems = await lock('update', async () =>
+        this.repository.findById(input.reservationId),
+      );
 
-        await this.stocks.increase(reservedItems);
+      await this.stocks.increase(reservedItems);
 
-        await this.reservations.release(input.reservationId);
-      }),
-    );
+      await this.repository.delete(input.reservationId);
+    });
   }
 }

@@ -10,9 +10,9 @@
   "dependencies": {
     "@casl/ability": "catalog:",
     "@feature/shared": "workspace:*",
-    "@feature/warehouse-schema": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/messaging-outbox": "workspace:*",
+    "@infra/schema": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/outbox": "catalog:",
