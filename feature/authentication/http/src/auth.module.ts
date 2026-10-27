@@ -1,4 +1,4 @@
-import { HashService } from '@infra/crypto-hash';
+import { BcryptHasher } from '@infra/crypto-hash';
 import { JwtModule } from '@infra/crypto-jwt';
 import { OtpGenerator } from '@infra/crypto-otp';
 import { RedisModule } from '@infra/db-redis';
@@ -7,10 +7,8 @@ import { RateLimitModule } from '@infra/rate-limit';
 import { SynchronizerModule } from '@infra/synchronizer';
 import { DynamicModule, Module, ModuleMetadata } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
 import authConfig from './auth.config';
 import { AuthenticationController } from './auth.controller';
-import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { OtpStore } from './otp/otp.store';
 
@@ -28,8 +26,8 @@ import { OtpStore } from './otp/otp.store';
     OtpGenerator,
     AuthService,
     {
-      provide: HashService,
-      useFactory: () => new HashService(12),
+      provide: BcryptHasher,
+      useFactory: () => new BcryptHasher(12),
     },
   ],
   controllers: [AuthenticationController],

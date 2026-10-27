@@ -1,0 +1,4 @@
+// Only for vscode editor use purpose
+{
+  "extends": "./../../tsconfig.json"
+}

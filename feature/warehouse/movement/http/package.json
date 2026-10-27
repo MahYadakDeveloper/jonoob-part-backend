@@ -9,6 +9,8 @@
   "private": true,
   "dependencies": {
     "@casl/ability": "catalog:",
+    "@feature/authentication-http": "workspace:*",
+    "@feature/authorization-http": "workspace:*",
     "@feature/shared": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/messaging-outbox": "workspace:*",

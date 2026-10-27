@@ -1,11 +1,12 @@
 // import { BullModule } from '@nestjs/bullmq';
-import { AuthenticatedUser } from '@feature/shared/contracts/authentication';
-import { WarehouseModule } from '@feature/warehouse';
 import { IdempotencyStoreModule } from '@infra/idempotency';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { IdempotencyModule } from '@nestjs/idempotency';
 import path from 'node:path';
+import { AuthenticatedUser } from '@feature/authentication-http/';
+import { AuthGuard } from '@feature/authentication-http/guards';
+import { APP_GUARD } from '@nestjs/core';
 // import { ScheduleModule } from '@nestjs/schedule';
 
 // const authenticationModule = AuthenticationModule.forRoot({
@@ -38,5 +39,6 @@ import path from 'node:path';
     // authenticationModule,
     WarehouseModule.forRoot({}),
   ],
+  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule {}

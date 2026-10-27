@@ -142,6 +142,22 @@
         "@infra/messaging-sms": "workspace:*",
       },
     },
+    "feature/authorization/http": {
+      "name": "@feature/authorization-http",
+      "dependencies": {
+        "@casl/ability": "catalog:",
+        "@feature/authentication-http": "workspace:*",
+        "@feature/shared": "workspace:*",
+        "@nestjs/common": "catalog:",
+      },
+      "devDependencies": {
+        "fastify": "catalog:",
+      },
+      "peerDependencies": {
+        "@nestjs/core": "catalog:",
+        "rxjs": "catalog:",
+      },
+    },
     "feature/cashback/api": {
       "name": "@feature/cashback-api",
       "dependencies": {
@@ -688,6 +704,8 @@
       "name": "@feature/warehouse-movement-http",
       "dependencies": {
         "@casl/ability": "catalog:",
+        "@feature/authentication-http": "workspace:*",
+        "@feature/authorization-http": "workspace:*",
         "@feature/shared": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/messaging-outbox": "workspace:*",
@@ -1163,6 +1181,8 @@
     "@feature/authentication-http": ["@feature/authentication-http@workspace:feature/authentication/http"],
 
     "@feature/authentication-sms": ["@feature/authentication-sms@workspace:feature/authentication/sms"],
+
+    "@feature/authorization-http": ["@feature/authorization-http@workspace:feature/authorization/http"],
 
     "@feature/cashback": ["@feature/cashback@workspace:feature/cashback/impl"],
 

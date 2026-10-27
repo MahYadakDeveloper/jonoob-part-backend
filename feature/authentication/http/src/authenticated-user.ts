@@ -1,5 +1,3 @@
-import { SetMetadata } from '@nestjs/common';
-
 export type AuthenticatedUser =
   | ({
       id: string;

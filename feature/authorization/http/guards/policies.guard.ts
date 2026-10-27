@@ -1,4 +1,5 @@
 import { MongoAbility } from '@casl/ability';
+import '@feature/authentication-http/augmentation/fastify';
 import {
   CanActivate,
   ExecutionContext,
@@ -7,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
-import { PolicyContext, PolicyDefinition } from '../contracts/policy';
-import { CHECK_POLICIES_KEY } from '../decorators/check-policies.decorator';
+import { PolicyContext, PolicyDefinition } from '../contracts';
+import { CHECK_POLICIES_KEY } from '../decorators';
 
 @Injectable()
 export class PoliciesGuard implements CanActivate {

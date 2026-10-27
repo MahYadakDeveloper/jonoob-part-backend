@@ -216,7 +216,7 @@ export class AuthService {
     if (!payload) throw new UnauthorizedException('Invalid verification token');
 
     return await this.synchronizer.executeExclusive(
-      `${AuthenticationService.name}:sign-in:${payload.jti}`,
+      `${AuthService.name}:sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload)
@@ -269,7 +269,7 @@ export class AuthService {
     const payload = this.jwtService.decode(verifyToken);
     if (!payload) throw new UnauthorizedException('Invalid verification token');
     return await this.synchronizer.executeExclusive(
-      `${AuthenticationService.name}:courier-sign-in:${payload.jti}`,
+      `${AuthService.name}:courier-sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload)
@@ -327,7 +327,7 @@ export class AuthService {
     if (!payload) throw new UnauthorizedException('Invalid verification token');
 
     return await this.synchronizer.executeExclusive(
-      `${AuthenticationService.name}:manager-sign-in:${payload.jti}`,
+      `${AuthService.name}:manager-sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload)
@@ -387,7 +387,7 @@ export class AuthService {
     }
 
     return await this.synchronizer.executeExclusive(
-      `${AuthenticationService.name}:admin-sign-in:${payload.jti}`,
+      `${AuthService.name}:admin-sign-in:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload) {
@@ -452,7 +452,7 @@ export class AuthService {
     if (!payload) throw new UnauthorizedException('Invalid verification token');
 
     return this.synchronizer.executeExclusive(
-      `${AuthenticationService.name}:sign-up:${payload.jti}`,
+      `${AuthService.name}:sign-up:${payload.jti}`,
       async () => {
         const payload = await this.jwtService.verify(verifyToken, 'verify');
         if (!payload)
@@ -501,7 +501,7 @@ export class AuthService {
     if (!payload) throw new UnauthorizedException('Invalid refresh token');
 
     return await this.synchronizer.executeExclusive(
-      `${AuthenticationService.name}:refresh:${payload.jti}`,
+      `${AuthService.name}:refresh:${payload.jti}`,
       async () => {
         const payload = (await this.jwtService.verify(
           oldRefreshToken,

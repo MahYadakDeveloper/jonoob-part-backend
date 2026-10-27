@@ -6,9 +6,9 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./sms/*": "./src/sms/*.ts",
-    "./guards/*": "./src/guards/*.ts",
-    "./decorators/*": "./src/decorators/*.ts"
+    "./guards": "./src/guards/index.ts",
+    "./decorators": "./src/decorators/index.ts",
+    "./augmentation/*": "./*.d.ts"
   },
   "dependencies": {
     "@feature/actors-api": "workspace:*",
