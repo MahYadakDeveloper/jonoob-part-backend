@@ -1,0 +1,11 @@
+{
+  "name": "@feature/authentication-sms",
+  "private": true,
+  "type": "commonjs",
+  "exports": {
+    "./*": "./*.d.ts"
+  },
+  "dependencies": {
+    "@infra/messaging-sms": "workspace:*"
+  }
+}

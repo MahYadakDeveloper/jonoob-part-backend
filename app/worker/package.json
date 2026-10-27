@@ -16,9 +16,10 @@
     "lint": "oxlint --type-aware src/ test/"
   },
   "dependencies": {
-    "@feature/authentication": "workspace:*",
+    "@feature/authentication-sms": "workspace:*",
     "@infra/messaging-job-scheduler": "workspace:*",
     "@infra/messaging-queue": "workspace:*",
+    "@infra/messaging-sms": "workspace:*",
     "@nestjs/axios": "catalog:",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",

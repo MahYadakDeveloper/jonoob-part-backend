@@ -1,7 +1,4 @@
-import {
-  SmsTemplate,
-  SmsTemplateRegistry,
-} from '@infra/messaging-queue/job-types';
+import { SmsTemplate, SmsTemplateRegistry } from '@infra/messaging-sms';
 
 export interface SmsTemplateHandler<T extends SmsTemplate = SmsTemplate> {
   readonly template: T;

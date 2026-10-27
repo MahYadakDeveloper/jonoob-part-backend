@@ -2,7 +2,6 @@ import { CacheInvalidationQueueName } from '@jonoob-part/contracts';
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SMS_QUEUE_NAME } from './queue.constants';
 
 @Module({
   imports: [
@@ -30,19 +29,15 @@ import { SMS_QUEUE_NAME } from './queue.constants';
         },
       }),
     }),
-    BullModule.registerQueue(
-      { name: SMS_QUEUE_NAME },
-      {
-        name: CacheInvalidationQueueName,
-        defaultJobOptions: {
-          attempts: 5,
-          backoff: { type: 'exponential', delay: 5000 },
-          removeOnComplete: true,
-          removeOnFail: 1000,
-        },
+    BullModule.registerQueue({
+      name: CacheInvalidationQueueName,
+      defaultJobOptions: {
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 5000 },
+        removeOnComplete: true,
+        removeOnFail: 1000,
       },
-    ),
+    }),
   ],
-  exports: [BullModule],
 })
 export class QueueModule {}

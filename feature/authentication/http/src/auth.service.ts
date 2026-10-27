@@ -1,22 +1,16 @@
+import { BullmqSms } from '@infra/messaging-sms';
 import { COURIER_API, type CourierApi } from '@feature/actors-api/courier';
 import { CUSTOMERS_API, type CustomersApi } from '@feature/actors-api/customer';
 import { MANAGER_API, type ManagerApi } from '@feature/actors-api/manager';
-import {
-  AuthenticatedUser,
-  AuthenticationInput,
-  AuthenticationResult,
-} from '@feature/shared/contracts/authentication';
+import '@feature/authentication-sms/sms-opt.template';
 import { BcryptHasher } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
 import { OtpGenerator } from '@infra/crypto-otp';
-import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
-import { SmsJobs } from '@infra/messaging-queue/job-types';
 import {
   TokenBucketConfig,
   TokenBucketRateLimitService,
 } from '@infra/rate-limit';
 import { RedlockSynchronizer } from '@infra/synchronizer';
-import { InjectQueue } from '@nestjs/bullmq';
 import {
   BadRequestException,
   HttpException,
@@ -27,10 +21,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
-import { Queue } from 'bullmq';
 import authConfig from './auth.config';
+import { AuthenticatedUser } from './authenticated-user';
 import { OtpStore } from './otp/otp.store';
-import { SmsSendOtpJobPayload } from './sms/sms-opt.template';
+import { OtpSmsPayload } from '@feature/authentication-sms/sms-opt.template';
 
 export type RefreshClaim = AuthenticatedUser;
 
@@ -85,17 +79,8 @@ export class AuthService {
     private readonly synchronizer: RedlockSynchronizer,
     @Inject(authConfig.KEY)
     private readonly config: ConfigType<typeof authConfig>,
-    @InjectQueue(SMS_QUEUE_NAME) private readonly smsQueue: Queue,
+    private readonly sms: BullmqSms,
   ) {}
-
-  async authenticate({
-    token,
-  }: AuthenticationInput): Promise<AuthenticationResult> {
-    const payload = await this.jwtService.verify(token, 'access');
-    if (!payload) return { user: null };
-
-    return { user: payload as unknown as AuthenticatedUser };
-  }
 
   /**
    * [NOTE]
@@ -143,7 +128,7 @@ export class AuthService {
       );
     }
 
-    const otp = this.otpGenerator.generate(this.otpLength);
+    const otp = await this.otpGenerator.generate(this.otpLength);
 
     await this.otps.set(
       phone,
@@ -153,13 +138,13 @@ export class AuthService {
       this.otpTtlSeconds,
     );
 
-    await this.smsQueue.add(SmsJobs.Send, {
+    await this.sms.send({
       to: phone,
       template: 'auth.otp',
       data: {
         otp,
       },
-    } satisfies SmsSendOtpJobPayload);
+    } satisfies OtpSmsPayload);
   }
 
   async verify({

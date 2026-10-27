@@ -13,7 +13,7 @@
     "@fastify/static": "^10.1.3",
     "@feature/actors": "workspace:*",
     "@feature/actors-api": "workspace:*",
-    "@feature/authentication": "workspace:*",
+    "@feature/authentication-http": "workspace:*",
     "@feature/shared": "workspace:*",
     "@feature/warehouse-impl": "workspace:*",
     "@infra/crypto-hash": "workspace:*",

@@ -1,5 +1,3 @@
-import { SMS_QUEUE_NAME } from '@infra/messaging-queue/constants';
-import { SmsJobPayload, SmsTemplate } from '@infra/messaging-queue/job-types';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
@@ -8,6 +6,11 @@ import {
   SmsTemplateHandler,
 } from '../sms/sms-template.handler';
 import { SmsService } from '../sms/sms.service';
+import {
+  SMS_QUEUE_NAME,
+  SmsJobPayload,
+  SmsTemplate,
+} from '@infra/messaging-sms';
 
 @Processor(SMS_QUEUE_NAME, { concurrency: 5 })
 export class SmsProcessor extends WorkerHost {
@@ -42,7 +45,7 @@ export class SmsProcessor extends WorkerHost {
     );
 
     const failed = recipients.filter(
-      (_, i) => results[i].status === 'rejected',
+      (_, i) => results[i]?.status === 'rejected',
     );
     if (failed.length === 0) return;
 

@@ -1,0 +1,20 @@
+{
+  "name": "@infra/messaging-sms",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@infra/messaging-queue": "workspace:*",
+    "@nestjs/bullmq": "catalog:",
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "bullmq": "catalog:"
+  },
+  "peerDependencies": {
+    "rxjs": "catalog:"
+  }
+}

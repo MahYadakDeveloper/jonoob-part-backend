@@ -1,35 +1,18 @@
 {
   "name": "@infra/messaging-queue",
   "private": true,
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
-  },
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./constants": {
-      "types": "./dist/queue.constants.d.ts",
-      "import": "./dist/queue.constants.js",
-      "require": "./dist/queue.constants.js"
-    },
-    "./job-types": {
-      "types": "./dist/job-types/index.d.ts",
-      "import": "./dist/job-types/index.js",
-      "require": "./dist/job-types/index.js"
-    }
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@jonoob-part/contracts": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
+    "bullmq": "catalog:",
     "rxjs": "catalog:"
   }
 }

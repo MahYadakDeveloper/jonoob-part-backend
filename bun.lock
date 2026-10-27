@@ -20,7 +20,7 @@
         "@fastify/static": "^10.1.3",
         "@feature/actors": "workspace:*",
         "@feature/actors-api": "workspace:*",
-        "@feature/authentication": "workspace:*",
+        "@feature/authentication-http": "workspace:*",
         "@feature/shared": "workspace:*",
         "@feature/warehouse-impl": "workspace:*",
         "@infra/crypto-hash": "workspace:*",
@@ -56,9 +56,10 @@
       "name": "@app/worker",
       "version": "0.0.1",
       "dependencies": {
-        "@feature/authentication": "workspace:*",
+        "@feature/authentication-sms": "workspace:*",
         "@infra/messaging-job-scheduler": "workspace:*",
         "@infra/messaging-queue": "workspace:*",
+        "@infra/messaging-sms": "workspace:*",
         "@nestjs/axios": "catalog:",
         "@nestjs/bullmq": "catalog:",
         "@nestjs/common": "catalog:",
@@ -104,10 +105,11 @@
         "zod": "catalog:",
       },
     },
-    "feature/authentication/impl": {
-      "name": "@feature/authentication",
+    "feature/authentication/http": {
+      "name": "@feature/authentication-http",
       "dependencies": {
         "@feature/actors-api": "workspace:*",
+        "@feature/authentication-sms": "workspace:*",
         "@feature/order-api": "workspace:*",
         "@feature/shared": "workspace:*",
         "@infra/crypto-hash": "workspace:*",
@@ -115,6 +117,7 @@
         "@infra/crypto-otp": "workspace:*",
         "@infra/db-redis": "workspace:*",
         "@infra/messaging-queue": "workspace:*",
+        "@infra/messaging-sms": "workspace:*",
         "@infra/rate-limit": "workspace:*",
         "@infra/synchronizer": "workspace:*",
         "@jonoob-part/contracts": "workspace:*",
@@ -131,6 +134,12 @@
       "peerDependencies": {
         "@nestjs/core": "catalog:",
         "rxjs": "catalog:",
+      },
+    },
+    "feature/authentication/sms": {
+      "name": "@feature/authentication-sms",
+      "dependencies": {
+        "@infra/messaging-sms": "workspace:*",
       },
     },
     "feature/cashback/api": {
@@ -855,6 +864,20 @@
         "@nestjs/bullmq": "catalog:",
         "@nestjs/common": "catalog:",
         "@nestjs/config": "catalog:",
+        "bullmq": "catalog:",
+        "rxjs": "catalog:",
+      },
+    },
+    "infrastructure/messaging/sms": {
+      "name": "@infra/messaging-sms",
+      "dependencies": {
+        "@infra/messaging-queue": "workspace:*",
+        "@nestjs/bullmq": "catalog:",
+        "@nestjs/common": "catalog:",
+        "@nestjs/config": "catalog:",
+        "bullmq": "catalog:",
+      },
+      "peerDependencies": {
         "rxjs": "catalog:",
       },
     },
@@ -1137,7 +1160,9 @@
 
     "@feature/actors-api": ["@feature/actors-api@workspace:feature/actors/api"],
 
-    "@feature/authentication": ["@feature/authentication@workspace:feature/authentication/impl"],
+    "@feature/authentication-http": ["@feature/authentication-http@workspace:feature/authentication/http"],
+
+    "@feature/authentication-sms": ["@feature/authentication-sms@workspace:feature/authentication/sms"],
 
     "@feature/cashback": ["@feature/cashback@workspace:feature/cashback/impl"],
 
@@ -1360,6 +1385,8 @@
     "@infra/messaging-outbox": ["@infra/messaging-outbox@workspace:infrastructure/messaging/outbox"],
 
     "@infra/messaging-queue": ["@infra/messaging-queue@workspace:infrastructure/messaging/queue"],
+
+    "@infra/messaging-sms": ["@infra/messaging-sms@workspace:infrastructure/messaging/sms"],
 
     "@infra/object-storage-s3-client": ["@infra/object-storage-s3-client@workspace:infrastructure/object-storage/s3/client"],
 

@@ -31,7 +31,6 @@ import { OtpStore } from './otp/otp.store';
       provide: HashService,
       useFactory: () => new HashService(12),
     },
-    { provide: APP_GUARD, useClass: AuthGuard },
   ],
   controllers: [AuthenticationController],
   exports: ['AuthenticationApi'],

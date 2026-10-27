@@ -1,4 +1,4 @@
-import '@feature/authentication/sms/sms-opt.template';
+import '@feature/authentication-sms/sms-opt.template';
 import { Injectable } from '@nestjs/common';
 import { SmsTemplateHandler } from '../sms-template.handler';
 

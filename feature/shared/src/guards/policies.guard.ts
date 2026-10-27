@@ -1,5 +1,10 @@
 import { MongoAbility } from '@casl/ability';
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { PolicyContext, PolicyDefinition } from '../contracts/policy';
@@ -29,6 +34,8 @@ export class PoliciesGuard implements CanActivate {
     const abilityFactory = this.moduleRef.get(definition.abilityFactory, {
       strict: false,
     });
+
+    if (!user) throw new UnauthorizedException();
 
     const ability = abilityFactory.createFor(user);
 
