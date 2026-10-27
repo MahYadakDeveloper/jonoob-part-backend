@@ -8,7 +8,7 @@ import {
 import { StrictOmit } from '@feature/shared/types/utils';
 import { assertNotNull } from '@feature/shared/utils/assertions';
 import { omit } from '@feature/shared/utils/common';
-import { type Database, InjectDrizzle } from '@infra/db-drizzle';
+import { type Database, DbErrors, InjectDrizzle } from '@infra/db-drizzle';
 import {
   movementItems,
   movements,
@@ -44,6 +44,11 @@ export type MovementView = {
   } & Record<SourceReference[S], string>;
 }[MovementSource];
 
+@DbErrors({
+  constraints: {
+    // Example of error mapping
+  },
+})
 export class ListQuery implements Query<ListQueryDto, unknown> {
   constructor(@InjectDrizzle() private readonly db: Database) {}
 

@@ -10,12 +10,15 @@ import { CheckPolicies } from '@feature/authorization-http/decorators';
 import { CurrentUser, Public } from '@feature/authentication-http/decorators';
 import { type AuthenticatedUser } from '@feature/authentication-http';
 import { RequiredAuth } from '@feature/authentication-http/decorators';
+import { ApiDomainErrors } from '@feature/shared/errors';
+import { movementHttpErrors } from './movement.errors';
 
 @UseGuards(PoliciesGuard)
 @Controller('warehouse/movement')
 export class MovementController {
   constructor(private readonly listQuery: ListQuery) {}
 
+  @ApiDomainErrors(...movementHttpErrors)
   @Public()
   @Get()
   list(@Query({ schema: listQuerySchema }) q: ListQueryDto) {

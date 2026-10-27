@@ -21,6 +21,7 @@
   "dependencies": {
     "@casl/ability": "catalog:",
     "@nestjs/outbox": "catalog:",
+    "@nestjs/swagger": "catalog:",
     "drizzle-orm": "catalog:",
     "fastify": "catalog:",
     "zod": "catalog:"

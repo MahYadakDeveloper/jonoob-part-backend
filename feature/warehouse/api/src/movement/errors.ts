@@ -1,4 +1,4 @@
-import { DomainError } from '@feature/shared/errors';
+import { DomainError, httpError } from '@feature/shared/errors';
 import { movements } from '@infra/schema/warehouse/movements.schema';
 
 /**
