@@ -28,7 +28,7 @@
         "@feature/actors": "workspace:*",
         "@feature/actors-api": "workspace:*",
         "@feature/authentication-http": "workspace:*",
-        "@feature/errors-http": "workspace:*",
+        "@feature/error-http": "workspace:*",
         "@feature/shared": "workspace:*",
         "@feature/warehouse-impl": "workspace:*",
         "@infra/crypto-hash": "workspace:*",
@@ -280,8 +280,8 @@
         "zod": "4.6.7",
       },
     },
-    "feature/errors/http": {
-      "name": "@feature/errors-http",
+    "feature/error/http": {
+      "name": "@feature/error-http",
       "dependencies": {
         "@feature/shared": "workspace:*",
         "@nestjs/common": "catalog:",
@@ -731,6 +731,7 @@
         "@casl/ability": "catalog:",
         "@feature/authentication-http": "workspace:*",
         "@feature/authorization-http": "workspace:*",
+        "@feature/error-http": "workspace:*",
         "@feature/shared": "workspace:*",
         "@feature/warehouse-errors": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
@@ -1253,7 +1254,7 @@
 
     "@feature/discount-api": ["@feature/discount-api@workspace:feature/pricing/discount/api"],
 
-    "@feature/errors-http": ["@feature/errors-http@workspace:feature/errors/http"],
+    "@feature/error-http": ["@feature/error-http@workspace:feature/error/http"],
 
     "@feature/media-api": ["@feature/media-api@workspace:feature/media/api"],
 
@@ -2599,7 +2600,7 @@
 
     "@fastify/ajv-compiler/ajv": ["ajv@8.20.0", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, "sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA=="],
 
-    "@feature/errors-http/@nestjs/swagger": ["@nestjs/swagger@12.0.5", "", { "dependencies": { "@microsoft/tsdoc": "0.17.1", "@nestjs/mapped-types": "12.0.0", "@standard-schema/spec": "1.1.0", "es-toolkit": "1.52.0", "js-yaml": "5.5.0", "path-to-regexp": "8.4.2", "swagger-ui-dist": "5.34.0" }, "peerDependencies": { "@fastify/static": "^8.0.0 || ^9.0.0 || ^10.0.0", "@nestjs/common": "^12.0.0", "@nestjs/core": "^12.0.0", "class-transformer": "*", "class-validator": "*", "reflect-metadata": "^0.1.12 || ^0.2.0", "typescript": "^5.5.0 || ^6.0.0" }, "optionalPeers": ["@fastify/static", "class-transformer", "class-validator", "typescript"] }, "sha512-6Zf8DhSqyBt3409Ycpezy7cVfAiO1s9XkjyxE7RtOJmVzMPs2T4XGC7sukBvxdtIVmhUC9EoglHH73O75MKApw=="],
+    "@feature/error-http/@nestjs/swagger": ["@nestjs/swagger@12.0.5", "", { "dependencies": { "@microsoft/tsdoc": "0.17.1", "@nestjs/mapped-types": "12.0.0", "@standard-schema/spec": "1.1.0", "es-toolkit": "1.52.0", "js-yaml": "5.5.0", "path-to-regexp": "8.4.2", "swagger-ui-dist": "5.34.0" }, "peerDependencies": { "@fastify/static": "^8.0.0 || ^9.0.0 || ^10.0.0", "@nestjs/common": "^12.0.0", "@nestjs/core": "^12.0.0", "class-transformer": "*", "class-validator": "*", "reflect-metadata": "^0.1.12 || ^0.2.0", "typescript": "^5.5.0 || ^6.0.0" }, "optionalPeers": ["@fastify/static", "class-transformer", "class-validator", "typescript"] }, "sha512-6Zf8DhSqyBt3409Ycpezy7cVfAiO1s9XkjyxE7RtOJmVzMPs2T4XGC7sukBvxdtIVmhUC9EoglHH73O75MKApw=="],
 
     "@feature/procurement-supply/@eslint/js": ["@eslint/js@10.0.1", "", { "peerDependencies": { "eslint": "^10.0.0" }, "optionalPeers": ["eslint"] }, "sha512-zeR9k5pd4gxjZ0abRoIaxdc7I3nDktoXZk2qOv9gCNWx3mVwEn32VRhyLaRsDiJjTs0xq/T8mfPtyuXu7GWBcA=="],
 

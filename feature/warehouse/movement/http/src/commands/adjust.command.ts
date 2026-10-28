@@ -1,45 +1,26 @@
 import { Command } from '@feature/shared/cqrs';
-import { DiscriminatedUnion, StrictOmit } from '@feature/shared/types/utils';
 import { assertNever, assertOne } from '@feature/shared/utils/assertions';
 import { StockNotFoundError } from '@feature/warehouse-errors/stock';
 import { type Database, InjectDrizzle } from '@infra/db-drizzle';
 import {
   adjustmentEffect,
-  adjustmentReason,
   adjustments,
 } from '@infra/schema/warehouse/adjustments.schema';
+import {
+  movementDirection,
+  movements,
+} from '@infra/schema/warehouse/movements.schema';
 import { stocks } from '@infra/schema/warehouse/stocks.schema';
 import { Injectable } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 
-type Reason = (typeof adjustmentReason.enumValues)[number];
-type Effect = (typeof adjustmentEffect.enumValues)[number];
-
-type Base = StrictOmit<
-  typeof adjustments.$inferInsert,
-  'id' | 'adjustedAt' | 'effect' | 'reason' | 'note'
->;
-
-type Note = { note?: string | null };
-type With<E extends Effect> = { effect: E } & Note;
-
-export type AdjustmentInput = Base &
-  DiscriminatedUnion<
-    'reason',
-    Reason,
-    {
-      damaged: With<'shortage'>;
-      lost: With<'shortage'>;
-      found: With<'surplus'>;
-      count_correction: With<Effect>;
-      other: { effect: Effect; note: string };
-    }
-  >;
+type AdjustInput = typeof adjustments.$inferInsert;
 
 @Injectable()
-export class AdjustMovementCommand implements Command<AdjustmentInput, void> {
+export class AdjustCommand implements Command<AdjustInput, void> {
   constructor(@InjectDrizzle() private readonly db: Database) {}
-  execute(input: AdjustmentInput): void {
+
+  execute(input: AdjustInput): Promise<void> {
     return this.db.transaction(async (tx) => {
       const { effect } = input;
       let op;
@@ -62,9 +43,26 @@ export class AdjustMovementCommand implements Command<AdjustmentInput, void> {
         .where(eq(stocks.id, input.stockId))
         .returning({ id: stocks.id });
 
-      assertOne(updated, () => new StockNotFoundError(''));
+      assertOne(updated, StockNotFoundError);
 
-      await tx.insert(adjustments).values(input);
+      const [inserted] = await tx
+        .insert(adjustments)
+        .values(input)
+        .returning({ id: adjustments.id });
+
+      const DIRECTION_BY_EFFECT = {
+        surplus: 'inbound',
+        shortage: 'outbound',
+      } as const satisfies Record<
+        (typeof adjustmentEffect.enumValues)[number],
+        (typeof movementDirection.enumValues)[number]
+      >;
+
+      await tx.insert(movements).values({
+        direction: DIRECTION_BY_EFFECT[effect],
+        source: 'adjustment',
+        adjustmentId: inserted!.id,
+      });
     });
   }
 }

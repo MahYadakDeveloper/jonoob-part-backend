@@ -1,3 +1,3 @@
-import { DomainError } from '@feature/shared/errors';
+import { EntityNotFoundError } from '@feature/shared/errors';
 
-export class StockNotFoundError extends DomainError {}
+export class StockNotFoundError extends EntityNotFoundError {}

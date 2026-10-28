@@ -13,6 +13,7 @@
  *   into `params`, not into new classes.
  */
 const CODE_CACHE = new WeakMap<object, string>();
+const ENTITY_CACHE = new WeakMap<object, string>();
 
 export abstract class DomainError extends Error {
   static codeOf(cls: { name: string }): string {
@@ -42,13 +43,86 @@ export abstract class DomainError extends Error {
   }
 }
 
+/**
+ * Base categories for domain errors. Each category maps to one kind of client
+ * behavior, so the transport layer (HTTP, RPC, queue consumer) can translate
+ * errors by category without knowing individual error classes.
+ */
+
+/**
+ * The requested resource does not exist, or is not visible to the caller.
+ *
+ * Use when a lookup by id/key/unique field finds nothing
+ * (MovementNotFoundError, WalletNotFoundError). Prefer extending
+ * EntityNotFoundError for plain "entity with id X" cases.
+ *
+ * Client behavior: stop retrying with the same identifier; fix the input. HTTP:
+ * 404.
+ */
 export abstract class NotFoundError extends DomainError {}
+
+/**
+ * The request is valid on its own, but conflicts with the current state of an
+ * existing resource.
+ *
+ * Use for uniqueness violations (WalletAlreadyExistsError), stale or concurrent
+ * updates (optimistic-lock mismatch), and operations that are impossible in the
+ * resource's current state (MovementAlreadyCancelledError).
+ *
+ * Client behavior: re-fetch the current state, then retry or give up. HTTP:
+ * 409.
+ */
 export abstract class ConflictError extends DomainError {}
+
+/**
+ * The caller is identified, but is not allowed to perform this action on this
+ * resource.
+ *
+ * Use for ownership, role, or policy checks that fail inside the domain
+ * (ManagerNotAllowedToAdjustError). Do not use for missing or invalid
+ * credentials; that is an authentication concern handled outside the domain.
+ *
+ * Client behavior: do not retry; request access or switch account. HTTP: 403.
+ */
 export abstract class ForbiddenError extends DomainError {}
+
+/**
+ * The input is well-formed and the caller is allowed, but the operation would
+ * break a business invariant.
+ *
+ * Use for rules that depend on domain state or semantics, not on input shape
+ * (WalletInsufficientBalanceError, AdjustmentWindowExpiredError). Shape and
+ * type problems belong to schema validation (zod), not here.
+ *
+ * Client behavior: show the reason to the user; retrying unchanged will fail.
+ * HTTP: 422 (or 400, per project convention).
+ */
 export abstract class BusinessRuleViolationError extends DomainError {}
 
 export abstract class EntityNotFoundError extends NotFoundError {
-  static readonly entity: string;
+  /** Override only when the auto-derived name is not what you want. */
+  static readonly entity?: string;
+
+  static entityOf(cls: { name: string }): string {
+    return cls.name.replace(/(NotFound)?(Error|Exception)?$/, '');
+  }
+
+  static get resolvedEntity(): string {
+    // an explicit static `entity` on the subclass wins
+    if (Object.prototype.hasOwnProperty.call(this, 'entity') && this.entity) {
+      return this.entity;
+    }
+    let entity = ENTITY_CACHE.get(this);
+    if (!entity) {
+      entity = EntityNotFoundError.entityOf(this);
+      ENTITY_CACHE.set(this, entity);
+    }
+    return entity;
+  }
+
+  get entity(): string {
+    return (this.constructor as typeof EntityNotFoundError).resolvedEntity;
+  }
 
   readonly id?: string | number;
   readonly params: Readonly<Record<string, unknown>>;
@@ -57,12 +131,10 @@ export abstract class EntityNotFoundError extends NotFoundError {
     id?: string | number,
     options?: { cause?: unknown; params?: Record<string, unknown> },
   ) {
-    const { entity } = new.target as typeof EntityNotFoundError;
+    const entity = (new.target as typeof EntityNotFoundError).resolvedEntity;
     super(
       id === undefined ? `${entity} not found` : `${entity} not found: ${id}`,
-      {
-        cause: options?.cause,
-      },
+      { cause: options?.cause },
     );
     this.id = id;
     this.params = { ...(id !== undefined && { id }), ...options?.params };

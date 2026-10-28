@@ -1,5 +1,5 @@
 {
-  "name": "@feature/errors-http",
+  "name": "@feature/error-http",
   "private": true,
   "type": "commonjs",
   "exports": {

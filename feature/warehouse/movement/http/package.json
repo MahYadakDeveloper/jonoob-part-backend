@@ -11,6 +11,7 @@
     "@casl/ability": "catalog:",
     "@feature/authentication-http": "workspace:*",
     "@feature/authorization-http": "workspace:*",
+    "@feature/error-http": "workspace:*",
     "@feature/shared": "workspace:*",
     "@feature/warehouse-errors": "workspace:*",
     "@infra/db-drizzle": "workspace:*",

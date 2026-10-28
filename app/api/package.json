@@ -14,7 +14,7 @@
     "@feature/actors": "workspace:*",
     "@feature/actors-api": "workspace:*",
     "@feature/authentication-http": "workspace:*",
-    "@feature/errors-http": "workspace:*",
+    "@feature/error-http": "workspace:*",
     "@feature/shared": "workspace:*",
     "@feature/warehouse-impl": "workspace:*",
     "@infra/crypto-hash": "workspace:*",
