@@ -48,7 +48,7 @@ export class OrderController {
     handlers: [RecordOrderPolicy],
   })
   @Post()
-  record(
+  place(
     @Body({ schema: recordOrderSchema }) body: RecordOrderType,
     @User() user: Extract<AuthenticatedUser, { role: 'customer' }>,
   ) {

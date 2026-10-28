@@ -7,8 +7,9 @@
   "private": true,
   "dependencies": {
     "@feature/shared": "workspace:*",
-    "@infra/schema": "workspace:*",
-    "@jonoob-part/contracts": "workspace:*",
-    "zod": "catalog:"
+    "@infra/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/oxlint-config": "workspace:*"
   }
 }

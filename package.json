@@ -1,10 +1,18 @@
 {
-  "scripts": {},
+  "scripts": {
+    "knip:deps:ws": "knip --dependencies --workspace",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix"
+  },
   "devDependencies": {
     "@types/bun": "^1.4.3",
     "@types/node": "^26.6.5",
     "dotenv": "catalog:",
     "drizzle-kit": "1.0.0-rc.4",
+    "knip": "^6.43.0",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "7",
+    "prettier-plugin-jsdoc": "^1.8.1",
     "typescript": "catalog:"
   },
   "workspaces": {
@@ -50,5 +58,11 @@
   },
   "overrides": {
     "fastify": "catalog:"
+  },
+  "trustedDependencies": [
+    "oxlint-tsgolint"
+  ],
+  "dependencies": {
+    "@repo/oxlint-config": "workspace:*"
   }
 }

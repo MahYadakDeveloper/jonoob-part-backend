@@ -1,0 +1,48 @@
+{
+  "extends": ["./base.json"],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@feature/*",
+              "@feature/*/**",
+              "!@feature/shared",
+              "!@feature/shared/**"
+            ],
+            "message": "api packages may only depend on @feature/shared."
+          },
+          {
+            "group": [
+              "@infra/*",
+              "@infra/*/**",
+              "!@infra/schema",
+              "!@infra/schema/**"
+            ],
+            "message": "api packages may only depend on @infra/schema."
+          },
+          {
+            "group": [
+              "**",
+              "!./**",
+              "!../**",
+              "!@feature/shared",
+              "!@feature/shared/**",
+              "!@infra/schema",
+              "!@infra/schema/**"
+            ],
+            "message": "api packages may only import allowed libraries: [for adding lib allow config in oxlint-config package]."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.spec.ts", "**/*.test.ts"],
+      "rules": {}
+    }
+  ]
+}

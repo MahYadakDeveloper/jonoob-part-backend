@@ -1,0 +1,13 @@
+{
+  "name": "@repo/oxlint-config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./base.json": "./base.json",
+    "./plugins/drizzle": "./plugins/drizzle.mjs"
+  },
+  "files": [
+    "*.json",
+    "plugins"
+  ]
+}

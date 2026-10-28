@@ -1,0 +1,22 @@
+{
+  "extends": ["./base.json"],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "**",
+              "!./**",
+              "!../**",
+              "!@feature/shared",
+              "!@feature/shared/**"
+            ],
+            "message": "errors packages may only depend on @feature/shared."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@feature/errors-http",
+  "private": true,
+  "type": "commonjs",
+  "exports": {
+    ".": "./src/index.ts",
+    "./filters": "./src/filters/index.ts",
+    "./decorators": "./src/decorators/index.ts",
+    "./interceptors": "./src/interceptors/index.ts"
+  },
+  "dependencies": {
+    "@nestjs/swagger": "catalog:",
+    "@feature/shared": "workspace:*",
+    "fastify": "catalog:",
+    "@nestjs/common": "catalog:"
+  },
+  "peerDependencies": {
+    "@nestjs/core": "catalog:",
+    "rxjs": "catalog:"
+  }
+}

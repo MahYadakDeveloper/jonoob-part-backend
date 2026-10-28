@@ -6,5 +6,9 @@
   "trailingComma": "all",
   "bracketSpacing": true,
   "arrowParens": "always",
-  "endOfLine": "lf"
+  "endOfLine": "lf",
+  "plugins": ["prettier-plugin-jsdoc"],
+  "jsdocPrintWidth": 80,
+  "jsdocSeparateReturnsFromParam": true,
+  "jsdocCapitalizeDescription": false
 }

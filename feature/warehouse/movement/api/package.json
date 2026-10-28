@@ -8,16 +8,13 @@
   },
   "private": true,
   "dependencies": {
-    "@casl/ability": "catalog:",
     "@feature/shared": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
-    "@infra/messaging-outbox": "workspace:*",
+    "@infra/schema": "workspace:*",
     "@nestjs/common": "catalog:",
-    "@nestjs/config": "catalog:",
-    "@nestjs/outbox": "catalog:",
-    "drizzle-orm": "catalog:",
-    "rxjs": "catalog:",
-    "zod": "catalog:"
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@repo/oxlint-config": "workspace:*"
   }
 }

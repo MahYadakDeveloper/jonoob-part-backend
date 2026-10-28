@@ -15,3 +15,8 @@ export type AuthenticatedUser =
   | {
       role: 'admin';
     };
+
+export type Admin = Extract<AuthenticatedUser, { role: 'admin' }>;
+export type Manager = Extract<AuthenticatedUser, { role: 'manager' }>;
+export type Courier = Extract<AuthenticatedUser, { role: 'courier' }>;
+export type Customer = Extract<AuthenticatedUser, { role: 'customer' }>;

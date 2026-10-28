@@ -13,7 +13,7 @@ const SOURCE_REFERENCE = {
   order: 'orderId',
   sale: 'saleId',
   procurement: 'procurementId',
-  adjustment: 'managerId',
+  adjustment: 'adjustmentId',
 } as const satisfies Record<MovementSource, keyof MovementSelect>;
 
 type SourceReference = typeof SOURCE_REFERENCE;
@@ -51,7 +51,7 @@ export interface UndoMovementInput {
   movementId: string;
 }
 
-export const MOVEMENT_API = Symbol('WAREHOUSE_MOVEMENT_API');
+export const MOVEMENT_API = Symbol('MOVEMENT_API');
 
 export interface MovementApi {
   /**

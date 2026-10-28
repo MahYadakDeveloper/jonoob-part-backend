@@ -1,0 +1,22 @@
+{
+  "extends": ["./base.json"],
+  "jsPlugins": ["./plugins/drizzle.mjs"],
+  "rules": {
+    "drizzle/update-requires-returning": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@feature/*-impl", "@feature/*-impl/**"],
+            "message": "impl packages must not import other impl packages."
+          },
+          {
+            "group": ["@feature/*-http", "@feature/*-http/**"],
+            "message": "impl packages must not depend on http packages."
+          }
+        ]
+      }
+    ]
+  }
+}

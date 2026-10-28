@@ -1,0 +1,14 @@
+{
+  "name": "@feature/warehouse-errors",
+  "type": "commonjs",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "private": true,
+  "dependencies": {
+    "@feature/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/oxlint-config": "workspace:*"
+  }
+}

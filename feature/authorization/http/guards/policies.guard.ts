@@ -19,10 +19,9 @@ export class PoliciesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const definition = this.reflector.get<PolicyDefinition<MongoAbility>>(
-      CHECK_POLICIES_KEY,
-      context.getHandler(),
-    );
+    const definition = this.reflector.getAllAndOverride<
+      PolicyDefinition<MongoAbility>
+    >(CHECK_POLICIES_KEY, [context.getHandler(), context.getClass()]);
 
     if (!definition) {
       return true;

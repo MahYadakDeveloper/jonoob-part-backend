@@ -1,10 +1,6 @@
 import { Query } from '@feature/shared/cqrs';
 import '@feature/shared/extensions';
-import {
-  createPageQuerySchema,
-  orderBy,
-  sortableFields,
-} from '@feature/shared/pagination';
+import { orderBy, sortableFields } from '@feature/shared/pagination';
 import { StrictOmit } from '@feature/shared/types/utils';
 import { assertNotNull } from '@feature/shared/utils/assertions';
 import { omit } from '@feature/shared/utils/common';
@@ -14,12 +10,9 @@ import {
   movements,
 } from '@infra/schema/warehouse/movements.schema';
 import { eq, getColumns } from 'drizzle-orm';
-import { z } from 'zod';
+import { ListQueryDto } from '../movement.dto';
 
-const fields = sortableFields(movements);
-export const listQuerySchema = createPageQuerySchema(fields, ['-movedAt']);
-
-export interface ListQueryDto extends z.infer<typeof listQuerySchema> {}
+export const movementSortableFields = sortableFields(movements);
 
 type MovementSource = (typeof movements.source.enumValues)[number];
 type MovementSelect = typeof movements.$inferSelect;

@@ -1,12 +1,14 @@
 // import { BullModule } from '@nestjs/bullmq';
+import { AuthenticatedUser } from '@feature/authentication-http/';
+import { AuthGuard } from '@feature/authentication-http/guards';
+import { ProblemDetailsFilter } from '@feature/errors-http/filters';
+import { ProblemTranslationInterceptor } from '@feature/errors-http/interceptors';
 import { IdempotencyStoreModule } from '@infra/idempotency';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { IdempotencyModule } from '@nestjs/idempotency';
 import path from 'node:path';
-import { AuthenticatedUser } from '@feature/authentication-http/';
-import { AuthGuard } from '@feature/authentication-http/guards';
-import { APP_GUARD } from '@nestjs/core';
 // import { ScheduleModule } from '@nestjs/schedule';
 
 // const authenticationModule = AuthenticationModule.forRoot({
@@ -39,6 +41,10 @@ import { APP_GUARD } from '@nestjs/core';
     // authenticationModule,
     WarehouseModule.forRoot({}),
   ],
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_FILTER, useClass: ProblemDetailsFilter },
+    { provide: APP_INTERCEPTOR, useClass: ProblemTranslationInterceptor },
+  ],
 })
 export class AppModule {}
