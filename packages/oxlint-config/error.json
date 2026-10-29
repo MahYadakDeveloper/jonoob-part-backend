@@ -10,8 +10,11 @@
               "**",
               "!./**",
               "!../**",
+              "!@nestjs/common",
               "!@feature/shared",
-              "!@feature/shared/**"
+              "!@feature/shared/**",
+              "!@feature/error-http",
+              "!@feature/error-http/**"
             ],
             "message": "errors packages may only depend on @feature/shared."
           }

@@ -1,5 +1,7 @@
 {
   "scripts": {
+    "gen:http": "bun run scripts/make-http-module.ts",
+    "gen:errors": "bun run scripts/make-errors-module.ts",
     "knip:deps:ws": "knip --dependencies --workspace",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix"

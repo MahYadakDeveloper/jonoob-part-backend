@@ -1,5 +1,4 @@
 import { CommandOf, InputOf, OutputOf } from '@feature/shared/cqrs';
-import '@feature/shared/extensions';
 import { MovementApi } from '@feature/warehouse-api/movement';
 import { DrizzleTransactionAls } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';

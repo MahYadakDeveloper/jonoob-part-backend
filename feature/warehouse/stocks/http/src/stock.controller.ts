@@ -5,7 +5,6 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Put,
   Query,
@@ -15,8 +14,6 @@ import { StockMovementService } from '../movement/movement.service';
 import { StockManagementPolicyHandler } from './policies/manage-stock.policy-handler';
 import { StockAbilityFactory } from './policies/stock-ability';
 import {
-  type StockAdjustmentDto,
-  StockAdjustmentSchema,
   type StockDefinitionDto,
   StockDefinitionSchema,
   type StockPageQueryDto,
@@ -25,6 +22,10 @@ import {
 import { StockService } from './stock.service';
 
 // @UseGuards(AuthGuard, PoliciesGuard)
+@CheckPolicies({
+  abilityFactory: StockAbilityFactory,
+  handlers: [StockManagementPolicyHandler],
+})
 @Controller('warehouse/stock')
 export class StockController {
   constructor(
@@ -32,10 +33,6 @@ export class StockController {
     private readonly movements: StockMovementService,
   ) {}
 
-  @CheckPolicies({
-    abilityFactory: StockAbilityFactory,
-    handlers: [StockManagementPolicyHandler],
-  })
   @Get(':id')
   stock(@Param('id', { schema: z.uuid() }) stockId: string) {
     return this.stocks.getById(stockId);

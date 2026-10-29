@@ -8,7 +8,7 @@
   "arrowParens": "always",
   "endOfLine": "lf",
   "plugins": ["prettier-plugin-jsdoc"],
-  "jsdocPrintWidth": 80,
+  "jsdocPrintWidth": 120,
   "jsdocSeparateReturnsFromParam": true,
   "jsdocCapitalizeDescription": false
 }

@@ -1,6 +1,9 @@
+import { DomainError } from '@feature/shared/errors';
 import { HttpStatus } from '@nestjs/common';
 import { ProblemDetails, problemType } from './problem-details';
-import { DomainError } from '@feature/shared/errors';
+
+export const errorsWithKeys = <T extends Record<string, unknown>>(map: T) =>
+  Object.assign(Object.values(map) as T[keyof T][], map);
 
 export type DomainErrorClass<T extends DomainError = DomainError> =
   (abstract new (...args: any[]) => T) & { readonly code: string };

@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
-import { mapDomainError } from './domain-error-mapping';
+import { errorsWithKeys, mapDomainError } from './domain-error-mapping';
 import {
   BusinessRuleViolationError,
   ConflictError,
@@ -7,17 +7,25 @@ import {
   NotFoundError,
 } from '@feature/shared/errors';
 
-export const CATEGORY_ERROR_MAPPINGS = [
-  mapDomainError(NotFoundError, HttpStatus.NOT_FOUND, 'Resource not found'),
-  mapDomainError(
+export const CATEGORY_ERROR_MAPPINGS = errorsWithKeys({
+  NotFoundError: mapDomainError(
+    NotFoundError,
+    HttpStatus.NOT_FOUND,
+    'Resource not found',
+  ),
+  ConflictError: mapDomainError(
     ConflictError,
     HttpStatus.CONFLICT,
     'Conflict with current state',
   ),
-  mapDomainError(
+  BusinessRuleViolationError: mapDomainError(
     BusinessRuleViolationError,
     HttpStatus.UNPROCESSABLE_ENTITY,
     'Business rule violated',
   ),
-  mapDomainError(ForbiddenError, HttpStatus.FORBIDDEN, 'Operation not allowed'),
-];
+  ForbiddenError: mapDomainError(
+    ForbiddenError,
+    HttpStatus.FORBIDDEN,
+    'Operation not allowed',
+  ),
+});

@@ -6,7 +6,9 @@
   },
   "private": true,
   "dependencies": {
-    "@feature/shared": "workspace:*"
+    "@feature/error-http": "workspace:*",
+    "@feature/shared": "workspace:*",
+    "@nestjs/common": "catalog:"
   },
   "devDependencies": {
     "@repo/oxlint-config": "workspace:*"

@@ -674,7 +674,9 @@
     "feature/warehouse/errors": {
       "name": "@feature/warehouse-errors",
       "dependencies": {
+        "@feature/error-http": "workspace:*",
         "@feature/shared": "workspace:*",
+        "@nestjs/common": "catalog:",
       },
       "devDependencies": {
         "@repo/oxlint-config": "workspace:*",

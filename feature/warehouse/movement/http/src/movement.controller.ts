@@ -1,5 +1,5 @@
 import { type Manager } from '@feature/authentication-http';
-import { CurrentUser } from '@feature/authentication-http/decorators';
+import { CurrentUser, OptionalAuth, Public, RequiredAuth } from '@feature/authentication-http/decorators';
 import { CheckPolicies } from '@feature/authorization-http/decorators';
 import { PoliciesGuard } from '@feature/authorization-http/guards';
 import { ProblemResponses } from '@feature/error-http/decorators';
@@ -24,6 +24,15 @@ export class MovementController {
     private readonly adjustCmd: AdjustCommand,
   ) {}
 
+  @RequiredAuth()
+@ProblemResponses(...)
+  @Get('...') // ** FOR AGENT: add comment if there sub and id ':id/sub' should be this way
+  list(@Query({ schema: listQuerySchema }) q: ListQueryDto) {
+    return this.listQuery.execute(q);
+  }
+
+  @OptionalAuth()
+  @ProblemResponses(...)
   @Get()
   list(@Query({ schema: listQuerySchema }) q: ListQueryDto) {
     return this.listQuery.execute(q);
@@ -33,6 +42,7 @@ export class MovementController {
    * If the error is not inherited from category errors then mapping domain
    * error is required
    */
+  @Public()
   @ProblemResponses(StockNotFoundError)
   adjust(
     @Body({ schema: adjustDtoSchema }) dto: AdjustDto,
