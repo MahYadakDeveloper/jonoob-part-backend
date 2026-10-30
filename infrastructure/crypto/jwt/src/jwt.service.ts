@@ -1,4 +1,4 @@
-import { REDIS_CLIENT } from '@infra/db-redis';
+import { InjectRedis } from '@nestjs-redis/client';
 import { Inject, Injectable } from '@nestjs/common';
 import { type ConfigType } from '@nestjs/config';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
@@ -10,7 +10,7 @@ import tokenConfig from './jwt.config';
 @Injectable()
 export class JwtService {
   constructor(
-    @Inject(REDIS_CLIENT)
+    @InjectRedis()
     private readonly redis: RedisClientType,
     private readonly jwt: NestJwtService,
     @Inject(tokenConfig.KEY)

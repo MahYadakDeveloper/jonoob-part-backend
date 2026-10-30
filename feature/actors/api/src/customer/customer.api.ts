@@ -29,6 +29,7 @@ export interface GetCustomerByPhoneInput {
 export const CUSTOMERS_API = Symbol('CUSTOMERS_API');
 
 export interface CustomersApi {
+  findOrCreate(...): Promise<{customerId: string}>
   getById(input: GetCustomerByIdInput): Promise<Customer>;
   getByPhone(input: GetCustomerByPhoneInput): Promise<Customer>;
   createConsumerTypeCustomer(

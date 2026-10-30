@@ -21,7 +21,7 @@ export const customers = actorsSchema.table(
   'customers',
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
-    fullName: varchar('full_name').notNull(),
+    fullName: varchar('full_name', { length: 32 }),
     phone: varchar('phone').unique().notNull(),
     type: customerType().notNull(),
     specialty: technicianSpecialty(),

@@ -1,69 +1,57 @@
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Ip,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 // [ASSUMPTION] adjust the token name to whatever you export next to the API
+import { minutes, Throttle } from '@nestjs/throttler';
 import {
   type AdminSignInDto,
   adminSignInSchema,
-  type HashRequestDto,
-  hashRequestSchema,
   type PasswordSignInDto,
   passwordSignInSchema,
   type RefreshDto,
   refreshSchema,
   type RequestOtpDto,
   requestOtpSchema,
-  type SignUpDto,
-  signUpSchema,
   type VerifyOtpDto,
   verifyOtpSchema,
-  type VerifyTokenDto,
-  verifyTokenSchema,
 } from './auth.dto';
 import { AuthenticationService } from './auth.service';
+import { Public } from './decorators';
 
 /**
  * App-layer controller: depends only on the feature :api contract.
  *
  * Flow:
- *   1. POST /auth/otp/request   -> SMS with OTP
- *   2. POST /auth/otp/verify    -> { verifyToken }   (single-use, 5 min)
- *   3. verifyToken is exchanged by exactly one of:
- *        customer/sign-in | customer/sign-up | courier/sign-in |
- *        manager/sign-in  | admin/sign-in
- *   4. POST /auth/refresh       -> rotates the token pair
  *
- * All routes are public: exclude them from the global auth guard
- * (e.g. with your @Public() decorator).
+ * 1. POST /auth/otp/request -> SMS with OTP
+ * 2. POST /auth/otp/verify -> ({ verifyToken } (single-use, 5 min) for admin) ({accessToken, refreshToken} customer -
+ *    manager -courier)
+ * 3. verifyToken is exchanged by exactly one of admin/sign-in
+ * 4. POST /auth/refresh -> rotates the token pair
+ *
+ * All routes are public: exclude them from the global auth guard (e.g. with your @Public() decorator).
  */
+@Public()
 @Controller('auth')
-export class AuthenticationController {
+export class AuthController {
   constructor(private readonly auth: AuthenticationService) {}
 
   // ---------- OTP ----------
 
+  @Throttle({
+    auth: { limit: 3, ttl: minutes(10), blockDuration: minutes(10) },
+  })
   @Post('otp/request')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async requestOtp(
-    @Body({ schema: requestOtpSchema }) dto: RequestOtpDto,
-    @Ip() ip: string,
-  ) {
-    await this.auth.request(dto.phoneNumber, ip);
+  async requestOtp(@Body({ schema: requestOtpSchema }) dto: RequestOtpDto) {
+    await this.auth.request(dto.phone);
   }
 
+  // For admin auth
   @Post('otp/verify')
   @HttpCode(HttpStatus.OK)
-  async verifyOtp(
-    @Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto,
-    @Ip() ip: string,
-  ) {
+  async verifyOtp(@Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto) {
     return this.auth.verify({
-      phoneNumber: dto.phoneNumber,
+      // phoneNumber: dto.phoneNumber,
+      // TODO Use token instead, when otp is requested return token for verify
       otp: dto.otp,
       ip,
     });
@@ -73,35 +61,22 @@ export class AuthenticationController {
 
   @Post('customer/sign-in')
   @HttpCode(HttpStatus.OK)
-  customerSignIn(@Body({ schema: verifyTokenSchema }) dto: VerifyTokenDto) {
-    return this.auth.signIn({ verifyToken: dto.verifyToken });
-  }
-
-  @Post('customer/sign-up')
-  @HttpCode(HttpStatus.CREATED)
-  customerSignUp(@Body({ schema: signUpSchema }) dto: SignUpDto) {
-    return this.auth.signUp({
-      verifyToken: dto.verifyToken,
-      fullName: dto.fullName,
-    });
+  @HttpCode(HttpStatus.OK)
+  async signInCustomer(@Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto) {
+    return this.auth.signInCustomer(dto);
   }
 
   // ---------- Staff ----------
 
   @Post('courier/sign-in')
   @HttpCode(HttpStatus.OK)
-  courierSignIn(
-    @Body({ schema: passwordSignInSchema }) dto: PasswordSignInDto,
-  ) {
-    return this.auth.courierSingIn({
-      verifyToken: dto.verifyToken,
-      password: dto.password,
-    });
+  singInCourier(@Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto) {
+    return this.auth.signInCourier(dto);
   }
 
   @Post('manager/sign-in')
   @HttpCode(HttpStatus.OK)
-  managerSignIn(
+  signInManager(
     @Body({ schema: passwordSignInSchema }) dto: PasswordSignInDto,
   ) {
     return this.auth.managerSignIn({
@@ -112,8 +87,8 @@ export class AuthenticationController {
 
   @Post('admin/sign-in')
   @HttpCode(HttpStatus.OK)
-  adminSignIn(@Body({ schema: adminSignInSchema }) dto: AdminSignInDto) {
-    return this.auth.adminSignIn({
+  signInAdmin(@Body({ schema: adminSignInSchema }) dto: AdminSignInDto) {
+    return this.auth.signInAdmin({
       verifyToken: dto.verifyToken,
       secretKey: dto.secretKey,
     });
@@ -125,12 +100,5 @@ export class AuthenticationController {
   @HttpCode(HttpStatus.OK)
   refresh(@Body({ schema: refreshSchema }) dto: RefreshDto) {
     return this.auth.refresh({ oldRefreshToken: dto.refreshToken });
-  }
-
-  // --------- hashing --------
-  @Post('hash')
-  @HttpCode(HttpStatus.OK)
-  hash(@Body({ schema: hashRequestSchema }) dto: HashRequestDto) {
-    return this.auth.hash(dto);
   }
 }

@@ -7,8 +7,7 @@
   "dependencies": {
     "@infra/db-redis": "workspace:*",
     "@nestjs/common": "catalog:",
-    "@nestjs/config": "catalog:",
-    "redis": "catalog:",
-    "redlock-universal": "^0.8.5"
+    "ioredis": "catalog:",
+    "redlock-universal": "catalog:"
   }
 }

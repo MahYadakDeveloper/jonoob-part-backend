@@ -1,5 +1,5 @@
 import { MongoAbility } from '@casl/ability';
-import '@feature/authentication-http/augmentation/fastify';
+import '@feature/authentication-http/augmentation/auth';
 import {
   CanActivate,
   ExecutionContext,

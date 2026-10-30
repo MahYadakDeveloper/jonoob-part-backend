@@ -1,13 +1,13 @@
-import { REDIS_CLIENT } from '@infra/db-redis';
-import { Inject, Injectable } from '@nestjs/common';
-import type { RedisClientType } from 'redis';
+import { InjectRedis } from '@infra/db-redis';
+import { Injectable } from '@nestjs/common';
+import { Redis } from 'ioredis';
 import { createLock, NodeRedisAdapter } from 'redlock-universal';
 
 @Injectable()
 export class RedlockSynchronizer {
   private readonly adapter: NodeRedisAdapter;
 
-  constructor(@Inject(REDIS_CLIENT) client: RedisClientType) {
+  constructor(@InjectRedis() client: Redis) {
     this.adapter = new NodeRedisAdapter(client);
   }
 

@@ -1,11 +1,12 @@
-import { BullmqSms } from '@infra/messaging-sms';
 import { COURIER_API, type CourierApi } from '@feature/actors-api/courier';
 import { CUSTOMERS_API, type CustomersApi } from '@feature/actors-api/customer';
 import { MANAGER_API, type ManagerApi } from '@feature/actors-api/manager';
 import '@feature/authentication-sms/sms-opt.template';
+import { OtpSmsPayload } from '@feature/authentication-sms/sms-opt.template';
 import { BcryptHasher } from '@infra/crypto-hash';
 import { JwtService, TokenPayload } from '@infra/crypto-jwt';
 import { OtpGenerator } from '@infra/crypto-otp';
+import { BullmqSms } from '@infra/messaging-sms';
 import {
   TokenBucketConfig,
   TokenBucketRateLimitService,
@@ -24,7 +25,6 @@ import { type ConfigType } from '@nestjs/config';
 import authConfig from './auth.config';
 import { AuthenticatedUser } from './authenticated-user';
 import { OtpStore } from './otp/otp.store';
-import { OtpSmsPayload } from '@feature/authentication-sms/sms-opt.template';
 
 export type RefreshClaim = AuthenticatedUser;
 
@@ -83,9 +83,8 @@ export class AuthService {
   ) {}
 
   /**
-   * [NOTE]
-   * This is responsible too for `Able to re-request and check` functionality
-   * so there no need for separated method for check requirement(otp-resending)
+   * [NOTE] This is responsible too for `Able to re-request and check` functionality so there no need for separated
+   * method for check requirement(otp-resending)
    *
    * [TODO] Add phone number validation inside the endpoint controller
    */
@@ -147,31 +146,27 @@ export class AuthService {
     } satisfies OtpSmsPayload);
   }
 
-  async verify({
-    phoneNumber,
-    ip,
-    otp,
-  }: {
-    phoneNumber: string;
-    ip: string;
-    otp: string;
-  }) {
-    const result = await this.rateLimit.attempt([
-      {
-        key: `verification:phone:${phoneNumber}`,
-        config: this.verificationRateLimitConfig,
-      },
-      {
-        key: `verification:ip:${ip}`,
-        config: this.verificationIpRateLimitConfig,
-      },
-    ]);
+  async verify(callangeToken, ...) {
+const payload = this.jwtService.decode(callangeToken);
+    if (!payload) throw new UnauthorizedException('Invalid verification token');
 
-    if (!result.allowed) {
-      await this.otps.delete(phoneNumber);
-      throw this.tooManyRequests('exceeded_attempts', result.retryAfter);
-    }
+    return await this.synchronizer.executeExclusive(
+      `${AuthService.name}:sign-in:${payload.jti}`,
+      async () => {
+        const payload = await this.jwtService.verify(verifyToken, 'verify');
+        if (!payload)
+          throw new UnauthorizedException(
+            'Verification token is invalid, expired, or already used',
+          );
+    // import { createHmac, timingSafeEqual } from 'node:crypto';
 
+    // const otpDigest = (secret: string, challengeId: string, phone: string, code: string) =>
+    //   createHmac('sha256', secret).update(`${challengeId}:${phone}:${code}`).digest();
+
+    // const matches = (a: Buffer, b: Buffer) =>
+    // a.length === b.length && timingSafeEqual(a, b);
+
+    
     const record = await this.otps.get(phoneNumber);
 
     if (!record) throw new BadRequestException({ reason: 'otp_not_found' });
@@ -208,9 +203,6 @@ export class AuthService {
     );
   }
 
-  /**
-   *
-   */
   async signIn({ verifyToken }: { verifyToken: string }) {
     const payload = this.jwtService.decode(verifyToken);
     if (!payload) throw new UnauthorizedException('Invalid verification token');
@@ -313,9 +305,6 @@ export class AuthService {
     );
   }
 
-  /**
-   *
-   */
   async managerSignIn({
     verifyToken,
     password,
@@ -425,64 +414,6 @@ export class AuthService {
           expiresIn: this.refreshTokenExpiresIn,
           claims: {
             role: 'admin',
-          } satisfies RefreshClaim,
-        });
-
-        await this.jwtService.revoke(verifyToken, 'verify');
-
-        return {
-          accessToken,
-          refreshToken,
-        };
-      },
-    );
-  }
-
-  /**
-   *
-   */
-  async signUp({
-    fullName,
-    verifyToken,
-  }: {
-    fullName: string;
-    verifyToken: string;
-  }) {
-    const payload = this.jwtService.decode(verifyToken);
-    if (!payload) throw new UnauthorizedException('Invalid verification token');
-
-    return this.synchronizer.executeExclusive(
-      `${AuthService.name}:sign-up:${payload.jti}`,
-      async () => {
-        const payload = await this.jwtService.verify(verifyToken, 'verify');
-        if (!payload)
-          throw new UnauthorizedException(
-            'Verification token is invalid, expired, or already used',
-          );
-
-        const { id: customerId } =
-          await this.customers.createConsumerTypeCustomer({
-            fullName,
-            phone: payload.sub,
-          });
-
-        const accessToken = await this.jwtService.issue({
-          type: 'access',
-          subject: customerId,
-          expiresIn: this.accessTokenExpiresIn,
-          claims: {
-            role: 'customer',
-            id: customerId,
-          } satisfies AuthenticatedUser,
-        });
-
-        const refreshToken = await this.jwtService.issue({
-          type: 'refresh',
-          subject: customerId,
-          expiresIn: this.refreshTokenExpiresIn,
-          claims: {
-            role: 'customer',
-            id: customerId,
           } satisfies RefreshClaim,
         });
 

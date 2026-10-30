@@ -18,7 +18,6 @@
   "private": true,
   "dependencies": {
     "@infra/config": "workspace:*",
-    "@infra/db-redis": "workspace:*",
     "@nestjs/axios": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
@@ -27,6 +26,6 @@
     "fastify": "catalog:",
     "redis": "catalog:",
     "rxjs": "catalog:",
-    "zod": "4.6.7"
+    "zod": "catalog:"
   }
 }

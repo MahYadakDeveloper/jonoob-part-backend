@@ -7,7 +7,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { managers } from '../actors/manager.schema';
+import { managers } from '../actors/managers.schema';
 import { stocks } from './stocks.schema';
 import { warehouseSchema } from './warehouse.schema';
 

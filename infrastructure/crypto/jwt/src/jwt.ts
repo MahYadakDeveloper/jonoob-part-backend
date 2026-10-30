@@ -1,28 +1,19 @@
-export type TokenType = 'access' | 'refresh' | 'verify';
+export type TokenType = 'access' | 'refresh' | 'verify' | 'challenge';
 export interface TokenPayload {
   jti: string;
   sub: string;
   type: TokenType;
 
-  /**
-   * Token issued at
-   */
+  /** Token issued at */
   iat: number;
 
-  /**
-   * Token expiration
-   */
+  /** Token expiration */
   exp: number;
 
-  /**
-   * Optional session identifier.
-   * Useful for revoking a specific session.
-   */
+  /** Optional session identifier. Useful for revoking a specific session. */
   sid?: string;
 
-  /**
-   * Optional custom claims.
-   */
+  /** Optional custom claims. */
   [key: string]: unknown;
 }
 
@@ -30,13 +21,9 @@ export interface IssueTokenOptions {
   type: TokenType;
   subject: string;
 
-  /**
-   * Token lifetime in seconds.
-   */
+  /** Token lifetime in seconds. */
   expiresIn?: number;
 
-  /**
-   * Additional claims.
-   */
+  /** Additional claims. */
   claims?: Record<string, unknown>;
 }

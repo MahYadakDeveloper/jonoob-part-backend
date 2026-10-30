@@ -34,7 +34,6 @@
     "@infra/messaging-queue": "workspace:*",
     "@infra/payment-gateway": "workspace:*",
     "@infra/settings-store": "workspace:*",
-    "@infra/synchronizer": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
