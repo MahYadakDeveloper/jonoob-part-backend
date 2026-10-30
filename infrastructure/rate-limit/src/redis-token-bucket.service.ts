@@ -1,6 +1,6 @@
-import { REDIS_CLIENT } from '@infra/db-redis';
-import { Inject } from '@nestjs/common';
-import { type RedisClientType } from 'redis';
+import { InjectRedis } from '@infra/db-redis';
+import { Injectable } from '@nestjs/common';
+import { Redis } from 'ioredis';
 import {
   ATTEMPT_SCRIPT,
   CHECK_LUA_SCRIPT,
@@ -14,40 +14,62 @@ import {
 
 const RATE_LIMIT_KEY_PREFIX = 'rate-limit:';
 
+// Matches the Lua return shape. For rejections the 2nd element is the
+// 1-based index of the failing bucket (not its key).
+type AttemptScriptResult = [1, number] | [0, number, number, number, number];
+
+@Injectable()
 export class TokenBucketRateLimitService {
   constructor(
-    @Inject(REDIS_CLIENT)
-    private readonly redis: RedisClientType,
+    @InjectRedis()
+    private readonly redis: Redis,
   ) {}
 
   async attempt(
     buckets: { key: string; config: TokenBucketConfig }[],
   ): Promise<RateLimitResults> {
+    // Nothing to limit. Also protects the Lua script from an empty KEYS array.
+    if (buckets.length === 0) {
+      return { allowed: true, remaining: Number.POSITIVE_INFINITY };
+    }
+
     const now = Date.now() / 1000; // seconds with fractional precision
 
-    const result = (await this.redis.eval(ATTEMPT_SCRIPT, {
-      keys: buckets.map((b) => this.toRedisKey(b.key)),
-      arguments: [
-        now.toString(),
-        ...buckets.flatMap((b) => [
-          b.config.maxTokens.toString(),
-          b.config.refillRate.toString(),
-        ]),
-      ],
-    })) as [1, number] | [0, string, number, number, number];
+    const keys = buckets.map((b) => this.toRedisKey(b.key));
+    const args = [
+      now.toString(),
+      ...buckets.flatMap((b) => [
+        b.config.maxTokens.toString(),
+        b.config.refillRate.toString(),
+      ]),
+    ];
+
+    const result = (await this.redis.eval(
+      ATTEMPT_SCRIPT,
+      keys.length,
+      ...keys,
+      ...args,
+    )) as AttemptScriptResult;
 
     if (result[0] === 1) {
-      return {
-        allowed: true,
-      };
+      return { allowed: true, remaining: result[1] };
+    }
+
+    const [, failedIndex, remaining, limit, retryAfter] = result;
+
+    const failedBucket = buckets[failedIndex - 1];
+    if (!failedBucket) {
+      throw new Error(
+        `Rate limit script returned invalid bucket index: ${failedIndex}`,
+      );
     }
 
     return {
       allowed: false,
-      bucketKey: result[1].slice(RATE_LIMIT_KEY_PREFIX.length),
-      remaining: result[2],
-      limit: result[3],
-      retryAfter: result[4],
+      bucketKey: failedBucket.key,
+      remaining,
+      limit,
+      retryAfter,
     };
   }
 
@@ -58,11 +80,15 @@ export class TokenBucketRateLimitService {
     const { maxTokens, refillRate } = config;
 
     const now = Date.now() / 1000; // seconds with fractional precision
+    const keys = [this.toRedisKey(key)];
+    const args = [maxTokens.toString(), refillRate.toString(), now.toString()];
 
-    const result = (await this.redis.eval(CONSUME_LUA_SCRIPT, {
-      keys: [this.toRedisKey(key)],
-      arguments: [maxTokens.toString(), refillRate.toString(), now.toString()],
-    })) as number[];
+    const result = (await this.redis.eval(
+      CONSUME_LUA_SCRIPT,
+      keys.length,
+      ...keys,
+      ...args,
+    )) as [0 | 1, number, number];
 
     const allowed = result[0] === 1;
     const remaining = result[1];
@@ -78,10 +104,16 @@ export class TokenBucketRateLimitService {
     const { maxTokens, refillRate } = config;
     const now = Date.now() / 1000; // seconds with fractional precision
 
-    const result = (await this.redis.eval(CHECK_LUA_SCRIPT, {
-      keys: [this.toRedisKey(key)],
-      arguments: [maxTokens.toString(), refillRate.toString(), now.toString()],
-    })) as number[];
+    const keys = [this.toRedisKey(key)];
+
+    const args = [maxTokens.toString(), refillRate.toString(), now.toString()];
+
+    const result = (await this.redis.eval(
+      CHECK_LUA_SCRIPT,
+      keys.length,
+      ...keys,
+      ...args,
+    )) as [number, number];
 
     const remaining = result[0];
     const retryAfter = result[1];

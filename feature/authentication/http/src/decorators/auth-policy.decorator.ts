@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { AUTH_POLICY, AuthPolicy } from '../auth-policy';
+import { AUTH_POLICY, AuthPolicy } from '../authentication-policy';
 
 export const RequiredAuth = () => SetMetadata(AUTH_POLICY, AuthPolicy.Required);
 export const OptionalAuth = () => SetMetadata(AUTH_POLICY, AuthPolicy.Optional);

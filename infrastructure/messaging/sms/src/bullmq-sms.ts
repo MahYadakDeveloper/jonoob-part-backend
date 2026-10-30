@@ -12,7 +12,9 @@ import { Queue } from 'bullmq';
 export class BullmqSms {
   constructor(@InjectQueue(SMS_QUEUE_NAME) private readonly queue: Queue) {}
 
-  async send<T extends keyof SmsTemplateRegistry>(payload: SmsJobPayload<T>) {
+  async enqueue<T extends keyof SmsTemplateRegistry>(
+    payload: SmsJobPayload<T>,
+  ) {
     await this.queue.add(SmsJobs.Send, payload);
   }
 }

@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@types/bun": "^1.4.3",
+    "@types/ms": "^2.1.0",
     "@types/node": "^26.6.5",
     "dotenv": "catalog:",
     "drizzle-kit": "1.0.0-rc.4",

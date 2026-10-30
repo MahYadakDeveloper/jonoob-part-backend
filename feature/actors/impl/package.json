@@ -19,7 +19,6 @@
   "dependencies": {
     "@feature/actors-api": "workspace:*",
     "@feature/shared": "workspace:*",
-    "@infra/crypto-hash": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/idempotency": "workspace:*",
     "@infra/messaging-queue": "workspace:*",

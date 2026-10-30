@@ -41,9 +41,7 @@ export class JwtService {
   async verify(token: string, type: TokenType): Promise<TokenPayload | null> {
     let payload: TokenPayload;
     try {
-      payload = this.jwt.verify(token, {
-        secret: this.config[`${type}Secret`],
-      }) as TokenPayload;
+      payload =  as TokenPayload;
     } catch {
       return null;
     }

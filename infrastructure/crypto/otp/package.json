@@ -1,6 +1,0 @@
-{
-  "name": "@infra/crypto-otp",
-  "private": true,
-  "type": "commonjs",
-  "exports": "./src/crypto-otp-generator.ts"
-}

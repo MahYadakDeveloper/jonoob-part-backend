@@ -1,20 +1,25 @@
-import { JwtService } from '@infra/crypto-jwt';
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { ConfigType } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { FastifyRequest } from 'fastify';
-import { AUTH_POLICY, AuthPolicy } from '../auth-policy';
+import { AUTH_POLICY, AuthPolicy } from '../authentication-policy';
+import authConfig from '../authentication.config';
 import { AuthenticatedUser } from '../authenticated-user';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private readonly jwtService: JwtService,
+    private readonly jwt: JwtService,
     private readonly reflector: Reflector,
+    @Inject(authConfig.KEY)
+    private readonly cfg: ConfigType<typeof authConfig>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -42,10 +47,12 @@ export class AuthGuard implements CanActivate {
   }
 
   private async authenticate(token: string) {
-    const payload = await this.jwtService.verify(token, 'access');
-    if (!payload) return null;
-
-    return payload as unknown as AuthenticatedUser;
+    try {
+      return await this.jwt.verifyAsync<AuthenticatedUser>(token, {
+        secret: this.cfg.accessSecret,
+      });
+    } catch {}
+    return null;
   }
 
   private extractBearerToken(request: FastifyRequest): string | null {

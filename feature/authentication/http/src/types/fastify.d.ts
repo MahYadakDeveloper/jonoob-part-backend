@@ -1,5 +1,5 @@
 import 'fastify';
-import { AuthenticatedUser } from './src/authenticated-user';
+import { AuthenticatedUser } from './../authenticated-user';
 
 declare module 'fastify' {
   interface FastifyRequest {

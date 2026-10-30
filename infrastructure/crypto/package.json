@@ -1,0 +1,8 @@
+{
+  "name": "@infra/crypto",
+  "private": true,
+  "type": "commonjs",
+  "exports": {
+    "./*": "./src/*.ts"
+  }
+}

@@ -11,6 +11,7 @@ import { STATUS_CODES } from 'node:http';
 import { PROBLEM_JSON, ProblemDetails, problemType } from '../problem-details';
 import { ProblemException } from '../problem.exception';
 import { DomainError } from '@feature/shared/errors';
+import { ThrottlerException } from '@nestjs/throttler';
 
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
@@ -41,6 +42,14 @@ export class ProblemDetailsFilter implements ExceptionFilter {
   private toProblem(e: unknown): ProblemDetails {
     if (e instanceof ProblemException) return e.problem;
     if (e instanceof HttpException) return this.fromHttpException(e);
+    if (e instanceof ThrottlerException) {
+      return {
+        type: problemType('RATE_LIMITED'),
+        title: 'Too many requests',
+        status: HttpStatus.TOO_MANY_REQUESTS,
+        code: 'RATE_LIMITED',
+      };
+    }
     if (e instanceof DomainError) {
       this.logger.error(`Unmapped domain error: ${e.code}`);
     }

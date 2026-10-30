@@ -8,6 +8,7 @@
       },
       "devDependencies": {
         "@types/bun": "^1.4.3",
+        "@types/ms": "^2.1.0",
         "@types/node": "^26.6.5",
         "dotenv": "catalog:",
         "drizzle-kit": "1.0.0-rc.4",
@@ -31,8 +32,6 @@
         "@feature/error-http": "workspace:*",
         "@feature/shared": "workspace:*",
         "@feature/warehouse-impl": "workspace:*",
-        "@infra/crypto-hash": "workspace:*",
-        "@infra/crypto-jwt": "workspace:*",
         "@infra/db-redis": "workspace:*",
         "@infra/idempotency": "workspace:*",
         "@infra/messaging-outbox": "workspace:*",
@@ -43,10 +42,12 @@
         "@nestjs/common": "catalog:",
         "@nestjs/config": "catalog:",
         "@nestjs/core": "catalog:",
+        "@nestjs/drizzle": "catalog:",
         "@nestjs/idempotency": "catalog:",
         "@nestjs/platform-fastify": "catalog:",
         "@nestjs/schedule": "catalog:",
         "@nestjs/throttler": "catalog:",
+        "drizzle-orm": "catalog:",
         "fastify": "catalog:",
         "ioredis": "catalog:",
         "qs": "^6.15.3",
@@ -93,40 +94,13 @@
         "tsconfig-paths": "^4.2.0",
       },
     },
-    "feature/actors/api": {
-      "name": "@feature/actors-api",
-      "dependencies": {
-        "@feature/shared": "workspace:*",
-      },
-    },
-    "feature/actors/impl": {
-      "name": "@feature/actors",
-      "dependencies": {
-        "@feature/actors-api": "workspace:*",
-        "@feature/shared": "workspace:*",
-        "@infra/crypto-hash": "workspace:*",
-        "@infra/db-drizzle": "workspace:*",
-        "@infra/idempotency": "workspace:*",
-        "@infra/messaging-queue": "workspace:*",
-        "@nestjs/bullmq": "catalog:",
-        "@nestjs/common": "catalog:",
-        "@nestjs/idempotency": "catalog:",
-        "bullmq": "catalog:",
-        "drizzle-orm": "catalog:",
-        "rxjs": "catalog:",
-        "zod": "catalog:",
-      },
-    },
-    "feature/authentication/http": {
-      "name": "@feature/authentication-http",
+    "feature/_authentication/http": {
+      "name": "@feature/_authentication-http",
       "dependencies": {
         "@feature/actors-api": "workspace:*",
         "@feature/authentication-sms": "workspace:*",
         "@feature/order-api": "workspace:*",
         "@feature/shared": "workspace:*",
-        "@infra/crypto-hash": "workspace:*",
-        "@infra/crypto-jwt": "workspace:*",
-        "@infra/crypto-otp": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/messaging-queue": "workspace:*",
         "@infra/messaging-sms": "workspace:*",
@@ -146,6 +120,54 @@
       "peerDependencies": {
         "@nestjs/core": "catalog:",
         "rxjs": "catalog:",
+      },
+    },
+    "feature/actors/api": {
+      "name": "@feature/actors-api",
+      "dependencies": {
+        "@feature/shared": "workspace:*",
+      },
+    },
+    "feature/actors/impl": {
+      "name": "@feature/actors",
+      "dependencies": {
+        "@feature/actors-api": "workspace:*",
+        "@feature/shared": "workspace:*",
+        "@infra/db-drizzle": "workspace:*",
+        "@infra/idempotency": "workspace:*",
+        "@infra/messaging-queue": "workspace:*",
+        "@nestjs/bullmq": "catalog:",
+        "@nestjs/common": "catalog:",
+        "@nestjs/idempotency": "catalog:",
+        "bullmq": "catalog:",
+        "drizzle-orm": "catalog:",
+        "rxjs": "catalog:",
+        "zod": "catalog:",
+      },
+    },
+    "feature/authentication/http": {
+      "name": "@feature/authentication-http",
+      "dependencies": {
+        "@casl/ability": "catalog:",
+        "@feature/authentication-sms": "workspace:*",
+        "@feature/shared": "workspace:*",
+        "@infra/crypto": "workspace:*",
+        "@infra/db-drizzle": "workspace:*",
+        "@infra/db-redis": "workspace:*",
+        "@infra/messaging-sms": "workspace:*",
+        "@infra/rate-limit": "workspace:*",
+        "@infra/schema": "workspace:*",
+        "@nestjs/common": "catalog:",
+        "@nestjs/config": "catalog:",
+        "@nestjs/core": "catalog:",
+        "@nestjs/jwt": "catalog:",
+        "@nestjs/throttler": "catalog:",
+        "@repo/oxlint-config": "workspace:*",
+        "drizzle-orm": "catalog:",
+        "fastify": "catalog:",
+        "ioredis": "catalog:",
+        "rxjs": "catalog:",
+        "zod": "catalog:",
       },
     },
     "feature/authentication/sms": {
@@ -290,6 +312,7 @@
         "@feature/shared": "workspace:*",
         "@nestjs/common": "catalog:",
         "@nestjs/swagger": "catalog:",
+        "@nestjs/throttler": "catalog:",
         "fastify": "catalog:",
       },
       "peerDependencies": {
@@ -801,28 +824,8 @@
         "zod": "catalog:",
       },
     },
-    "infrastructure/crypto/hash": {
-      "name": "@infra/crypto-hash",
-      "dependencies": {
-        "@feature/shared": "workspace:*",
-        "@nestjs/common": "catalog:",
-        "@nestjs/config": "catalog:",
-        "zod": "catalog:",
-      },
-    },
-    "infrastructure/crypto/jwt": {
-      "name": "@infra/crypto-jwt",
-      "dependencies": {
-        "@feature/shared": "workspace:*",
-        "@nestjs/common": "catalog:",
-        "@nestjs/config": "catalog:",
-        "@nestjs/jwt": "catalog:",
-        "redis": "catalog:",
-        "zod": "catalog:",
-      },
-    },
-    "infrastructure/crypto/otp": {
-      "name": "@infra/crypto-otp",
+    "infrastructure/crypto": {
+      "name": "@infra/crypto",
     },
     "infrastructure/database/drizzle": {
       "name": "@infra/db-drizzle",
@@ -959,9 +962,9 @@
     "infrastructure/rate-limit": {
       "name": "@infra/rate-limit",
       "dependencies": {
+        "@infra/db-redis": "workspace:*",
         "@nestjs/common": "catalog:",
-        "@nestjs/config": "catalog:",
-        "redis": "catalog:",
+        "ioredis": "catalog:",
       },
     },
     "infrastructure/schema": {
@@ -1208,6 +1211,8 @@
 
     "@fastify/static": ["@fastify/static@10.1.7", "", { "dependencies": { "@fastify/accept-negotiator": "^2.0.0", "@fastify/error": "^4.0.0", "@fastify/send": "^4.0.0", "content-disposition": "^3.0.0", "fastify-plugin": "^6.0.0", "fastq": "^1.17.1", "glob": "^13.0.0" } }, "sha512-7+lUiPRraENCiULgjhcqZyWSW6qnwIT87Is0u3c2Z3iGEEEGB45wJhYxzrSdzu12gHM4qcviEYcPEiCe4J6MCQ=="],
 
+    "@feature/_authentication-http": ["@feature/_authentication-http@workspace:feature/_authentication/http"],
+
     "@feature/actors": ["@feature/actors@workspace:feature/actors/impl"],
 
     "@feature/actors-api": ["@feature/actors-api@workspace:feature/actors/api"],
@@ -1420,11 +1425,7 @@
 
     "@infra/config": ["@infra/config@workspace:infrastructure/config"],
 
-    "@infra/crypto-hash": ["@infra/crypto-hash@workspace:infrastructure/crypto/hash"],
-
-    "@infra/crypto-jwt": ["@infra/crypto-jwt@workspace:infrastructure/crypto/jwt"],
-
-    "@infra/crypto-otp": ["@infra/crypto-otp@workspace:infrastructure/crypto/otp"],
+    "@infra/crypto": ["@infra/crypto@workspace:infrastructure/crypto"],
 
     "@infra/db-drizzle": ["@infra/db-drizzle@workspace:infrastructure/database/drizzle"],
 

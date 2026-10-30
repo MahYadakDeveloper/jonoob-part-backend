@@ -2,14 +2,12 @@ import { z } from 'zod';
 
 // ---------- Reusable fields ----------
 
-// Accept local Iranian phone numbers and normalize to E.164.
 const phone = z
   .string()
   .trim()
   .regex(/^09\d{9}$/, 'phone number must be in Iranian local format (09…)')
   .transform((phone) => `+98${phone.slice(1)}`);
 
-// keep in sync with AuthenticationService.otpLength
 const otp = z.string().regex(/^\d{4}$/, 'otp must be 4 digits');
 
 // three base64url segments separated by dots

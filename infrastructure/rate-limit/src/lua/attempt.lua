@@ -1,45 +1,40 @@
+-- KEYS[i]              : bucket key (i = 1..N)
+-- ARGV[1]              : now (seconds, fractional)
+-- ARGV[2i], ARGV[2i+1] : max_tokens, refill_rate of bucket i
+--
+-- Returns:
+--   allowed  -> { 1, remaining }
+--   rejected -> { 0, failed_bucket_index (1-based), remaining, limit, retry_after }
+
 local now = tonumber(ARGV[1])
 local count = #KEYS
 
-local failed = nil
-local buckets = {}
+if not now or count == 0 then
+  return redis.error_reply('ERR invalid arguments')
+end
 
--- Check all buckets without consuming
+local buckets = {}
+local failed = nil
+
+-- Phase 1: check all buckets without consuming
 for i = 1, count do
   local key = KEYS[i]
-
   local max_tokens = tonumber(ARGV[2 + (i - 1) * 2])
   local refill_rate = tonumber(ARGV[3 + (i - 1) * 2])
 
-  local data = redis.call('HGETALL', key)
-
-  local tokens = max_tokens
-  local last_refill = now
-
-  if #data > 0 then
-    local fields = {}
-
-    for j = 1, #data, 2 do
-      fields[data[j]] = data[j + 1]
-    end
-
-    tokens = tonumber(fields['tokens']) or max_tokens
-    last_refill = tonumber(fields['last_refill']) or now
+  -- Validate before any write happens (avoids division by zero / NaN / inf)
+  if not max_tokens or not refill_rate or max_tokens < 1 or refill_rate <= 0 then
+    return redis.error_reply('ERR invalid bucket config at index ' .. i)
   end
 
-  local elapsed = now - last_refill
+  -- Missing fields come back as false; tonumber(false) == nil -> falls back to default
+  local stored = redis.call('HMGET', key, 'tokens', 'last_refill')
+  local tokens = tonumber(stored[1]) or max_tokens
+  local last_refill = tonumber(stored[2]) or now
 
-  tokens = math.min(
-    max_tokens,
-    tokens + elapsed * refill_rate
-  )
-
-  local allowed = tokens >= 1
-  local retry_after = 0
-
-  if not allowed then
-    retry_after = math.ceil((1 - tokens) / refill_rate)
-  end
+  -- Clamp: client clock skew must never make elapsed negative
+  local elapsed = math.max(0, now - last_refill)
+  tokens = math.min(max_tokens, tokens + elapsed * refill_rate)
 
   buckets[i] = {
     key = key,
@@ -48,37 +43,35 @@ for i = 1, count do
     refill_rate = refill_rate,
   }
 
-  if not allowed and failed == nil then
-    failed = {
-      key,
-      math.floor(tokens),
-      max_tokens,
-      retry_after,
-    }
+  if tokens < 1 then
+    local retry_after = math.ceil((1 - tokens) / refill_rate)
+
+    -- Report the bucket the client must wait on the longest,
+    -- otherwise the client retries too early and is rejected again
+    if failed == nil or retry_after > failed[4] then
+      failed = { i, math.floor(tokens), max_tokens, retry_after }
+    end
   end
 end
 
--- At least one bucket rejected the request
 if failed ~= nil then
-  return {
-    0,
-    failed[1],
-    failed[2],
-    failed[3],
-    failed[4],
-  }
+  return { 0, failed[1], failed[2], failed[3], failed[4] }
 end
 
--- All buckets are allowed: consume one token from each
+-- Phase 2: all buckets allowed, consume one token from each
+local min_remaining = nil
+
 for i = 1, count do
   local bucket = buckets[i]
   local tokens = bucket.tokens - 1
 
+  -- tostring() keeps only 14 significant digits, which truncates the
+  -- sub-millisecond part of a unix timestamp. Use explicit precision.
   redis.call(
     'HSET',
     bucket.key,
-    'tokens', tostring(tokens),
-    'last_refill', tostring(now)
+    'tokens', string.format('%.6f', tokens),
+    'last_refill', string.format('%.6f', now)
   )
 
   redis.call(
@@ -86,9 +79,10 @@ for i = 1, count do
     bucket.key,
     math.ceil(bucket.max_tokens / bucket.refill_rate) + 1
   )
+
+  if min_remaining == nil or tokens < min_remaining then
+    min_remaining = tokens
+  end
 end
 
-return {
-  1,
-  math.floor(buckets[1].tokens - 1)
-}
+return { 1, math.floor(min_remaining) }

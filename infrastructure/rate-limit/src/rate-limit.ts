@@ -12,24 +12,21 @@ export type RateLimitResult =
 export type RateLimitResults =
   | {
       allowed: true;
+      /** Remaining tokens in the tightest bucket (Infinity if no buckets were given) */
+      remaining: number;
     }
   | {
       allowed: false;
       bucketKey: string;
-      remaining: number; // how many requests are left in the current bucket
-      limit: number; // the configured maximum
-      retryAfter: number; // seconds until the client should retry
+      remaining: number;
+      limit: number;
+      retryAfter: number; // seconds
     };
 
 export interface TokenBucketConfig {
-  /**
-   * Maximum number of requests allowed
-   * during the configured window.
-   */
+  /** Maximum number of requests allowed during the configured window. */
   maxTokens: number;
 
-  /**
-   * Rate of refilling with unit: token/sec
-   */
+  /** Rate of refilling with unit: token/sec */
   refillRate: number;
 }

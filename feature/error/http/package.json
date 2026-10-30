@@ -9,10 +9,11 @@
     "./interceptors": "./src/interceptors/index.ts"
   },
   "dependencies": {
-    "@nestjs/swagger": "catalog:",
     "@feature/shared": "workspace:*",
-    "fastify": "catalog:",
-    "@nestjs/common": "catalog:"
+    "@nestjs/common": "catalog:",
+    "@nestjs/swagger": "catalog:",
+    "@nestjs/throttler": "catalog:",
+    "fastify": "catalog:"
   },
   "peerDependencies": {
     "@nestjs/core": "catalog:",

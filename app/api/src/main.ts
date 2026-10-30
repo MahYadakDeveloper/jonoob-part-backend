@@ -1,3 +1,4 @@
+// oxlint-disable
 import multipart from '@fastify/multipart';
 import { StandardSchemaValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -14,9 +15,7 @@ import qs from 'qs';
 import { createSchema } from 'zod-openapi';
 import { AppModule } from './app.module';
 
-/**
- * [NOTE] @fastify/static is required for openapi/swagger
- */
+/** [NOTE] @fastify/static is required for openapi/swagger */
 async function bootstrap() {
   const production = process.env.NODE_ENV === 'production';
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -64,6 +63,8 @@ async function bootstrap() {
       SwaggerModule.createDocument(app, config, documentOptions);
     SwaggerModule.setup('api', app, documentFactory);
   }
+
+  app.enableShutdownHooks();
 
   await app.listen(3000, '0.0.0.0');
 }

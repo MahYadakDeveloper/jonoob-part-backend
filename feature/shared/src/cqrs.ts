@@ -23,8 +23,8 @@ type ResolveOutput<S, M extends MethodKeys<S>, TOut> = [TOut] extends [Derived]
   ? OutputOf<S, M>
   : TOut;
 
-export interface Command<TInput = void, TOutput = Promise<void>> {
-  execute(input: TInput): TOutput;
+export interface Command<TInput = void, TOutput = void> {
+  execute(input: TInput): Promise<TOutput>;
 }
 
 export interface Query<TInput = void, TOutput = Promise<unknown>> {
