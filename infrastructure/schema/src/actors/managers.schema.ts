@@ -22,7 +22,7 @@ export const managersPhones = actorsSchema.table(
   'managers_phones',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    phone: varchar('phone', { length: 11 }).unique(),
+    phone: varchar('phone', { length: 11 }).unique().notNull(),
 
     managerId: uuid('manager_id')
       .references(() => managers.id, { onDelete: 'cascade' })

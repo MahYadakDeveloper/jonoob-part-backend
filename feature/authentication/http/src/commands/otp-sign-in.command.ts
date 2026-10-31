@@ -21,7 +21,7 @@ export class OtpSignInCommand implements Command<
   }: {
     challengeToken: string;
     otp: string;
-    role: Exclude<AuthenticatedUser['role'], 'admin'>;
+    role: Exclude<AuthenticatedUser['role'], 'admin' | 'manager'>;
   }): Promise<AuthTokens> {
     const claims = await this.jwtAuth.verify(challengeToken, 'challenge');
 
@@ -29,16 +29,14 @@ export class OtpSignInCommand implements Command<
 
     let id;
     switch (role) {
-      case 'manager':
-        id = await this.users.getManagerIdByPhone(claims.sub);
-        break;
       case 'courier':
         id = await this.users.getCourierIdByPhone(claims.sub);
         break;
       case 'customer':
-        id = await this.users.findOrCreateCustomerByPhoneAndReturnId(
-          claims.sub,
-        );
+        id =
+          await this.users.findOrCreateConsumerCustomerTypeByPhoneAndReturnId(
+            claims.sub,
+          );
     }
 
     return await this.jwtAuth.issue({ id, role });

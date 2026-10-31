@@ -13,6 +13,8 @@ import authCfg from './authentication.config';
 import {
   type AdminSignInDto,
   adminSignInSchema,
+  type ManagerSignInDto,
+  managerSignInSchema,
   type RefreshDto,
   refreshSchema,
   type RequestOtpDto,
@@ -25,6 +27,7 @@ import {
   OTP_ERROR_MAPPINGS,
 } from './authentication.errors';
 import { AdminSecretSignInCommand } from './commands/admin-secret-sing-in.command';
+import { ManagerPasswordSignInCommand } from './commands/manager-password-sing-in.command';
 import { OtpVerifyCommand } from './commands/opt-verify.command';
 import { OtpRequestCommand } from './commands/otp-request.command';
 import { OtpSignInCommand } from './commands/otp-sign-in.command';
@@ -39,6 +42,7 @@ export class AuthenticationController {
     private readonly otpVerifyCmd: OtpVerifyCommand,
     private readonly otpSigInCmd: OtpSignInCommand,
     private readonly adminSecretSingInCmd: AdminSecretSignInCommand,
+    private readonly managerPasswordSingInCmd: ManagerPasswordSignInCommand,
     private readonly refreshCmd: RefreshCommand,
     @Inject(authCfg.KEY) private readonly cfg: ConfigType<typeof authCfg>,
   ) {}
@@ -90,14 +94,14 @@ export class AuthenticationController {
     return this.otpSigInCmd.execute({ ...dto, role: 'courier' });
   }
 
-  @ProblemResponses(
-    ...OTP_ERROR_MAPPINGS,
-    AUTH_ERROR_MAPPINGS.AuthTokenInvalidError,
-  )
+  @ProblemResponses(...AUTH_ERROR_MAPPINGS)
+  @Throttle({
+    auth: { limit: 5, ttl: minutes(10) },
+  })
   @Post('manager/sign-in')
   @HttpCode(HttpStatus.OK)
-  signInManager(@Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto) {
-    return this.otpSigInCmd.execute({ ...dto, role: 'manager' });
+  signInManager(@Body({ schema: managerSignInSchema }) dto: ManagerSignInDto) {
+    return this.managerPasswordSingInCmd.execute(dto);
   }
 
   @ProblemResponses(...AUTH_ERROR_MAPPINGS)

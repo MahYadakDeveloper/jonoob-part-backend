@@ -22,11 +22,12 @@ export const customers = actorsSchema.table(
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
     fullName: varchar('full_name', { length: 32 }),
-    phone: varchar('phone').unique().notNull(),
+    phone: varchar('phone', { length: 11 }).unique().notNull(),
     type: customerType().notNull(),
     specialty: technicianSpecialty(),
   },
   (t) => [
+    check('phone_format_chk', sql`${t.phone} ~ '^09[0-9]{9}$'`),
     check(
       'chk_technician_specialty_required',
       sql`(${t.type} = 'technician') = (${t.specialty} IS NOT NULL)`,
