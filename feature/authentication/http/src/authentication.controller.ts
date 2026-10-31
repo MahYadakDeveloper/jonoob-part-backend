@@ -1,3 +1,5 @@
+import { CheckPolicies } from '@feature/authorization-http/decorators';
+import { PoliciesGuard } from '@feature/authorization-http/guards';
 import { ProblemResponses } from '@feature/error-http/decorators';
 import {
   Body,
@@ -6,6 +8,7 @@ import {
   HttpStatus,
   Inject,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { minutes, Throttle } from '@nestjs/throttler';
@@ -32,7 +35,7 @@ import { OtpVerifyCommand } from './commands/opt-verify.command';
 import { OtpRequestCommand } from './commands/otp-request.command';
 import { OtpSignInCommand } from './commands/otp-sign-in.command';
 import { RefreshCommand } from './commands/refresh.command';
-import { Public } from './decorators';
+import { Public, RequiredAuth } from './decorators';
 
 @Public()
 @Controller('auth')
@@ -113,6 +116,13 @@ export class AuthenticationController {
   signInAdmin(@Body({ schema: adminSignInSchema }) dto: AdminSignInDto) {
     return this.adminSecretSingInCmd.execute(dto);
   }
+
+  @RequiredAuth()
+  @UseGuards(PoliciesGuard)
+  @CheckPolicies(/** [TODO] */)
+  @Post('manager/create')
+  @HttpCode(HttpStatus.OK)
+  createManager() {}
 
   // ---------- Tokens ----------
 
