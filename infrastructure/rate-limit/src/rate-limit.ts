@@ -1,32 +1,56 @@
-export type RateLimitResult =
-  | {
-      allowed: true;
-    }
-  | {
-      allowed: false;
-      remaining: number; // how many requests are left in the current window/bucket
-      limit: number; // the configured maximum
-      retryAfter: number; // seconds until the client should retry (null if allowed)
-    };
-
-export type RateLimitResults =
-  | {
-      allowed: true;
-      /** Remaining tokens in the tightest bucket (Infinity if no buckets were given) */
-      remaining: number;
-    }
-  | {
-      allowed: false;
-      bucketKey: string;
-      remaining: number;
-      limit: number;
-      retryAfter: number; // seconds
-    };
+export type RateLimitAlgorithm =
+  | 'token-bucket'
+  | 'fixed-window'
+  | 'sliding-window-log'
+  | 'sliding-window-counter';
 
 export interface TokenBucketConfig {
-  /** Maximum number of requests allowed during the configured window. */
+  algorithm: 'token-bucket';
+  /** Bucket capacity = max burst size. */
   maxTokens: number;
-
-  /** Rate of refilling with unit: token/sec */
+  /** Refill speed, unit: tokens/second. */
   refillRate: number;
+}
+
+interface WindowConfigBase<A extends RateLimitAlgorithm> {
+  algorithm: A;
+  /** Max requests allowed inside one window. Integer >= 1. */
+  limit: number;
+  /** Window length in seconds. */
+  windowSeconds: number;
+}
+
+/** Counter that resets when its window expires (window starts at the first request). */
+export type FixedWindowConfig = WindowConfigBase<'fixed-window'>;
+/** Exact: stores one timestamp per accepted request (memory O(limit)). */
+export type SlidingWindowLogConfig = WindowConfigBase<'sliding-window-log'>;
+/** Approximate: weighted sum of previous and current window (memory O(1)). */
+export type SlidingWindowCounterConfig =
+  WindowConfigBase<'sliding-window-counter'>;
+
+export type RateLimitConfig =
+  | TokenBucketConfig
+  | FixedWindowConfig
+  | SlidingWindowLogConfig
+  | SlidingWindowCounterConfig;
+
+export interface RateLimitRule {
+  /** Logical key (without the service prefix), e.g. `otp:verify:<challengeId>`. */
+  key: string;
+  config: RateLimitConfig;
+}
+
+export interface RateLimitDecision {
+  allowed: boolean;
+  /**
+   * allowed = true  -> key of the tightest rule (the one with the fewest requests left)
+   * allowed = false -> key of the rule that rejected (the one with the longest wait)
+   */
+  key: string;
+  /** Requests left in that rule (after consuming, for `attempt`/`consume`). */
+  remaining: number;
+  /** Configured maximum of that rule. */
+  limit: number;
+  /** Seconds until the client may retry. 0 when allowed. */
+  retryAfter: number;
 }

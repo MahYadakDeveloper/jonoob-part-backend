@@ -1,1 +1,1 @@
-export * from './problem.filter';
+export * from './problem-details.filter';

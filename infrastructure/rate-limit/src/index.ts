@@ -1,3 +1,2 @@
-export * from './rate-limit.module';
-export * from './redis-token-bucket.service';
 export * from './rate-limit';
+export * from './redis-rate-limit.service';

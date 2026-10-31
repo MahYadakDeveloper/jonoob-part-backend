@@ -1,20 +1,25 @@
-import { JwtService } from '@infra/crypto-jwt';
+import { ConfigType } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { minutes, ThrottlerOptions } from '@nestjs/throttler';
-import { AuthController } from './auth.controller';
+import authCfg from './authentication.config';
+import { AuthenticationController } from './authentication.controller';
 import {
   adminSignInSchema,
+  refreshSchema,
   requestOtpSchema,
   verifyOtpSchema,
-} from './auth.dto';
+} from './authentication.dto';
+import { TokenPayload } from './types/token-payload';
 
 export const createAuthThrottlerOption: (
   jwt: JwtService,
-) => ThrottlerOptions = (jwt) => ({
+  cfg: ConfigType<typeof authCfg>,
+) => ThrottlerOptions = (jwt, cfg) => ({
   name: 'auth',
   ttl: minutes(5),
   limit: 20,
   blockDuration: minutes(5),
-  skipIf: (ctx) => ctx.getClass() !== AuthController,
+  skipIf: (ctx) => ctx.getClass() !== AuthenticationController,
   getTracker: async (req) => {
     const { body } = req as { body?: any; ip?: string };
 
@@ -23,29 +28,34 @@ export const createAuthThrottlerOption: (
       return `phone:${otpRequestBody.data.phone}`;
     }
 
-    const otpVerifyBody = verifyOtpSchema.safeParse(body);
-    if (otpVerifyBody.success) {
-      const p = jwt.decode(body.token);
-      if (p) {
-        const c = await jwt.verify(
-          otpVerifyBody.data.challengeToken,
-          'challenge',
-        );
-        if (c) return `sub:${c?.sub}`;
-      }
-    }
+    // support different sign-in's endpoints and verifyOtp endpoint
+    try {
+      const otpVerifyBody = verifyOtpSchema.parse(body);
+      const c = await jwt.verifyAsync<TokenPayload>(
+        otpVerifyBody.challengeToken,
+        {
+          secret: cfg.challengeSecret,
+        },
+      );
 
-    const adminSignInBody = adminSignInSchema.safeParse(body);
-    if (adminSignInBody.success) {
-      const p = jwt.decode(body.token);
-      if (p) {
-        const c = await jwt.verify(
-          adminSignInBody.data.verifyToken,
-          'challenge',
-        );
-        if (c) return `sub:${c?.sub}`;
-      }
-    }
+      if (c) return `otp-challenge:${otpVerifyBody.challengeToken}`;
+    } catch {}
+
+    try {
+      const adminSignInBody = adminSignInSchema.parse(body);
+      const c = await jwt.verify(adminSignInBody.verifyToken, {
+        secret: cfg.verifySecret,
+      });
+      if (c) return `verify:${adminSignInBody.verifyToken}`;
+    } catch {}
+
+    try {
+      const refresh = refreshSchema.parse(body);
+      const c = await jwt.verify(refresh.refreshToken, {
+        secret: cfg.refreshSecret,
+      });
+      if (c) return `refresh:${refresh.refreshToken}`;
+    } catch {}
 
     return `ip:${req.ip}`;
   },

@@ -1,172 +1,218 @@
-export const CONSUME_LUA_SCRIPT = `
-local key = KEYS[1]
-local max_tokens = tonumber(ARGV[1])
-local refill_rate = tonumber(ARGV[2])
-local now = tonumber(ARGV[3])
+import { createHash } from 'node:crypto';
 
-local data = redis.call('HGETALL', key)
-local tokens = max_tokens
-local last_refill = now
+/**
+ * One script for every algorithm and for both "check" and "consume".
+ *
+ * KEYS[i]   one Redis key per rule (all must live in the same cluster slot,
+ *           e.g. use a hash tag: `otp:{+98912...}:cooldown`)
+ * ARGV[1]   mode: '0' = check only, '1' = check + consume
+ * ARGV[2]   unique request id (member suffix for sliding-window-log)
+ * ARGV[3+]  3 values per rule: algorithm, p1, p2
+ *             token-bucket           p1 = maxTokens, p2 = refillRate (tokens/sec)
+ *             fixed-window           p1 = limit,     p2 = windowSeconds
+ *             sliding-window-log     p1 = limit,     p2 = windowSeconds
+ *             sliding-window-counter p1 = limit,     p2 = windowSeconds
+ *
+ * Returns { allowed(1|0), ruleIndex(1-based), remaining, limit, retryAfter }
+ *   allowed = 1 -> ruleIndex = tightest rule
+ *   allowed = 0 -> ruleIndex = rule with the longest wait
+ *
+ * Time comes from Redis (TIME), so app instances with skewed clocks agree.
+ * Requires Redis >= 5 (TIME followed by writes inside a script).
+ */
+export const RATE_LIMIT_SCRIPT = `
+local mode = ARGV[1]
+local request_id = ARGV[2]
 
-if #data > 0 then
-  local fields = {}
-  for i = 1, #data, 2 do
-    fields[data[i]] = data[i + 1]
-  end
-  tokens = tonumber(fields['tokens']) or max_tokens
-  last_refill = tonumber(fields['last_refill']) or now
-end
+local t = redis.call('TIME')
+local now = tonumber(t[1]) + tonumber(t[2]) / 1000000
+local now_ms = tonumber(t[1]) * 1000 + math.floor(tonumber(t[2]) / 1000)
 
--- Refill tokens based on elapsed time
-local elapsed = now - last_refill
-local new_tokens = elapsed * refill_rate
-tokens = math.min(max_tokens, tokens + new_tokens)
+-- tostring() would turn big numbers into 1.76e+15 and lose precision
+local function int_str(n) return string.format('%.0f', n) end
+local function dec_str(n) return string.format('%.6f', n) end
 
-local allowed = 0
-local remaining = tokens
-local retry_after = 0
-
-if tokens >= 1 then
-  tokens = tokens - 1
-  remaining = tokens
-  allowed = 1
-else
-retry_after = math.ceil((1 - tokens) / refill_rate)
-end
-
-redis.call('HSET', key, 'tokens', tostring(tokens), 'last_refill', tostring(now))
-redis.call('EXPIRE', key, math.ceil(max_tokens / refill_rate) + 1)
-
-return { allowed, math.floor(remaining), retry_after }
-`;
-
-export const ATTEMPT_SCRIPT = `
-local now = tonumber(ARGV[1])
-local count = #KEYS
-
-local failed = nil
-local buckets = {}
-
--- Check all buckets without consuming
-for i = 1, count do
-  local key = KEYS[i]
-
-  local max_tokens = tonumber(ARGV[2 + (i - 1) * 2])
-  local refill_rate = tonumber(ARGV[3 + (i - 1) * 2])
-
-  local data = redis.call('HGETALL', key)
-
-  local tokens = max_tokens
-  local last_refill = now
-
-  if #data > 0 then
-    local fields = {}
-
-    for j = 1, #data, 2 do
-      fields[data[j]] = data[j + 1]
-    end
-
-    tokens = tonumber(fields['tokens']) or max_tokens
-    last_refill = tonumber(fields['last_refill']) or now
+local function token_bucket(key, max_tokens, refill_rate)
+  local d = redis.call('HMGET', key, 'tokens', 'ts')
+  local tokens = tonumber(d[1])
+  local ts = tonumber(d[2])
+  if tokens == nil or ts == nil then
+    tokens = max_tokens
+    ts = now
   end
 
-  local elapsed = now - last_refill
-
-  tokens = math.min(
-    max_tokens,
-    tokens + elapsed * refill_rate
-  )
+  tokens = math.min(max_tokens, tokens + math.max(0, now - ts) * refill_rate)
 
   local allowed = tokens >= 1
-  local retry_after = 0
+  local retry = 0
+  if not allowed then
+    retry = math.ceil((1 - tokens) / refill_rate)
+  end
+
+  return {
+    allowed = allowed,
+    available = math.floor(tokens),
+    limit = max_tokens,
+    retry = retry,
+    commit = function()
+      redis.call('HSET', key, 'tokens', dec_str(tokens - 1), 'ts', dec_str(now))
+      redis.call('EXPIRE', key, math.ceil(max_tokens / refill_rate) + 1)
+    end,
+  }
+end
+
+local function fixed_window(key, limit, window)
+  local count = tonumber(redis.call('GET', key)) or 0
+  local allowed = count < limit
+  local retry = 0
+  if not allowed then
+    local ttl_ms = redis.call('PTTL', key)
+    if ttl_ms < 0 then ttl_ms = window * 1000 end
+    retry = math.max(1, math.ceil(ttl_ms / 1000))
+  end
+
+  return {
+    allowed = allowed,
+    available = math.max(0, limit - count),
+    limit = limit,
+    retry = retry,
+    commit = function()
+      if redis.call('INCR', key) == 1 then
+        redis.call('PEXPIRE', key, math.ceil(window * 1000))
+      end
+    end,
+  }
+end
+
+local function sliding_window_log(key, limit, window)
+  local window_ms = window * 1000
+  local cutoff = now_ms - window_ms
+  local count = redis.call('ZCOUNT', key, '(' .. int_str(cutoff), '+inf')
+  local allowed = count < limit
+  local retry = 0
+  if not allowed then
+    -- the entry that must leave the window before a new request fits
+    local pivot = redis.call(
+      'ZRANGEBYSCORE', key, '(' .. int_str(cutoff), '+inf',
+      'WITHSCORES', 'LIMIT', count - limit, 1
+    )
+    if pivot[2] ~= nil then
+      retry = math.ceil((tonumber(pivot[2]) + window_ms - now_ms) / 1000)
+    end
+    retry = math.max(1, retry)
+  end
+
+  return {
+    allowed = allowed,
+    available = math.max(0, limit - count),
+    limit = limit,
+    retry = retry,
+    commit = function()
+      redis.call('ZREMRANGEBYSCORE', key, '-inf', int_str(cutoff))
+      redis.call('ZADD', key, int_str(now_ms), int_str(now_ms) .. ':' .. request_id)
+      redis.call('PEXPIRE', key, math.ceil(window_ms) + 1000)
+    end,
+  }
+end
+
+local function sliding_window_counter(key, limit, window)
+  local idx = math.floor(now / window)
+  local d = redis.call('HMGET', key, 'w', 'cur', 'prev')
+  local w = tonumber(d[1])
+  local cur = tonumber(d[2]) or 0
+  local prev = tonumber(d[3]) or 0
+
+  if w == nil then
+    cur = 0
+    prev = 0
+  elseif w == idx - 1 then
+    prev = cur
+    cur = 0
+  elseif w ~= idx then
+    cur = 0
+    prev = 0
+  end
+
+  local frac = (now - idx * window) / window
+  local estimated = prev * (1 - frac) + cur
+  local allowed = estimated + 1 <= limit + 1e-9
+  local retry = 0
 
   if not allowed then
-    retry_after = math.ceil((1 - tokens) / refill_rate)
+    -- moment (in window units) when estimated drops to limit - 1
+    local target
+    if cur <= limit - 1 and prev > 0 then
+      target = idx + 1 - (limit - 1 - cur) / prev
+    else
+      -- current window alone is full: wait until it becomes the "previous" one
+      target = idx + 2 - (limit - 1) / cur
+    end
+    retry = math.max(1, math.ceil(target * window - now))
   end
 
-  buckets[i] = {
-    key = key,
-    tokens = tokens,
-    max_tokens = max_tokens,
-    refill_rate = refill_rate,
-  }
-
-  if not allowed and failed == nil then
-    failed = {
-      key,
-      math.floor(tokens),
-      max_tokens,
-      retry_after,
-    }
-  end
-end
-
--- At least one bucket rejected the request
-if failed ~= nil then
   return {
-    0,
-    failed[1],
-    failed[2],
-    failed[3],
-    failed[4],
+    allowed = allowed,
+    available = math.max(0, math.floor(limit - estimated + 1e-9)),
+    limit = limit,
+    retry = retry,
+    commit = function()
+      redis.call('HSET', key, 'w', int_str(idx), 'cur', int_str(cur + 1), 'prev', int_str(prev))
+      redis.call('PEXPIRE', key, math.ceil(window * 2000) + 1000)
+    end,
   }
 end
 
--- All buckets are allowed: consume one token from each
+local count = #KEYS
+local evals = {}
+local worst = nil
+local tightest = 1
+
 for i = 1, count do
-  local bucket = buckets[i]
-  local tokens = bucket.tokens - 1
+  local base = 3 + (i - 1) * 3
+  local algorithm = ARGV[base]
+  local p1 = tonumber(ARGV[base + 1])
+  local p2 = tonumber(ARGV[base + 2])
 
-  redis.call(
-    'HSET',
-    bucket.key,
-    'tokens', tostring(tokens),
-    'last_refill', tostring(now)
-  )
-
-  redis.call(
-    'EXPIRE',
-    bucket.key,
-    math.ceil(bucket.max_tokens / bucket.refill_rate) + 1
-  )
-end
-
-return {
-  1,
-  math.floor(buckets[1].tokens - 1)
-}
-`;
-
-export const CHECK_LUA_SCRIPT = `
-local key = KEYS[1]
-local max_tokens = tonumber(ARGV[1])
-local refill_rate = tonumber(ARGV[2])
-local now = tonumber(ARGV[3])
-
-local data = redis.call('HGETALL', key)
-local tokens = max_tokens
-local last_refill = now
-
-if #data > 0 then
-  local fields = {}
-  for i = 1, #data, 2 do
-    fields[data[i]] = data[i + 1]
+  local r
+  if algorithm == 'token-bucket' then
+    r = token_bucket(KEYS[i], p1, p2)
+  elseif algorithm == 'fixed-window' then
+    r = fixed_window(KEYS[i], p1, p2)
+  elseif algorithm == 'sliding-window-log' then
+    r = sliding_window_log(KEYS[i], p1, p2)
+  elseif algorithm == 'sliding-window-counter' then
+    r = sliding_window_counter(KEYS[i], p1, p2)
+  else
+    error('unknown rate limit algorithm: ' .. tostring(algorithm))
   end
-  tokens = tonumber(fields['tokens']) or max_tokens
-  last_refill = tonumber(fields['last_refill']) or now
+
+  r.index = i
+  evals[i] = r
+
+  if not r.allowed and (worst == nil or r.retry > worst.retry) then
+    worst = r
+  end
+  if r.available < evals[tightest].available then
+    tightest = i
+  end
 end
 
--- Refill tokens based on elapsed time
-local elapsed = now - last_refill
-local new_tokens = elapsed * refill_rate
-tokens = math.min(max_tokens, tokens + new_tokens)
-
-local remaining = tokens
-local retry_after = 0
-
-if tokens < 1 then
-  retry_after = math.ceil((1 - tokens) / refill_rate)
+-- Any rule rejected -> nothing is consumed anywhere
+if worst ~= nil then
+  return { 0, worst.index, worst.available, math.floor(worst.limit), worst.retry }
 end
 
-return { math.floor(remaining), retry_after }
+local remaining = evals[tightest].available
+if mode == '1' then
+  for i = 1, count do
+    evals[i].commit()
+  end
+  remaining = remaining - 1
+end
+
+return { 1, tightest, remaining, math.floor(evals[tightest].limit), 0 }
 `;
+
+export const RATE_LIMIT_SCRIPT_SHA = createHash('sha1')
+  .update(RATE_LIMIT_SCRIPT)
+  .digest('hex');

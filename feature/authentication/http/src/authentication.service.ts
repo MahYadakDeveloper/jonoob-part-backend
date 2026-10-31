@@ -1,27 +1,44 @@
-import { OtpSmsPayload } from '@feature/authentication-sms/sms-opt.template';
-import { hmacSha256 } from '@infra/crypto/hmac';
-import { generateNumericCode } from '@infra/crypto/random';
-import { BullmqSms } from '@infra/messaging-sms';
 import { Inject, Injectable } from '@nestjs/common';
-import { type ConfigType } from '@nestjs/config';
+import type { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
-import authConfig from './authentication.config';
-import { RedisOtpChallengeStore } from './stores/otp-challenge.store';
+import { AuthenticatedUser } from './authenticated-user';
+import authCfg from './authentication.config';
 
-export interface OtpRecord {
-  attempts: number;
-  /**
-   * Hashed OTP value.
-   *
-   * Never store the raw OTP.
-   */
-  hash: string;
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
 }
 
 @Injectable()
-export class AuthenticationService {
-  async requestOtp(input: unknown) {}
+export class JwtAuthService {
+  constructor(
+    private readonly jwt: JwtService,
+    @Inject(authCfg.KEY)
+    private readonly cfg: ConfigType<typeof authCfg>,
+  ) {}
 
-  private verify() {}
+  async issue(user: AuthenticatedUser): Promise<AuthTokens> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwt.signAsync<AuthenticatedUser>(
+        { id: user.id, role: user.role },
+        {
+          secret: this.cfg.accessSecret,
+          subject: user.id,
+          expiresIn: this.cfg.accessTokenExpiresIn,
+        },
+      ),
+      this.jwt.signAsync<AuthenticatedUser>(
+        { id: user.id, role: user.role },
+        {
+          secret: this.cfg.refreshSecret,
+          subject: user.id,
+          jwtid: randomUUID(),
+          expiresIn: this.cfg.refreshTokenExpiresIn,
+        },
+      ),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
 }

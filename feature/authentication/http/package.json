@@ -8,6 +8,7 @@
   "dependencies": {
     "@casl/ability": "catalog:",
     "@feature/authentication-sms": "workspace:*",
+    "@feature/error-http": "workspace:*",
     "@feature/shared": "workspace:*",
     "@infra/crypto": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
