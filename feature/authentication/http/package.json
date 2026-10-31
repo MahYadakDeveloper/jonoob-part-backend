@@ -2,7 +2,9 @@
   "name": "@feature/authentication-http",
   "type": "commonjs",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./decorators": "./src/decorators/index.ts",
+    "./guards": "./src/guards/index.ts"
   },
   "private": true,
   "dependencies": {

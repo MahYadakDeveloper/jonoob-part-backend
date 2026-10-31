@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
 import { InjectRedis } from '@infra/db-redis'; // use the same import as in your rate-limit service
+import { Injectable } from '@nestjs/common';
 import type Redis from 'ioredis';
-
-import { ExpiresIn, expiresInToSeconds } from './commands/utils/expires-in';
+import { ExpiresIn, expiresInToSeconds } from './utils/expires-in';
 
 const AUTH_KEY_PREFIX = 'auth:';
 
@@ -33,6 +32,15 @@ export class AuthStore {
 
   async exists(key: string): Promise<boolean> {
     return (await this.redis.exists(this.toRedisKey(key))) === 1;
+  }
+
+  async setIfAbsent(
+    key: string,
+    value: string,
+    ttlSeconds: number,
+  ): Promise<boolean> {
+    const res = await this.redis.set(key, value, 'EX', ttlSeconds, 'NX');
+    return res === 'OK';
   }
 
   async delete(key: string): Promise<void> {

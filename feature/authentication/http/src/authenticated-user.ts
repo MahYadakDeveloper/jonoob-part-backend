@@ -1,19 +1,7 @@
 export type AuthenticatedUser = {
   id: string;
-} & (
-  | {
-      role: 'admin';
-    }
-  | {
-      role: 'manager';
-    }
-  | {
-      role: 'courier';
-    }
-  | {
-      role: 'customer';
-    }
-);
+  role: 'admin' | 'manager' | 'courier' | 'customer';
+};
 
 export type Role = AuthenticatedUser['role'];
 

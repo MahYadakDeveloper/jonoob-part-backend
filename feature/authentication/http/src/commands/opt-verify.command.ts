@@ -3,8 +3,8 @@ import { Inject } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import authConfig from '../authentication.config';
+import { JwtAuthService } from '../jwt-auth.service';
 import { OtpChallengeService } from '../otp-challenge.service';
-import { TokenPayload } from '../types/token-payload';
 
 export type OtpVerifyInput = {
   challengeToken: string;
@@ -21,6 +21,7 @@ export class OtpVerifyCommand implements Command<
 > {
   constructor(
     private readonly otpChallenge: OtpChallengeService,
+    private readonly jwtAuth: JwtAuthService,
     private readonly jwt: JwtService,
     @Inject(authConfig.KEY)
     private readonly cfg: ConfigType<typeof authConfig>,
@@ -30,9 +31,7 @@ export class OtpVerifyCommand implements Command<
     challengeToken,
     otp,
   }: OtpVerifyInput): Promise<OtpVerifyOutput> {
-    const claims = await this.jwt.verifyAsync<TokenPayload>(challengeToken, {
-      secret: this.cfg.challengeSecret,
-    });
+    const claims = await this.jwtAuth.verify(challengeToken, 'challenge');
 
     await this.otpChallenge.verify(claims.jti, claims.sub, otp);
 

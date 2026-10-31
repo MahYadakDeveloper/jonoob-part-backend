@@ -20,7 +20,20 @@ export class OtpInvalidError extends DomainError {
   }
 }
 
-export const AUTH_ERROR_MAPPINGS = errorsWithKeys({
+type AuthTokenInvalidReason = 'expired' | 'invalid' | 'revoked';
+export class AuthTokenInvalidError extends DomainError {
+  constructor(readonly reason: AuthTokenInvalidReason) {
+    super(`Auth token is ${reason}`);
+  }
+}
+
+export class AuthInvalidCredentialsError extends DomainError {
+  constructor() {
+    super('Invalid credentials');
+  }
+}
+
+export const OTP_ERROR_MAPPINGS = errorsWithKeys({
   OtpTooManyAttemptsError: mapDomainError(
     OtpTooManyAttemptsError,
     HttpStatus.TOO_MANY_REQUESTS,
@@ -35,5 +48,18 @@ export const AUTH_ERROR_MAPPINGS = errorsWithKeys({
     OtpInvalidError,
     HttpStatus.BAD_REQUEST,
     'Invalid OTP',
+  ),
+});
+export const AUTH_ERROR_MAPPINGS = errorsWithKeys({
+  AuthTokenInvalidError: mapDomainError(
+    AuthTokenInvalidError,
+    HttpStatus.UNAUTHORIZED,
+    'Invalid or expired token',
+    (e) => ({ reason: e.reason }),
+  ),
+  AuthInvalidCredentialsError: mapDomainError(
+    AuthInvalidCredentialsError,
+    HttpStatus.UNAUTHORIZED,
+    'Invalid credentials',
   ),
 });

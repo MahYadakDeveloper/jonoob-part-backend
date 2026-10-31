@@ -7,6 +7,9 @@ import ms from 'ms'; // needs "esModuleInterop": true, otherwise: import ms = re
  */
 export type ExpiresIn = NonNullable<JwtSignOptions['expiresIn']>;
 
+export const secondsUntil = (exp: number, nowMs: number = Date.now()): number =>
+  Math.max(0, Math.ceil(exp - nowMs / 1000));
+
 /**
  * Converts an `expiresIn` value to whole seconds, following jsonwebtoken's rules:
  *

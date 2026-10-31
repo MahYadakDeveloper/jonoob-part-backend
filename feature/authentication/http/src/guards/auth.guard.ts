@@ -7,16 +7,16 @@ import {
 } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 import { FastifyRequest } from 'fastify';
+import { AuthenticatedUser } from '../authenticated-user';
 import { AUTH_POLICY, AuthPolicy } from '../authentication-policy';
 import authConfig from '../authentication.config';
-import { AuthenticatedUser } from '../authenticated-user';
+import { JwtAuthService } from '../jwt-auth.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private readonly jwt: JwtService,
+    private readonly jwt: JwtAuthService,
     private readonly reflector: Reflector,
     @Inject(authConfig.KEY)
     private readonly cfg: ConfigType<typeof authConfig>,
@@ -48,9 +48,7 @@ export class AuthGuard implements CanActivate {
 
   private async authenticate(token: string) {
     try {
-      return await this.jwt.verifyAsync<AuthenticatedUser>(token, {
-        secret: this.cfg.accessSecret,
-      });
+      return await this.jwt.verify<AuthenticatedUser>(token, 'access');
     } catch {}
     return null;
   }

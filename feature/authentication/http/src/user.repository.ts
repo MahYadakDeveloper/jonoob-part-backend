@@ -1,10 +1,10 @@
 import { DrizzleBaseRepository } from '@infra/db-drizzle';
 
 export class UserRepository extends DrizzleBaseRepository {
-  findOrCreateAdminByPhone() {}
+  findOrCreateAdminByPhoneAndReturnId(phone: string): Promise<string> {}
 
-  findOrCreateCustomerByPhone(phone: string): { customerId: string } {}
+  findOrCreateCustomerByPhoneAndReturnId(phone: string): Promise<string> {}
 
-  getManagerByPhone() {}
-  getCourierByPhone() {}
+  getManagerIdByPhone(phone: string): Promise<string> {}
+  getCourierIdByPhone(phone: string): Promise<string> {}
 }

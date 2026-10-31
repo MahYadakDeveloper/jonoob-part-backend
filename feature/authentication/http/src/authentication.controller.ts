@@ -1,3 +1,4 @@
+import { ProblemResponses } from '@feature/error-http/decorators';
 import {
   Body,
   Controller,
@@ -19,11 +20,15 @@ import {
   type VerifyOtpDto,
   verifyOtpSchema,
 } from './authentication.dto';
+import {
+  AUTH_ERROR_MAPPINGS,
+  OTP_ERROR_MAPPINGS,
+} from './authentication.errors';
+import { AdminSecretSignInCommand } from './commands/admin-secret-sing-in.command';
 import { OtpVerifyCommand } from './commands/opt-verify.command';
 import { OtpRequestCommand } from './commands/otp-request.command';
-import { OtpSignInCourierCommand } from './commands/otp-sign-in-courier.command';
-import { OtpSignInCustomerCommand } from './commands/otp-sign-in-customer.command';
-import { OtpSignInManagerCommand } from './commands/otp-sign-in-manager.command';
+import { OtpSignInCommand } from './commands/otp-sign-in.command';
+import { RefreshCommand } from './commands/refresh.command';
 import { Public } from './decorators';
 
 @Public()
@@ -32,9 +37,9 @@ export class AuthenticationController {
   constructor(
     private readonly otpRequestCmd: OtpRequestCommand,
     private readonly otpVerifyCmd: OtpVerifyCommand,
-    private readonly otpSingInManagerCmd: OtpSignInManagerCommand,
-    private readonly otpSingInCourierCmd: OtpSignInCourierCommand,
-    private readonly otpSingInCustomerCmd: OtpSignInCustomerCommand,
+    private readonly otpSigInCmd: OtpSignInCommand,
+    private readonly adminSecretSingInCmd: AdminSecretSignInCommand,
+    private readonly refreshCmd: RefreshCommand,
     @Inject(authCfg.KEY) private readonly cfg: ConfigType<typeof authCfg>,
   ) {}
 
@@ -50,6 +55,10 @@ export class AuthenticationController {
   }
 
   /** Useful for password sign-in */
+  @ProblemResponses(
+    ...OTP_ERROR_MAPPINGS,
+    AUTH_ERROR_MAPPINGS.AuthTokenInvalidError,
+  )
   @Post('otp/verify')
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto) {
@@ -58,47 +67,58 @@ export class AuthenticationController {
 
   // ---------- Customer ----------
 
+  @ProblemResponses(
+    ...OTP_ERROR_MAPPINGS,
+    AUTH_ERROR_MAPPINGS.AuthTokenInvalidError,
+  )
   @Post('customer/sign-in')
   @HttpCode(HttpStatus.OK)
   @HttpCode(HttpStatus.OK)
   async signInCustomer(@Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto) {
-    return this.otpSingInCustomerCmd.execute(dto);
+    return this.otpSigInCmd.execute({ ...dto, role: 'customer' });
   }
 
   // ---------- Staff ----------
 
+  @ProblemResponses(
+    ...OTP_ERROR_MAPPINGS,
+    AUTH_ERROR_MAPPINGS.AuthTokenInvalidError,
+  )
   @Post('courier/sign-in')
   @HttpCode(HttpStatus.OK)
   singInCourier(@Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto) {
-    return this.otpSingInCourierCmd.execute(dto);
+    return this.otpSigInCmd.execute({ ...dto, role: 'courier' });
   }
 
+  @ProblemResponses(
+    ...OTP_ERROR_MAPPINGS,
+    AUTH_ERROR_MAPPINGS.AuthTokenInvalidError,
+  )
   @Post('manager/sign-in')
   @HttpCode(HttpStatus.OK)
   signInManager(@Body({ schema: verifyOtpSchema }) dto: VerifyOtpDto) {
-    return this.otpSingInManagerCmd.execute(dto);
+    return this.otpSigInCmd.execute({ ...dto, role: 'manager' });
   }
 
+  @ProblemResponses(...AUTH_ERROR_MAPPINGS)
   @Throttle({
     auth: { limit: 3, ttl: minutes(10) },
   })
   @Post('admin/sign-in')
   @HttpCode(HttpStatus.OK)
   signInAdmin(@Body({ schema: adminSignInSchema }) dto: AdminSignInDto) {
-    return this.auth.signInAdmin({
-      verifyToken: dto.verifyToken,
-      secretKey: dto.secretKey,
-    });
+    return this.adminSecretSingInCmd.execute(dto);
   }
 
   // ---------- Tokens ----------
 
+  @ProblemResponses(AUTH_ERROR_MAPPINGS.AuthTokenInvalidError)
   @Throttle({
     auth: { limit: 3, ttl: minutes(10) },
   })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Body({ schema: refreshSchema }) dto: RefreshDto) {
-    return this..refresh({ oldRefreshToken: dto.refreshToken });
+    return this.refreshCmd.execute(dto);
   }
 }

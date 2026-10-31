@@ -1,12 +1,13 @@
 // import { BullModule } from '@nestjs/bullmq';
 import {
   AuthenticatedUser,
+  AuthenticationHttpModule,
   createAuthThrottlerOption,
-} from '@feature/authentication-http/';
+  JwtAuthService,
+} from '@feature/authentication-http';
 import { AuthGuard } from '@feature/authentication-http/guards';
 import { ProblemDetailsFilter } from '@feature/error-http/filters';
 import { ProblemTranslationInterceptor } from '@feature/error-http/interceptors';
-import { JwtModule, JwtService } from '@infra/crypto-jwt';
 import { getRedisToken, RedisModule } from '@infra/db-redis';
 import { IdempotencyStoreModule } from '@infra/idempotency';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
@@ -52,9 +53,9 @@ import path from 'node:path';
       },
     }),
     ThrottlerModule.forRootAsync({
-      imports: [JwtModule],
-      inject: [getRedisToken('throttler'), JwtService],
-      useFactory: (redis: Redis, jwt: JwtService) => ({
+      imports: [AuthenticationHttpModule],
+      inject: [getRedisToken('throttler'), JwtAuthService],
+      useFactory: (redis: Redis, jwt: JwtAuthService) => ({
         storage: new ThrottlerStorageRedisService(redis),
         throttlers: [
           { name: 'default', ttl: seconds(60), limit: 120 },

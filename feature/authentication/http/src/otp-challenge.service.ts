@@ -8,7 +8,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import authCfg from './authentication.config';
-import { OtpTooManyAttemptsError } from './authentication.errors';
+import {
+  OtpExpiredError,
+  OtpTooManyAttemptsError,
+} from './authentication.errors';
 import { AuthStore } from './authentication.store';
 import { expiresInToSeconds } from './utils/expires-in';
 
@@ -70,10 +73,12 @@ export class OtpChallengeService {
 
     const stored = await this.store.get(otpChallengeStoreKey(challengeId));
 
-    assertNotNull(stored, new Error('Otp expired!'));
+    assertNotNull(stored, OtpExpiredError);
 
     const actual = otpDigest(this.cfg.challengeSecret, challengeId, phone, otp);
     const expected = decodeDigest(stored);
+
+    await this.store.delete(otpChallengeStoreKey(challengeId));
 
     assertOtpDigestEqual(expected, actual);
   }
