@@ -1,5 +1,6 @@
 import { CommandOf, InputOf, OutputOf } from '@feature/shared/cqrs';
-import { MovementApi } from '@feature/warehouse-api/movement';
+import '@feature/shared/extensions';
+import { MovementApi } from '@feature/warehouse-api/movement.api';
 import { DrizzleTransactionAls } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { QuarantineRepository } from '../../quarantine.repository';
@@ -30,7 +31,7 @@ export class ReturnMovementCommand implements CommandOf<MovementApi, 'return'> {
 
       const restock = [
         ...restockInput
-          .map(({ quarantine, ...s }) => ({ ...s, quantity: 0 }))
+          .map(({ quarantine: _q, ...s }) => ({ ...s, quantity: 0 }))
           .toMap('stockId', (a, b) => ({
             ...a,
             quantity: a.quantity + b.quantity,
@@ -40,7 +41,7 @@ export class ReturnMovementCommand implements CommandOf<MovementApi, 'return'> {
 
       await this.stocks.increase(restock);
 
-      const { items, ...m } = input;
+      const { items: _items, ...m } = input;
       const { movementId } = await this.repository.create({
         ...m,
         items: restock,
@@ -48,7 +49,7 @@ export class ReturnMovementCommand implements CommandOf<MovementApi, 'return'> {
       });
 
       const quarantineStocks = quarantineStocksInput.map(
-        ({ quarantine, ...q }) => ({ ...q, movementId }),
+        ({ quarantine: _quarantine, ...q }) => ({ ...q, movementId }),
       );
       await this.quarantines.quarantine(quarantineStocks);
 

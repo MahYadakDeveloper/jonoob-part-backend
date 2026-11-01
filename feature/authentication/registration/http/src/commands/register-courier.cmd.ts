@@ -26,10 +26,7 @@ export type RegisterCourierInput = {
   },
 })
 @Injectable()
-export class RegisterCourierCommand implements Command<
-  RegisterCourierInput,
-  void
-> {
+export class RegisterCourierCommand implements Command<RegisterCourierInput> {
   constructor(
     @InjectDrizzle()
     private readonly db: Database,

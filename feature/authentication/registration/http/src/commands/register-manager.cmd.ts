@@ -34,10 +34,7 @@ export type RegisterManagerInput = {
   },
 })
 @Injectable()
-export class RegisterManagerCommand implements Command<
-  RegisterManagerInput,
-  void
-> {
+export class RegisterManagerCommand implements Command<RegisterManagerInput> {
   constructor(
     @InjectDrizzle()
     private readonly db: Database,

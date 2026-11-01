@@ -1,14 +1,14 @@
 import { CommandOf, InputOf, OutputOf } from '@feature/shared/cqrs';
 import { assertFound, assertNever } from '@feature/shared/utils/assertions';
-import {
-  MovementApi,
-  MovementNotFoundError,
-  MovementNotUndoableError,
-} from '@feature/warehouse-api/movement';
+import { MovementApi } from '@feature/warehouse-api/movement.api';
 import { DrizzleTransactionAls } from '@infra/db-drizzle';
 import { Injectable } from '@nestjs/common';
 import { StockService } from '../../stock.service';
 import { MovementRepository } from '../movement.repository';
+import {
+  MovementNotFoundError,
+  MovementNotUndoableError,
+} from '@feature/warehouse-errors/movement.errors';
 
 @Injectable()
 export class UndoMovementCommand implements CommandOf<MovementApi, 'undo'> {

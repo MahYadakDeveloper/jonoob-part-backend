@@ -698,6 +698,7 @@
       "name": "@feature/warehouse-api",
       "dependencies": {
         "@feature/shared": "workspace:*",
+        "@feature/warehouse-errors": "workspace:*",
         "@infra/schema": "workspace:*",
       },
       "devDependencies": {
@@ -735,6 +736,7 @@
       "dependencies": {
         "@feature/shared": "workspace:*",
         "@feature/warehouse-api": "workspace:*",
+        "@feature/warehouse-errors": "workspace:*",
         "@infra/db-drizzle": "workspace:*",
         "@infra/schema": "workspace:*",
         "@nestjs/common": "catalog:",

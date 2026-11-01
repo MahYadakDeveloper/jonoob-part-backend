@@ -13,10 +13,7 @@ export type UnregisterUserInput = {
 };
 
 @Injectable()
-export class UnregisterUserCommand implements Command<
-  UnregisterUserInput,
-  void
-> {
+export class UnregisterUserCommand implements Command<UnregisterUserInput> {
   constructor(
     @InjectDrizzle()
     private readonly db: Database,

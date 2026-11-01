@@ -20,15 +20,15 @@ export type OutputOf<S, M extends MethodKeys<S>> = S[M] extends (
   : never;
 
 type ResolveOutput<S, M extends MethodKeys<S>, TOut> = [TOut] extends [Derived]
-  ? OutputOf<S, M>
+  ? Awaited<OutputOf<S, M>>
   : TOut;
 
 export interface Command<TInput = void, TOutput = void> {
   execute(input: TInput): Promise<TOutput>;
 }
 
-export interface Query<TInput = void, TOutput = Promise<unknown>> {
-  execute(input: TInput): TOutput;
+export interface Query<TInput = void, TOutput = unknown> {
+  execute(input: TInput): Promise<TOutput>;
 }
 
 export interface CommandOf<
