@@ -6,14 +6,14 @@ import { managers } from '@infra/schema/actors/managers.schema';
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-export type UnregisterCourierInput = {
+export type UnregisterUserInput = {
   id: string;
   usr: 'manager' | 'courier';
 };
 
 @Injectable()
-export class UnregisterCourierCommand implements Command<
-  UnregisterCourierInput,
+export class UnregisterUserCommand implements Command<
+  UnregisterUserInput,
   void
 > {
   constructor(
@@ -21,7 +21,7 @@ export class UnregisterCourierCommand implements Command<
     private readonly db: Database,
   ) {}
 
-  async execute({ id, usr }: UnregisterCourierInput): Promise<void> {
+  async execute({ id, usr }: UnregisterUserInput): Promise<void> {
     let deleted;
     switch (usr) {
       case 'manager':

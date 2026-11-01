@@ -204,7 +204,7 @@ real schema.
 
 @example
 ${FENCE}ts
-import { discriminatedVariants } from '@feature/shared/utils/zod';
+import { discriminatedVariants } from '@feature/shared/zod/utils';
 import {
   ${c}Effect,
   ${c}Reason,
@@ -520,7 +520,7 @@ export class ${P}AbilityFactory implements AbilityFactory<${P}Ability> {
 import { ${P}Ability } from './${abilityFile}';
 
 export class ${P}${Z}Policy implements PolicyHandler<${P}Ability> {
-  async handle(ability: ${P}Ability, context: PolicyContext): Promise<boolean> {
+  async handle(ability: ${P}Ability, _context: PolicyContext): Promise<boolean> {
     return ability.can('manage', '${P}');
   }
 }

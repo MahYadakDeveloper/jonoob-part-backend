@@ -1,9 +1,11 @@
-export type AuthenticatedUser = {
-  id: string;
-  role: 'admin' | 'manager' | 'courier' | 'customer';
-};
+export type Role = 'admin' | 'manager' | 'courier' | 'customer';
 
-export type Role = AuthenticatedUser['role'];
+export type AuthenticatedUser = {
+  [R in Role]: {
+    id: string;
+    role: R;
+  };
+}[Role];
 
 // generic helper, replaces the four types in generic code
 export type UserOf<R extends Role> = Extract<AuthenticatedUser, { role: R }>;
