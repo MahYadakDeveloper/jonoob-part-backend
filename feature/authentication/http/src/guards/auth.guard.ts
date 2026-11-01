@@ -1,16 +1,13 @@
 import {
   CanActivate,
   ExecutionContext,
-  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { ConfigType } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { AuthenticatedUser } from '../authenticated-user';
 import { AUTH_POLICY, AuthPolicy } from '../authentication-policy';
-import authConfig from '../authentication.config';
 import { JwtAuthService } from '../jwt-auth.service';
 
 @Injectable()
@@ -18,8 +15,6 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtAuthService,
     private readonly reflector: Reflector,
-    @Inject(authConfig.KEY)
-    private readonly cfg: ConfigType<typeof authConfig>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

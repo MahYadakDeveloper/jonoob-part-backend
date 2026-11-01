@@ -132,6 +132,7 @@
       "name": "@feature/authentication-http",
       "dependencies": {
         "@casl/ability": "catalog:",
+        "@feature/authentication-registration-http": "workspace:*",
         "@feature/authentication-sms": "workspace:*",
         "@feature/authorization-http": "workspace:*",
         "@feature/error-http": "workspace:*",

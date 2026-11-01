@@ -1,14 +1,5 @@
-import { CheckPolicies } from '@feature/authorization-http/decorators';
-import { PoliciesGuard } from '@feature/authorization-http/guards';
 import { ProblemResponses } from '@feature/error-http/decorators';
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { minutes, Throttle } from '@nestjs/throttler';
 import {
   type AdminSignInDto,
@@ -32,9 +23,7 @@ import { OtpVerifyCommand } from './commands/opt-verify.command';
 import { OtpRequestCommand } from './commands/otp-request.command';
 import { OtpSignInCommand } from './commands/otp-sign-in.command';
 import { RefreshCommand } from './commands/refresh.command';
-import { Public, RequiredAuth } from './decorators';
-import { UsersRegistrationPolicy } from './policy/users-registration.policy';
-import { UsersAbilityFactory } from './policy/users.ability-factory';
+import { Public } from './decorators';
 
 @Public()
 @Controller('auth')
