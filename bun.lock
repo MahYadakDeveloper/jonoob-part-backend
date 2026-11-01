@@ -117,6 +117,17 @@
         "zod": "catalog:",
       },
     },
+    "feature/authentication/errors": {
+      "name": "@feature/authentication-errors",
+      "dependencies": {
+        "@feature/error-http": "workspace:*",
+        "@feature/shared": "workspace:*",
+        "@nestjs/common": "catalog:",
+      },
+      "devDependencies": {
+        "@repo/oxlint-config": "workspace:*",
+      },
+    },
     "feature/authentication/http": {
       "name": "@feature/authentication-http",
       "dependencies": {
@@ -140,6 +151,27 @@
         "drizzle-orm": "catalog:",
         "fastify": "catalog:",
         "ioredis": "catalog:",
+        "rxjs": "catalog:",
+        "zod": "catalog:",
+      },
+    },
+    "feature/authentication/registration/http": {
+      "name": "@feature/authentication-registration-http",
+      "dependencies": {
+        "@casl/ability": "catalog:",
+        "@feature/authentication-errors": "workspace:*",
+        "@feature/authentication-http": "workspace:*",
+        "@feature/authentication-sms": "workspace:*",
+        "@feature/authorization-http": "workspace:*",
+        "@feature/error-http": "workspace:*",
+        "@feature/shared": "workspace:*",
+        "@infra/crypto": "workspace:*",
+        "@infra/db-drizzle": "workspace:*",
+        "@infra/messaging-sms": "workspace:*",
+        "@infra/schema": "workspace:*",
+        "@nestjs/common": "catalog:",
+        "@repo/oxlint-config": "workspace:*",
+        "drizzle-orm": "catalog:",
         "rxjs": "catalog:",
         "zod": "catalog:",
       },
@@ -1189,7 +1221,11 @@
 
     "@feature/actors-api": ["@feature/actors-api@workspace:feature/actors/api"],
 
+    "@feature/authentication-errors": ["@feature/authentication-errors@workspace:feature/authentication/errors"],
+
     "@feature/authentication-http": ["@feature/authentication-http@workspace:feature/authentication/http"],
+
+    "@feature/authentication-registration-http": ["@feature/authentication-registration-http@workspace:feature/authentication/registration/http"],
 
     "@feature/authentication-sms": ["@feature/authentication-sms@workspace:feature/authentication/sms"],
 

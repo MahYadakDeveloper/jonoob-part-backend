@@ -1,0 +1,26 @@
+{
+  "name": "@feature/authentication-registration-http",
+  "type": "commonjs",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "private": true,
+  "dependencies": {
+    "@casl/ability": "catalog:",
+    "@feature/authentication-errors": "workspace:*",
+    "@feature/authentication-http": "workspace:*",
+    "@feature/authentication-sms": "workspace:*",
+    "@feature/authorization-http": "workspace:*",
+    "@feature/error-http": "workspace:*",
+    "@feature/shared": "workspace:*",
+    "@infra/crypto": "workspace:*",
+    "@infra/db-drizzle": "workspace:*",
+    "@infra/messaging-sms": "workspace:*",
+    "@infra/schema": "workspace:*",
+    "@nestjs/common": "catalog:",
+    "@repo/oxlint-config": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "rxjs": "catalog:",
+    "zod": "catalog:"
+  }
+}

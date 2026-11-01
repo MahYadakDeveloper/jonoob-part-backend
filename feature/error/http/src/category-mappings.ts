@@ -1,6 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 import { errorsWithKeys, mapDomainError } from './domain-error-mapping';
 import {
+  BadRequestError,
   BusinessRuleViolationError,
   ConflictError,
   ForbiddenError,
@@ -17,6 +18,11 @@ export const CATEGORY_ERROR_MAPPINGS = errorsWithKeys({
     ConflictError,
     HttpStatus.CONFLICT,
     'Conflict with current state',
+  ),
+  BadRequestError: mapDomainError(
+    BadRequestError,
+    HttpStatus.BAD_REQUEST,
+    'Malformed request',
   ),
   BusinessRuleViolationError: mapDomainError(
     BusinessRuleViolationError,

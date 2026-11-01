@@ -6,13 +6,10 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
-  Inject,
   Post,
   UseGuards,
 } from '@nestjs/common';
-import type { ConfigType } from '@nestjs/config';
 import { minutes, Throttle } from '@nestjs/throttler';
-import authCfg from './authentication.config';
 import {
   type AdminSignInDto,
   adminSignInSchema,
@@ -36,6 +33,8 @@ import { OtpRequestCommand } from './commands/otp-request.command';
 import { OtpSignInCommand } from './commands/otp-sign-in.command';
 import { RefreshCommand } from './commands/refresh.command';
 import { Public, RequiredAuth } from './decorators';
+import { UsersRegistrationPolicy } from './policy/users-registration.policy';
+import { UsersAbilityFactory } from './policy/users.ability-factory';
 
 @Public()
 @Controller('auth')
@@ -47,7 +46,6 @@ export class AuthenticationController {
     private readonly adminSecretSingInCmd: AdminSecretSignInCommand,
     private readonly managerPasswordSingInCmd: ManagerPasswordSignInCommand,
     private readonly refreshCmd: RefreshCommand,
-    @Inject(authCfg.KEY) private readonly cfg: ConfigType<typeof authCfg>,
   ) {}
 
   // ---------- OTP ----------
@@ -116,13 +114,6 @@ export class AuthenticationController {
   signInAdmin(@Body({ schema: adminSignInSchema }) dto: AdminSignInDto) {
     return this.adminSecretSingInCmd.execute(dto);
   }
-
-  @RequiredAuth()
-  @UseGuards(PoliciesGuard)
-  @CheckPolicies(/** [TODO] */)
-  @Post('manager/create')
-  @HttpCode(HttpStatus.OK)
-  createManager() {}
 
   // ---------- Tokens ----------
 

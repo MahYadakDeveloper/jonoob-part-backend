@@ -1,6 +1,6 @@
-import { sql } from 'drizzle-orm';
-import { check, index, text, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, text, uuid, varchar } from 'drizzle-orm/pg-core';
 import { actorsSchema } from './actors.schema';
+import { phoneFormatCheck } from './checks';
 
 export const MANAGER_CHECKS = {
   managerPhoneFormat: 'managers_phones_phone_format_chk',
@@ -8,7 +8,7 @@ export const MANAGER_CHECKS = {
 
 export const managers = actorsSchema.table('managers', {
   id: uuid('id').defaultRandom().primaryKey(),
-  nickName: text('nick_name').unique().notNull(),
+  nickname: text('nickname').unique().notNull(),
 });
 
 export const managersPasswords = actorsSchema.table('managers_passwords', {
@@ -29,7 +29,7 @@ export const managersPhones = actorsSchema.table(
       .notNull(),
   },
   (t) => [
-    check(MANAGER_CHECKS.managerPhoneFormat, sql`${t.phone} ~ '^09[0-9]{9}$'`),
+    phoneFormatCheck(t.phone),
     index('managers_phones_manager_id_idx').on(t.managerId),
   ],
 );

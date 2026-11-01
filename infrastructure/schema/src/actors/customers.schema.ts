@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { check, uuid, varchar } from 'drizzle-orm/pg-core';
 import { actorsSchema } from './actors.schema';
+import { phoneFormatCheck } from './checks';
 
 export const technicianSpecialty = actorsSchema.enum('technician_specialty', [
   'electrical',
@@ -27,7 +28,7 @@ export const customers = actorsSchema.table(
     specialty: technicianSpecialty(),
   },
   (t) => [
-    check('phone_format_chk', sql`${t.phone} ~ '^09[0-9]{9}$'`),
+    phoneFormatCheck(t.phone),
     check(
       'chk_technician_specialty_required',
       sql`(${t.type} = 'technician') = (${t.specialty} IS NOT NULL)`,

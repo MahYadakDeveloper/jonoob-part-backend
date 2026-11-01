@@ -520,7 +520,7 @@ export class ${P}AbilityFactory implements AbilityFactory<${P}Ability> {
 import { ${P}Ability } from './${abilityFile}';
 
 export class ${P}${Z}Policy implements PolicyHandler<${P}Ability> {
-  async handle(ability: ${P}Ability, _context: PolicyContext): Promise<boolean> {
+  async handle(ability: ${P}Ability, context: PolicyContext): Promise<boolean> {
     return ability.can('manage', '${P}');
   }
 }
@@ -546,7 +546,7 @@ ${commandDoc}
 export class ${P}Command implements Command<${P}, void> {
   constructor(@InjectDrizzle() private readonly db: Database) {}
 
-  async execute(_input: ${P}): Promise<void> {
+  async execute(input: ${P}): Promise<void> {
     // TODO: implement
     throw new Error('Not implemented');
   }

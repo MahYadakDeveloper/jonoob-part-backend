@@ -1,13 +1,18 @@
-import { sql } from 'drizzle-orm';
-import { check, text, uuid, varchar } from 'drizzle-orm/pg-core';
+import { text, uuid, varchar } from 'drizzle-orm/pg-core';
 import { actorsSchema } from './actors.schema';
+import { phoneFormatCheck } from './checks';
+
+export const COURIER_CHECKS = {
+  courierPhoneFormat: 'phone_format_chk',
+};
 
 export const couriers = actorsSchema.table(
   'couriers',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    fullName: text('full_name').notNull(),
+
+    nickname: text('nickname').unique().notNull(),
     phone: varchar('phone', { length: 11 }).unique().notNull(),
   },
-  (t) => [check('phone_format_chk', sql`${t.phone} ~ '^09[0-9]{9}$'`)],
+  (t) => [phoneFormatCheck(t.phone)],
 );
