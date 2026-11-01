@@ -1,0 +1,8 @@
+{
+  "name": "@infra/errors",
+  "private": true,
+  "type": "commonjs",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

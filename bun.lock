@@ -317,6 +317,7 @@
       "name": "@feature/error-http",
       "dependencies": {
         "@feature/shared": "workspace:*",
+        "@infra/errors": "workspace:*",
         "@nestjs/common": "catalog:",
         "@nestjs/swagger": "catalog:",
         "@nestjs/throttler": "catalog:",
@@ -856,6 +857,9 @@
         "@nestjs/common": "catalog:",
         "ioredis": "catalog:",
       },
+    },
+    "infrastructure/errors": {
+      "name": "@infra/errors",
     },
     "infrastructure/evaluator": {
       "name": "@infra/evaluator",
@@ -1443,6 +1447,8 @@
     "@infra/db-redis": ["@infra/db-redis@workspace:infrastructure/database/redis"],
 
     "@infra/elasticsearch-db": ["@infra/elasticsearch-db@workspace:infrastructure/database/elasticsearch"],
+
+    "@infra/errors": ["@infra/errors@workspace:infrastructure/errors"],
 
     "@infra/evaluator": ["@infra/evaluator@workspace:infrastructure/evaluator"],
 

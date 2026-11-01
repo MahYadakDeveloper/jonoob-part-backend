@@ -10,7 +10,7 @@ import {
   movements,
 } from '@infra/schema/warehouse/movements.schema';
 import { eq, getColumns } from 'drizzle-orm';
-import { ListQueryDto } from '../movement.dto';
+import { ListQueryDto } from '../dto/list-query.dto';
 
 export const movementSortableFields = sortableFields(movements);
 
@@ -21,7 +21,7 @@ const SOURCE_REFERENCE = {
   order: 'orderId',
   sale: 'saleId',
   procurement: 'procurementId',
-  adjustment: 'managerId',
+  adjustment: 'adjustmentId',
 } as const satisfies Record<MovementSource, keyof MovementSelect>;
 
 type SourceReference = typeof SOURCE_REFERENCE;
@@ -54,7 +54,7 @@ export class ListQuery implements Query<ListQueryDto, unknown> {
       .limit(size)
       .as('paginated');
 
-    const { movementId, ...movementItemView } = getColumns(movementItems);
+    const { movementId: _mId, ...movementItemView } = getColumns(movementItems);
     const movementView = {
       ...getColumns(paginated),
       item: movementItemView,
@@ -65,7 +65,7 @@ export class ListQuery implements Query<ListQueryDto, unknown> {
       .leftJoin(movementItems, eq(movementItems.movementId, paginated.id))
       .then((rows) =>
         [...Map.groupBy(rows, (r) => r.id).values()].map((group) => {
-          const { item, ...m } = group[0]!;
+          const { item: _i, ...m } = group[0]!;
           const refKey = SOURCE_REFERENCE[m.source];
           const refVal = m[refKey];
           assertNotNull(refVal, Error);

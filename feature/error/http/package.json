@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@feature/shared": "workspace:*",
+    "@infra/errors": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/swagger": "catalog:",
     "@nestjs/throttler": "catalog:",

@@ -1,16 +1,17 @@
-import { type Manager } from '@feature/authentication-http';
-import { CurrentUser, OptionalAuth, Public, RequiredAuth } from '@feature/authentication-http/decorators';
+import { CurrentUser } from '@feature/authentication-http/decorators';
 import { CheckPolicies } from '@feature/authorization-http/decorators';
 import { PoliciesGuard } from '@feature/authorization-http/guards';
 import { ProblemResponses } from '@feature/error-http/decorators';
-import { StockNotFoundError } from '@feature/warehouse-errors/stock';
 import { Body, Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AdjustCommand } from './commands/adjust.command';
 import { type AdjustDto, adjustDtoSchema } from './dto/adjust.dto';
+import { type ListQueryDto, listQuerySchema } from './dto/list-query.dto';
 import { MovementAbilityFactor } from './policies/movement-ability.factory';
 import { MovementManagementPolicy } from './policies/movement-management-policy.handler';
 import { ListQuery } from './queries/list.query';
-import { type ListQueryDto, listQuerySchema } from './dto/list-query.dto';
+import { NonPositiveQuantityError } from '@feature/warehouse-errors/movement.errors';
+import type { UserOf } from '@feature/authentication-http';
+import { StockNotFoundError } from '@feature/warehouse-errors/stocks.error';
 
 @UseGuards(PoliciesGuard)
 @CheckPolicies({
@@ -24,29 +25,16 @@ export class MovementController {
     private readonly adjustCmd: AdjustCommand,
   ) {}
 
-  @RequiredAuth()
-@ProblemResponses(...)
-  @Get('...') // ** FOR AGENT: add comment if there sub and id ':id/sub' should be this way
-  list(@Query({ schema: listQuerySchema }) q: ListQueryDto) {
-    return this.listQuery.execute(q);
-  }
-
-  @OptionalAuth()
-  @ProblemResponses(...)
+  @ProblemResponses()
   @Get()
   list(@Query({ schema: listQuerySchema }) q: ListQueryDto) {
     return this.listQuery.execute(q);
   }
 
-  /**
-   * If the error is not inherited from category errors then mapping domain
-   * error is required
-   */
-  @Public()
-  @ProblemResponses(StockNotFoundError)
+  @ProblemResponses(StockNotFoundError, NonPositiveQuantityError)
   adjust(
     @Body({ schema: adjustDtoSchema }) dto: AdjustDto,
-    @CurrentUser() manager: Manager,
+    @CurrentUser() manager: UserOf<'manager'>,
   ) {
     return this.adjustCmd.execute({ ...dto, managerId: manager.id });
   }

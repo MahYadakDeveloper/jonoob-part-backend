@@ -1,6 +1,6 @@
 import { Command } from '@feature/shared/cqrs';
 import { assertNever, assertOne } from '@feature/shared/utils/assertions';
-import { StockNotFoundError } from '@feature/warehouse-errors/stock';
+import { StockNotFoundError } from '@feature/warehouse-errors/stocks.error';
 import { type Database, InjectDrizzle } from '@infra/db-drizzle';
 import {
   adjustmentEffect,

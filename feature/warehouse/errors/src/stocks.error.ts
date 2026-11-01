@@ -1,4 +1,7 @@
-import { BusinessRuleViolationError } from '@feature/shared/errors';
+import {
+  BusinessRuleViolationError,
+  EntityNotFoundError,
+} from '@feature/shared/errors';
 
 interface InsufficientStockDetails {
   stockId?: string;
@@ -26,5 +29,11 @@ export class InsufficientStockError extends BusinessRuleViolationError {
     this.stockId = stockId;
     this.requestedQty = requestedQty;
     this.availableQty = availableQty;
+  }
+}
+
+export class StockNotFoundError extends EntityNotFoundError {
+  constructor(id?: string) {
+    super(id);
   }
 }

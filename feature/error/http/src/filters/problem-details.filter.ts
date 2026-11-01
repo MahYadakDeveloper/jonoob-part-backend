@@ -1,3 +1,5 @@
+import { DomainError } from '@feature/shared/errors';
+import { InfrastructureError } from '@infra/errors';
 import {
   ArgumentsHost,
   Catch,
@@ -6,12 +8,12 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { ThrottlerException } from '@nestjs/throttler';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { STATUS_CODES } from 'node:http';
+import { infrastructureProblem } from '../infrastructur-error.mapping';
 import { PROBLEM_JSON, ProblemDetails, problemType } from '../problem-details';
 import { ProblemException } from '../problem.exception';
-import { DomainError } from '@feature/shared/errors';
-import { ThrottlerException } from '@nestjs/throttler';
 
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
@@ -36,12 +38,24 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       );
     }
 
-    void reply.status(problem.status).type(PROBLEM_JSON).send(problem);
+    const retryAfter =
+      exception instanceof InfrastructureError
+        ? exception.retryAfterSeconds
+        : undefined;
+
+    void reply
+      .status(problem.status)
+      .type(PROBLEM_JSON)
+      .headers(
+        retryAfter !== undefined ? { 'retry-after': String(retryAfter) } : {},
+      )
+      .send(problem);
   }
 
   private toProblem(e: unknown): ProblemDetails {
     if (e instanceof ProblemException) return e.problem;
     if (e instanceof HttpException) return this.fromHttpException(e);
+    if (e instanceof InfrastructureError) return infrastructureProblem(e);
     if (e instanceof ThrottlerException) {
       return {
         type: problemType('RATE_LIMITED'),
