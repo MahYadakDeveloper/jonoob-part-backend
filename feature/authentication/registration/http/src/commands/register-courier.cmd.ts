@@ -35,6 +35,10 @@ export class RegisterCourierCommand implements Command<
     private readonly db: Database,
   ) {}
 
+  /**
+   * @throws {CourierConflictError}
+   * @throws {MalformedPhoneNumberError}
+   */
   async execute(input: RegisterCourierInput): Promise<void> {
     await this.db.insert(couriers).values(input);
   }

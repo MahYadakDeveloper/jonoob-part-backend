@@ -1,3 +1,4 @@
+import { UserNotFoundError } from '@feature/authentication-errors';
 import { Command } from '@feature/shared/cqrs';
 import { assertOne } from '@feature/shared/utils/assertions';
 import { BunPasswordHasher } from '@infra/crypto/password-hasher';
@@ -16,6 +17,8 @@ export class ResetManagerPasswordCommand implements Command<ResetManagerPassword
     private readonly db: Database,
     private readonly hasher: BunPasswordHasher,
   ) {}
+
+  /** @throws {UserNotFoundError} */
   async execute({
     managerId,
     password,
@@ -28,6 +31,6 @@ export class ResetManagerPasswordCommand implements Command<ResetManagerPassword
       .where(eq(managersPasswords.managerId, managerId))
       .returning({ id: managersPasswords.managerId });
 
-    assertOne(updated, Error);
+    assertOne(updated, () => new UserNotFoundError(managerId));
   }
 }

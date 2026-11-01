@@ -1,3 +1,4 @@
+import { UserNotFoundError } from '@feature/authentication-errors';
 import { Command } from '@feature/shared/cqrs';
 import { assertNever, assertOne } from '@feature/shared/utils/assertions';
 import { type Database, InjectDrizzle } from '@infra/db-drizzle';
@@ -21,6 +22,7 @@ export class UnregisterUserCommand implements Command<
     private readonly db: Database,
   ) {}
 
+  /** @throws {UserNotFoundError} */
   async execute({ id, usr }: UnregisterUserInput): Promise<void> {
     let deleted;
     switch (usr) {
@@ -40,6 +42,6 @@ export class UnregisterUserCommand implements Command<
         assertNever(usr);
     }
 
-    assertOne(deleted, Error);
+    assertOne(deleted, () => new UserNotFoundError(id));
   }
 }

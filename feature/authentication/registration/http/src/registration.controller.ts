@@ -28,6 +28,13 @@ import {
   type ResetManagerPasswordDto,
   resetManagerPasswordSchema,
 } from './registration.dto';
+import { ProblemResponses } from '@feature/error-http/decorators';
+import {
+  CourierConflictError,
+  MalformedPhoneNumberError,
+  ManagerConflictError,
+  UserNotFoundError,
+} from '@feature/authentication-errors';
 
 @UseGuards(PoliciesGuard)
 @Controller('auth/registration')
@@ -42,6 +49,7 @@ export class RegistrationController {
 
   // ------------------------------------------ manager
 
+  @ProblemResponses(ManagerConflictError, MalformedPhoneNumberError)
   @UseGuards(PoliciesGuard)
   @CheckPolicies({
     abilityFactory: RegistrationAbilityFactory,
@@ -53,6 +61,7 @@ export class RegistrationController {
     return this.registerManagerCmd.execute(dto);
   }
 
+  @ProblemResponses(UserNotFoundError)
   @UseGuards(PoliciesGuard)
   @CheckPolicies({
     abilityFactory: RegistrationAbilityFactory,
@@ -75,6 +84,7 @@ export class RegistrationController {
     return this.resetManagerPasswordByAdminCmd.execute({ managerId });
   }
 
+  @ProblemResponses(UserNotFoundError)
   @CheckPolicies({
     abilityFactory: RegistrationAbilityFactory,
     handlers: [ResetManagerPasswordPolicy],
@@ -89,6 +99,7 @@ export class RegistrationController {
 
   // ------------------------------------ courier
 
+  @ProblemResponses(CourierConflictError, MalformedPhoneNumberError)
   @UseGuards(PoliciesGuard)
   @CheckPolicies({
     abilityFactory: RegistrationAbilityFactory,
@@ -100,6 +111,7 @@ export class RegistrationController {
     return this.registerCourierCmd.execute(dto);
   }
 
+  @ProblemResponses(UserNotFoundError)
   @UseGuards(PoliciesGuard)
   @CheckPolicies({
     abilityFactory: RegistrationAbilityFactory,

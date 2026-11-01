@@ -1,3 +1,5 @@
+import { UserNotFoundError } from '@feature/authentication-errors';
+import { ManagerPasswordSmsPayload } from '@feature/authentication-sms/sms-manager-password.template';
 import { Command } from '@feature/shared/cqrs';
 import { assertOne, ensureOne } from '@feature/shared/utils/assertions';
 import { BunPasswordHasher } from '@infra/crypto/password-hasher';
@@ -9,7 +11,6 @@ import {
   managersPhones,
 } from '@infra/schema/actors/managers.schema';
 import { eq } from 'drizzle-orm';
-import { ManagerPasswordSmsPayload } from '@feature/authentication-sms/sms-manager-password.template';
 
 interface ResetManagerPasswordByAdminInput {
   managerId: string;
@@ -35,12 +36,6 @@ export class ResetManagerPasswordByAdminCommand implements Command<ResetManagerP
       Error,
     );
 
-    await this.sms.enqueue({
-      to: phone,
-      data: { password },
-      template: 'auth.manager-password',
-    } satisfies ManagerPasswordSmsPayload);
-
     const hashedPassword = await this.hasher.hash(password);
 
     const updated = await this.db
@@ -49,6 +44,12 @@ export class ResetManagerPasswordByAdminCommand implements Command<ResetManagerP
       .where(eq(managersPasswords.managerId, managerId))
       .returning({ id: managersPasswords.managerId });
 
-    assertOne(updated, Error);
+    assertOne(updated, () => new UserNotFoundError(managerId));
+
+    await this.sms.enqueue({
+      to: phone,
+      data: { password },
+      template: 'auth.manager-password',
+    } satisfies ManagerPasswordSmsPayload);
   }
 }

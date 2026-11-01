@@ -22,14 +22,9 @@ import { HttpStatus } from '@nestjs/common';
  */
 
 // ------------------------------------------------------------------ 404
-export class AuthenticationNotFoundError extends EntityNotFoundError {
-  // Optional: if not provided, the entity is read from the class name
-  // (AuthenticationNotFoundError -> 'Authentication').
-  // private override readonly entity = 'Authentication';
-
-  /** constructor EntityNotFoundError(...) -- adapt the arguments to the base class. */
+export class UserNotFoundError extends EntityNotFoundError {
   constructor(id: string, options?: { cause?: unknown }) {
-    super(`Authentication "${id}" was not found`, options);
+    super(`User "${id}" was not found`, options);
   }
 }
 
