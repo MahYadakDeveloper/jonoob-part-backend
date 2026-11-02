@@ -1,6 +1,8 @@
 -- 0001_stock_seq_allocator.sql
 -- Custom migration:  drizzle-kit generate --custom --name=stock_seq_allocator
 -- drizzle-kit does not manage functions/triggers, so keep this file by hand.
+-- Must run AFTER the migration that creates the warehouse tables
+-- (stocks incl. zeroed_at, stock_counter, free_stock_seqs).
 --
 -- Allocation policy
 --   Phase 1: fresh numbers 1..max_seq from the single-row counter.
@@ -10,9 +12,11 @@
 --
 -- Concurrency
 --   next_stock_seq() first takes a row lock on stock_counter, which serializes
---   every allocation until commit/rollback. Consequently the free pool is never
---   contended by another allocator, SKIP LOCKED is not needed and there are no
---   false "exhausted" errors.
+--   every allocation until commit/rollback (keep transactions that create new
+--   stocks short). Consequently the free pool is never contended by another
+--   allocator, so SKIP LOCKED is not needed. Numbers freed by a purge
+--   transaction that has not committed yet are invisible to the allocator;
+--   this only matters after the ceiling is reached.
 
 -- ---------------------------------------------------------------------------
 -- Seed the counter (ceiling = 12 digits; raising it later is allowed).
@@ -236,6 +240,10 @@ CREATE TRIGGER stock_counter_no_truncate
 -- statement then does NOT insert, the counter increment is NOT rolled back,
 -- which leaves a gap. The EXCEPTION block below is a savepoint, so a failed
 -- insert rolls the counter back too.
+--
+-- Only the (product, procurement) unique violation is swallowed. Any other
+-- unique violation (seq PK, label) means corruption and must fail loudly
+-- instead of looping forever.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION warehouse.add_stock_quantity(
   p_product_id       uuid,
@@ -247,7 +255,8 @@ RETURNS text
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_id text;
+  v_id         text;
+  v_constraint text;
 BEGIN
   LOOP
     UPDATE warehouse.stocks
@@ -267,9 +276,12 @@ BEGIN
 
       RETURN v_id;
     EXCEPTION WHEN unique_violation THEN
+      GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
+      IF v_constraint IS DISTINCT FROM 'stocks_product_procurement_uq' THEN
+        RAISE;
+      END IF;
       -- A concurrent transaction inserted the same (product, procurement).
       -- The savepoint rolled back our counter increment; loop and UPDATE.
-      NULL;
     END;
   END LOOP;
 END;
@@ -307,4 +319,38 @@ CREATE TRIGGER stocks_identity_immutable
   ON warehouse.stocks
   FOR EACH ROW
   EXECUTE FUNCTION warehouse.guard_stock_identity();
+--> statement-breakpoint
+
+-- ---------------------------------------------------------------------------
+-- zeroed_at = moment quantity became 0; NULL while quantity > 0.
+-- Used by the purge job (grace period) and enforced by
+-- stocks_zeroed_at_consistent_chk. BEFORE triggers run before CHECKs, so the
+-- constraint always sees the final value.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION warehouse.track_stock_zeroed()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.quantity = 0 THEN
+    IF TG_OP = 'INSERT' OR OLD.quantity <> 0 THEN
+      NEW.zeroed_at := now();
+    ELSE
+      NEW.zeroed_at := OLD.zeroed_at;
+    END IF;
+  ELSE
+    NEW.zeroed_at := NULL;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+--> statement-breakpoint
+
+DROP TRIGGER IF EXISTS stocks_track_zeroed ON warehouse.stocks;
+--> statement-breakpoint
+
+CREATE TRIGGER stocks_track_zeroed
+  BEFORE INSERT OR UPDATE OF quantity ON warehouse.stocks
+  FOR EACH ROW
+  EXECUTE FUNCTION warehouse.track_stock_zeroed();
 

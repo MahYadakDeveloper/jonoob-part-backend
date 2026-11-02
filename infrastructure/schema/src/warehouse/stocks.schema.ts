@@ -5,81 +5,22 @@ import {
   check,
   index,
   integer,
-  primaryKey,
   text,
   timestamp,
   unique,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { procurements } from '../procurements/procurements.schema';
-import {
-  BARCODE_PATTERNS,
-  BARCODE_TYPES,
-  CASE_SENSITIVE_TYPE,
-} from './barcode-rules';
+import { products } from './products.schema';
 import { warehouseSchema } from './warehouse.schema';
 
 export const STOCK_CONSTRAINTS = {
-  barcodePk: 'value_type_pk',
   quantityNonNegative: 'stocks_quantity_non_negative_chk',
-  barcodeValueFormat: 'stocks_barcode_value_format_chk',
   storageLocationNotBlank: 'stocks_storage_location_not_blank_chk',
-  procurementSkuUnique: 'stocks_procurement_sku_uq',
   idFormat: 'stocks_id_format_chk',
   seqPositive: 'stocks_seq_positive_chk',
+  zeroedAtConsistent: 'stocks_zeroed_at_consistent_chk',
 } as const;
-
-export const unitOfMeasure = warehouseSchema.enum('unit_of_measure', [
-  'piece',
-  'pair',
-  'set',
-]);
-
-// DDL constants only, never user input.
-const lit = (s: string) => sql.raw(`'${s.replaceAll("'", "''")}'`);
-
-export const barcodeType = warehouseSchema.enum('barcode_type', BARCODE_TYPES);
-
-export const barcodes = warehouseSchema.table(
-  'barcodes',
-  {
-    productId: uuid('product_id')
-      .references(() => products.id, { onDelete: 'cascade' })
-      .notNull(),
-    type: barcodeType('type').notNull(),
-    rawValue: text('raw_value').notNull(), // the only written column
-    value: text('value') // canonical, derived
-      .notNull()
-      .generatedAlwaysAs(
-        sql`CASE WHEN type = ${lit(CASE_SENSITIVE_TYPE)} THEN btrim(raw_value) ELSE upper(btrim(raw_value)) END`,
-      ),
-  },
-  (t) => [
-    primaryKey({
-      name: STOCK_CONSTRAINTS.barcodePk,
-      columns: [t.type, t.value],
-    }),
-    index('barcodes_stock_id_idx').on(t.productId),
-    check(
-      STOCK_CONSTRAINTS.barcodeValueFormat,
-      sql`CASE ${t.type} ${sql.join(
-        Object.entries(BARCODE_PATTERNS).map(
-          ([type, pattern]) =>
-            sql`WHEN ${lit(type)} THEN ${t.value} ~ ${lit(pattern)}`,
-        ),
-        sql` `,
-      )} ELSE false END`,
-    ),
-  ],
-);
-
-// ---------------------------------------------------------------------------
-// What the item IS (identity). One row per kind of item.
-// ---------------------------------------------------------------------------
-export const products = warehouseSchema.table('products', {
-  id: uuid('id').defaultRandom().primaryKey().notNull(),
-  unitOfMeasure: unitOfMeasure('unit_of_measure').notNull(),
-});
 
 // ---------------------------------------------------------------------------
 // Single-row counter for FRESH seq numbers.
@@ -92,6 +33,10 @@ export const products = warehouseSchema.table('products', {
 // Managed ONLY by warehouse.next_stock_seq() (see migration 0001).
 // The row is seeded in migration 0001. max_seq is the ceiling for fresh numbers;
 // after last_seq reaches max_seq, numbers come from free_stock_seqs.
+//
+// NOTE: the row lock is held until the end of the inserting transaction, so
+// all inserts into stocks are serialized. Keep transactions that create new
+// stocks short.
 // ---------------------------------------------------------------------------
 export const stockCounter = warehouseSchema.table(
   'stock_counter',
@@ -151,7 +96,8 @@ export const freeStockSeqs = warehouseSchema.table(
 //     ...
 //   }, (t) => [index('stock_movements_stock_id_idx').on(t.stockId)]);
 //
-// ALWAYS add an index on the FK column in child tables.
+// ALWAYS add an index on the FK column in child tables (the purge job probes
+// every referencing table with NOT EXISTS).
 // ---------------------------------------------------------------------------
 export const stocks = warehouseSchema.table(
   'stocks',
@@ -193,13 +139,26 @@ export const stocks = warehouseSchema.table(
     declaredAt: timestamp('declared_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
+
+    // Moment quantity became 0; NULL while quantity > 0.
+    // Maintained ONLY by trigger stocks_track_zeroed (migration 0001).
+    // Used by the purge job to apply a grace period before deleting.
+    zeroedAt: timestamp('zeroed_at', { withTimezone: true }),
   },
   (t) => [
     check(STOCK_CONSTRAINTS.idFormat, sql`${t.id} ~ '^S[0-9]{12,19}$'`),
     check(STOCK_CONSTRAINTS.seqPositive, sql`${t.seq} > 0`),
     check(STOCK_CONSTRAINTS.quantityNonNegative, sql`${t.quantity} >= 0`),
+    check(
+      STOCK_CONSTRAINTS.zeroedAtConsistent,
+      sql`(${t.quantity} = 0) = (${t.zeroedAt} IS NOT NULL)`,
+    ),
     unique('stocks_product_procurement_uq')
       .on(t.productId, t.procurementId)
       .nullsNotDistinct(),
+    // Partial index for the purge job: only empty stocks are indexed.
+    index('stocks_zeroed_idx')
+      .on(t.zeroedAt, t.seq)
+      .where(sql`${t.quantity} = 0`),
   ],
 );

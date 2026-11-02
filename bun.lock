@@ -811,6 +811,7 @@
         "@nestjs/common": "catalog:",
         "@nestjs/config": "catalog:",
         "@nestjs/outbox": "catalog:",
+        "@nestjs/schedule": "catalog:",
         "drizzle-orm": "catalog:",
         "rxjs": "catalog:",
         "zod": "catalog:",
