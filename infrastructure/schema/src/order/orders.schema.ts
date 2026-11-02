@@ -7,8 +7,12 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { orderSchema } from './order.schema';
 import { customers } from '../actors/customers.schema';
+import {
+  createMerchandiseLineItems,
+  createMerchandiseLines,
+} from '../public/merchandise-lines.schema';
+import { orderSchema } from './order.schema';
 
 export const cancellationFeeType = orderSchema.enum('cancellation_fee_type', [
   'fixed',
@@ -102,4 +106,15 @@ export const orders = orderSchema.table(
       END`,
     ),
   ],
+);
+
+export const orderMerchandiseLines = createMerchandiseLines(
+  orderSchema,
+  'order',
+  () => orders.id,
+);
+export const orderMerchandiseLineItems = createMerchandiseLineItems(
+  orderSchema,
+  'order',
+  orderMerchandiseLines,
 );

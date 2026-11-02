@@ -1,25 +1,15 @@
 import {
-  isValidBarcode,
-  normalizeBarcode,
-} from '@infra/schema/warehouse/barcode-rules';
-import { barcodes, stocks } from '@infra/schema/warehouse/stocks.schema';
-import { createInsertSchema, createSelectSchema } from 'drizzle-orm/zod';
+  stockLabelRegExp,
+  stocks,
+} from '@infra/schema/warehouse/stocks.schema';
+import { createInsertSchema } from 'drizzle-orm/zod';
 import { z } from 'zod';
 
-export const barcodeSchema = createSelectSchema(barcodes, {
-  value: (s) => s.trim().min(1).max(64),
-})
-  .pick({ type: true, value: true })
-  .transform((b) => ({
-    type: b.type,
-    value: normalizeBarcode(b.type, b.value),
-  }))
-  .refine((b) => isValidBarcode(b.type, b.value), {
-    path: ['value'],
-    message: 'Invalid value for this barcode type',
-  });
+const code = z.regex(stockLabelRegExp);
 
-export const barcodeQuerySchema = barcodeSchema;
+export const labelQuerySchema = z.strictObject({
+  code,
+});
 
 export const declarationSchema = createInsertSchema(stocks, {
   // Overrides with a plain zod schema; mirrors the "not blank" DB check.
@@ -40,5 +30,5 @@ export const declarationSchema = createInsertSchema(stocks, {
       ),
   });
 
-export type BarcodeQuery = z.output<typeof barcodeQuerySchema>; // { type; value }
+export type LabelQuery = z.output<typeof labelQuerySchema>;
 export type Declaration = z.output<typeof declarationSchema>;

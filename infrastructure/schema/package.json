@@ -3,7 +3,8 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "custom-migration": "bunx drizzle-kit generate --custom --name=stock_seq_allocator"
+    "db:gen": "drizzle-kit generate",
+    "db:mig": "drizzle-kit migrate"
   },
   "exports": {
     "./*": "./src/*.ts"

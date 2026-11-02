@@ -21,9 +21,9 @@ export const fulfillments = orderSchema.table(
       .unique('fulfillments_order_unique')
       .references(() => orders.id, { onDelete: 'cascade' }),
 
-    reservationId: uuid('reservation_id')
-      .references(() => reservations.id, { onDelete: 'restrict' })
-      .notNull(),
+    reservationId: uuid('reservation_id').references(() => reservations.id, {
+      onDelete: 'set null',
+    }),
 
     status: fulfillmentStatus('status').notNull().default('pending'),
     cancellationReason: text('cancellation_reason'),

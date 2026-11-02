@@ -509,6 +509,35 @@
         "@feature/shared": "workspace:*",
       },
     },
+    "feature/procurement/errors": {
+      "name": "@feature/procurement-errors",
+      "dependencies": {
+        "@feature/error-http": "workspace:*",
+        "@feature/shared": "workspace:*",
+        "@nestjs/common": "catalog:",
+      },
+      "devDependencies": {
+        "@repo/oxlint-config": "workspace:*",
+      },
+    },
+    "feature/procurement/http": {
+      "name": "@feature/procurement-http",
+      "dependencies": {
+        "@casl/ability": "catalog:",
+        "@feature/authentication-http": "workspace:*",
+        "@feature/authorization-http": "workspace:*",
+        "@feature/error-http": "workspace:*",
+        "@feature/procurement-errors": "workspace:*",
+        "@feature/shared": "workspace:*",
+        "@infra/db-drizzle": "workspace:*",
+        "@infra/schema": "workspace:*",
+        "@nestjs/common": "catalog:",
+        "@repo/oxlint-config": "workspace:*",
+        "drizzle-orm": "catalog:",
+        "rxjs": "catalog:",
+        "zod": "catalog:",
+      },
+    },
     "feature/procurement/impl": {
       "name": "@feature/procurement",
       "dependencies": {
@@ -1314,6 +1343,10 @@
     "@feature/procurement": ["@feature/procurement@workspace:feature/procurement/impl"],
 
     "@feature/procurement-api": ["@feature/procurement-api@workspace:feature/procurement/api"],
+
+    "@feature/procurement-errors": ["@feature/procurement-errors@workspace:feature/procurement/errors"],
+
+    "@feature/procurement-http": ["@feature/procurement-http@workspace:feature/procurement/http"],
 
     "@feature/procurement-replenishment": ["@feature/procurement-replenishment@workspace:feature/procurement/replenishment/impl"],
 
