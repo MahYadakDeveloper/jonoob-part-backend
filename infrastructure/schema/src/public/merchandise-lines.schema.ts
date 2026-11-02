@@ -22,7 +22,7 @@ export type MerchandiseLineDiscount = {
 const money = (name: string) => bigint(name, { mode: 'number' });
 
 export const merchandiseLineKind = pgEnum('merchandise_line_kind', [
-  'leaf',
+  'product',
   'bundle',
 ]);
 
@@ -35,24 +35,24 @@ export const createMerchandiseLine = <N extends string>(
     {
       id: uuid('id').primaryKey().defaultRandom(),
 
-      // خط سطح بالا: به والد وصل است
       referenceId: uuid('reference_id').references(parent, {
         onDelete: 'cascade',
       }),
 
-      // خط فرزند: به bundle وصل است
       bundleId: uuid('bundle_id'),
 
       kind: merchandiseLineKind('kind').notNull(),
       position: integer('position').notNull().default(0),
 
-      productId: uuid('product_id').notNull(),
+      // The catalog item that was sold (a product or a bundle).
+      catalogItemId: uuid('catalog_item_id').notNull(),
       displayName: text('display_name').notNull(),
       quantity: integer('quantity').notNull(),
       unitPrice: money('unit_price').notNull(),
       lineTotal: money('line_total').notNull(),
 
-      stockId: uuid('stock_id'),
+      // The product behind a 'product' line. Always NULL for bundle lines.
+      productId: uuid('product_id'),
 
       discount: jsonb('discount').$type<MerchandiseLineDiscount>(),
     },
@@ -71,12 +71,12 @@ export const createMerchandiseLine = <N extends string>(
         sql`num_nonnulls(${t.referenceId}, ${t.bundleId}) = 1`,
       ),
       check(
-        `${name}_stock_only_for_leaf`,
-        sql`${t.stockId} IS NULL OR ${t.kind} = 'leaf'`,
+        `${name}_product_id_only_for_product`,
+        sql`${t.productId} IS NULL OR ${t.kind} = 'product'`,
       ),
       check(
         `${name}_child_is_plain`,
-        sql`${t.bundleId} IS NULL OR (${t.kind} = 'leaf' AND ${t.discount} IS NULL)`,
+        sql`${t.bundleId} IS NULL OR (${t.kind} = 'product' AND ${t.discount} IS NULL)`,
       ),
       check(
         `${name}_discount_is_object`,

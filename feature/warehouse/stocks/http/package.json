@@ -14,9 +14,15 @@
     "@infra/messaging-outbox": "workspace:*",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
+    "@feature/authentication-http": "workspace:*",
+    "@feature/authorization-http": "workspace:*",
+    "@infra/schema": "workspace:*",
     "@nestjs/outbox": "catalog:",
     "drizzle-orm": "catalog:",
     "rxjs": "catalog:",
     "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@repo/oxlint-config": "workspace:*"
   }
 }

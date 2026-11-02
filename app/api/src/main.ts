@@ -22,7 +22,15 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter({
       routerOptions: {
-        querystringParser: (str) => qs.parse(str),
+        querystringParser: (str) =>
+          qs.parse(str, {
+            comma: true,
+            depth: 2,
+            arrayLimit: 50,
+            parameterLimit: 100,
+            allowPrototypes: false,
+            plainObjects: false,
+          }),
       },
     }),
     {

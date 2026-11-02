@@ -2,13 +2,18 @@
   "name": "@infra/schema",
   "private": true,
   "type": "commonjs",
+  "scripts": {
+    "custom-migration": "bunx drizzle-kit generate --custom --name=stock_seq_allocator"
+  },
   "exports": {
     "./*": "./src/*.ts"
   },
   "dependencies": {
     "@infra/db-drizzle": "workspace:*",
-    "drizzle-orm": "catalog:",
     "@nestjs/outbox": "catalog:",
+    "dotenv": "catalog:",
+    "drizzle-kit": "catalog:",
+    "drizzle-orm": "catalog:",
     "rxjs": "catalog:"
   }
 }

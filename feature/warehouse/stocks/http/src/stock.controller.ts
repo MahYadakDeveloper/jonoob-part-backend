@@ -1,3 +1,4 @@
+import { PoliciesGuard } from '@feature/authorization-http/guards';
 import { CheckPolicies } from '@feature/shared/decorators/check-policies.decorator';
 import {
   Body,
@@ -8,20 +9,14 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { StockMovementService } from '../movement/movement.service';
 import { StockManagementPolicyHandler } from './policies/manage-stock.policy-handler';
 import { StockAbilityFactory } from './policies/stock-ability';
-import {
-  type StockDefinitionDto,
-  StockDefinitionSchema,
-  type StockPageQueryDto,
-  StockPageQuerySchema,
-} from './stock.dto';
-import { StockService } from './stock.service';
+import { type BarcodeQuery, barcodeQuerySchema } from './stocks.dto';
 
-// @UseGuards(AuthGuard, PoliciesGuard)
+@UseGuards(PoliciesGuard)
 @CheckPolicies({
   abilityFactory: StockAbilityFactory,
   handlers: [StockManagementPolicyHandler],
@@ -29,53 +24,33 @@ import { StockService } from './stock.service';
 @Controller('warehouse/stock')
 export class StockController {
   constructor(
-    private readonly stocks: StockService,
-    private readonly movements: StockMovementService,
   ) {}
 
   @Get(':id')
-  stock(@Param('id', { schema: z.uuid() }) stockId: string) {
+  getById(@Param('id', { schema: z.uuid() }) stockId: string) {
     return this.stocks.getById(stockId);
   }
 
-  @CheckPolicies({
-    abilityFactory: StockAbilityFactory,
-    handlers: [StockManagementPolicyHandler],
-  })
   @Get()
-  page(@Query({ schema: StockPageQuerySchema }) criteria: StockPageQueryDto) {
-    return this.stocks.page(criteria);
-  }
+  getByBarcode(@Query({ schema: barcodeQuerySchema }) q: BarcodeQuery) {}
 
-  @CheckPolicies({
-    abilityFactory: StockAbilityFactory,
-    handlers: [StockManagementPolicyHandler],
-  })
   @Post()
-  define(
-    @Body({ schema: StockDefinitionSchema }) definition: StockDefinitionDto,
+  declare(
+    @Body({ schema: }) dto: ,
   ) {
     return this.stocks.define(definition);
   }
 
-  @CheckPolicies({
-    abilityFactory: StockAbilityFactory,
-    handlers: [StockManagementPolicyHandler],
-  })
   @Put(':id')
-  redefine(
+  redeclare(
     @Param('id', { schema: z.uuid() }) stockId: string,
     @Body({ schema: StockDefinitionSchema }) definition: StockDefinitionDto,
   ) {
     return this.stocks.redefine(stockId, definition);
   }
 
-  @CheckPolicies({
-    abilityFactory: StockAbilityFactory,
-    handlers: [StockManagementPolicyHandler],
-  })
   @Delete(':id')
-  delete(@Param('id', { schema: z.uuid() }) stockId: string) {
+  remove(@Param('id', { schema: z.uuid() }) stockId: string) {
     return this.stocks.delete(stockId);
   }
 }
