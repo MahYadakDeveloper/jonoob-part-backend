@@ -8,8 +8,7 @@ import {
 import { RequiredBy } from '@feature/shared';
 import { MediaRef } from '@feature/media-api';
 
-export type FitmentNodeType = 'make' | 'model' | 'series' | 'transmission' | 'fuelType';
-
+export type FitmentNodeType = 
 export type BaseFitmentNode = RequiredBy<
   Partial<
     Omit<FitmentMakeNode, 'type' | 'parent'> &

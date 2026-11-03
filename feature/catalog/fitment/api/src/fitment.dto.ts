@@ -17,6 +17,4 @@ export interface FitmentDto {
   };
   fuelType?: string;
   transmission?: string;
-
-  skuCode: string;
 }

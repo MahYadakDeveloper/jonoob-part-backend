@@ -7,11 +7,12 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+
+import { warehouseSchema } from './warehouse.schema';
 import {
   createLabelTables,
   labelCodeRegExp,
-} from '../public/label.schema-factory';
-import { warehouseSchema } from './warehouse.schema';
+} from '../public/helpers/create-label-table';
 
 export const STOCK_CONSTRAINTS = {
   storageLocationNotBlank: 'stocks_storage_location_not_blank_chk',
