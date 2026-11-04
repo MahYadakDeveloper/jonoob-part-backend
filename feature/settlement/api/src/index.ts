@@ -1,3 +1,3 @@
-export * from "./settlement.api";
-export * from "./settlement.requests";
-export * from "./settlement.events"
+export * from './settlement.api';
+export * from './settlement.requests';
+export * from './settlement.events';

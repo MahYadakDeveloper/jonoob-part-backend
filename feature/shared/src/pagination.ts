@@ -104,9 +104,9 @@ type NonSortable = (typeof NON_SORTABLE)[number];
 export const NON_SORTABLE_SET: ReadonlySet<string> = new Set(NON_SORTABLE);
 
 export type SortableKeys<T extends Table> = {
-  [K in keyof T['_']['columns']]: T['_']['columns'][K]['_']['dataType'] extends NonSortable
-    ? never
-    : K;
+  [
+    K in keyof T['_']['columns']
+  ]: T['_']['columns'][K]['_']['dataType'] extends NonSortable ? never : K;
 }[keyof T['_']['columns']];
 
 export type PageCriteria<TTable extends Table> = {

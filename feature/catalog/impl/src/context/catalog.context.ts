@@ -11,7 +11,10 @@ export enum CatalogVisibility {
 }
 
 export interface CatalogContextProvider {
-  run<T>(context: CatalogContext, callback: () => T | Promise<T>): T | Promise<T>;
+  run<T>(
+    context: CatalogContext,
+    callback: () => T | Promise<T>,
+  ): T | Promise<T>;
 
   current(): CatalogContext;
 }

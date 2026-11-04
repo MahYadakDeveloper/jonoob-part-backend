@@ -44,7 +44,9 @@ const KEY_LOCK = 20_260_902;
 
 @Injectable()
 export class DrizzleOutboxStore
-  implements OutboxStore<DbTransaction<{}>>, OutboxInboxStore<DbTransaction<{}>>
+  implements
+    OutboxStore<DbTransaction<{}>>,
+    OutboxInboxStore<DbTransaction<{}>>
 {
   constructor(
     @InjectDrizzle()

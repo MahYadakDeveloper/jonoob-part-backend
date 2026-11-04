@@ -1,4 +1,7 @@
-import { ProductRedefinedEventPayload, ProductRedefinedEventType } from '@feature/catalog-api';
+import {
+  ProductRedefinedEventPayload,
+  ProductRedefinedEventType,
+} from '@feature/catalog-api';
 import { type BrandApi } from '@feature/catalog-brand-api';
 import {
   type FitmentApi,
@@ -46,7 +49,9 @@ export class FitmentUpdatedEventHandler extends BaseEventHandler<FitmentUpdatedE
         }),
         (x) => x.productId,
       );
-      const fitmentIds = [...new Set(productFitments.toArray().flatMap((x) => x.fitmentIds))];
+      const fitmentIds = [
+        ...new Set(productFitments.toArray().flatMap((x) => x.fitmentIds)),
+      ];
       const { fitments } = await this.fitment.findMany({ fitmentIds });
 
       // Resolving brands

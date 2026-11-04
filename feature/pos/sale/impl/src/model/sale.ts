@@ -18,7 +18,11 @@ export class Sale {
     private _payment: InvoicePayment,
   ) {}
 
-  static create(id: string, invoiceNumber: InvoiceNumber, snapshot: InvoiceSnapshot): Sale {
+  static create(
+    id: string,
+    invoiceNumber: InvoiceNumber,
+    snapshot: InvoiceSnapshot,
+  ): Sale {
     return new Sale(
       id,
       invoiceNumber,

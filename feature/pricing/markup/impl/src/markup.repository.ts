@@ -16,7 +16,9 @@ export interface MarkupPolicyRepository {
   // [TODO] select key by its id not references
   findById(id: string): Promise<MarkupPolicy | null>;
   findByReference(reference: MarkupReference): Promise<MarkupPolicy | null>;
-  findManyByReference(references: MarkupReference[]): Promise<LineItems<MarkupPolicy>>;
+  findManyByReference(
+    references: MarkupReference[],
+  ): Promise<LineItems<MarkupPolicy>>;
 
   create(data: CreateMarkupPolicy): Promise<string>;
   update(data: UpdateMarkupPolicy): Promise<void>;

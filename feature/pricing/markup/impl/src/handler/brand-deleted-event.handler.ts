@@ -1,4 +1,7 @@
-import { BrandDeletedEventPayload, BrandDeletedEventType } from '@feature/catalog-brand-api';
+import {
+  BrandDeletedEventPayload,
+  BrandDeletedEventType,
+} from '@feature/catalog-brand-api';
 import {
   BaseEventHandler,
   type EventHandlerRegistry,

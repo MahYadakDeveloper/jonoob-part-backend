@@ -13,9 +13,13 @@
     "dotenv": "catalog:",
     "drizzle-kit": "1.0.0-rc.4",
     "knip": "^6.43.0",
+    "oxfmt": "^0.76.0",
     "oxlint": "^1.90.0",
     "oxlint-tsgolint": "7",
+    "prettier": "^3.9.10",
+    "prettier-plugin-embed": "^0.8.2",
     "prettier-plugin-jsdoc": "^1.8.1",
+    "prettier-plugin-sql": "^0.20.0",
     "typescript": "catalog:"
   },
   "workspaces": {

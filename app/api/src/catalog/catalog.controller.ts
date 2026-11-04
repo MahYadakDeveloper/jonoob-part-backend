@@ -8,14 +8,29 @@ import type {
 } from '@feature/media-api';
 import type { ImageProcessor } from '@feature/media-image';
 import { UploadedMediaFiles } from '@feature/media-nest';
-import { Body, Controller, Delete, Get, Post, Put, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CatalogService } from 'catalog.service';
-import { type CatalogContext, type CatalogContextProvider } from 'context/catalog.context';
+import {
+  type CatalogContext,
+  type CatalogContextProvider,
+} from 'context/catalog.context';
 import { CatalogContextParam } from 'decorator/catalog-context.decorator';
 import { SearchProductParamsDto } from 'dto/search-params.dto';
 import { CatalogAbilityFactory } from 'policies/catalog-ability-factory';
 import { CatalogManagementPolicyHandler } from 'policies/catalog-manage-policy.handler';
-import { type CreateProduct, createProductSchema } from 'schema/create-product.schema';
+import {
+  type CreateProduct,
+  createProductSchema,
+} from 'schema/create-product.schema';
 
 /**
  * Exposes endpoints for managing catalog products.

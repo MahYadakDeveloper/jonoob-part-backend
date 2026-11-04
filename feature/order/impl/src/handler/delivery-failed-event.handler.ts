@@ -31,9 +31,13 @@ export class DeliveryFailedEventHandler extends BaseEventHandler<OrderDeliverySu
     const fee = order.cancellationTerms.fee;
     let refund = Money.zero();
     if (fee.type === 'fixed')
-      refund = order.summary.grandTotal.subtract(Money.create(fee.amount.value));
+      refund = order.summary.grandTotal.subtract(
+        Money.create(fee.amount.value),
+      );
     else {
-      refund = order.summary.grandTotal.subtract(order.summary.grandTotal.multiply(fee.rate));
+      refund = order.summary.grandTotal.subtract(
+        order.summary.grandTotal.multiply(fee.rate),
+      );
     }
 
     await this.tx.run(async () => {

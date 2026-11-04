@@ -11,4 +11,7 @@ export type SupplyReturnDocument = {
 };
 
 export type SupplyReturnStatus =
-  'pending' | 'returnedToSupplier' | 'damaged' | 'returnedToWarehouse';
+  | 'pending'
+  | 'returnedToSupplier'
+  | 'damaged'
+  | 'returnedToWarehouse';

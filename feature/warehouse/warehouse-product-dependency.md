@@ -17,12 +17,12 @@ The warehouse module depends on products. `warehouse.labels.product_id` and `war
 
 A product can be purged only when none of these remain:
 
-| Reference | Cleared by |
-|---|---|
-| `stocks` rows (any quantity) | stock reaches 0, then the warehouse purge deletes it after the grace period (`graceDays`) |
-| `labels` rows | no stock or other child references the label, then the warehouse purge deletes it after its grace period |
-| `procurement_items` rows | the owning procurement is removed, or the item is deleted |
-| external references (events, caches, printed labels, POS) | not protected by FKs: purge or invalidate them explicitly |
+| Reference                                                 | Cleared by                                                                                               |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `stocks` rows (any quantity)                              | stock reaches 0, then the warehouse purge deletes it after the grace period (`graceDays`)                |
+| `labels` rows                                             | no stock or other child references the label, then the warehouse purge deletes it after its grace period |
+| `procurement_items` rows                                  | the owning procurement is removed, or the item is deleted                                                |
+| external references (events, caches, printed labels, POS) | not protected by FKs: purge or invalidate them explicitly                                                |
 
 Consequences:
 

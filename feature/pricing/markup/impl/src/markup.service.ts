@@ -1,7 +1,11 @@
 import { ProductDto, type CatalogApi } from '@feature/catalog-api';
 import { type BrandApi } from '@feature/catalog-brand-api';
 import { type CategoryApi } from '@feature/catalog-category-api';
-import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/shared';
+import {
+  LineItems,
+  type OutboxRepository,
+  type TransactionManager,
+} from '@feature/shared';
 import {
   MarkupDto,
   MarkupPolicyApi,
@@ -14,7 +18,10 @@ import {
   ResolveMarkupResponse,
 } from '@feature/pricing-markup-api';
 import { Injectable } from '@nestjs/common';
-import { MarkupReference, type MarkupPolicyRepository } from './markup.repository';
+import {
+  MarkupReference,
+  type MarkupPolicyRepository,
+} from './markup.repository';
 import {
   GlobalMarkupPolicyRequest,
   GlobalMarkupPolicySettingRequest,
@@ -36,8 +43,14 @@ export class MarkupPolicyService implements MarkupPolicyApi {
     private readonly outbox: OutboxRepository,
   ) {}
 
-  async resolve({ productId, policy }: ResolveMarkupRequest): Promise<ResolveMarkupResponse> {
-    const { markups } = await this.resolveMany({ productIds: [productId], policy });
+  async resolve({
+    productId,
+    policy,
+  }: ResolveMarkupRequest): Promise<ResolveMarkupResponse> {
+    const { markups } = await this.resolveMany({
+      productIds: [productId],
+      policy,
+    });
     return {
       markup: markups.getOrThrow(
         productId,
@@ -54,7 +67,8 @@ export class MarkupPolicyService implements MarkupPolicyApi {
 
     if (policy === 'wholesale') {
       const markups = new LineItems<MarkupDto>((x) => x.productId);
-      const wholesaleMarkup = await this.repository.getGlobalMarkup('wholesale');
+      const wholesaleMarkup =
+        await this.repository.getGlobalMarkup('wholesale');
       for (const product of products) {
         markups.set({ productId: product.id, rate: wholesaleMarkup.rate });
       }
@@ -62,10 +76,20 @@ export class MarkupPolicyService implements MarkupPolicyApi {
     }
 
     const references = this.getMarkupReferences(products);
-    const markupPolicies = await this.repository.findManyByReference(references);
-    const productMarkupPolicies = this.filterMarkupPoliciesWithScope(markupPolicies, 'product');
-    const categoryMarkupPolicies = this.filterMarkupPoliciesWithScope(markupPolicies, 'category');
-    const brandMarkupPolicies = this.filterMarkupPoliciesWithScope(markupPolicies, 'brand');
+    const markupPolicies =
+      await this.repository.findManyByReference(references);
+    const productMarkupPolicies = this.filterMarkupPoliciesWithScope(
+      markupPolicies,
+      'product',
+    );
+    const categoryMarkupPolicies = this.filterMarkupPoliciesWithScope(
+      markupPolicies,
+      'category',
+    );
+    const brandMarkupPolicies = this.filterMarkupPoliciesWithScope(
+      markupPolicies,
+      'brand',
+    );
     const globalMarkupPolicy = await this.repository.getGlobalMarkup('retail');
 
     const markups = new LineItems<MarkupDto>((x) => x.productId);
@@ -91,7 +115,10 @@ export class MarkupPolicyService implements MarkupPolicyApi {
         ? brandMarkupPolicies.get(product.references.brandId)
         : undefined;
 
-      const scopedMarkup = this.selectHigherPriority(categoryMarkup, brandMarkup);
+      const scopedMarkup = this.selectHigherPriority(
+        categoryMarkup,
+        brandMarkup,
+      );
 
       markups.set({
         productId: product.id,
@@ -104,7 +131,9 @@ export class MarkupPolicyService implements MarkupPolicyApi {
     };
   }
 
-  async getGlobal({ variant }: GlobalMarkupPolicyRequest): Promise<GlobalMarkupPolicyResponse> {
+  async getGlobal({
+    variant,
+  }: GlobalMarkupPolicyRequest): Promise<GlobalMarkupPolicyResponse> {
     const m = await this.repository.getGlobalMarkup(variant);
     return {
       markup: {
@@ -114,7 +143,10 @@ export class MarkupPolicyService implements MarkupPolicyApi {
     };
   }
 
-  async setGlobal({ variant, rate }: GlobalMarkupPolicySettingRequest): Promise<void> {
+  async setGlobal({
+    variant,
+    rate,
+  }: GlobalMarkupPolicySettingRequest): Promise<void> {
     await this.tx.run(async () => {
       await this.repository.setGlobalMarkup(variant, rate);
       await this.outbox.save({
@@ -135,16 +167,22 @@ export class MarkupPolicyService implements MarkupPolicyApi {
 
     switch (markup.scope) {
       case 'product':
-        const { product } = await this.catalog.find({ productId: markup.referenceId }); // this means the product exists otherwise throws an error
+        const { product } = await this.catalog.find({
+          productId: markup.referenceId,
+        }); // this means the product exists otherwise throws an error
         if (!product) throw new Error(''); // Anyway it throws if the api not throw
         break;
       case 'brand':
-        const { brand } = await this.brand.find({ brandId: markup.referenceId });
+        const { brand } = await this.brand.find({
+          brandId: markup.referenceId,
+        });
 
         if (!brand) throw new Error(''); // Anyway it throws if the api not throw
         break;
       case 'category':
-        const { category } = await this.category.find({ categoryId: markup.referenceId });
+        const { category } = await this.category.find({
+          categoryId: markup.referenceId,
+        });
 
         if (!category) throw new Error(''); // Anyway it throws if the api not throw
         break;
@@ -186,13 +224,18 @@ export class MarkupPolicyService implements MarkupPolicyApi {
     });
   }
 
-  private getMarkupReferences(products: LineItems<ProductDto>): MarkupReference[] {
+  private getMarkupReferences(
+    products: LineItems<ProductDto>,
+  ): MarkupReference[] {
     return products
       .transform<{ id: string; references: MarkupReference[] }>(
         (p) => {
           const _references: MarkupReference[] = [];
           if (p.references.brandId)
-            _references.push({ scope: 'brand', referenceId: p.references.brandId });
+            _references.push({
+              scope: 'brand',
+              referenceId: p.references.brandId,
+            });
 
           if (p.references.categoryIds.length > 0)
             p.references.categoryIds.forEach((categoryId) => {

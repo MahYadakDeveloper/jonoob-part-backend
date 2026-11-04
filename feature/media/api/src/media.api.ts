@@ -4,7 +4,11 @@ import {
   GetSignedMediaUrlRequest,
   UploadFileRequest,
 } from './media.req';
-import { GetMediaUrlResponse, GetSignedMediaUrlResponse, UploadFileResponse } from './media.res';
+import {
+  GetMediaUrlResponse,
+  GetSignedMediaUrlResponse,
+  UploadFileResponse,
+} from './media.res';
 import { MediaFileType } from './media.types';
 
 /**
@@ -19,7 +23,9 @@ export interface MediaApi {
    *
    * Returns a stable fileId that should be stored by domain models.
    */
-  upload<T extends MediaFileType>(request: UploadFileRequest<T>): Promise<UploadFileResponse>;
+  upload<T extends MediaFileType>(
+    request: UploadFileRequest<T>,
+  ): Promise<UploadFileResponse>;
   /**
    * Delete a file by its stable identifier.
    *
@@ -40,5 +46,7 @@ export interface MediaApi {
    *
    * Keep this method even if you do not need it today.
    */
-  getSignedUrl(request: GetSignedMediaUrlRequest): Promise<GetSignedMediaUrlResponse>;
+  getSignedUrl(
+    request: GetSignedMediaUrlRequest,
+  ): Promise<GetSignedMediaUrlResponse>;
 }

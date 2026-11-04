@@ -8,7 +8,10 @@ import {
   OutboxRepository,
   TransactionManager,
 } from '@feature/shared';
-import { FitmentManyDeletedEventPayload, FitmentManyDeletedEventType } from '@feature/fitment-api';
+import {
+  FitmentManyDeletedEventPayload,
+  FitmentManyDeletedEventType,
+} from '@feature/fitment-api';
 import { FitmentRepository } from '../repository/fitment.repository';
 
 export class FitmentNodeDeletedEventHandler extends BaseEventHandler<FitmentNodeDeletedEventPayload> {
@@ -31,7 +34,9 @@ export class FitmentNodeDeletedEventHandler extends BaseEventHandler<FitmentNode
 
       await this.outbox.save({
         type: FitmentManyDeletedEventType,
-        payload: { fitmentsIds: [...fitments.keys()] } satisfies FitmentManyDeletedEventPayload,
+        payload: {
+          fitmentsIds: [...fitments.keys()],
+        } satisfies FitmentManyDeletedEventPayload,
       });
     });
   }

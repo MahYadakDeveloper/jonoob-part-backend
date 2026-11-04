@@ -5,7 +5,10 @@ export interface PaymentSessionRepository {
   findByProviderId(providerId: number): Promise<PaymentSession | null>;
   findByOrderId(orderId: string): Promise<PaymentSession | null>;
 
-  create(data: { orderId: string; expiryJob: JobHandle }): Promise<{ providerId: number }>;
+  create(data: {
+    orderId: string;
+    expiryJob: JobHandle;
+  }): Promise<{ providerId: number }>;
 
   updateGatewayStatus(gateway: PaymentSession['gateway']): Promise<void>;
   /**

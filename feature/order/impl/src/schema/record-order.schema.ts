@@ -1,10 +1,18 @@
-import { InterCityRecipient, IntraCityRecipient } from '@feature/order-delivery-api';
+import {
+  InterCityRecipient,
+  IntraCityRecipient,
+} from '@feature/order-delivery-api';
 import { z } from 'zod';
 
 export const recordOrderSchema = z.object({
   customerId: z.uuid(),
   items: z
-    .array(z.object({ productId: z.string(), quantity: z.coerce.number().int().positive() }))
+    .array(
+      z.object({
+        productId: z.string(),
+        quantity: z.coerce.number().int().positive(),
+      }),
+    )
     .transform((val) => val.toLineItems((item) => item.productId)),
   recipient: z.discriminatedUnion('scope', [
     z.object({

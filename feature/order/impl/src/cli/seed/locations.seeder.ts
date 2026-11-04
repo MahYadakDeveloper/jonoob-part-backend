@@ -144,14 +144,12 @@ export class LocationsSeeder {
           );
         }
 
-        const temporaryProvinces = managedProvinces.map(
-          (province, index) => ({
-            id: maxExistingId + index + 1,
-            name: `__locations_seed_${randomUUID()}_${index}`,
-            oldId: province.id,
-            targetId: province.targetId,
-          }),
-        );
+        const temporaryProvinces = managedProvinces.map((province, index) => ({
+          id: maxExistingId + index + 1,
+          name: `__locations_seed_${randomUUID()}_${index}`,
+          oldId: province.id,
+          targetId: province.targetId,
+        }));
 
         await tx
           .insert(provinces)
@@ -201,14 +199,12 @@ export class LocationsSeeder {
             .where(eq(addresses.provinceId, province.id));
         }
 
-        await tx
-          .delete(provinces)
-          .where(
-            inArray(
-              provinces.id,
-              temporaryProvinces.map(({ id }) => id),
-            ),
-          );
+        await tx.delete(provinces).where(
+          inArray(
+            provinces.id,
+            temporaryProvinces.map(({ id }) => id),
+          ),
+        );
       } else {
         for (const batch of chunk(provinceRows, BATCH_SIZE)) {
           await tx
@@ -307,7 +303,6 @@ export class LocationsSeeder {
       throw new Error(`Could not sync identity sequence for ${qualified}`);
     }
   }
-
 }
 
 function chunk<T>(items: T[], size: number): T[][] {

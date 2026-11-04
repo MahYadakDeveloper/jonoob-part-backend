@@ -69,11 +69,16 @@ export class SaleService implements SaleApi {
 
       const requestedItems = req.items.toLineItems((item) => item.productId);
 
-      const { products } = await this.catalog.findMany({ productIds: [...requestedItems.keys()] });
+      const { products } = await this.catalog.findMany({
+        productIds: [...requestedItems.keys()],
+      });
 
       const unpricedInvoiceItems = products.transform(
         (product) =>
-          mapProductToUnpricedInvoiceItem(product, requestedItems.getOrThrow(product.id).qty),
+          mapProductToUnpricedInvoiceItem(
+            product,
+            requestedItems.getOrThrow(product.id).qty,
+          ),
         (product) => product.productId,
       );
 

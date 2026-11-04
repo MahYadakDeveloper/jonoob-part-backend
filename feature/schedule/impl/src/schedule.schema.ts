@@ -1,4 +1,8 @@
-import { BusinessHoursException, BusinessHoursInterval, Weekday } from '@feature/schedule-api';
+import {
+  BusinessHoursException,
+  BusinessHoursInterval,
+  Weekday,
+} from '@feature/schedule-api';
 import { z } from 'zod';
 import { timeToMinutes } from './utils';
 
@@ -26,7 +30,10 @@ const businessHoursIntervalSchema: z.ZodType<BusinessHoursInterval> = z
   .refine(
     (data) => {
       // If either field failed its initial regex validation, skip this check
-      if (!timeStringRegex.test(data.opensAt) || !timeStringRegex.test(data.closesAt)) {
+      if (
+        !timeStringRegex.test(data.opensAt) ||
+        !timeStringRegex.test(data.closesAt)
+      ) {
         return true;
       }
       return timeToMinutes(data.closesAt) > timeToMinutes(data.opensAt);
@@ -53,14 +60,15 @@ const weeklyScheduleTuple = z.tuple([
   baseWeeklyBusinessDaySchema.extend({ weekday: z.literal('friday') }),
 ]);
 
-const businessHoursExceptionSchema: z.ZodType<BusinessHoursException> = z.object({
-  date: z.object({
-    start: z.date(),
-    end: z.date(),
-  }),
-  type: z.literal('closed'),
-  reason: z.string(),
-});
+const businessHoursExceptionSchema: z.ZodType<BusinessHoursException> =
+  z.object({
+    date: z.object({
+      start: z.date(),
+      end: z.date(),
+    }),
+    type: z.literal('closed'),
+    reason: z.string(),
+  });
 
 export const businessHoursSchema = z.object({
   timezone: z.string().refine(

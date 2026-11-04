@@ -1,4 +1,4 @@
-import { GrantedCashback } from "@feature/shared";
+import { GrantedCashback } from '@feature/shared';
 
 export abstract class CashbackError extends Error {
   abstract readonly code: string;
@@ -10,7 +10,7 @@ export abstract class CashbackError extends Error {
 }
 
 export class CashbackAmountChangedError extends CashbackError {
-  readonly code = "CASHBACK_AMOUNT_CHANGED";
+  readonly code = 'CASHBACK_AMOUNT_CHANGED';
 
   constructor({
     expected,
@@ -26,7 +26,7 @@ export class CashbackAmountChangedError extends CashbackError {
 }
 
 export class InvalidCashbackRateError extends CashbackError {
-  readonly code = "INVALID_CASHBACK_RATE";
+  readonly code = 'INVALID_CASHBACK_RATE';
 
   constructor(public readonly rate: number) {
     super(`Invalid cashback rate: ${rate}. Rate must be between 0 and 1.`);

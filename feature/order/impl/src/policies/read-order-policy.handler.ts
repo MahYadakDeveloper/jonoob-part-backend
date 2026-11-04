@@ -4,7 +4,10 @@ import { OrderAbility } from './order-ability';
 export class ReadOrderPolicy implements PolicyHandler<OrderAbility> {
   constructor(private readonly orders: OrderService) {}
 
-  async handle(ability: OrderAbility, context: PolicyContext): Promise<boolean> {
+  async handle(
+    ability: OrderAbility,
+    context: PolicyContext,
+  ): Promise<boolean> {
     const orderId = context.params.id;
 
     const { order } = await this.orders.findById({

@@ -34,13 +34,15 @@ export class StockRepository extends DrizzleBaseRepository {
     await this.db
       .update(stocks)
       .set({
-        quantity: sql`${stocks.quantity} + ${sqlCase<number>(
-          items.map((i) => ({
-            when: eq(stocks.id, i.stockId),
-            then: sql`${i.quantity}`,
-          })),
-          sql`0`,
-        )}`,
+        quantity: sql`
+          ${stocks.quantity} + ${sqlCase<number>(
+            items.map((i) => ({
+              when: eq(stocks.id, i.stockId),
+              then: sql`${i.quantity}`,
+            })),
+            sql`0`,
+          )}
+        `,
       })
       .where(
         inArray(
@@ -54,13 +56,16 @@ export class StockRepository extends DrizzleBaseRepository {
     await this.db
       .update(stocks)
       .set({
-        quantity: sql`${stocks.quantity} - ${sqlCase<number>(
-          items.map((i) => ({
-            when: eq(stocks.id, i.stockId),
-            then: sql`${i.quantity}`,
-          })),
-          sql`0`,
-        )}`,
+        quantity: sql`
+
+          ${stocks.quantity} - ${sqlCase<number>(
+            items.map((i) => ({
+              when: eq(stocks.id, i.stockId),
+              then: sql`${i.quantity}`,
+            })),
+            sql`0`,
+          )}
+        `,
       })
       .where(
         inArray(

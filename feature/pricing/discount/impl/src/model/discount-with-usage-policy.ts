@@ -1,4 +1,4 @@
-import { DiscountUsagePolicy } from "./discount-usage-policy";
+import { DiscountUsagePolicy } from './discount-usage-policy';
 
 export type DiscountWithUsagePolicy = {
   id: string;

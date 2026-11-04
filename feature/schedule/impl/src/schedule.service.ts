@@ -1,5 +1,9 @@
 import { type SettingsStore, SettingToken } from '@feature/shared';
-import { BusinessHoursException, IsOpenResponse, ScheduleApi } from '@feature/schedule-api';
+import {
+  BusinessHoursException,
+  IsOpenResponse,
+  ScheduleApi,
+} from '@feature/schedule-api';
 import { Injectable } from '@nestjs/common';
 import { businessHoursSchema, BusinessHoursType } from './schedule.schema';
 import { isTimeGreaterThanOrEqualTo, isTimeInInterval } from './utils';
@@ -80,7 +84,9 @@ export class ScheduleService implements ScheduleApi {
   }
 
   async isOpenNow(): Promise<IsOpenResponse> {
-    const businessHours = await this.settings.get(ScheduleService.scheduleSettings);
+    const businessHours = await this.settings.get(
+      ScheduleService.scheduleSettings,
+    );
     const now = new Date();
     const weekdayIndex = now.getDay();
     const weekday = businessHours.weeklySchedule[weekdayIndex];
@@ -142,7 +148,9 @@ export class ScheduleService implements ScheduleApi {
   }
 
   async getNextBusinessHours() {
-    const businessHours = await this.settings.get(ScheduleService.scheduleSettings);
+    const businessHours = await this.settings.get(
+      ScheduleService.scheduleSettings,
+    );
 
     const exceptions = (businessHours.exceptions ?? [])
       .map((exception) => {
@@ -161,7 +169,10 @@ export class ScheduleService implements ScheduleApi {
           end: end.getTime(),
         };
       })
-      .filter((exception): exception is { start: number; end: number } => exception !== null);
+      .filter(
+        (exception): exception is { start: number; end: number } =>
+          exception !== null,
+      );
 
     const currentAnchor = new Date();
 
@@ -197,7 +208,8 @@ export class ScheduleService implements ScheduleApi {
 
         const isBlocked = exceptions.some(
           (exception) =>
-            proposedOpenTimestamp >= exception.start && proposedOpenTimestamp <= exception.end,
+            proposedOpenTimestamp >= exception.start &&
+            proposedOpenTimestamp <= exception.end,
         );
 
         if (isBlocked) {

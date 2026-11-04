@@ -22,5 +22,8 @@ export type ProcessedImage = {
 export interface ImageProcessor {
   resize(file: Buffer, options: ResizeImageOptions): Promise<ProcessedImage>;
 
-  compress(file: Buffer, options: CompressImageOptions): Promise<ProcessedImage>;
+  compress(
+    file: Buffer,
+    options: CompressImageOptions,
+  ): Promise<ProcessedImage>;
 }

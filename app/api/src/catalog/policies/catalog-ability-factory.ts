@@ -18,7 +18,9 @@ export type CatalogAbility = MongoAbility<CatalogAbilityTuple, MongoQuery>;
 
 export class CatalogAbilityFactory implements AbilityFactory<CatalogAbility> {
   createFor(user: AuthenticatedUser): CatalogAbility {
-    const { can, build } = new AbilityBuilder(createMongoAbility<CatalogAbilityTuple, MongoQuery>);
+    const { can, build } = new AbilityBuilder(
+      createMongoAbility<CatalogAbilityTuple, MongoQuery>,
+    );
 
     switch (user.role) {
       case 'admin':

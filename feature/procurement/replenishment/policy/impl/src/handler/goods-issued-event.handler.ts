@@ -1,5 +1,12 @@
-import { BaseEventHandler, LineItems, type EventHandlerRegistry } from '@feature/shared';
-import { Replenishment, type ReplenishmentApi } from '@feature/procurement-replenishment-api';
+import {
+  BaseEventHandler,
+  LineItems,
+  type EventHandlerRegistry,
+} from '@feature/shared';
+import {
+  Replenishment,
+  type ReplenishmentApi,
+} from '@feature/procurement-replenishment-api';
 import {
   GoodsIssuedEventPayload,
   GoodsIssuedEventType,

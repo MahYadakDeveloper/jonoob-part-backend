@@ -1,5 +1,5 @@
-import { LineItems } from "@feature/shared";
-import { ApplicableDiscount } from "./discount.types";
+import { LineItems } from '@feature/shared';
+import { ApplicableDiscount } from './discount.types';
 
 export interface FindApplicableDiscountResponse {
   discount?: ApplicableDiscount;

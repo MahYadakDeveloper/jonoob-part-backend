@@ -3,9 +3,9 @@ export class DuplicateItemsInReturnError extends Error {
     super(
       productId
         ? `Duplicate item found in return request for product '${productId}'.`
-        : "Duplicate items found in return request.",
+        : 'Duplicate items found in return request.',
     );
 
-    this.name = "DuplicateItemsInReturn";
+    this.name = 'DuplicateItemsInReturn';
   }
 }

@@ -1,4 +1,4 @@
-import { AppliedDiscount, LineItems } from "@feature/shared";
+import { AppliedDiscount, LineItems } from '@feature/shared';
 
 export interface FindApplicableDiscountRequest {
   productId: string;

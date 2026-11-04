@@ -5,7 +5,10 @@ import {
 } from '@feature/shared';
 import { type DeliveryApi } from '@feature/order-delivery-api';
 import { type FulfillmentApi } from '@feature/order-fulfillment-api';
-import { PaymentFailedEventPayload, PaymentFailedEventType } from '@feature/order-payment-api';
+import {
+  PaymentFailedEventPayload,
+  PaymentFailedEventType,
+} from '@feature/order-payment-api';
 import { Injectable } from '@nestjs/common';
 import { type OrderRepository } from '../order.repository';
 

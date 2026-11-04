@@ -39,7 +39,12 @@ export interface ProductSearchSort {
 
 export type SortDirection = 'asc' | 'desc';
 
-export type ProductSortField = 'relevance' | 'price' | 'createdAt' | 'popularity' | 'name';
+export type ProductSortField =
+  | 'relevance'
+  | 'price'
+  | 'createdAt'
+  | 'popularity'
+  | 'name';
 
 export interface SearchFacets {
   brands?: readonly SearchFacet[];

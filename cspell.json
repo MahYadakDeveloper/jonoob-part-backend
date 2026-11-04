@@ -1,11 +1,4 @@
 {
-  "words": [
-    "Populator",
-    "barcodes",
-    "jonoob"
-  ],
-  "userWords": [
-    "populators",
-    "CacheInvalidationQueue"
-  ]
+  "words": ["Populator", "barcodes", "jonoob"],
+  "userWords": ["populators", "CacheInvalidationQueue"]
 }

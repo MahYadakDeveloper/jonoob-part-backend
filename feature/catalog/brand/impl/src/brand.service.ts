@@ -9,10 +9,17 @@ import {
   FindManyBrandRequest,
   FindManyBrandResponse,
 } from '@feature/catalog.brand-api';
-import { type OutboxRepository, type TransactionManager } from '@feature/shared';
+import {
+  type OutboxRepository,
+  type TransactionManager,
+} from '@feature/shared';
 import { Injectable } from '@nestjs/common';
 import { type BrandRepository } from './brand.repository';
-import { BrandCreationRequest, BrandDeletionRequest, BrandUpdatingRequest } from './brand.req';
+import {
+  BrandCreationRequest,
+  BrandDeletionRequest,
+  BrandUpdatingRequest,
+} from './brand.req';
 
 @Injectable()
 export class BrandService implements BrandApi {
@@ -27,7 +34,9 @@ export class BrandService implements BrandApi {
     return { brand };
   }
 
-  async findMany({ brandIds }: FindManyBrandRequest): Promise<FindManyBrandResponse> {
+  async findMany({
+    brandIds,
+  }: FindManyBrandRequest): Promise<FindManyBrandResponse> {
     const brands = await this.repository.findManyByIds(brandIds);
     return { brands };
   }

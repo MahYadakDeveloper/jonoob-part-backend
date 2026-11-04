@@ -1,6 +1,8 @@
-export const FitmentManyDeletedEventType = 'catalog.fitment:fitment-many-deleted';
+export const FitmentManyDeletedEventType =
+  'catalog.fitment:fitment-many-deleted';
 export const FitmentDeletedEventType = 'catalog.fitment:fitment-deleted';
-export const FitmentManyUpdatedEventType = 'catalog.fitment:fitment-many-updated';
+export const FitmentManyUpdatedEventType =
+  'catalog.fitment:fitment-many-updated';
 export const FitmentUpdatedEventType = 'catalog.fitment:fitment-updated';
 
 export type FitmentManyDeletedEventPayload = {

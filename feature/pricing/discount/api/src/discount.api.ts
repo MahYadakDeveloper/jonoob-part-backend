@@ -2,11 +2,11 @@ import {
   DiscountUsageRecordRequest,
   FindApplicableDiscountRequest,
   FindManyApplicableDiscountRequest,
-} from "./discount.req";
+} from './discount.req';
 import {
   FindApplicableDiscountResponse,
   FindManyApplicableDiscountResponse,
-} from "./discount.res";
+} from './discount.res';
 
 export interface DiscountApi {
   /**

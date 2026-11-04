@@ -1,4 +1,4 @@
-import { NewSettlementRequest, SettlementRequest } from "type";
+import { NewSettlementRequest, SettlementRequest } from 'type';
 
 export interface SettlementRepository {
   createRequest(request: NewSettlementRequest): Promise<void>;

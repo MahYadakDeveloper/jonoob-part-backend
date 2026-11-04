@@ -46,7 +46,10 @@ export interface DbErrorRules {
 const classify = classifyPgError;
 
 /** Handled by retrying the whole transaction, never mapped to a domain error. */
-const RETRYABLE: ReadonlySet<DbErrorKind> = new Set(['serialization', 'deadlock']);
+const RETRYABLE: ReadonlySet<DbErrorKind> = new Set([
+  'serialization',
+  'deadlock',
+]);
 
 export function isRetryableDbError(error: unknown): boolean {
   const kind = classify(error)?.kind;

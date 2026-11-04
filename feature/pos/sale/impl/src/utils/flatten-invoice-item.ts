@@ -1,6 +1,8 @@
 import { InvoiceItem, LineItems, ProductInvoiceItem } from '@feature/shared';
 
-export function flattenInvoiceItem(item: InvoiceItem): readonly ProductInvoiceItem[] {
+export function flattenInvoiceItem(
+  item: InvoiceItem,
+): readonly ProductInvoiceItem[] {
   if (item.kind === 'leaf') {
     return [item];
   }
@@ -15,7 +17,9 @@ export function flattenInvoiceItem(item: InvoiceItem): readonly ProductInvoiceIt
   }));
 }
 
-export function flattenInvoiceItems(items: LineItems<InvoiceItem>): LineItems<ProductInvoiceItem> {
+export function flattenInvoiceItems(
+  items: LineItems<InvoiceItem>,
+): LineItems<ProductInvoiceItem> {
   const result = new LineItems<ProductInvoiceItem>((p) => p.productId);
 
   for (const item of items) {

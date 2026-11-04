@@ -43,10 +43,10 @@ product_fitments (product_id, node_id) → vehicle_nodes.id
 
 ### دو نوع رابطه
 
-| رابطه | چطور | هدف |
-|---|---|---|
-| هویت | FK ترکیبی `(id, kind)` از جدول تخصصی به `vehicle_nodes` + CHECK | make فقط به گرهٔ `kind='make'` وصل شود |
-| والد-فرزند | `vehicles.series_id`، `series.model_id`، `models.make_id` (همه NOT NULL) | درخت ناقص نشود |
+| رابطه      | چطور                                                                     | هدف                                   |
+| ---------- | ------------------------------------------------------------------------ | ------------------------------------- |
+| هویت       | FK ترکیبی `(id, kind)` از جدول تخصصی به `vehicle_nodes` + CHECK          | make فقط به گرهٔ `kind='make'` وصل شود |
+| والد-فرزند | `vehicles.series_id`، `series.model_id`، `models.make_id` (همه NOT NULL) | درخت ناقص نشود                        |
 
 ---
 
@@ -62,13 +62,13 @@ Toyota (make)
 
 **vehicle_nodes**
 
-| id | kind |
-|---|---|
-| A1 | make |
-| B2 | model |
-| C3 | series |
-| D4 | vehicle |
-| D5 | vehicle |
+| id  | kind    |
+| --- | ------- |
+| A1  | make    |
+| B2  | model   |
+| C3  | series  |
+| D4  | vehicle |
+| D5  | vehicle |
 
 **makes**: `A1 | make | Toyota | toyota`
 
@@ -78,19 +78,19 @@ Toyota (make)
 
 **vehicles**
 
-| id | series_id | transmission | fuel |
-|---|---|---|---|
-| D4 | C3 | automatic | petrol |
-| D5 | C3 | manual | petrol |
+| id  | series_id | transmission | fuel   |
+| --- | --------- | ------------ | ------ |
+| D4  | C3        | automatic    | petrol |
+| D5  | C3        | manual       | petrol |
 
 **product_fitments**
 
-| product_id | node_id | معنی |
-|---|---|---|
-| P1 | A1 | روی همهٔ تویوتاها |
-| P2 | B2 | روی همهٔ Corollaها |
-| P3 | C3 | روی همهٔ GLIها (هر گیربکس و سوخت) |
-| P4 | D4 | فقط GLI اتوماتیک بنزینی |
+| product_id | node_id | معنی                             |
+| ---------- | ------- | -------------------------------- |
+| P1         | A1      | روی همهٔ تویوتاها                 |
+| P2         | B2      | روی همهٔ Corollaها                |
+| P3         | C3      | روی همهٔ GLIها (هر گیربکس و سوخت) |
+| P4         | D4      | فقط GLI اتوماتیک بنزینی          |
 
 ---
 
@@ -239,7 +239,11 @@ export const vehicles = catalogSchema.table(
   },
   (t) => [
     ...nodeChecks('vehicles', 'vehicle', t),
-    unique('vehicles_identity_unique').on(t.seriesId, t.transmissionId, t.fuelId),
+    unique('vehicles_identity_unique').on(
+      t.seriesId,
+      t.transmissionId,
+      t.fuelId,
+    ),
     index('vehicles_series_idx').on(t.seriesId),
     index('vehicles_transmission_idx').on(t.transmissionId),
     index('vehicles_fuel_idx').on(t.fuelId),
@@ -321,21 +325,38 @@ const createNode = async (
 export const createMake = (input: { name: string; slug: string }) =>
   db.transaction(async (tx) => {
     const id = await createNode(tx, 'make');
-    const [row] = await tx.insert(makes).values({ id, ...input }).returning();
+    const [row] = await tx
+      .insert(makes)
+      .values({ id, ...input })
+      .returning();
     return row;
   });
 
-export const createModel = (input: { makeId: string; name: string; slug: string }) =>
+export const createModel = (input: {
+  makeId: string;
+  name: string;
+  slug: string;
+}) =>
   db.transaction(async (tx) => {
     const id = await createNode(tx, 'model');
-    const [row] = await tx.insert(models).values({ id, ...input }).returning();
+    const [row] = await tx
+      .insert(models)
+      .values({ id, ...input })
+      .returning();
     return row;
   });
 
-export const createSeries = (input: { modelId: string; name: string; slug: string }) =>
+export const createSeries = (input: {
+  modelId: string;
+  name: string;
+  slug: string;
+}) =>
   db.transaction(async (tx) => {
     const id = await createNode(tx, 'series');
-    const [row] = await tx.insert(series).values({ id, ...input }).returning();
+    const [row] = await tx
+      .insert(series)
+      .values({ id, ...input })
+      .returning();
     return row;
   });
 
@@ -346,7 +367,10 @@ export const createVehicle = (input: {
 }) =>
   db.transaction(async (tx) => {
     const id = await createNode(tx, 'vehicle');
-    const [row] = await tx.insert(vehicles).values({ id, ...input }).returning();
+    const [row] = await tx
+      .insert(vehicles)
+      .values({ id, ...input })
+      .returning();
     return row;
   });
 ```
@@ -391,10 +415,10 @@ export const productsForVehicle = (vehicleId: string) =>
 
 برای مثال بخش ۳:
 
-| vehicle | محصولات برگشتی |
-|---|---|
+| vehicle       | محصولات برگشتی  |
+| ------------- | -------------- |
 | D4 (اتوماتیک) | P1، P2، P3، P4 |
-| D5 (دستی) | P1، P2، P3 |
+| D5 (دستی)     | P1، P2، P3     |
 
 ### ۶.۲ همین query با نمایش سطح fitment
 
@@ -487,15 +511,17 @@ db.select().from(makes).orderBy(makes.name);
 db.select().from(models).where(eq(models.makeId, makeId)).orderBy(models.name);
 
 // سطح ۳
-db.select().from(series).where(eq(series.modelId, modelId)).orderBy(series.name);
+db.select()
+  .from(series)
+  .where(eq(series.modelId, modelId))
+  .orderBy(series.name);
 
 // سطح ۴
-db
-  .select({
-    id: vehicles.id,
-    transmission: transmissions.name,
-    fuel: fuels.name,
-  })
+db.select({
+  id: vehicles.id,
+  transmission: transmissions.name,
+  fuel: fuels.name,
+})
   .from(vehicles)
   .innerJoin(transmissions, eq(transmissions.id, vehicles.transmissionId))
   .innerJoin(fuels, eq(fuels.id, vehicles.fuelId))
@@ -515,13 +541,13 @@ export const deleteNode = (nodeId: string) =>
 
 رفتار قفل‌ها:
 
-| وضعیت | نتیجه |
-|---|---|
-| گره فرزند دارد (مثلاً make با model) | خطا (`restrict` روی `models.make_id` و ...) |
-| گره fitment دارد | خطا (`restrict` روی `product_fitments.node_id`) |
-| گره بدون فرزند و fitment | حذف می‌شود و ردیف تخصصی هم cascade پاک می‌شود |
-| لینک‌های تصویر گره | cascade پاک می‌شوند (فایل در `mediaFiles` می‌ماند) |
-| حذف product | fitmentهایش cascade پاک می‌شوند |
+| وضعیت                              | نتیجه                                            |
+| ---------------------------------- | ------------------------------------------------ |
+| گره فرزند دارد (مثلاً make با model) | خطا (`restrict` روی `models.make_id` و ...)      |
+| گره fitment دارد                   | خطا (`restrict` روی `product_fitments.node_id`)  |
+| گره بدون فرزند و fitment           | حذف می‌شود و ردیف تخصصی هم cascade پاک می‌شود      |
+| لینک‌های تصویر گره                  | cascade پاک می‌شوند (فایل در `mediaFiles` می‌ماند) |
+| حذف product                        | fitmentهایش cascade پاک می‌شوند                   |
 
 > اگر فقط ردیف تخصصی را حذف کنی، یک گرهٔ یتیم در `vehicle_nodes` می‌ماند. به همین دلیل حذف از `vehicle_nodes` توصیه می‌شود.
 
@@ -530,7 +556,9 @@ export const deleteNode = (nodeId: string) =>
 ## ۸. نکات مهم
 
 ### ۸.۱ گرهٔ یتیم (Orphan Node)
+
 دیتابیس جلوی ردیفی در `vehicle_nodes` بدون ردیف تخصصی را **نمی‌گیرد**. چنین گره‌ای می‌تواند fitment بگیرد، ولی هیچ vehicle یا make ای به آن نمی‌رسد.
+
 - اگر همهٔ نوشتن‌ها از طریق اپلیکیشن و transaction است، مشکلی پیش نمی‌آید.
 - اگر ردیف‌ها مستقیم با SQL ساخته می‌شوند، یک `DEFERRABLE INITIALLY DEFERRED` constraint trigger بنویس (Drizzle مستقیم پشتیبانی نمی‌کند، در migration دستی اضافه می‌شود).
 - یک query دوره‌ای برای پیدا کردن یتیم‌ها مفید است:
@@ -546,28 +574,35 @@ where m.id is null and d.id is null and s.id is null and v.id is null;
 ```
 
 ### ۸.۲ هر model باید حداقل یک series داشته باشد
+
 چون `vehicles.series_id` اجباری است، مدلی که series ندارد نمی‌تواند vehicle بگیرد. راه‌حل رایج: برای مدل‌های بدون series یک series پیش‌فرض مثل `standard` بساز.
 
 ### ۸.۳ fitmentهای هم‌پوشان
+
 اگر محصولی هم روی `make` و هم روی یک `vehicle` همان make fitment دارد، unique جلویش را نمی‌گیرد. query شماره ۶.۱ با `selectDistinct` درست کار می‌کند. اگر می‌خواهی ادمین را آگاه کنی، در لایهٔ اپلیکیشن بررسی کن.
 
 ### ۸.۴ fitment معنی «شمول» دارد
+
 fitment روی یک گره یعنی «همهٔ زیرمجموعه‌های آن گره». هیچ مفهومی از «همه به‌جز فلان» وجود ندارد. اگر چنین نیازی دارید (exclusion)، یک جدول جدا برای استثناها لازم می‌شود.
 
 ### ۸.۵ slug
+
 - `makes`، `transmissions`، `fuels`: slug سراسری unique
 - `models`: unique داخل make
 - `series`: unique داخل model
 - نام اول `slugChecks(tableName, col)` باید با نام واقعی جدول یکی باشد.
 
 ### ۸.۶ هزینهٔ طراحی
+
 - هر گره دو insert می‌خواهد (باید transaction باشد).
 - در عوض fitment فقط یک FK ساده دارد و جدول‌های تخصصی type-safe و با ستون‌های مخصوص خودشان می‌مانند.
 
 ### ۸.۷ بدون نیاز به PostgreSQL 15
+
 در طراحی فعلی `nullsNotDistinct()` استفاده نشده، چون هیچ ستون nullable‌ای در unique نیست.
 
 ### ۸.۸ جدول‌های تصویر
+
 - `createImageTable` به owner با ستون `id` نیاز دارد؛ `makes` و `vehicles` این را دارند.
 - `unique(file_id)` در هر جدول تصویر یعنی یک فایل نمی‌تواند در دو vehicle تکرار شود. اگر عکس مشترک می‌خواهی، عکس را روی `series` یا `model` بگذار (با همان `createImageTable`).
 - اعتبارسنجی magic bytes فایل هنگام آپلود در لایهٔ اپلیکیشن انجام شود؛ CHECK دیتابیس فقط mime ثبت‌شده را می‌بیند.
@@ -597,14 +632,14 @@ set node_id = coalesce(vehicle_id, series_id, model_id, make_id);
 
 ## ۱۰. خلاصه
 
-| مفهوم | نقش |
-|---|---|
-| `vehicle_nodes` | شناسنامهٔ هر گره (id و نوع)، هدف fitment |
-| `makes/models/series/vehicles` | اطلاعات واقعی هر سطح، با همان id |
-| FK والد-فرزند | ساختار درخت، همه NOT NULL |
-| FK ترکیبی `(id, kind)` | نوع گره اشتباه نمی‌شود |
-| `product_fitments.node_id` | اشاره به یک گره از هر سطح |
-| خواندن برای vehicle | `node_id in (vehicle, series, model, make)` |
-| خواندن برای make/model | CTE روی زیرمجموعه‌ها |
-| ساخت | همیشه دو insert داخل transaction |
-| حذف | از `vehicle_nodes` |
+| مفهوم                          | نقش                                         |
+| ------------------------------ | ------------------------------------------- |
+| `vehicle_nodes`                | شناسنامهٔ هر گره (id و نوع)، هدف fitment     |
+| `makes/models/series/vehicles` | اطلاعات واقعی هر سطح، با همان id             |
+| FK والد-فرزند                  | ساختار درخت، همه NOT NULL                   |
+| FK ترکیبی `(id, kind)`         | نوع گره اشتباه نمی‌شود                       |
+| `product_fitments.node_id`     | اشاره به یک گره از هر سطح                   |
+| خواندن برای vehicle            | `node_id in (vehicle, series, model, make)` |
+| خواندن برای make/model         | CTE روی زیرمجموعه‌ها                         |
+| ساخت                           | همیشه دو insert داخل transaction            |
+| حذف                            | از `vehicle_nodes`                          |

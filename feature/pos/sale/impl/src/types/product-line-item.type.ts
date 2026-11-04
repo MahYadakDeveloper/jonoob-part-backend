@@ -1,4 +1,4 @@
 export type ProductLineItem = {
-  productId: string,
-  quantity: number
-}
+  productId: string;
+  quantity: number;
+};

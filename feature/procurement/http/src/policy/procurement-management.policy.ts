@@ -5,7 +5,10 @@ import {
 import { ProcurementAbility } from './procurement.ability-factory';
 
 export class ProcurementManagementPolicy implements PolicyHandler<ProcurementAbility> {
-  async handle(ability: ProcurementAbility, _context: PolicyContext): Promise<boolean> {
+  async handle(
+    ability: ProcurementAbility,
+    _context: PolicyContext,
+  ): Promise<boolean> {
     return ability.can('manage', 'Procurement');
   }
 }

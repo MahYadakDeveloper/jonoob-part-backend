@@ -11,7 +11,10 @@ import sharp from 'sharp';
 
 @Injectable()
 export class SharpImageProcessor implements ImageProcessor {
-  async resize(file: Buffer, options: ResizeImageOptions): Promise<ProcessedImage> {
+  async resize(
+    file: Buffer,
+    options: ResizeImageOptions,
+  ): Promise<ProcessedImage> {
     const processor = sharp(file);
     const metadata = await processor.metadata();
 
@@ -31,8 +34,15 @@ export class SharpImageProcessor implements ImageProcessor {
     };
   }
 
-  async compress(file: Buffer, options: CompressImageOptions): Promise<ProcessedImage> {
-    const output = await this.toFormat(sharp(file), options.format, options.quality);
+  async compress(
+    file: Buffer,
+    options: CompressImageOptions,
+  ): Promise<ProcessedImage> {
+    const output = await this.toFormat(
+      sharp(file),
+      options.format,
+      options.quality,
+    );
 
     return {
       mimeType: this.toMimeType(options.format),
@@ -60,7 +70,11 @@ export class SharpImageProcessor implements ImageProcessor {
     }
   }
 
-  private toFormat(image: sharp.Sharp, format: ImageFormat, quality?: number): Promise<Buffer> {
+  private toFormat(
+    image: sharp.Sharp,
+    format: ImageFormat,
+    quality?: number,
+  ): Promise<Buffer> {
     switch (format) {
       case 'jpeg':
         return image.jpeg({ quality }).toBuffer();

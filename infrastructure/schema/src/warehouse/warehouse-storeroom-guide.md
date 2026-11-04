@@ -5,17 +5,17 @@ The `stocks` table has its own document: see [`stocks-guide.md`](./stocks-guide.
 
 ## 1. Design decisions
 
-| Topic | Decision |
-|---|---|
-| What is the storeroom? | The shop's own warehouse. A **regular row** in `warehouses` with `code = STOREROOM_CODE` |
-| `warehouse_id` in `shelves` and `stocks` | `NOT NULL`. A NULL warehouse does **not** mean storeroom |
-| Shelves in the storeroom | Allowed, exactly like any other warehouse |
-| Creating the storeroom | At runtime through a dedicated admin endpoint. Not a migration, not a seed |
-| Calling the create-storeroom endpoint again | Fails with `409 STOREROOM_ALREADY_EXISTS` |
-| Creating a normal warehouse with `code = storeroom` | Rejected (`422 RESERVED_WAREHOUSE_CODE`) |
-| Deleting the storeroom | Forbidden |
-| Editing `code` | Never. Only `name` and `address` are editable, for every warehouse |
-| Deleting a warehouse | Only when no shelf and no stock row points to it |
+| Topic                                               | Decision                                                                                 |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| What is the storeroom?                              | The shop's own warehouse. A **regular row** in `warehouses` with `code = STOREROOM_CODE` |
+| `warehouse_id` in `shelves` and `stocks`            | `NOT NULL`. A NULL warehouse does **not** mean storeroom                                 |
+| Shelves in the storeroom                            | Allowed, exactly like any other warehouse                                                |
+| Creating the storeroom                              | At runtime through a dedicated admin endpoint. Not a migration, not a seed               |
+| Calling the create-storeroom endpoint again         | Fails with `409 STOREROOM_ALREADY_EXISTS`                                                |
+| Creating a normal warehouse with `code = storeroom` | Rejected (`422 RESERVED_WAREHOUSE_CODE`)                                                 |
+| Deleting the storeroom                              | Forbidden                                                                                |
+| Editing `code`                                      | Never. Only `name` and `address` are editable, for every warehouse                       |
+| Deleting a warehouse                                | Only when no shelf and no stock row points to it                                         |
 
 ### Why not `NULL` for the storeroom?
 
@@ -91,17 +91,17 @@ The `stocks` table (quantity per product and place) is documented in `stocks-gui
 
 ### Database behavior: error or silent?
 
-| Operation | Result | Enforced by |
-|---|---|---|
-| Delete a warehouse that still has shelves | Error (`23503`) | `onDelete: 'restrict'` on `shelves.warehouse_id` |
-| Delete a warehouse that still has stock rows | Error (`23503`) | `onDelete: 'restrict'` on `stocks.warehouse_id` |
-| Delete a shelf that still has stock rows | Error (`23503`) | composite FK from `stocks` with `restrict` |
-| Stock row pointing at a shelf of another warehouse | Error (`23503`) | composite FK `(shelf_id, warehouse_id)` |
-| Two warehouses with the same `code` | Error (`23505`) | `unique` on `warehouses.code` |
-| Two shelves at the same position in one warehouse | Error (`23505`) | `shelves_position_uq` |
-| Delete or change the code of the storeroom with raw SQL | **Silent** | only the service layer guards it (optional trigger in section 8) |
-| Change `aisle/bay/level` of a shelf | Silent; `code` changes and stock rows follow the shelf | by design |
-| Stock a shelf that has `active = false` | **Silent** | nothing checks it |
+| Operation                                               | Result                                                 | Enforced by                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------- |
+| Delete a warehouse that still has shelves               | Error (`23503`)                                        | `onDelete: 'restrict'` on `shelves.warehouse_id`                 |
+| Delete a warehouse that still has stock rows            | Error (`23503`)                                        | `onDelete: 'restrict'` on `stocks.warehouse_id`                  |
+| Delete a shelf that still has stock rows                | Error (`23503`)                                        | composite FK from `stocks` with `restrict`                       |
+| Stock row pointing at a shelf of another warehouse      | Error (`23503`)                                        | composite FK `(shelf_id, warehouse_id)`                          |
+| Two warehouses with the same `code`                     | Error (`23505`)                                        | `unique` on `warehouses.code`                                    |
+| Two shelves at the same position in one warehouse       | Error (`23505`)                                        | `shelves_position_uq`                                            |
+| Delete or change the code of the storeroom with raw SQL | **Silent**                                             | only the service layer guards it (optional trigger in section 8) |
+| Change `aisle/bay/level` of a shelf                     | Silent; `code` changes and stock rows follow the shelf | by design                                                        |
+| Stock a shelf that has `active = false`                 | **Silent**                                             | nothing checks it                                                |
 
 Because stock rows are deleted the moment their quantity reaches zero, an emptied shelf or warehouse is deletable immediately. There are no leftover zero rows blocking the `restrict` FKs.
 
@@ -111,14 +111,14 @@ Because stock rows are deleted the moment their quantity reaches zero, an emptie
 
 All routes sit behind the admin guard (`AdminGuard` in the sample code; replace it with the project's real guard).
 
-| Method | Path | Purpose | Success | Errors |
-|---|---|---|---|---|
-| `POST` | `/admin/warehouses/storeroom` | Create the storeroom (once) | `201` | `409 STOREROOM_ALREADY_EXISTS` |
-| `POST` | `/admin/warehouses` | Create a normal warehouse | `201` | `409 WAREHOUSE_CODE_TAKEN`, `422 RESERVED_WAREHOUSE_CODE` |
-| `GET` | `/admin/warehouses` | List warehouses | `200` | none |
-| `GET` | `/admin/warehouses/:id` | Get one warehouse | `200` | `404 WAREHOUSE_NOT_FOUND` |
-| `PATCH` | `/admin/warehouses/:id` | Rename / change address | `200` | `404 WAREHOUSE_NOT_FOUND` |
-| `DELETE` | `/admin/warehouses/:id` | Delete a warehouse | `204` | `404`, `409 STOREROOM_PROTECTED`, `409 WAREHOUSE_NOT_EMPTY` |
+| Method   | Path                          | Purpose                     | Success | Errors                                                      |
+| -------- | ----------------------------- | --------------------------- | ------- | ----------------------------------------------------------- |
+| `POST`   | `/admin/warehouses/storeroom` | Create the storeroom (once) | `201`   | `409 STOREROOM_ALREADY_EXISTS`                              |
+| `POST`   | `/admin/warehouses`           | Create a normal warehouse   | `201`   | `409 WAREHOUSE_CODE_TAKEN`, `422 RESERVED_WAREHOUSE_CODE`   |
+| `GET`    | `/admin/warehouses`           | List warehouses             | `200`   | none                                                        |
+| `GET`    | `/admin/warehouses/:id`       | Get one warehouse           | `200`   | `404 WAREHOUSE_NOT_FOUND`                                   |
+| `PATCH`  | `/admin/warehouses/:id`       | Rename / change address     | `200`   | `404 WAREHOUSE_NOT_FOUND`                                   |
+| `DELETE` | `/admin/warehouses/:id`       | Delete a warehouse          | `204`   | `404`, `409 STOREROOM_PROTECTED`, `409 WAREHOUSE_NOT_EMPTY` |
 
 ### Race-safe creation
 
@@ -147,32 +147,50 @@ import {
 
 export class StoreroomAlreadyExistsError extends ConflictException {
   constructor() {
-    super({ key: 'STOREROOM_ALREADY_EXISTS', message: 'Storeroom already exists' });
+    super({
+      key: 'STOREROOM_ALREADY_EXISTS',
+      message: 'Storeroom already exists',
+    });
   }
 }
 export class StoreroomNotInitializedError extends ConflictException {
   constructor() {
-    super({ key: 'STOREROOM_NOT_INITIALIZED', message: 'Storeroom has not been created yet' });
+    super({
+      key: 'STOREROOM_NOT_INITIALIZED',
+      message: 'Storeroom has not been created yet',
+    });
   }
 }
 export class StoreroomProtectedError extends ConflictException {
   constructor() {
-    super({ key: 'STOREROOM_PROTECTED', message: 'Storeroom cannot be deleted' });
+    super({
+      key: 'STOREROOM_PROTECTED',
+      message: 'Storeroom cannot be deleted',
+    });
   }
 }
 export class WarehouseCodeTakenError extends ConflictException {
   constructor() {
-    super({ key: 'WAREHOUSE_CODE_TAKEN', message: 'Warehouse code is already in use' });
+    super({
+      key: 'WAREHOUSE_CODE_TAKEN',
+      message: 'Warehouse code is already in use',
+    });
   }
 }
 export class WarehouseNotEmptyError extends ConflictException {
   constructor() {
-    super({ key: 'WAREHOUSE_NOT_EMPTY', message: 'Warehouse still has shelves or stock' });
+    super({
+      key: 'WAREHOUSE_NOT_EMPTY',
+      message: 'Warehouse still has shelves or stock',
+    });
   }
 }
 export class ReservedWarehouseCodeError extends UnprocessableEntityException {
   constructor() {
-    super({ key: 'RESERVED_WAREHOUSE_CODE', message: 'This code is reserved for the storeroom' });
+    super({
+      key: 'RESERVED_WAREHOUSE_CODE',
+      message: 'This code is reserved for the storeroom',
+    });
   }
 }
 export class WarehouseNotFoundError extends NotFoundException {
@@ -226,12 +244,18 @@ export class WarehouseRepository {
   }
 
   async findById(id: string): Promise<Warehouse | null> {
-    const [row] = await this.db.select().from(warehouses).where(eq(warehouses.id, id));
+    const [row] = await this.db
+      .select()
+      .from(warehouses)
+      .where(eq(warehouses.id, id));
     return row ?? null;
   }
 
   async findByCode(code: string): Promise<Warehouse | null> {
-    const [row] = await this.db.select().from(warehouses).where(eq(warehouses.code, code));
+    const [row] = await this.db
+      .select()
+      .from(warehouses)
+      .where(eq(warehouses.code, code));
     return row ?? null;
   }
 
@@ -286,7 +310,10 @@ export class WarehouseService {
 
   constructor(private readonly repo: WarehouseRepository) {}
 
-  async createStoreroom(input: { name?: string; address?: string | null }): Promise<Warehouse> {
+  async createStoreroom(input: {
+    name?: string;
+    address?: string | null;
+  }): Promise<Warehouse> {
     const row = await this.repo.insert({
       code: STOREROOM_CODE,
       name: input.name ?? 'Storeroom',
@@ -297,7 +324,11 @@ export class WarehouseService {
     return row;
   }
 
-  async create(input: { code: string; name: string; address?: string | null }): Promise<Warehouse> {
+  async create(input: {
+    code: string;
+    name: string;
+    address?: string | null;
+  }): Promise<Warehouse> {
     if (input.code === STOREROOM_CODE) throw new ReservedWarehouseCodeError();
     const row = await this.repo.insert(input);
     if (!row) throw new WarehouseCodeTakenError();
@@ -314,7 +345,10 @@ export class WarehouseService {
     return row;
   }
 
-  async update(id: string, patch: { name?: string; address?: string | null }): Promise<Warehouse> {
+  async update(
+    id: string,
+    patch: { name?: string; address?: string | null },
+  ): Promise<Warehouse> {
     const row = await this.repo.update(id, patch);
     if (!row) throw new WarehouseNotFoundError();
     return row;
@@ -350,8 +384,16 @@ export class WarehouseService {
 ```ts
 // admin-warehouses.controller.ts
 import {
-  Body, Controller, Delete, Get, HttpCode, Param,
-  ParseUUIDPipe, Patch, Post, UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
 // import { AdminGuard } from '...';
 import { WarehouseService } from './warehouse.service';
@@ -359,7 +401,11 @@ import { WarehouseService } from './warehouse.service';
 // Validate these with your usual pipe (class-validator / zod).
 // code: non-empty lowercase slug; name: non-empty; address: optional.
 type CreateStoreroomDto = { name?: string; address?: string | null };
-type CreateWarehouseDto = { code: string; name: string; address?: string | null };
+type CreateWarehouseDto = {
+  code: string;
+  name: string;
+  address?: string | null;
+};
 type UpdateWarehouseDto = { name?: string; address?: string | null };
 
 @Controller('admin/warehouses')
@@ -389,7 +435,10 @@ export class AdminWarehousesController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateWarehouseDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateWarehouseDto,
+  ) {
     return this.service.update(id, dto); // code is intentionally not editable
   }
 

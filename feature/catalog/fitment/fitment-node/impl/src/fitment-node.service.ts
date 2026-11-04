@@ -15,7 +15,10 @@ import {
   FitmentSeriesNode,
   FitmentTransmissionNode,
 } from '@feature/catalog.fitment.node-api';
-import { type OutboxRepository, type TransactionManager } from '@feature/shared';
+import {
+  type OutboxRepository,
+  type TransactionManager,
+} from '@feature/shared';
 import { Injectable } from '@nestjs/common';
 import {
   FitmentFuelTypeCreationRequest,
@@ -41,7 +44,9 @@ export class FitmentNodeService implements FitmentNodeApi {
     private readonly outbox: OutboxRepository,
     private readonly tx: TransactionManager,
   ) {}
-  async find({ nodeId }: FindFitmentNodeRequest): Promise<FindFitmentNodeResponse> {
+  async find({
+    nodeId,
+  }: FindFitmentNodeRequest): Promise<FindFitmentNodeResponse> {
     const node = await this.repository.findHierarchyNodeById(nodeId);
 
     if (!node) throw new Error(`Not found node: ${nodeId}`);
@@ -53,7 +58,9 @@ export class FitmentNodeService implements FitmentNodeApi {
     };
   }
 
-  async findMany({ nodeIds }: FindManyFitmentNodeRequest): Promise<FindManyFitmentNodeResponse> {
+  async findMany({
+    nodeIds,
+  }: FindManyFitmentNodeRequest): Promise<FindManyFitmentNodeResponse> {
     const nodes = await this.repository.findManyHierarchyNodesByIds(nodeIds);
 
     const fitmentNodes = nodes.transform(
@@ -133,14 +140,23 @@ export class FitmentNodeService implements FitmentNodeApi {
     };
   }
 
-  async updateMake({ nodeId, name, logo }: FitmentMakeUpdatingRequest): Promise<void> {
+  async updateMake({
+    nodeId,
+    name,
+    logo,
+  }: FitmentMakeUpdatingRequest): Promise<void> {
     return this.updateNode(nodeId, {
       name,
       logo,
     });
   }
 
-  async updateModel({ nodeId, name, image, parentId }: FitmentModelUpdatingRequest): Promise<void> {
+  async updateModel({
+    nodeId,
+    name,
+    image,
+    parentId,
+  }: FitmentModelUpdatingRequest): Promise<void> {
     return this.updateNode(nodeId, {
       name,
       image,
@@ -148,7 +164,11 @@ export class FitmentNodeService implements FitmentNodeApi {
     });
   }
 
-  async updateSeries({ nodeId, name, parentId }: FitmentSeriesUpdatingRequest): Promise<void> {
+  async updateSeries({
+    nodeId,
+    name,
+    parentId,
+  }: FitmentSeriesUpdatingRequest): Promise<void> {
     return this.updateNode(nodeId, {
       name,
       parentId,
@@ -182,7 +202,11 @@ export class FitmentNodeService implements FitmentNodeApi {
     return this.repository.create(input);
   }
 
-  async updateFuelType({ nodeId, name, parentId }: FitmentFuelTypeUpdatingRequest): Promise<void> {
+  async updateFuelType({
+    nodeId,
+    name,
+    parentId,
+  }: FitmentFuelTypeUpdatingRequest): Promise<void> {
     return this.updateNode(nodeId, {
       name,
       parentId,
@@ -227,7 +251,9 @@ export class FitmentNodeService implements FitmentNodeApi {
    */
   async deleteNode({ nodeId }: FitmentNodeDeletionRequest): Promise<void> {
     const descendants = await this.repository.findDescendants(nodeId);
-    const { nodes } = await this.findMany({ nodeIds: [...descendants, nodeId] });
+    const { nodes } = await this.findMany({
+      nodeIds: [...descendants, nodeId],
+    });
 
     await this.tx.run(async () => {
       await this.repository.deleteMany([...descendants, nodeId]);
@@ -241,7 +267,9 @@ export class FitmentNodeService implements FitmentNodeApi {
     });
   }
 
-  private toFitmentNode(node: Generator<BaseFitmentNode, BaseFitmentNode>): FitmentNode {
+  private toFitmentNode(
+    node: Generator<BaseFitmentNode, BaseFitmentNode>,
+  ): FitmentNode {
     const current = node.next().value;
 
     switch (current.type) {
@@ -272,7 +300,9 @@ export class FitmentNodeService implements FitmentNodeApi {
           id: current.id,
           type: 'transmission',
           name: current.name,
-          parent: this.toFitmentNode(node) as FitmentModelNode | FitmentSeriesNode,
+          parent: this.toFitmentNode(node) as
+            | FitmentModelNode
+            | FitmentSeriesNode,
         } satisfies FitmentTransmissionNode;
       case 'fuelType':
         return {
@@ -280,12 +310,16 @@ export class FitmentNodeService implements FitmentNodeApi {
           type: 'fuelType',
           name: current.name,
           parent: this.toFitmentNode(node) as
-            FitmentModelNode | FitmentSeriesNode | FitmentTransmissionNode,
+            | FitmentModelNode
+            | FitmentSeriesNode
+            | FitmentTransmissionNode,
         } satisfies FitmentFuelTypeNode;
     }
   }
 
-  private *ancestors(node: BaseFitmentNode): Generator<BaseFitmentNode, BaseFitmentNode> {
+  private *ancestors(
+    node: BaseFitmentNode,
+  ): Generator<BaseFitmentNode, BaseFitmentNode> {
     while (node.type !== 'make') {
       yield node;
       node = node.parent!;

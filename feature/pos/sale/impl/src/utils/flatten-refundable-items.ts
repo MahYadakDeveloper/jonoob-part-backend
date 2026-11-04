@@ -1,7 +1,16 @@
-import { InvoiceItem, InvoiceItemBase, LineItems, Money } from '@feature/shared';
+import {
+  InvoiceItem,
+  InvoiceItemBase,
+  LineItems,
+  Money,
+} from '@feature/shared';
 
-export function flattenRefundableItems(items: LineItems<InvoiceItem>): LineItems<InvoiceItemBase> {
-  const result: LineItems<InvoiceItemBase> = new LineItems((item) => item.productId);
+export function flattenRefundableItems(
+  items: LineItems<InvoiceItem>,
+): LineItems<InvoiceItemBase> {
+  const result: LineItems<InvoiceItemBase> = new LineItems(
+    (item) => item.productId,
+  );
 
   for (const item of items) {
     if (item.kind === 'leaf') {
@@ -27,7 +36,9 @@ export function flattenRefundableItems(items: LineItems<InvoiceItem>): LineItems
         discount: {
           discountPerUnit: Money.zero(),
           discountedQuantity: 0,
-          totalDiscount: childTotal.subtract(childTotal.multiply(discountRatio)),
+          totalDiscount: childTotal.subtract(
+            childTotal.multiply(discountRatio),
+          ),
           source: { id: '' },
         },
         lineTotal: childTotal.multiply(discountRatio),

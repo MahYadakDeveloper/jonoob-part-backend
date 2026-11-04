@@ -43,22 +43,23 @@ import { PayResponse } from './payment.res';
 
 @Injectable()
 export class PaymentService implements PaymentApi {
-  private static readonly PaymentSettings: SettingToken<{ expiry: Duration }> = {
-    key: 'payment',
-    defaultValue: {
-      expiry: {
-        value: 30,
-        unit: 'minute',
+  private static readonly PaymentSettings: SettingToken<{ expiry: Duration }> =
+    {
+      key: 'payment',
+      defaultValue: {
+        expiry: {
+          value: 30,
+          unit: 'minute',
+        },
       },
-    },
 
-    schema: z.object({
-      expiry: z.object({
-        value: z.number().positive(),
-        unit: z.enum(['month', 'year', 'week', 'hour', 'minute']),
+      schema: z.object({
+        expiry: z.object({
+          value: z.number().positive(),
+          unit: z.enum(['month', 'year', 'week', 'hour', 'minute']),
+        }),
       }),
-    }),
-  };
+    };
 
   constructor(
     private readonly wallet: WalletApi,
@@ -115,8 +116,12 @@ export class PaymentService implements PaymentApi {
         refundedTo: 'payment_reversed',
       };
     } catch (err) {
-      const { summary } = await this.order.getOrderSummary({ orderId: session.orderId });
-      const { customer } = await this.order.getRecipientInformation({ orderId: session.orderId });
+      const { summary } = await this.order.getOrderSummary({
+        orderId: session.orderId,
+      });
+      const { customer } = await this.order.getRecipientInformation({
+        orderId: session.orderId,
+      });
       await this.wallet.deposit({
         amount: summary.grandTotal,
         customerId: customer.id,
@@ -140,7 +145,11 @@ export class PaymentService implements PaymentApi {
     return { gateway: session.gateway.name };
   }
 
-  async getTrackingCode({ providerId }: { providerId: number }): Promise<{ trackingCode: string }> {
+  async getTrackingCode({
+    providerId,
+  }: {
+    providerId: number;
+  }): Promise<{ trackingCode: string }> {
     const session = await this.repository.findByProviderId(providerId);
 
     if (!session?.gateway) throw new Error();
@@ -153,29 +162,43 @@ export class PaymentService implements PaymentApi {
     };
   }
 
-  async pay({ providerId, gatewayName, useWallet }: PayRequest): Promise<PayResponse> {
+  async pay({
+    providerId,
+    gatewayName,
+    useWallet,
+  }: PayRequest): Promise<PayResponse> {
     const session = await this.repository.findByProviderId(providerId);
     if (!session) throw new Error();
     if (session.gateway?.status === 'paid') throw new Error();
 
     const gateway = this.gateways.resolve(gatewayName);
 
-    const expiryExecutionDate = await this.job.getExecutionDate(session.expiryJob.id);
+    const expiryExecutionDate = await this.job.getExecutionDate(
+      session.expiryJob.id,
+    );
     const expiresAt = new Date();
     expiresAt.setMinutes(
-      expiresAt.getMinutes() + gateway.expiryInMinutes + gateway.verificationDeadlineInMinutes,
+      expiresAt.getMinutes() +
+        gateway.expiryInMinutes +
+        gateway.verificationDeadlineInMinutes,
     );
 
     // [NOTE] The expired state means even if money paid they would refunded by gateway provider
-    if (expiryExecutionDate < expiresAt) await this.job.update(session.expiryJob.id, expiresAt);
+    if (expiryExecutionDate < expiresAt)
+      await this.job.update(session.expiryJob.id, expiresAt);
 
     if (!gateway.supportsPartialPayment && useWallet) throw new Error();
 
-    const { customer: customerContact } = await this.order.getRecipientInformation({
+    const { customer: customerContact } =
+      await this.order.getRecipientInformation({
+        orderId: session.orderId,
+      });
+    const { items: purchasedItems } = await this.order.getOrderItems({
       orderId: session.orderId,
     });
-    const { items: purchasedItems } = await this.order.getOrderItems({ orderId: session.orderId });
-    const { summary } = await this.order.getOrderSummary({ orderId: session.orderId });
+    const { summary } = await this.order.getOrderSummary({
+      orderId: session.orderId,
+    });
 
     return await this.tx.run(async () => {
       const { paymentUrl } = await gateway.createPaymentTicket({
@@ -224,11 +247,18 @@ export class PaymentService implements PaymentApi {
         }
 
         if (useWallet.amount.gt(amountDue)) {
-          throw new WalletPaymentExceedsInvoiceError(useWallet.amount, amountDue);
+          throw new WalletPaymentExceedsInvoiceError(
+            useWallet.amount,
+            amountDue,
+          );
         }
 
         if (balance.available.lt(useWallet.amount)) {
-          throw new InsufficientWalletBalanceError(customerId, useWallet.amount, balance.available);
+          throw new InsufficientWalletBalanceError(
+            customerId,
+            useWallet.amount,
+            balance.available,
+          );
         }
 
         walletAmount = useWallet.amount;

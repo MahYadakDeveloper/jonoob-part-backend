@@ -2,7 +2,13 @@ import { LineItems } from '@feature/shared';
 import { ProcurementRequest } from './model/procurement-request';
 
 export interface ProcurementRequestRepository {
-  findAll({ take, skip }: { take?: number; skip?: number }): Promise<LineItems<ProcurementRequest>>;
+  findAll({
+    take,
+    skip,
+  }: {
+    take?: number;
+    skip?: number;
+  }): Promise<LineItems<ProcurementRequest>>;
 
   create(request: ProcurementRequest): Promise<void>;
 

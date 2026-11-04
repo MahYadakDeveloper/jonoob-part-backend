@@ -1,4 +1,7 @@
-import { type OutboxRepository, type TransactionManager } from '@feature/shared';
+import {
+  type OutboxRepository,
+  type TransactionManager,
+} from '@feature/shared';
 import {
   PayoffRequestCreatedEventType,
   RefundRequest,
@@ -41,7 +44,8 @@ export class SettlementService implements SettlementApi {
       }
 
       // Wallet credit
-      if (!req.customerId) throw new Error('Customer is required for wallet refund');
+      if (!req.customerId)
+        throw new Error('Customer is required for wallet refund');
 
       await this.wallet.deposit({
         customerId: req.customerId,

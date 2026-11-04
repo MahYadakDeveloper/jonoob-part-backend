@@ -2,9 +2,9 @@ import {
   TaxApi,
   TaxCalculationRequest,
   TaxCalculationResponse,
-} from "@feature/tax-api";
-import { TaxFormulaEvaluator } from "tax.evaluator";
-import { TaxFormulaRepository } from "tax.repository";
+} from '@feature/tax-api';
+import { TaxFormulaEvaluator } from 'tax.evaluator';
+import { TaxFormulaRepository } from 'tax.repository';
 
 export class TaxService implements TaxApi {
   constructor(

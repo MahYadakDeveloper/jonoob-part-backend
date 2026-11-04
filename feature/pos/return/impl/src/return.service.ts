@@ -188,7 +188,11 @@ export class SaleService {
     });
   }
 
-  private calculateProportionalTax(tax: Money, refund: Money, invoiceTotal: Money): Money {
+  private calculateProportionalTax(
+    tax: Money,
+    refund: Money,
+    invoiceTotal: Money,
+  ): Money {
     const ratio = refund.value / invoiceTotal.value;
 
     return tax.multiply(ratio);
@@ -208,11 +212,14 @@ export class SaleService {
         () => new ReturnItemsDoNotMatchSaleError(),
       );
 
-      if (returnItem.quantity > refundableItem.quantity) throw new ReturnItemsDoNotMatchSaleError();
+      if (returnItem.quantity > refundableItem.quantity)
+        throw new ReturnItemsDoNotMatchSaleError();
 
       // Discount given is considered
       refund = refund.add(
-        refundableItem.lineTotal.divide(refundableItem.quantity).multiply(returnItem.quantity),
+        refundableItem.lineTotal
+          .divide(refundableItem.quantity)
+          .multiply(returnItem.quantity),
       );
     }
     return refund;
@@ -235,7 +242,9 @@ export class SaleService {
       ...item,
       description: refundableItem.description,
       unitPrice: refundableItem.unitPrice,
-      lineTotal: refundableItem.lineTotal.divide(refundableItem.quantity).multiply(item.quantity),
+      lineTotal: refundableItem.lineTotal
+        .divide(refundableItem.quantity)
+        .multiply(item.quantity),
     };
   }
 }

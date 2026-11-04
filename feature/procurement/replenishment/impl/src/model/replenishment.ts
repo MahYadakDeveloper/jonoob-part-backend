@@ -1,5 +1,5 @@
 export type Replenishment = {
-  goodId: string,
-  createdAt: Date
-  updatedAt?: Date
-}
+  goodId: string;
+  createdAt: Date;
+  updatedAt?: Date;
+};

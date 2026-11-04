@@ -78,7 +78,9 @@ export class CategoriesService {
       const [existing] = await tx
         .select({ id: categories.id })
         .from(categories)
-        .where(and(eq(categories.parentId, parentId), eq(categories.slug, 'other')));
+        .where(
+          and(eq(categories.parentId, parentId), eq(categories.slug, 'other')),
+        );
       otherId = existing.id;
     }
 

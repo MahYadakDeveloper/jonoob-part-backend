@@ -7,7 +7,9 @@ export interface FitmentNodeRepository {
   }): Promise<BaseFitmentNode>;
   findById(id: string): Promise<BaseFitmentNode>;
   findHierarchyNodeById(id: string): Promise<BaseFitmentNode | null>;
-  findManyHierarchyNodesByIds(ids: string[]): Promise<LineItems<BaseFitmentNode>>;
+  findManyHierarchyNodesByIds(
+    ids: string[],
+  ): Promise<LineItems<BaseFitmentNode>>;
 
   findDescendants(id: string): Promise<string[]>;
 

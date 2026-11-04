@@ -9,7 +9,9 @@ export const appConfig = registerAs('app', () => ({
   webUrl: baseUrlSchema.parse(process.env.APP_WEB_URL),
   apiUrl: baseUrlSchema.parse(process.env.APP_API_URL),
   productsUrl: baseUrlSchema.parse(process.env.APP_PRODUCTS_URL),
-  successfulPaymentUrl: baseUrlSchema.parse(process.env.APP_SUCCESSFUL_PAYMENT_URL),
+  successfulPaymentUrl: baseUrlSchema.parse(
+    process.env.APP_SUCCESSFUL_PAYMENT_URL,
+  ),
   failurePaymentUrl: baseUrlSchema.parse(process.env.APP_FAILURE_PAYMENT_URL),
 
   redis: {

@@ -15,34 +15,34 @@ Notes on using `next-mdx-remote` (RSC) in the App Router, how it affects perform
 
 ```ts
 // next.config.ts
-import type { NextConfig } from 'next'
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-}
+};
 
-export default nextConfig
+export default nextConfig;
 ```
 
 Best pattern: put the **whole component** (fetching the source and compiling it) inside one cached function, and pass only simple values such as a `slug` as arguments.
 
 ```tsx
 // components/RemoteMdx.tsx
-import { MDXRemote } from 'next-mdx-remote/rsc'
-import { cacheLife, cacheTag } from 'next/cache'
-import { Callout } from './Callout'
+import { MDXRemote } from 'next-mdx-remote/rsc';
+import { cacheLife, cacheTag } from 'next/cache';
+import { Callout } from './Callout';
 
-const components = { Callout }
+const components = { Callout };
 
 export async function RemoteMdx({ slug }: { slug: string }) {
-  'use cache'
-  cacheLife('hours')
-  cacheTag(`mdx:${slug}`)
+  'use cache';
+  cacheLife('hours');
+  cacheTag(`mdx:${slug}`);
 
-  const res = await fetch(`https://example.com/docs/${slug}.mdx`)
-  if (!res.ok) throw new Error(`MDX not found: ${slug}`)
+  const res = await fetch(`https://example.com/docs/${slug}.mdx`);
+  if (!res.ok) throw new Error(`MDX not found: ${slug}`);
 
-  return <MDXRemote source={await res.text()} components={components} />
+  return <MDXRemote source={await res.text()} components={components} />;
 }
 ```
 
@@ -51,9 +51,9 @@ export async function RemoteMdx({ slug }: { slug: string }) {
 export default async function Page({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params
+  const { slug } = await params;
 
   return (
     <main>
@@ -61,7 +61,7 @@ export default async function Page({
       <RemoteMdx slug={slug} />
       <ContactForm />
     </main>
-  )
+  );
 }
 ```
 
@@ -78,11 +78,11 @@ When the source changes, invalidate by tag with `revalidateTag('mdx:<slug>', 'ma
 
 ## Choosing an approach
 
-| Situation | Recommendation |
-|---|---|
-| Static files inside the repo (guides, legal pages) | `@next/mdx`: compiled at build time, no runtime cost |
-| External source or database content | `next-mdx-remote` plus `'use cache'` |
-| Untrusted or admin-written content | Markdoc or `react-markdown`, which do not execute arbitrary code |
+| Situation                                          | Recommendation                                                   |
+| -------------------------------------------------- | ---------------------------------------------------------------- |
+| Static files inside the repo (guides, legal pages) | `@next/mdx`: compiled at build time, no runtime cost             |
+| External source or database content                | `next-mdx-remote` plus `'use cache'`                             |
+| Untrusted or admin-written content                 | Markdoc or `react-markdown`, which do not execute arbitrary code |
 
 ## Security
 

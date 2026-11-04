@@ -1,3 +1,3 @@
-import { ProductInvoiceItem } from "@feature/shared";
+import { ProductInvoiceItem } from '@feature/shared';
 
-export type BundleComponentInvoiceItem = Omit<ProductInvoiceItem, "discount">;
+export type BundleComponentInvoiceItem = Omit<ProductInvoiceItem, 'discount'>;

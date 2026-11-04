@@ -11,14 +11,20 @@ import { type SupplierRepository } from './supplier.repository';
 export class SupplierManagementService implements SupplierManagementApi {
   constructor(private readonly repository: SupplierRepository) {}
 
-  async findById({ supplierId }: FindSupplierByIdRequest): Promise<FindSupplierByIdResponse> {
+  async findById({
+    supplierId,
+  }: FindSupplierByIdRequest): Promise<FindSupplierByIdResponse> {
     const supplier = await this.repository.findById(supplierId);
     return {
       supplier,
     };
   }
 
-  async addSupplier({ info }: { info: Omit<Supplier, 'id'> }): Promise<{ supplierId: string }> {
+  async addSupplier({
+    info,
+  }: {
+    info: Omit<Supplier, 'id'>;
+  }): Promise<{ supplierId: string }> {
     const supplierId = await this.repository.create(info);
     return {
       supplierId,
@@ -29,7 +35,13 @@ export class SupplierManagementService implements SupplierManagementApi {
     await this.repository.delete(supplierId);
   }
 
-  async editSupplier({ supplierId, info }: { supplierId: string; info: Omit<Supplier, 'id'> }) {
+  async editSupplier({
+    supplierId,
+    info,
+  }: {
+    supplierId: string;
+    info: Omit<Supplier, 'id'>;
+  }) {
     await this.repository.update(supplierId, info);
   }
 }

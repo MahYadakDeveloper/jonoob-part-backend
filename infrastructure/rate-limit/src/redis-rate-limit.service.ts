@@ -2,7 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { InjectRedis } from '@infra/db-redis';
 import { Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { RATE_LIMIT_SCRIPT, RATE_LIMIT_SCRIPT_SHA } from './lua-scripts.constant';
+import {
+  RATE_LIMIT_SCRIPT,
+  RATE_LIMIT_SCRIPT_SHA,
+} from './lua-scripts.constant';
 import type {
   RateLimitConfig,
   RateLimitDecision,
@@ -63,14 +66,20 @@ export class RedisRateLimitService {
     assertValidRules(rules);
 
     const keys = rules.map((r) => this.toRedisKey(r.key));
-    const args = [mode, randomUUID(), ...rules.flatMap((r) => encode(r.config))];
+    const args = [
+      mode,
+      randomUUID(),
+      ...rules.flatMap((r) => encode(r.config)),
+    ];
 
     const reply = await this.evalScript(keys, args);
     const [allowed, index, remaining, limit, retryAfter] = parseReply(reply);
 
     const rule = rules[index - 1];
     if (!rule) {
-      throw new Error(`Rate limit script returned invalid rule index: ${index}`);
+      throw new Error(
+        `Rate limit script returned invalid rule index: ${index}`,
+      );
     }
 
     return { allowed, key: rule.key, remaining, limit, retryAfter };
@@ -87,7 +96,12 @@ export class RedisRateLimitService {
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('NOSCRIPT')) {
-        return this.redis.eval(RATE_LIMIT_SCRIPT, keys.length, ...keys, ...args);
+        return this.redis.eval(
+          RATE_LIMIT_SCRIPT,
+          keys.length,
+          ...keys,
+          ...args,
+        );
       }
       throw error;
     }
@@ -109,7 +123,11 @@ function encode(config: RateLimitConfig): string[] {
     case 'fixed-window':
     case 'sliding-window-log':
     case 'sliding-window-counter':
-      return [config.algorithm, String(config.limit), String(config.windowSeconds)];
+      return [
+        config.algorithm,
+        String(config.limit),
+        String(config.windowSeconds),
+      ];
   }
 }
 

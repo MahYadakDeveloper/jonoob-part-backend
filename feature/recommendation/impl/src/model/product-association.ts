@@ -27,11 +27,11 @@
  *     Clutch kit -> Clutch alignment tool
  */
 export type ProductRelationType =
-  | "manual"
-  | "category"
-  | "fitment"
-  | "alternative"
-  | "bundle";
+  | 'manual'
+  | 'category'
+  | 'fitment'
+  | 'alternative'
+  | 'bundle';
 
 /**
  * Explicit relation between two products.
@@ -95,7 +95,6 @@ export type RelatedProductRule =
   | SameCategoryRelatedRule
   | FitmentRelatedRule;
 
-
 /**
  * Finds products from the parent category.
  *
@@ -113,8 +112,7 @@ export type RelatedProductRule =
  *   Electrical System
  */
 export type ParentCategoryRelatedRule = {
-  strategy: "parent_category";
-
+  strategy: 'parent_category';
 
   /**
    * How many levels should move upward.
@@ -127,14 +125,11 @@ export type ParentCategoryRelatedRule = {
    */
   depth: number;
 
-
   /**
    * Maximum returned products.
    */
   limit: number;
 };
-
-
 
 /**
  * Finds products from the same category.
@@ -147,19 +142,15 @@ export type ParentCategoryRelatedRule = {
  *   Relay C
  */
 export type SameCategoryRelatedRule = {
-  strategy: "same_category";
-
+  strategy: 'same_category';
 
   /**
    * Exclude current product.
    */
   excludeCurrentProduct: boolean;
 
-
   limit: number;
 };
-
-
 
 /**
  * Finds products with the same vehicle compatibility.
@@ -172,8 +163,7 @@ export type SameCategoryRelatedRule = {
  *   Fuel filter
  */
 export type FitmentRelatedRule = {
-  strategy: "same_fitment";
-
+  strategy: 'same_fitment';
 
   limit: number;
 };
@@ -187,12 +177,10 @@ export type RelatedProductsConfiguration = {
    */
   manualProductIds: string[];
 
-
   /**
    * Automatic generation rules.
    */
   rules: RelatedProductRule[];
-
 
   /**
    * Final maximum items shown to customer.
@@ -203,19 +191,12 @@ export type RelatedProductsConfiguration = {
 export type RelatedProductResult = {
   productId: string;
 
-
   /**
    * Why this product was recommended.
    *
    * Useful for debugging and analytics.
    */
-  source:
-    | "manual"
-    | "category"
-    | "fitment"
-    | "alternative"
-    | "bundle";
-
+  source: 'manual' | 'category' | 'fitment' | 'alternative' | 'bundle';
 
   priority: number;
 };

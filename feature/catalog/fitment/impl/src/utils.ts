@@ -1,4 +1,7 @@
-import { FitmentMakeNode, FitmentNode } from '@feature/catalog.fitment.node-api';
+import {
+  FitmentMakeNode,
+  FitmentNode,
+} from '@feature/catalog.fitment.node-api';
 
 export function* ancestors(
   node: FitmentNode | FitmentMakeNode,

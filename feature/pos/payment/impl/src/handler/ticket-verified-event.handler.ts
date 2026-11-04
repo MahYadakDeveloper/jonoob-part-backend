@@ -5,7 +5,10 @@ import {
   type TransactionManager,
 } from '@feature/shared';
 import { OrderPaidEventPayload, OrderPaidEventType } from '@feature/order-api';
-import { TicketVerifiedEventPayload, TicketVerifiedEventType } from '@feature/payment-gateway-api';
+import {
+  TicketVerifiedEventPayload,
+  TicketVerifiedEventType,
+} from '@feature/payment-gateway-api';
 import { Injectable } from '@nestjs/common';
 import { PaymentGatewayResolver } from '../payment-gateway.resolver';
 import { type PaymentSessionRepository } from '../payment-session.repository';

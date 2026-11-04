@@ -1,12 +1,12 @@
-import { GrantedCashback, Money } from "@feature/shared";
+import { GrantedCashback, Money } from '@feature/shared';
 
 export type ReversalCashbackResponse =
   | {
-      kind: "reversed";
+      kind: 'reversed';
       reversedAmount: Money;
     }
   | {
-      kind: "deduct_from_refund";
+      kind: 'deduct_from_refund';
       deductedAmount: Money;
     };
 

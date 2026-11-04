@@ -1,4 +1,7 @@
-import { ProductRedefinedEventPayload, ProductRedefinedEventType } from '@feature/catalog-api';
+import {
+  ProductRedefinedEventPayload,
+  ProductRedefinedEventType,
+} from '@feature/catalog-api';
 import { type BrandApi } from '@feature/catalog-brand-api';
 import {
   type FitmentApi,
@@ -48,7 +51,11 @@ export class FitmentManyDeletedEventHandler extends BaseEventHandler<FitmentMany
         (x) => x.productId,
       );
       const fitmentIds = [
-        ...new Set(productWithNonDeletedFitments.toArray().flatMap((x) => x.nonDeletedFitments)),
+        ...new Set(
+          productWithNonDeletedFitments
+            .toArray()
+            .flatMap((x) => x.nonDeletedFitments),
+        ),
       ];
       const { fitments } = await this.fitment.findMany({ fitmentIds });
 

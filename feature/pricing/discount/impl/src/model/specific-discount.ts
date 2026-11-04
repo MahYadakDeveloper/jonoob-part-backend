@@ -1,7 +1,7 @@
-import { Money } from "@feature/shared";
-import { DiscountUsagePolicy } from "./discount-usage-policy";
+import { Money } from '@feature/shared';
+import { DiscountUsagePolicy } from './discount-usage-policy';
 
-export type SpecificDiscount= {
+export type SpecificDiscount = {
   id: string;
   productId: string;
   usagePolicy: DiscountUsagePolicy;

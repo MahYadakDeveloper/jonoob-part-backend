@@ -138,7 +138,11 @@ export class PaymentRepository extends DrizzleBaseRepository<
   async settle(id: number, s: Settlement): Promise<boolean> {
     const allocation =
       s.method === 'partial'
-        ? { amount: null, walletAmount: s.walletAmount, gatewayAmount: s.gatewayAmount }
+        ? {
+            amount: null,
+            walletAmount: s.walletAmount,
+            gatewayAmount: s.gatewayAmount,
+          }
         : { amount: s.amount, walletAmount: null, gatewayAmount: null };
     const gateway =
       s.method === 'wallet'

@@ -2,12 +2,12 @@ import {
   CalculateCashbackRequest,
   GrantingCashbackRequest,
   ReversalCashbackRequest,
-} from "./cashback.requests";
+} from './cashback.requests';
 import {
   CalculateCashbackResponse,
   GrantingCashbackResponse,
   ReversalCashbackResponse,
-} from "./cashback.responses";
+} from './cashback.responses';
 
 export interface CashbackApi {
   grant(request: GrantingCashbackRequest): Promise<GrantingCashbackResponse>;

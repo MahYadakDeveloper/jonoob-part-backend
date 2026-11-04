@@ -1,11 +1,11 @@
-import { LineItems } from "@feature/shared";
-import { DiscountUsagePolicy } from "./discount-usage-policy";
+import { LineItems } from '@feature/shared';
+import { DiscountUsagePolicy } from './discount-usage-policy';
 
-type UnlimitedUsagePolicy = Extract<DiscountUsagePolicy, { kind: "unlimited" }>;
+type UnlimitedUsagePolicy = Extract<DiscountUsagePolicy, { kind: 'unlimited' }>;
 
 type LimitedUsagePolicyWithoutExpiry = Omit<
-  Extract<DiscountUsagePolicy, { kind: "limited" }>,
-  "expiresAt"
+  Extract<DiscountUsagePolicy, { kind: 'limited' }>,
+  'expiresAt'
 >;
 
 type CampaignUsagePolicy =

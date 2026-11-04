@@ -52,7 +52,9 @@ export class DeliverySucceededEventHandler extends BaseEventHandler<DeliverySucc
 
       await this.outbox.save({
         type: OrderDeliverySucceededEventType,
-        payload: { orderId: delivery.orderId } satisfies OrderDeliverySucceededEventPayload,
+        payload: {
+          orderId: delivery.orderId,
+        } satisfies OrderDeliverySucceededEventPayload,
       });
     });
   }

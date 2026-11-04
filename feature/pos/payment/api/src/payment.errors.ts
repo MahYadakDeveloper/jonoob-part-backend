@@ -1,4 +1,4 @@
-import { Money } from "@feature/shared";
+import { Money } from '@feature/shared';
 
 export abstract class PaymentError extends Error {
   protected constructor(message: string) {
@@ -59,7 +59,7 @@ export class WalletVerificationRequiredError extends PaymentError {
  */
 export class InvalidWalletVerificationCodeError extends PaymentError {
   constructor() {
-    super("Wallet verification code is invalid or expired.");
+    super('Wallet verification code is invalid or expired.');
   }
 }
 

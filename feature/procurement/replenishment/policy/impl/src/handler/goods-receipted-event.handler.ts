@@ -40,7 +40,9 @@ export class GoodsReceiptedEventHandler extends BaseEventHandler<GoodsReceiptedE
 
     if (requests.length)
       await this.replenishment.replenishMany({
-        replenishment: requests.map((r) => ({ goodId: r })).toLineItems((r) => r.goodId),
+        replenishment: requests
+          .map((r) => ({ goodId: r }))
+          .toLineItems((r) => r.goodId),
       });
 
     const requestIds = new Set(requests);

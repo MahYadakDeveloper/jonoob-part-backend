@@ -1,4 +1,7 @@
-import { FitmentNode, type FitmentNodeApi } from '@feature/catalog.fitment.node-api';
+import {
+  FitmentNode,
+  type FitmentNodeApi,
+} from '@feature/catalog.fitment.node-api';
 import { OutboxRepository, TransactionManager } from '@feature/shared';
 import {
   FindFitmentRequest,
@@ -42,7 +45,9 @@ export class FitmentService implements FitmentApi {
     };
   }
 
-  async findMany({ fitmentIds }: FindManyFitmentRequest): Promise<FindManyFitmentResponse> {
+  async findMany({
+    fitmentIds,
+  }: FindManyFitmentRequest): Promise<FindManyFitmentResponse> {
     const fitments = await this.repository.findMany(fitmentIds);
 
     const { nodes } = await this.node.findMany({
@@ -70,7 +75,9 @@ export class FitmentService implements FitmentApi {
    * Validation of the model year (e.g. Persian or Gregorian calendar) is
    * intentionally delegated to higher layers such as controllers.
    */
-  async create({ fitmentDto }: FitmentCreationRequest): Promise<FitmentCreationResponse> {
+  async create({
+    fitmentDto,
+  }: FitmentCreationRequest): Promise<FitmentCreationResponse> {
     const { node } = await this.node.find({ nodeId: fitmentDto.nodeReference });
 
     const id = await this.repository.create({
@@ -80,7 +87,10 @@ export class FitmentService implements FitmentApi {
 
     return { fitmentId: id };
   }
-  async update({ fitmentId, fitmentDto }: FitmentUpdatingRequest): Promise<void> {
+  async update({
+    fitmentId,
+    fitmentDto,
+  }: FitmentUpdatingRequest): Promise<void> {
     const fitment = await this.repository.find(fitmentId);
 
     if (fitment === null) throw new Error(`Not found fitment ${fitmentId}`);

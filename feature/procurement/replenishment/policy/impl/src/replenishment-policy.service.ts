@@ -6,7 +6,11 @@ import { type ReplenishmentPolicyRepository } from './replenishment-policy.repos
 @Injectable()
 export class ReplenishmentPolicyService {
   constructor(private readonly repository: ReplenishmentPolicyRepository) {}
-  list({ criteria }: { criteria: PageCriteria }): Promise<PageResult<ReplenishmentPolicy>> {
+  list({
+    criteria,
+  }: {
+    criteria: PageCriteria;
+  }): Promise<PageResult<ReplenishmentPolicy>> {
     return this.repository.list(criteria);
   }
 

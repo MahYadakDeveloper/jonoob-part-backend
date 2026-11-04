@@ -5,10 +5,10 @@ Built with **Drizzle ORM + PostgreSQL** in a NestJS service. No triggers, no cus
 
 Files:
 
-| File | Purpose |
-|---|---|
-| `categories.schema.ts` | Drizzle tables: `categories`, `product_categories` |
-| `categories.service.ts` | All write operations and the business rules |
+| File                    | Purpose                                            |
+| ----------------------- | -------------------------------------------------- |
+| `categories.schema.ts`  | Drizzle tables: `categories`, `product_categories` |
+| `categories.service.ts` | All write operations and the business rules        |
 
 ---
 
@@ -16,15 +16,15 @@ Files:
 
 ### `categories` (adjacency list)
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid PK | `defaultRandom()` |
-| `parent_id` | uuid, nullable | `NULL` = root category. FK to `categories.id`, `ON DELETE RESTRICT` |
-| `name` | text | Display name |
-| `slug` | text | URL-safe identifier (validated by `slugChecks`) |
-| `sort_order` | integer | Display order among siblings (default `0`) |
-| `is_active` | boolean | Visibility flag (default `true`) |
-| `created_at` / `updated_at` | timestamptz | `updated_at` is refreshed via `$onUpdate` |
+| Column                      | Type           | Notes                                                               |
+| --------------------------- | -------------- | ------------------------------------------------------------------- |
+| `id`                        | uuid PK        | `defaultRandom()`                                                   |
+| `parent_id`                 | uuid, nullable | `NULL` = root category. FK to `categories.id`, `ON DELETE RESTRICT` |
+| `name`                      | text           | Display name                                                        |
+| `slug`                      | text           | URL-safe identifier (validated by `slugChecks`)                     |
+| `sort_order`                | integer        | Display order among siblings (default `0`)                          |
+| `is_active`                 | boolean        | Visibility flag (default `true`)                                    |
+| `created_at` / `updated_at` | timestamptz    | `updated_at` is refreshed via `$onUpdate`                           |
 
 Constraints and indexes:
 
@@ -36,12 +36,12 @@ The same slug may appear under different parents (`men/shoes` and `women/shoes`)
 
 ### `product_categories` (join table)
 
-| Column | Type | Notes |
-|---|---|---|
-| `product_id` | uuid | FK to `products.id`, `ON DELETE CASCADE` |
-| `category_id` | uuid | FK to `categories.id`, `ON DELETE RESTRICT` |
-| `is_primary` | boolean | The product's main category (breadcrumbs, SEO) |
-| `created_at` | timestamptz | |
+| Column        | Type        | Notes                                          |
+| ------------- | ----------- | ---------------------------------------------- |
+| `product_id`  | uuid        | FK to `products.id`, `ON DELETE CASCADE`       |
+| `category_id` | uuid        | FK to `categories.id`, `ON DELETE RESTRICT`    |
+| `is_primary`  | boolean     | The product's main category (breadcrumbs, SEO) |
+| `created_at`  | timestamptz |                                                |
 
 Constraints and indexes:
 
@@ -53,17 +53,17 @@ Constraints and indexes:
 
 ## 2. Business Rules
 
-| # | Rule | Enforced by |
-|---|---|---|
-| 1 | A category cannot be its own parent | DB check constraint |
-| 2 | Sibling slugs are unique (roots included) | DB unique constraint |
-| 3 | A category with children cannot be deleted | DB FK `RESTRICT` |
-| 4 | A category linked to products cannot be deleted | DB FK `RESTRICT` |
-| 5 | At most one primary category per product | DB partial unique index |
-| 6 | Products attach **only to leaf categories** | **Service** |
-| 7 | No cycles in the tree (A → B → A) | **Service** |
-| 8 | Exactly one primary per product (at least one) | **Service** |
-| 9 | Adding a child under a category that has products moves those products to an `other` child | **Service** |
+| #   | Rule                                                                                       | Enforced by             |
+| --- | ------------------------------------------------------------------------------------------ | ----------------------- |
+| 1   | A category cannot be its own parent                                                        | DB check constraint     |
+| 2   | Sibling slugs are unique (roots included)                                                  | DB unique constraint    |
+| 3   | A category with children cannot be deleted                                                 | DB FK `RESTRICT`        |
+| 4   | A category linked to products cannot be deleted                                            | DB FK `RESTRICT`        |
+| 5   | At most one primary category per product                                                   | DB partial unique index |
+| 6   | Products attach **only to leaf categories**                                                | **Service**             |
+| 7   | No cycles in the tree (A → B → A)                                                          | **Service**             |
+| 8   | Exactly one primary per product (at least one)                                             | **Service**             |
+| 9   | Adding a child under a category that has products moves those products to an `other` child | **Service**             |
 
 > **Important:** rules 6 to 9 are **not** guaranteed by the database. They hold only if every write to
 > `categories` and `product_categories` goes through `CategoriesService`. Do not write to these tables
@@ -91,12 +91,12 @@ fashion
 
 Example product links:
 
-| Product | Categories |
-|---|---|
-| iPhone 16 | `smartphones` (primary) |
-| MacBook Air | `laptops/other` (primary) |
-| Power bank | `accessories` (primary) |
-| Nike Air | `men/shoes` (primary), `women/shoes` |
+| Product     | Categories                           |
+| ----------- | ------------------------------------ |
+| iPhone 16   | `smartphones` (primary)              |
+| MacBook Air | `laptops/other` (primary)            |
+| Power bank  | `accessories` (primary)              |
+| Nike Air    | `men/shoes` (primary), `women/shoes` |
 
 Parents such as `electronics` are **not** linked to products; they are reached through the tree.
 
@@ -146,7 +146,7 @@ await categoriesService.move(categoryId, newParentId); // or null to make it a r
 await categoriesService.setProductCategories(
   productId,
   [menShoesId, womenShoesId], // all categories
-  menShoesId,                 // primary (must be in the list)
+  menShoesId, // primary (must be in the list)
 );
 ```
 
@@ -212,7 +212,9 @@ async function loadTree(): Promise<Node[]> {
     .where(eq(categories.isActive, true))
     .orderBy(asc(categories.sortOrder), asc(categories.name));
 
-  const byId = new Map<string, Node>(rows.map((r) => [r.id, { ...r, children: [] }]));
+  const byId = new Map<string, Node>(
+    rows.map((r) => [r.id, { ...r, children: [] }]),
+  );
   const roots: Node[] = [];
 
   for (const node of byId.values()) {
@@ -285,7 +287,12 @@ async function descendantIds(rootId: string): Promise<string[]> {
     const rows = await db
       .select({ id: categories.id })
       .from(categories)
-      .where(and(inArray(categories.parentId, frontier), eq(categories.isActive, true)));
+      .where(
+        and(
+          inArray(categories.parentId, frontier),
+          eq(categories.isActive, true),
+        ),
+      );
     frontier = rows.map((r) => r.id);
     ids.push(...frontier);
   }

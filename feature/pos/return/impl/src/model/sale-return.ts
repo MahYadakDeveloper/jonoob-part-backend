@@ -1,5 +1,9 @@
 import { InvoiceHeader, InvoiceItemBase, LineItems } from '@feature/shared';
-import { ReturnRefund, ReturnSnapshot, ReturnSummary } from '@feature/pos-return-api';
+import {
+  ReturnRefund,
+  ReturnSnapshot,
+  ReturnSummary,
+} from '@feature/pos-return-api';
 import { InvoiceNumber } from './invoice-number';
 
 export class SaleReturn {

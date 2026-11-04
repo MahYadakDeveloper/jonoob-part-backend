@@ -1,5 +1,5 @@
-import { LineItems } from "@feature/shared";
-import { DiscountUsage } from "../model/discount-usage";
+import { LineItems } from '@feature/shared';
+import { DiscountUsage } from '../model/discount-usage';
 
 export interface DiscountUsageRepository {
   findCustomerUsage(
@@ -10,7 +10,7 @@ export interface DiscountUsageRepository {
   findCustomerUsages(
     customerId: string,
     discountIds: string[],
-  ): Promise<LineItems< DiscountUsage>>;
+  ): Promise<LineItems<DiscountUsage>>;
 
   findDiscountUsages(
     discountIds: string[],

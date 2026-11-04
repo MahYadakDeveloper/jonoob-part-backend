@@ -10,13 +10,18 @@ import { AbilityFactory } from '@feature/authorization-http/contracts';
 export type ProcurementAction = 'manage' | 'read';
 
 // TODO: replace with the real Procurement domain type
-export type ProcurementSubjectType = Record<string, unknown> & { __typename: 'Procurement' };
+export type ProcurementSubjectType = Record<string, unknown> & {
+  __typename: 'Procurement';
+};
 
 export type ProcurementSubject = 'Procurement' | ProcurementSubjectType;
 
 export type ProcurementAbilityTuple = [ProcurementAction, ProcurementSubject];
 
-export type ProcurementAbility = MongoAbility<ProcurementAbilityTuple, MongoQuery>;
+export type ProcurementAbility = MongoAbility<
+  ProcurementAbilityTuple,
+  MongoQuery
+>;
 
 export class ProcurementAbilityFactory implements AbilityFactory<ProcurementAbility> {
   createFor(user: AuthenticatedUser): ProcurementAbility {

@@ -1,3 +1,3 @@
 export interface RemoveOneReplenishmentRequest {
-  goodId: string
+  goodId: string;
 }

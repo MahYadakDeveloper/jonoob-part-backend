@@ -51,7 +51,9 @@ export class S3Media implements MediaApi {
   getPublicUrl(request: GetMediaUrlRequest): Promise<GetMediaUrlResponse> {
     throw new Error('Method not implemented.');
   }
-  getSignedUrl(request: GetSignedMediaUrlRequest): Promise<GetSignedMediaUrlResponse> {
+  getSignedUrl(
+    request: GetSignedMediaUrlRequest,
+  ): Promise<GetSignedMediaUrlResponse> {
     throw new Error('Method not implemented.');
   }
 }

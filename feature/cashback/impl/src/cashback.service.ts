@@ -8,10 +8,19 @@ import {
   ReversalCashbackRequest,
   ReversalCashbackResponse,
 } from '@feature/cashback-api';
-import { CustomerType, GrantedCashback, InvoiceItem, LineItems, Money } from '@feature/shared';
+import {
+  CustomerType,
+  GrantedCashback,
+  InvoiceItem,
+  LineItems,
+  Money,
+} from '@feature/shared';
 import { type WalletApi } from '@feature/wallet-api';
 import { Injectable } from '@nestjs/common';
-import { CashbackAmountChangedError, InvalidCashbackRateError } from './cashback.errors';
+import {
+  CashbackAmountChangedError,
+  InvalidCashbackRateError,
+} from './cashback.errors';
 import { type CashbackSettingsRepository } from './repository/cashback-settings.repository';
 
 @Injectable()
@@ -26,7 +35,10 @@ export class CashbackService implements CashbackApi {
     purchasedItems,
   }: CalculateCashbackRequest): Promise<CalculateCashbackResponse> {
     return {
-      cashback: await this.resolveGrantedCashback(customer.type, purchasedItems),
+      cashback: await this.resolveGrantedCashback(
+        customer.type,
+        purchasedItems,
+      ),
     };
   }
 
@@ -36,7 +48,10 @@ export class CashbackService implements CashbackApi {
     purchasedItems,
     expectedCashback,
   }: GrantingCashbackRequest): Promise<GrantingCashbackResponse> {
-    const granted = await this.resolveGrantedCashback(customer.type, purchasedItems);
+    const granted = await this.resolveGrantedCashback(
+      customer.type,
+      purchasedItems,
+    );
 
     if (
       expectedCashback.appliedRate !== granted.appliedRate ||
@@ -72,9 +87,13 @@ export class CashbackService implements CashbackApi {
     granted,
     policy,
   }: ReversalCashbackRequest): Promise<ReversalCashbackResponse> {
-    const eligibleRefundAmount = this.resolveCashbackEligibleAmount(refundedItems);
+    const eligibleRefundAmount =
+      this.resolveCashbackEligibleAmount(refundedItems);
 
-    const reversalCashback = this.calculateCashback(granted.appliedRate, eligibleRefundAmount);
+    const reversalCashback = this.calculateCashback(
+      granted.appliedRate,
+      eligibleRefundAmount,
+    );
 
     switch (policy) {
       case CashbackReversalPolicy.DeductFromRefund:

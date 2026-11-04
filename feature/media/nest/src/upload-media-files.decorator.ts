@@ -1,13 +1,24 @@
 import '@fastify/multipart';
-import { MediaFileType, MediaType, UploadFileRequest } from '@feature/media-api';
-import { BadRequestException, createParamDecorator, ExecutionContext } from '@nestjs/common';
+import {
+  MediaFileType,
+  MediaType,
+  UploadFileRequest,
+} from '@feature/media-api';
+import {
+  BadRequestException,
+  createParamDecorator,
+  ExecutionContext,
+} from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
 import { Readable } from 'node:stream';
 import { UploadedMediaFileOptions, UploadedMediaFileResult } from './types';
 import { streamToBuffer } from './utils';
 
 export const UploadedMediaFiles = createParamDecorator(
-  async ({ output, maxSize, accept }: UploadedMediaFileOptions, ctx: ExecutionContext) => {
+  async (
+    { output, maxSize, accept }: UploadedMediaFileOptions,
+    ctx: ExecutionContext,
+  ) => {
     const req = ctx.switchToHttp().getRequest<FastifyRequest>();
 
     const files: UploadFileRequest<MediaFileType>[] = [];
@@ -23,7 +34,9 @@ export const UploadedMediaFiles = createParamDecorator(
         if (!accept.includes(mediaType as MediaType)) {
           file.file.resume();
 
-          throw new BadRequestException(`Media type "${file.mimetype}" is not allowed.`);
+          throw new BadRequestException(
+            `Media type "${file.mimetype}" is not allowed.`,
+          );
         }
       }
 

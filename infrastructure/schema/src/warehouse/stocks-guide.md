@@ -10,10 +10,10 @@ Warehouses, the storeroom and shelves: [`warehouse-storeroom-guide.md`](./wareho
 - Movements and reservations reference the **product**, never a stock row. That is what makes deletion at zero safe.
 - Every stock row has exactly one **label** (a physical sticker). Managers identify stock by label, not by product + place.
 
-| `warehouse_id` | `shelf_id` | Meaning |
-|---|---|---|
-| W | NULL | In warehouse W, not shelved yet (one row per product and warehouse) |
-| W | S | On shelf S of warehouse W (one row per product and shelf) |
+| `warehouse_id` | `shelf_id` | Meaning                                                             |
+| -------------- | ---------- | ------------------------------------------------------------------- |
+| W              | NULL       | In warehouse W, not shelved yet (one row per product and warehouse) |
+| W              | S          | On shelf S of warehouse W (one row per product and shelf)           |
 
 ---
 
@@ -21,7 +21,15 @@ Warehouses, the storeroom and shelves: [`warehouse-storeroom-guide.md`](./wareho
 
 ```ts
 import { sql } from 'drizzle-orm';
-import { check, foreignKey, index, integer, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import {
+  check,
+  foreignKey,
+  index,
+  integer,
+  timestamp,
+  unique,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 export const STOCK_CONSTRAINTS = {
   quantityNonNegative: 'stocks_quantity_non_negative_chk',
@@ -68,18 +76,20 @@ export const stocks = warehouseSchema.table(
     check(STOCK_CONSTRAINTS.quantityNonNegative, sql`${t.quantity} >= 0`),
 
     index('stocks_warehouse_idx').on(t.warehouseId),
-    index('stocks_shelf_idx').on(t.shelfId).where(sql`${t.shelfId} IS NOT NULL`),
+    index('stocks_shelf_idx')
+      .on(t.shelfId)
+      .where(sql`${t.shelfId} IS NOT NULL`),
   ],
 );
 ```
 
-| Invariant | Enforced by |
-|---|---|
-| One row per (product, warehouse, shelf) | `unique ... nullsNotDistinct()` |
-| Shelf belongs to the row's warehouse | composite FK |
-| Quantity never negative | check |
-| No row rests at 0 | trigger (section 3) |
-| Warehouse or shelf with stock cannot be deleted | `onDelete: 'restrict'` |
+| Invariant                                       | Enforced by                     |
+| ----------------------------------------------- | ------------------------------- |
+| One row per (product, warehouse, shelf)         | `unique ... nullsNotDistinct()` |
+| Shelf belongs to the row's warehouse            | composite FK                    |
+| Quantity never negative                         | check                           |
+| No row rests at 0                               | trigger (section 3)             |
+| Warehouse or shelf with stock cannot be deleted | `onDelete: 'restrict'`          |
 
 ---
 
@@ -139,19 +149,19 @@ One label per stock row (1:1, FK with cascade): created with the row, deleted wi
 - **Destination already holds this product?** Quantities merge into the existing row. No new label is issued; the response returns the existing one.
 - **Emptied stock:** its row and label are deleted. The response says `labelVoided: true` and the manager removes the sticker. Scanning a voided label returns `LABEL_NOT_FOUND`.
 
-| Action | Manager scans | System returns | Manager physically |
-|---|---|---|---|
-| Receive / store new stock | nothing (picks product and place) | label (new, or the existing one on merge) | sticks a new label on the shelf |
-| Issue | label on the source shelf | `remaining`, `labelVoided` | removes the label if voided |
-| Move (same or other warehouse) | source label | destination label, `isNewLabel`, `sourceRemaining`, `sourceLabelVoided` | sticks destination label on the destination shelf; removes the source label if voided |
+| Action                         | Manager scans                     | System returns                                                          | Manager physically                                                                    |
+| ------------------------------ | --------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Receive / store new stock      | nothing (picks product and place) | label (new, or the existing one on merge)                               | sticks a new label on the shelf                                                       |
+| Issue                          | label on the source shelf         | `remaining`, `labelVoided`                                              | removes the label if voided                                                           |
+| Move (same or other warehouse) | source label                      | destination label, `isNewLabel`, `sourceRemaining`, `sourceLabelVoided` | sticks destination label on the destination shelf; removes the source label if voided |
 
 ### Endpoints (manager only)
 
-| Method | Path | Body | Errors |
-|---|---|---|---|
-| `POST` | `/manager/stocks/receive` | `{ productId, warehouseId, shelfId?, quantity }` | `422 INVALID_QUANTITY` |
-| `POST` | `/manager/stocks/issue` | `{ label, quantity }` | `404 LABEL_NOT_FOUND`, `409 INSUFFICIENT_STOCK` |
-| `POST` | `/manager/stocks/move` | `{ fromLabel, quantity, to: { warehouseId, shelfId? } }` | `404 LABEL_NOT_FOUND`, `409 INSUFFICIENT_STOCK`, `422 SAME_PLACE` |
+| Method | Path                      | Body                                                     | Errors                                                            |
+| ------ | ------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------- |
+| `POST` | `/manager/stocks/receive` | `{ productId, warehouseId, shelfId?, quantity }`         | `422 INVALID_QUANTITY`                                            |
+| `POST` | `/manager/stocks/issue`   | `{ label, quantity }`                                    | `404 LABEL_NOT_FOUND`, `409 INSUFFICIENT_STOCK`                   |
+| `POST` | `/manager/stocks/move`    | `{ fromLabel, quantity, to: { warehouseId, shelfId? } }` | `404 LABEL_NOT_FOUND`, `409 INSUFFICIENT_STOCK`, `422 SAME_PLACE` |
 
 ### Code
 
@@ -229,11 +239,14 @@ export function issue(db: Db, label: string, n: number) {
   return db.transaction(async (tx) => {
     const { productId } = await findStockByLabel(tx, label); // which product to lock
     await lockProduct(tx, productId);
-    const stock = await findStockByLabel(tx, label);          // re-read under the lock
+    const stock = await findStockByLabel(tx, label); // re-read under the lock
     if (stock.quantity < n) throw new InsufficientStockError();
 
     const remaining = stock.quantity - n;
-    await tx.update(stocks).set({ quantity: remaining }).where(eq(stocks.id, stock.id));
+    await tx
+      .update(stocks)
+      .set({ quantity: remaining })
+      .where(eq(stocks.id, stock.id));
     return { remaining, labelVoided: remaining === 0 }; // 0: trigger deletes row + label
   });
 }
@@ -242,7 +255,8 @@ export function move(
   db: Db,
   p: { fromLabel: string; quantity: number; to: Place },
 ) {
-  if (!Number.isInteger(p.quantity) || p.quantity <= 0) throw new InvalidQuantityError();
+  if (!Number.isInteger(p.quantity) || p.quantity <= 0)
+    throw new InvalidQuantityError();
   return db.transaction(async (tx) => {
     const { productId } = await findStockByLabel(tx, p.fromLabel);
     await lockProduct(tx, productId);
@@ -254,7 +268,10 @@ export function move(
     if (src.quantity < p.quantity) throw new InsufficientStockError();
 
     const remaining = src.quantity - p.quantity;
-    await tx.update(stocks).set({ quantity: remaining }).where(eq(stocks.id, src.id));
+    await tx
+      .update(stocks)
+      .set({ quantity: remaining })
+      .where(eq(stocks.id, src.id));
     const dest = await addAt(tx, productId, p.to, p.quantity);
 
     return {

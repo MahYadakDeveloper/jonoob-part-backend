@@ -22,7 +22,9 @@ export interface PurchaseRecordApi {
     req: FindManyLatestRecordByGoodIdRequest,
   ): Promise<FindManyLatestRecordByGoodIdResponse>;
 
-  createManySuppliedRecord(req: SuppliedRecordManyCreationRequest): Promise<void>;
+  createManySuppliedRecord(
+    req: SuppliedRecordManyCreationRequest,
+  ): Promise<void>;
 
   findManyRecordByDocumentId(
     req: FindManyRecordByDocumentIdRequest,

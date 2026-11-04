@@ -1,4 +1,7 @@
-import { ProductRedefinedEventPayload, ProductRedefinedEventType } from '@feature/catalog-api';
+import {
+  ProductRedefinedEventPayload,
+  ProductRedefinedEventType,
+} from '@feature/catalog-api';
 import {
   CategoryDeletedEventPayload,
   CategoryDeletedEventType,

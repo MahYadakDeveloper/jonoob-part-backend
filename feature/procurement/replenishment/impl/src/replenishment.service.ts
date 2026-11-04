@@ -22,7 +22,9 @@ export class ReplenishmentService implements ReplenishmentApi {
     return { replenishment };
   }
 
-  async findByGoodId({ goodId }: FindByGoodIdRequest): Promise<FindByGoodIdResponse> {
+  async findByGoodId({
+    goodId,
+  }: FindByGoodIdRequest): Promise<FindByGoodIdResponse> {
     const replenishment = await this.repository.findByGoodId(goodId);
     return {
       replenishment,

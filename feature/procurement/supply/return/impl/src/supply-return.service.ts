@@ -1,4 +1,8 @@
-import { PageCriteria, PageResult, type TransactionManager } from '@feature/shared';
+import {
+  PageCriteria,
+  PageResult,
+  type TransactionManager,
+} from '@feature/shared';
 import {
   RecordSupplyReturnRequest,
   RecordSupplyReturnResponse,
@@ -17,11 +21,17 @@ export class SupplyReturnService implements SupplyReturnApi {
     private readonly tx: TransactionManager,
   ) {}
 
-  documents({ criteria }: { criteria: PageCriteria }): Promise<PageResult<SupplyReturnDocument>> {
+  documents({
+    criteria,
+  }: {
+    criteria: PageCriteria;
+  }): Promise<PageResult<SupplyReturnDocument>> {
     return this.repository.documents(criteria);
   }
 
-  async recordSupplyReturn(req: RecordSupplyReturnRequest): Promise<RecordSupplyReturnResponse> {
+  async recordSupplyReturn(
+    req: RecordSupplyReturnRequest,
+  ): Promise<RecordSupplyReturnResponse> {
     const returnId = await this.repository.create({ ...req });
     return {
       returnId,

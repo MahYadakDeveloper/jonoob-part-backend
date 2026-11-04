@@ -10,7 +10,11 @@ import {
   FindManyCategoryResponse,
   type CategoryApi,
 } from '@feature/catalog-category-api';
-import { LineItems, type OutboxRepository, type TransactionManager } from '@feature/shared';
+import {
+  LineItems,
+  type OutboxRepository,
+  type TransactionManager,
+} from '@feature/shared';
 import { Injectable } from '@nestjs/common';
 import { type CategoryRepository } from 'category.repository';
 import { CategoryDeletionRequest, CategoryUpdateRequest } from 'category.req';
@@ -23,7 +27,9 @@ export class CategoryService implements CategoryApi {
     private readonly tx: TransactionManager,
     private readonly outbox: OutboxRepository,
   ) {}
-  async find({ categoryId }: FindCategoryRequest): Promise<FindCategoryResponse> {
+  async find({
+    categoryId,
+  }: FindCategoryRequest): Promise<FindCategoryResponse> {
     const category = await this.repository.find(categoryId);
 
     if (!category) throw new Error(`Not found category: ${categoryId}`);
@@ -33,7 +39,9 @@ export class CategoryService implements CategoryApi {
     };
   }
 
-  async findMany({ categoryIds }: FindManyCategoryRequest): Promise<FindManyCategoryResponse> {
+  async findMany({
+    categoryIds,
+  }: FindManyCategoryRequest): Promise<FindManyCategoryResponse> {
     const categories = await this.repository.findMany(categoryIds);
 
     const categoriesDto = new LineItems<CategoryDto>(

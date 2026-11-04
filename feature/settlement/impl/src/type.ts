@@ -1,16 +1,16 @@
-import { BankDestination, Money } from "@feature/shared";
+import { BankDestination, Money } from '@feature/shared';
 
-export type SettlementType = "withdrawal" | "refund";
+export type SettlementType = 'withdrawal' | 'refund';
 
 export type SettlementStatus =
-  | "pending"
-  | "processing"
-  | "paid"
-  | "rejected"
-  | "cancelled";
+  | 'pending'
+  | 'processing'
+  | 'paid'
+  | 'rejected'
+  | 'cancelled';
 
 export type SettlementRequestWithdrawalType = {
-  type: "withdrawal";
+  type: 'withdrawal';
   customerId: string;
   amount: Money;
   destination: BankDestination;
@@ -19,7 +19,7 @@ export type SettlementRequestWithdrawalType = {
 };
 
 export type SettlementRequestRefundType = {
-  type: "refund";
+  type: 'refund';
   customerId?: string | null;
   amount: Money;
   destination: BankDestination;

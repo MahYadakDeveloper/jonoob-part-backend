@@ -4,7 +4,10 @@ import {
   type OutboxRepository,
   type TransactionManager,
 } from '@feature/shared';
-import { OrderPaymentFailedEventPayload, OrderPaymentFailedEventType } from '@feature/order-api';
+import {
+  OrderPaymentFailedEventPayload,
+  OrderPaymentFailedEventType,
+} from '@feature/order-api';
 import {
   TicketVerificationFailedEventPayload,
   TicketVerificationFailedEventType,

@@ -34,19 +34,19 @@ drizzle-kit migrate
 
 ## What the file contains
 
-| Object | Purpose |
-|---|---|
-| Seed `INSERT` into `label_counter` | Creates the single counter row (`last_seq = 0`, `max_seq = 999999999999`). Idempotent. |
-| `next_label_seq()` | The allocator (details below). |
-| `labels_assign_seq` (BEFORE INSERT) | Sets `NEW.seq := next_label_seq()`, overriding any supplied value. |
-| `labels_release_seq` (AFTER DELETE) | Inserts `OLD.seq` into `free_label_seqs`. No `ON CONFLICT`: a duplicate means corruption and must fail loudly. |
-| `labels_seq_immutable` | Blocks `UPDATE` of `seq`. |
-| `labels_identity_immutable` | Blocks `UPDATE` of `product_id` and `procurement_id`. |
-| `stocks_identity_immutable` | Blocks `UPDATE` of `label_id`. |
-| `stocks_track_zeroed` | Maintains `zeroed_at` (set when `quantity` becomes 0, kept while it stays 0, cleared otherwise). The purge job's grace period is based on it. |
-| `label_counter_guard_update` / `_delete` | `last_seq` may only stay the same or advance by exactly 1; `singleton` is immutable; the row cannot be deleted. Changing `max_seq` alone is allowed. |
-| `*_no_truncate` (3 triggers) | Block `TRUNCATE` on `labels`, `free_label_seqs`, `label_counter`. |
-| `add_stock_quantity(label_id, delta, storage_location)` | Gap-free upsert of the stock of a label (the product comes from the label); returns `stocks.id` (`uuid`). |
+| Object                                                  | Purpose                                                                                                                                              |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Seed `INSERT` into `label_counter`                      | Creates the single counter row (`last_seq = 0`, `max_seq = 999999999999`). Idempotent.                                                               |
+| `next_label_seq()`                                      | The allocator (details below).                                                                                                                       |
+| `labels_assign_seq` (BEFORE INSERT)                     | Sets `NEW.seq := next_label_seq()`, overriding any supplied value.                                                                                   |
+| `labels_release_seq` (AFTER DELETE)                     | Inserts `OLD.seq` into `free_label_seqs`. No `ON CONFLICT`: a duplicate means corruption and must fail loudly.                                       |
+| `labels_seq_immutable`                                  | Blocks `UPDATE` of `seq`.                                                                                                                            |
+| `labels_identity_immutable`                             | Blocks `UPDATE` of `product_id` and `procurement_id`.                                                                                                |
+| `stocks_identity_immutable`                             | Blocks `UPDATE` of `label_id`.                                                                                                                       |
+| `stocks_track_zeroed`                                   | Maintains `zeroed_at` (set when `quantity` becomes 0, kept while it stays 0, cleared otherwise). The purge job's grace period is based on it.        |
+| `label_counter_guard_update` / `_delete`                | `last_seq` may only stay the same or advance by exactly 1; `singleton` is immutable; the row cannot be deleted. Changing `max_seq` alone is allowed. |
+| `*_no_truncate` (3 triggers)                            | Block `TRUNCATE` on `labels`, `free_label_seqs`, `label_counter`.                                                                                    |
+| `add_stock_quantity(label_id, delta, storage_location)` | Gap-free upsert of the stock of a label (the product comes from the label); returns `stocks.id` (`uuid`).                                            |
 
 ## How `next_label_seq()` works
 
@@ -60,36 +60,47 @@ Because allocators are serialized by the counter lock, the pool is never contend
 ## Key notes
 
 ### 1. Never use `ON CONFLICT` on `labels`
+
 The `BEFORE INSERT` trigger runs before conflict detection. If the statement then inserts nothing, the counter increment is **not** rolled back and a permanent gap appears. This also applies to Drizzle's `.onConflictDoNothing()` / `.onConflictDoUpdate()`.
 
 ### 2. Never use `ON CONFLICT` for stock upserts either
+
 Postgres checks `CHECK` constraints on the proposed row before conflict detection, so a negative delta fails on `quantity >= 0` even though the existing row could absorb it. Use `warehouse.add_stock_quantity(...)` (see `stock_code_usage_rules.md`). It relies on `READ COMMITTED`; under stricter isolation it raises `serialization_failure` after a few attempts instead of looping.
 
 ### 3. Inserts into `labels` are serialized
+
 The counter row lock is held until the inserting transaction ends. Keep transactions that create new labels short.
 
 ### 4. A supplied `seq` is ignored
+
 The trigger overwrites it. For data imports with fixed numbers you must temporarily disable `labels_assign_seq` and keep `label_counter` consistent yourself.
 
 ### 5. Raising the ceiling
+
 ```sql
 UPDATE warehouse.label_counter SET max_seq = 9999999999999;
 ```
+
 Must be `>= last_seq` (table check). Phase 1 resumes where it stopped. Never edit `last_seq` by hand. The label format supports up to 19 digits (`bigint` limit).
 
 ### 6. Recycled labels
+
 In phase 2 a label number can point to a different label than before. Foreign keys to `labels.id` protect database rows (a label cannot be deleted while a child references it), but references **outside** foreign keys (caches, events, logs, printed labels, POS) are not protected. Purge or invalidate them when a label is deleted. No cooldown on freed numbers is implemented.
 
 ### 7. `TRUNCATE` is blocked
+
 In tests, temporarily disable the relevant trigger (`ALTER TABLE ... DISABLE TRIGGER ...`) if you must truncate.
 
 ### 8. "Moving" a label
+
 `product_id` / `procurement_id` cannot be updated. "Moving" means `DELETE` + `INSERT` (new number), and only works while no child row references the label.
 
 ### 9. Do not change the `id` generated expression later
+
 drizzle-kit would drop and recreate the column, which fails when child tables hold foreign keys to it.
 
 ### 10. Existing data
+
 This file assumes an empty database. With existing rows you need a separate data migration: set `last_seq` to `max(seq)`, insert unused numbers in `1..last_seq` into `free_label_seqs`. Disable `label_counter_guard_update` for that step, otherwise the guard rejects the jump.
 
 ## Behavior checklist for manual testing
