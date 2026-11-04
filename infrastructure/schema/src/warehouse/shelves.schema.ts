@@ -19,11 +19,11 @@ export const shelves = warehouseSchema.table(
     level: smallint('level').notNull(),
 
     // Derived from the coordinates, so it can never drift from them.
-    // Fixed width keeps text ordering equal to physical ordering: 02-014-3
+    // Fixed width keeps text ordering equal to physical ordering: 02-14-3
     code: text('code')
       .notNull()
       .generatedAlwaysAs(
-        sql`lpad(aisle::text, 2, '0') || '-' || lpad(bay::text, 3, '0') || '-' || level::text`,
+        sql`lpad(aisle::text, 2, '0') || '-' || lpad(bay::text, 2, '0') || '-' || level::text`,
       ),
   },
   (t) => [
@@ -38,7 +38,7 @@ export const shelves = warehouseSchema.table(
       .on(t.warehouseId, t.code)
       .nullsNotDistinct(),
     check('shelves_aisle_chk', sql`${t.aisle} BETWEEN 1 AND 99`),
-    check('shelves_bay_chk', sql`${t.bay} BETWEEN 1 AND 999`),
+    check('shelves_bay_chk', sql`${t.bay} BETWEEN 1 AND 99`),
     check('shelves_level_chk', sql`${t.level} BETWEEN 0 AND 9`),
   ],
 );

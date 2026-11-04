@@ -1,8 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { check, index, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { orders } from './orders.schema';
 import { orderSchema } from './order.schema';
-import { reservations } from '../warehouse/reservations.schema';
+import { orders } from './orders.schema';
 
 export const fulfillmentStatus = orderSchema.enum('fulfillment_status', [
   'pending',
@@ -21,9 +20,10 @@ export const fulfillments = orderSchema.table(
       .unique('fulfillments_order_unique')
       .references(() => orders.id, { onDelete: 'cascade' }),
 
-    reservationId: uuid('reservation_id').references(() => reservations.id, {
-      onDelete: 'set null',
-    }),
+    // reservation is referenced by the id
+    // reservationId: uuid('reservation_id').references(() => reservations.id, {
+    //   onDelete: 'set null',
+    // }),
 
     status: fulfillmentStatus('status').notNull().default('pending'),
     cancellationReason: text('cancellation_reason'),
@@ -32,8 +32,7 @@ export const fulfillments = orderSchema.table(
     updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
   },
   (t) => [
-    index('fulfillments_reservation_idx').on(t.reservationId),
-    index('fulfillments_status_idx').on(t.status),
+    index('fulfillments_status_idx').on(t.createdAt.desc(), t.status),
 
     check(
       'fulfillments_manager_cancel_requires_reason',

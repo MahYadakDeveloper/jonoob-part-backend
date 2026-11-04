@@ -8,10 +8,6 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { products } from '../catalog/products.schema';
-import {
-  createLabelTables,
-  labelCodeRegExp,
-} from '../public/helpers/create-label-table';
 import { shelves } from './shelves.schema';
 import { warehouseSchema } from './warehouse.schema';
 
@@ -46,7 +42,6 @@ export const stocks = warehouseSchema.table(
   },
   (t) => [
     unique('stocks_product_shelf_uq').on(t.productId, t.shelfId),
-
     // >= 0 (not > 0): a decrement may touch 0 for an instant before the
     // trigger deletes the row.
     check(STOCK_CONSTRAINTS.quantityNonNegative, sql`${t.quantity} >= 0`),
@@ -55,13 +50,3 @@ export const stocks = warehouseSchema.table(
     index('stocks_shelf_idx').on(t.shelfId),
   ],
 );
-
-/** IMPORTANT: Stock with out label should not exist */
-const STOCK_LABEL_PREFIX = 'S';
-export const {
-  counter: _,
-  freeSeqs: __,
-  labels: stockLabels,
-} = createLabelTables(warehouseSchema, stocks, STOCK_LABEL_PREFIX);
-
-export const stockLabelRegExp = labelCodeRegExp(STOCK_LABEL_PREFIX);
