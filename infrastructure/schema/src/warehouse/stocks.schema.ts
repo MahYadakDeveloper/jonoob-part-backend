@@ -1,22 +1,26 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
+  foreignKey,
   index,
   integer,
-  text,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
-
-import { warehouseSchema } from './warehouse.schema';
+import { products } from '../catalog/products.schema';
 import {
   createLabelTables,
   labelCodeRegExp,
 } from '../public/helpers/create-label-table';
+import { shelves } from './shelves.schema';
+import { warehouseSchema } from './warehouse.schema';
+import { warehouses } from './warehouses.schema';
 
+// One row per (product, warehouse, shelf). shelfId NULL = received but not
+// shelved yet (a single "unshelved" row per product and warehouse).
 export const STOCK_CONSTRAINTS = {
-  storageLocationNotBlank: 'stocks_storage_location_not_blank_chk',
-  zeroedAtConsistent: 'stocks_zeroed_at_consistent_chk',
+  quantityNonNegative: 'stocks_quantity_non_negative_chk',
 } as const;
 
 export const stocks = warehouseSchema.table(
@@ -24,32 +28,46 @@ export const stocks = warehouseSchema.table(
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
 
-    quantity: integer('quantity').default(0).notNull(),
+    warehouseId: uuid('warehouse_id')
+      .notNull()
+      .references(() => warehouses.id, { onDelete: 'restrict' }),
 
-    storageLocation: text('storage_location'),
+    // NULL = not shelved yet.
+    shelfId: uuid('shelf_id'),
 
-    declaredAt: timestamp('declared_at', { withTimezone: true })
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'restrict' }),
+
+    // Quantity at THIS place. A row never rests at 0: the trigger
+    // stocks_delete_when_empty removes it as soon as it reaches 0.
+    quantity: integer('quantity').notNull(),
+
+    // Start of the current stocking period at this place. Rows are deleted at
+    // zero, so a re-stocked place gets a fresh value.
+    stockedSince: timestamp('stocked_since', { withTimezone: true })
       .defaultNow()
       .notNull(),
-
-    // Moment quantity became 0; NULL while quantity > 0.
-    // Maintained ONLY by trigger stocks_track_zeroed.
-    // Used by the purge job to apply a grace period before deleting.
-    zeroedAt: timestamp('zeroed_at', { withTimezone: true }),
   },
   (t) => [
-    check(
-      STOCK_CONSTRAINTS.storageLocationNotBlank,
-      sql`${t.storageLocation} IS NULL OR btrim(${t.storageLocation}) <> ''`,
-    ),
-    check(
-      STOCK_CONSTRAINTS.zeroedAtConsistent,
-      sql`(${t.quantity} = 0) = (${t.zeroedAt} IS NOT NULL)`,
-    ),
-    // Partial index for the purge job: only empty stocks are indexed.
-    index('stocks_zeroed_idx')
-      .on(t.zeroedAt, t.id)
-      .where(sql`${t.quantity} = 0`),
+    unique('stocks_product_warehouse_shelf_uq')
+      .on(t.productId, t.warehouseId, t.shelfId)
+      .nullsNotDistinct(),
+
+    foreignKey({
+      name: 'stocks_shelf_warehouse_fk',
+      columns: [t.shelfId, t.warehouseId],
+      foreignColumns: [shelves.id, shelves.warehouseId],
+    }).onDelete('restrict'),
+
+    // >= 0 (not > 0): a decrement may touch 0 for an instant before the
+    // trigger deletes the row.
+    check(STOCK_CONSTRAINTS.quantityNonNegative, sql`${t.quantity} >= 0`),
+
+    index('stocks_warehouse_idx').on(t.warehouseId),
+    index('stocks_shelf_idx')
+      .on(t.shelfId)
+      .where(sql`${t.shelfId} IS NOT NULL`),
   ],
 );
 

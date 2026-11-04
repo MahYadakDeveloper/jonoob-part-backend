@@ -68,13 +68,6 @@ export const mediaFiles = mediaSchema.table(
   },
   (t) => [
     check(
-      'media_files_type_matches_mime',
-      sql`(${t.type} = 'image' and ${t.mime}::text like 'image/%')
-   or (${t.type} = 'video' and ${t.mime}::text like 'video/%')
-   or (${t.type} = 'document' and ${t.mime}::text in ('text/markdown', 'text/mdx'))`,
-    ),
-
-    check(
       'media_files_file_name_not_blank',
       sql`char_length(btrim(${t.fileName})) > 0`,
     ),

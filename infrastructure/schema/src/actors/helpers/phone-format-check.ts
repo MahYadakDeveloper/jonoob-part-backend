@@ -1,4 +1,3 @@
-// shared/db/checks.ts
 import { sql } from 'drizzle-orm';
 import { check, type AnyPgColumn } from 'drizzle-orm/pg-core';
 

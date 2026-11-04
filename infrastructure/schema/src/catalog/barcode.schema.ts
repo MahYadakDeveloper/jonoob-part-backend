@@ -1,12 +1,8 @@
+import { sql } from 'drizzle-orm';
 import { check, index, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
+import { BARCODE_PATTERNS, BARCODE_TYPES } from './barcode-rules';
 import { catalogSchema } from './catalog.schema';
 import { products } from './products.schema';
-import { sql } from 'drizzle-orm';
-import {
-  BARCODE_PATTERNS,
-  BARCODE_TYPES,
-  CASE_SENSITIVE_TYPE,
-} from './barcode-rules';
 
 export const BARCODE_CONSTRAINTS = {
   barcodePk: 'barcodes_type_value_pk',
@@ -25,12 +21,7 @@ export const barcodes = catalogSchema.table(
       .references(() => products.id, { onDelete: 'cascade' })
       .notNull(),
     type: barcodeType('type').notNull(),
-    rawValue: text('raw_value').notNull(), // the only written column
-    value: text('value') // canonical, derived
-      .notNull()
-      .generatedAlwaysAs(
-        sql`CASE WHEN type = ${lit(CASE_SENSITIVE_TYPE)} THEN btrim(raw_value) ELSE upper(btrim(raw_value)) END`,
-      ),
+    value: text('raw_value').notNull(), // the only written column
   },
   (t) => [
     primaryKey({

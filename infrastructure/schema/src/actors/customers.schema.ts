@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { check, uuid, varchar } from 'drizzle-orm/pg-core';
 import { actorsSchema } from './actors.schema';
-import { phoneFormatCheck } from './checks';
+import { phoneFormatCheck } from './helpers/phone-format-check';
 
 export const technicianSpecialty = actorsSchema.enum('technician_specialty', [
   'electrical',

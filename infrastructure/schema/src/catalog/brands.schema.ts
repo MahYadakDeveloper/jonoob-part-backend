@@ -1,7 +1,8 @@
 import { sql } from 'drizzle-orm';
 import { check, text, uuid } from 'drizzle-orm/pg-core';
 import { createImageTable } from '../media/helpers/media-tables';
-import { catalogSchema, slugChecks } from './catalog.schema';
+import { catalogSchema } from './catalog.schema';
+import { slugChecks } from './helpers/slug-checks';
 
 export const brands = catalogSchema.table(
   'brands',
@@ -16,7 +17,7 @@ export const brands = catalogSchema.table(
       'brands_name_length_chk',
       sql`char_length(${t.name}) between 1 and 100`,
     ),
-    ...slugChecks('brands', t.slug),
+    ...slugChecks(t.slug),
   ],
 );
 
