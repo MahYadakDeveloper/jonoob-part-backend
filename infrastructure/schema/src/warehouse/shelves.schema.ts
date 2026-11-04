@@ -8,9 +8,10 @@ export const shelves = warehouseSchema.table(
   {
     id: uuid('id').defaultRandom().primaryKey(),
 
-    warehouseId: uuid('warehouse_id')
-      .notNull()
-      .references(() => warehouses.id, { onDelete: 'restrict' }),
+    // NULL = storeroom shelf.
+    warehouseId: uuid('warehouse_id').references(() => warehouses.id, {
+      onDelete: 'restrict',
+    }),
 
     aisle: smallint('aisle').notNull(),
     bay: smallint('bay').notNull(),
@@ -26,11 +27,16 @@ export const shelves = warehouseSchema.table(
       ),
   },
   (t) => [
-    unique('shelves_position_uq').on(t.warehouseId, t.aisle, t.bay, t.level),
-    // Lookup by scanned code.
-    unique('shelves_warehouse_code_uq').on(t.warehouseId, t.code),
-    // Target of the composite FK from stocks.
-    unique('shelves_id_warehouse_uq').on(t.id, t.warehouseId),
+    // NULLS NOT DISTINCT: warehouse_id is NULL for storeroom shelves, and
+    // without it the same position could exist twice there.
+    // Requires PostgreSQL 15+.
+    unique('shelves_position_uq')
+      .on(t.warehouseId, t.aisle, t.bay, t.level)
+      .nullsNotDistinct(),
+    // Lookup by scanned code (same NULL reasoning as above).
+    unique('shelves_warehouse_code_uq')
+      .on(t.warehouseId, t.code)
+      .nullsNotDistinct(),
     check('shelves_aisle_chk', sql`${t.aisle} BETWEEN 1 AND 99`),
     check('shelves_bay_chk', sql`${t.bay} BETWEEN 1 AND 999`),
     check('shelves_level_chk', sql`${t.level} BETWEEN 0 AND 9`),

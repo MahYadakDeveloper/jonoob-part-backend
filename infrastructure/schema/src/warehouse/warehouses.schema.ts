@@ -1,12 +1,18 @@
-import { text, uuid } from 'drizzle-orm/pg-core';
+import { index, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { warehouseSchema } from './warehouse.schema';
 
-export const STOREROOM_CODE = 'storeroom';
-
-// The shop's own storage is a regular row with code STOREROOM_CODE.
-export const warehouses = warehouseSchema.table('warehouses', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  code: text('code').notNull().unique(),
-  name: text('name').notNull(),
-  address: text('address'),
-});
+// External warehouses only. The storeroom is not a row here: it is the set of
+// shelves whose warehouse_id is NULL.
+export const warehouses = warehouseSchema.table(
+  'warehouses',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    code: text('code').notNull().unique(),
+    name: text('name').notNull(),
+    address: text('address'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [index('created_at_idx').on(t.createdAt)],
+);

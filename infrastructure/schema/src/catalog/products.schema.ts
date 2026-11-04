@@ -11,6 +11,10 @@ import {
   createDocumentTable,
   createImageTable,
 } from '../media/helpers/media-tables';
+import {
+  createLabelTables,
+  labelCodeRegExp,
+} from '../public/helpers/create-label-table';
 import { brands } from './brands.schema';
 import { catalogSchema } from './catalog.schema';
 
@@ -92,3 +96,13 @@ export const productDescriptions = createDocumentTable(
     mimes: ['text/markdown', 'text/mdx'],
   },
 );
+
+/** [NOTE] Use labels when products has no barcodes */
+const PRODUCT_LABEL_PREFIX = 'P';
+export const {
+  counter: _,
+  freeSeqs: __,
+  labels: productLabels,
+} = createLabelTables(catalogSchema, products, PRODUCT_LABEL_PREFIX);
+
+export const productLabelRegExp = labelCodeRegExp(PRODUCT_LABEL_PREFIX);
