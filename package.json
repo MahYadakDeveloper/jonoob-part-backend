@@ -1,29 +1,4 @@
 {
-  "scripts": {
-    "gen:http": "bun run scripts/make-http-module.ts",
-    "gen:errors": "bun run scripts/make-errors-module.ts",
-    "knip:deps:ws": "knip --dependencies --workspace",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.4.3",
-    "@types/ms": "^2.1.0",
-    "@types/node": "^26.6.5",
-    "dotenv": "catalog:",
-    "drizzle-kit": "1.0.0-rc.4",
-    "eslint-import-resolver-oxc": "catalog:",
-    "eslint-plugin-boundaries": "catalog:",
-    "knip": "^6.43.0",
-    "oxfmt": "^0.76.0",
-    "oxlint": "^1.91.0",
-    "oxlint-tsgolint": "7",
-    "prettier": "^3.9.10",
-    "prettier-plugin-embed": "^0.8.2",
-    "prettier-plugin-jsdoc": "^1.8.1",
-    "prettier-plugin-sql": "^0.20.0",
-    "typescript": "catalog:"
-  },
   "workspaces": {
     "packages": [
       "app/*",
@@ -69,6 +44,31 @@
       "typescript": "^7.0.2",
       "zod": "^4.6.7"
     }
+  },
+  "scripts": {
+    "gen:http": "bun run scripts/make-http-module.ts",
+    "gen:errors": "bun run scripts/make-errors-module.ts",
+    "knip:deps:ws": "knip --dependencies --workspace",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.3",
+    "@types/ms": "^2.1.0",
+    "@types/node": "^26.6.5",
+    "dotenv": "catalog:",
+    "drizzle-kit": "1.0.0-rc.4",
+    "eslint-import-resolver-oxc": "catalog:",
+    "eslint-plugin-boundaries": "catalog:",
+    "knip": "^6.43.0",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0",
+    "oxlint-tsgolint": "7",
+    "prettier": "^3.9.10",
+    "prettier-plugin-embed": "^0.8.2",
+    "prettier-plugin-jsdoc": "^1.8.1",
+    "prettier-plugin-sql": "^0.20.0",
+    "typescript": "catalog:"
   },
   "overrides": {
     "fastify": "catalog:"
