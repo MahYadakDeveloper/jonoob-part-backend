@@ -1,0 +1,27 @@
+{
+  "name": "@store/pricing-markup-impl",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
+  },
+  "dependencies": {
+    "@feature/catalog-api": "workspace:*",
+    "@feature/catalog-brand-api": "workspace:*",
+    "@feature/catalog-category-api": "workspace:*",
+    "@feature/pricing-markup-api": "workspace:*",
+    "@feature/shared": "workspace:*",
+    "@nestjs/common": "catalog:"
+  }
+}

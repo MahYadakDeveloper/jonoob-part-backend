@@ -22,8 +22,5 @@
     "drizzle-orm": "catalog:",
     "rxjs": "catalog:",
     "zod": "catalog:"
-  },
-  "devDependencies": {
-    "@repo/oxlint-config": "workspace:*"
   }
 }

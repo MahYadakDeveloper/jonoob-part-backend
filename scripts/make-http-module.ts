@@ -592,10 +592,6 @@ export class ${P}HttpModule {}
 `,
 
   // ---------------------------------------------------------- package files
-  '.oxlintrc.json': json({
-    extends: ['./node_modules/@repo/oxlint-config/http.json'],
-  }),
-
   'tsconfig.json': json({ extends: tsconfigExtends }),
 
   'package.json': json({
@@ -617,7 +613,6 @@ export class ${P}HttpModule {}
       rxjs: 'catalog:',
       zod: 'catalog:',
     },
-    devDependencies: { '@repo/oxlint-config': 'workspace:*' },
   }),
 };
 

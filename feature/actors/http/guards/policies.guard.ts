@@ -1,0 +1,64 @@
+import { MongoAbility } from '@casl/ability';
+import '@feature/authentication-http/augmentation/auth';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ModuleRef, Reflector } from '@nestjs/core';
+import { FastifyRequest } from 'fastify';
+import { PolicyContext, PolicyDefinition } from '../contracts';
+import { CHECK_POLICIES_KEY } from '../decorators';
+
+@Injectable()
+export class PoliciesGuard implements CanActivate {
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly moduleRef: ModuleRef,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const definition = this.reflector.getAllAndOverride<
+      PolicyDefinition<MongoAbility>
+    >(CHECK_POLICIES_KEY, [context.getHandler(), context.getClass()]);
+
+    if (!definition) {
+      return true;
+    }
+
+    const request = context.switchToHttp().getRequest<FastifyRequest>();
+
+    const user = request.user;
+
+    const abilityFactory = this.moduleRef.get(definition.abilityFactory, {
+      strict: false,
+    });
+
+    if (!user) throw new UnauthorizedException();
+
+    const ability = abilityFactory.createFor(user);
+
+    const policyContext = this.createPolicyContext(request);
+
+    for (const Handler of definition.handlers) {
+      const handler = this.moduleRef.get(Handler, { strict: false });
+
+      const allowed = await handler.handle(ability, policyContext);
+
+      if (!allowed) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private createPolicyContext(request: FastifyRequest): PolicyContext {
+    return {
+      params: request.params as Record<string, string>,
+      query: request.query as Record<string, unknown>,
+      body: request.body,
+    };
+  }
+}

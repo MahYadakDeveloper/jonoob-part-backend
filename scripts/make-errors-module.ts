@@ -364,12 +364,6 @@ void HttpStatus;
 const files: Record<string, string> = {
   [errorsFile]: errorsSource,
 
-  '.oxlintrc.json': `${JSON.stringify(
-    { extends: ['./node_modules/@repo/oxlint-config/error.json'] },
-    null,
-    2,
-  )}\n`,
-
   'tsconfig.json': `${JSON.stringify({ extends: tsconfigExtends }, null, 2)}\n`,
 
   'package.json': `${JSON.stringify(
@@ -382,9 +376,6 @@ const files: Record<string, string> = {
         '@feature/error-http': 'workspace:*',
         '@feature/shared': 'workspace:*',
         '@nestjs/common': 'catalog:',
-      },
-      devDependencies: {
-        '@repo/oxlint-config': 'workspace:*',
       },
     },
     null,

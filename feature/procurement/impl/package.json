@@ -1,11 +1,7 @@
 {
-  "name": "@feature/procurement",
+  "name": "@procurement/impl",
+  "private": true,
   "type": "commonjs",
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -15,7 +11,11 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
+  },
   "dependencies": {
     "@feature/procurement-api": "workspace:*",
     "@feature/procurement-supply-api": "workspace:*",

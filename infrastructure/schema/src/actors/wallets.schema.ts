@@ -11,52 +11,49 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+
+import { actorsSchema } from './actors.schema';
 // adjust these two imports to your project layout
 import { customers } from './customers.schema';
-import { actorsSchema } from './actors.schema';
 
 /**
- * Wallet model
- * ------------
+ * ## Wallet model
+ *
  * - wallets.available_balance : spendable money (single stored number).
- * - freezed_amounts           : one row per hold. Rows are NEVER deleted on
- *                               commit/release; they only change status.
- *                               A hold is always settled in FULL (no partial
- *                               commit).
- * - frozen amount             : derived as
- *                               SUM(freezed_amounts.amount) WHERE status = 'active'.
- * - total                     : available + frozen (derived).
- * - wallet_transactions       : ledger; every row is a snapshot of the moment
- *                               (availableBalanceAfter). Freeze-related rows
- *                               DEPEND on their freezed_amounts row: deleting a
- *                               freezed_amounts row cascades to its freeze /
- *                               commit_freeze / unfreeze transactions.
+ * - freezed_amounts : one row per hold. Rows are NEVER deleted on commit/release;
+ *   they only change status. A hold is always settled in FULL (no partial
+ *   commit).
+ * - frozen amount : derived as SUM(freezed_amounts.amount) WHERE status =
+ *   'active'.
+ * - total : available + frozen (derived).
+ * - wallet_transactions : ledger; every row is a snapshot of the moment
+ *   (availableBalanceAfter). Freeze-related rows DEPEND on their
+ *   freezed_amounts row: deleting a freezed_amounts row cascades to its freeze
+ *   / commit_freeze / unfreeze transactions.
  *
- * Effect of each transaction type (all inside ONE db transaction, after
- * `SELECT ... FOR UPDATE` on the wallet row):
+ * Effect of each transaction type (all inside ONE db transaction, after `SELECT
+ * ... FOR UPDATE` on the wallet row):
  *
- *   type           | available_balance | freezed_amounts
- *   ---------------+-------------------+------------------------------------
- *   credit         | +amount           | -
- *   debit          | -amount           | -
- *   freeze         | -amount           | insert row, status = active
- *   unfreeze       | +freeze.amount    | status = released, settled_at = now
- *   commit_freeze  | unchanged         | status = committed, settled_at = now
- *                  |  (money already left available when frozen; the whole
- *                  |   hold is spent)
+ * type | available_balance | freezed_amounts
+ * ---------------+-------------------+------------------------------------
+ * credit | +amount | - debit | -amount | - freeze | -amount | insert row,
+ * status = active unfreeze | +freeze.amount | status = released, settled_at =
+ * now commit_freeze | unchanged | status = committed, settled_at = now | (money
+ * already left available when frozen; the whole | hold is spent)
  *
- * Order inside the DB transaction:
- *   freeze : insert freezed_amounts -> insert wallet_transactions(freeze)
- *   settle : read active freeze -> insert wallet_transactions(commit_freeze |
- *            unfreeze, amount = freeze.amount) -> update freezed_amounts status
+ * Order inside the DB transaction: freeze : insert freezed_amounts -> insert
+ * wallet_transactions(freeze) settle : read active freeze -> insert
+ * wallet_transactions(commit_freeze | unfreeze, amount = freeze.amount) ->
+ * update freezed_amounts status
  *
  * Invariants enforced in the service (cross-table, CHECK cannot see them):
- *   - freeze row + freeze tx are created together, amounts equal
- *   - commit_freeze.amount = unfreeze.amount = freeze.amount
- *   - settle only when status = 'active'; tx type matches the new status
- *     (commit_freeze <-> committed, unfreeze <-> released)
- *   - deleting a freezed_amounts row does NOT touch available_balance; the
- *     service must compensate if such a delete is ever done
+ *
+ * - freeze row + freeze tx are created together, amounts equal
+ * - commit_freeze.amount = unfreeze.amount = freeze.amount
+ * - settle only when status = 'active'; tx type matches the new status
+ *   (commit_freeze <-> committed, unfreeze <-> released)
+ * - deleting a freezed_amounts row does NOT touch available_balance; the service
+ *   must compensate if such a delete is ever done
  */
 
 export const walletTransactionType = actorsSchema.enum(
@@ -168,7 +165,8 @@ export const walletTransactions = actorsSchema.table(
     type: walletTransactionType('type').notNull(),
     amount: bigint('amount', { mode: 'number' }).notNull(),
     reason: walletTransactionReason('reason').notNull(),
-    note: text('note'),
+    /** ex: Receipt (Only for payout) */
+    extra: text('extra'), // [NOTE] this column may change in future
 
     // set for freeze / commit_freeze / unfreeze only
     freezedAmountId: uuid('freezed_amount_id'),
@@ -226,7 +224,7 @@ export const walletTransactions = actorsSchema.table(
     check(
       'chk_wallet_tx_manual_adjustment',
       sql`${t.reason} <> 'manual_adjustment'
-          OR (${t.note} IS NOT NULL AND ${t.performedBy} IS NOT NULL)`,
+          OR (${t.extra} IS NOT NULL AND ${t.performedBy} IS NOT NULL)`,
     ),
 
     // each freeze row has exactly one 'freeze' tx ...

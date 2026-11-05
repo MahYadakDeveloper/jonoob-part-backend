@@ -2,124 +2,51 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "oxc", "import"],
   "jsPlugins": [
+    "eslint-plugin-boundaries",
     "./packages/oxlint-plugins/drizzle.mjs",
     "./packages/oxlint-plugins/nest.mjs"
   ],
-  "categories": { "correctness": "error" },
-  "env": { "node": true, "es2022": true },
-  "ignorePatterns": ["**/dist", "**/node_modules", "**/coverage"],
+  "settings": {
+    "boundaries/include": ["src/**/*.ts"],
+    "boundaries/elements": [
+      { "type": "helper", "pattern": "src/helpers/*" },
+      { "type": "component", "pattern": "src/components/*" },
+      { "type": "module", "pattern": "src/modules/*" }
+    ],
+    "import/resolver": {
+      "oxc": {
+        "tsconfig": { "configFile": "./tsconfig.json", "references": "auto" }
+      }
+    }
+  },
   "rules": {
+    "boundaries/no-unknown-dependencies": "error",
+    "boundaries/dependencies": [
+      "error",
+      {
+        "default": "disallow",
+        "policies": [
+          {
+            "from": { "element": { "type": "component" } },
+            "allow": { "to": { "element": { "type": "helper" } } }
+          },
+          {
+            "from": { "element": { "type": "module" } },
+            "allow": {
+              "to": { "element": { "type": ["component", "helper"] } }
+            }
+          }
+        ]
+      }
+    ],
+
+    // oxlint base rules.
     "typescript/no-explicit-any": "off",
     "typescript/no-floating-promises": "error",
     "no-unused-vars": ["error", { "fix": { "imports": "safe-fix" } }]
   },
-  "options": { "typeAware": true, "reportUnusedDisableDirectives": "warn" },
-  "overrides": [
-    {
-      "files": ["feature/**/api/**/*.ts"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": [
-                  "@feature/*",
-                  "@feature/*/**",
-                  "!@feature/shared",
-                  "!@feature/shared/**"
-                ],
-                "message": "api packages may only depend on @feature/shared."
-              },
-              {
-                "group": [
-                  "@infra/*",
-                  "@infra/*/**",
-                  "!@infra/schema",
-                  "!@infra/schema/**"
-                ],
-                "message": "api packages may only depend on @infra/schema."
-              },
-              {
-                "group": [
-                  "**",
-                  "!./**",
-                  "!../**",
-                  "!@feature/shared",
-                  "!@feature/shared/**",
-                  "!@infra/schema",
-                  "!@infra/schema/**"
-                ],
-                "message": "api packages may only import allowed libraries: add the library to the api override in the root .oxlintrc.json."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["feature/**/impl/**/*.ts"],
-      "rules": {
-        "drizzle/update-requires-returning": "warn",
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": ["@feature/*-impl", "@feature/*-impl/**"],
-                "message": "impl packages must not import other impl packages."
-              },
-              {
-                "group": ["@feature/*-http", "@feature/*-http/**"],
-                "message": "impl packages must not depend on http packages."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["feature/**/http/**/*.ts"],
-      "rules": {
-        "drizzle/update-requires-returning": "warn",
-        "nest/no-body-in-get": ["error", { "methods": ["Get", "Head"] }],
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": ["@feature/*-impl", "@feature/*-impl/**"],
-                "message": "http packages must not depend on impl packages."
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "files": ["feature/**/error/**/*.ts"],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": [
-                  "**",
-                  "!./**",
-                  "!../**",
-                  "!@nestjs/common",
-                  "!@feature/shared",
-                  "!@feature/shared/**",
-                  "!@feature/error-http",
-                  "!@feature/error-http/**"
-                ],
-                "message": "error packages may only depend on @feature/shared, @feature/error-http and @nestjs/common."
-              }
-            ]
-          }
-        ]
-      }
-    }
-  ]
+  "categories": { "correctness": "error" },
+  "env": { "node": true, "es2022": true },
+  "ignorePatterns": ["**/dist", "**/node_modules", "**/coverage"],
+  "options": { "typeAware": true, "reportUnusedDisableDirectives": "warn" }
 }

@@ -1,7 +1,7 @@
 {
-  "name": "@feature/shared",
-  "type": "commonjs",
+  "name": "@shared",
   "private": true,
+  "type": "commonjs",
   "exports": {
     "./contracts/*": "./src/contracts/*.ts",
     "./decorators/*": "./src/decorators/*.ts",
@@ -14,13 +14,13 @@
     "./extensions": "./src/extensions.ts",
     "./zod/*": "./src/zod/*.ts"
   },
+  "dependencies": {
+    "@nestjs/outbox": "catalog:",
+    "zod": "catalog:"
+  },
   "peerDependencies": {
     "@nestjs/common": "catalog:",
     "@nestjs/core": "catalog:",
     "rxjs": "catalog:"
-  },
-  "dependencies": {
-    "@nestjs/outbox": "catalog:",
-    "zod": "catalog:"
   }
 }

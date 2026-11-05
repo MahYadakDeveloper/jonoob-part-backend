@@ -1,0 +1,26 @@
+{
+  "name": "@procurement/replenishment-policy-impl",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
+  },
+  "dependencies": {
+    "@feature/procurement-api": "workspace:*",
+    "@feature/procurement-replenishment-api": "workspace:*",
+    "@feature/shared": "workspace:*",
+    "@feature/warehouse-api": "workspace:*",
+    "@nestjs/common": "catalog:"
+  }
+}

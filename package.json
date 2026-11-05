@@ -12,6 +12,8 @@
     "@types/node": "^26.6.5",
     "dotenv": "catalog:",
     "drizzle-kit": "1.0.0-rc.4",
+    "eslint-import-resolver-oxc": "catalog:",
+    "eslint-plugin-boundaries": "catalog:",
     "knip": "^6.43.0",
     "oxfmt": "^0.76.0",
     "oxlint": "^1.91.0",
@@ -53,6 +55,8 @@
       "dotenv": "^18.0.9",
       "drizzle-kit": "1.0.0-rc.4",
       "drizzle-orm": "1.0.0-rc.4",
+      "eslint-import-resolver-oxc": "^0.15.0",
+      "eslint-plugin-boundaries": "^7.4.1",
       "fastify": "5.12.7",
       "ioredis": "^6.0.0",
       "nest-commander": "^3.21.0",
@@ -71,8 +75,5 @@
   },
   "trustedDependencies": [
     "oxlint-tsgolint"
-  ],
-  "dependencies": {
-    "@repo/oxlint-config": "workspace:*"
-  }
+  ]
 }

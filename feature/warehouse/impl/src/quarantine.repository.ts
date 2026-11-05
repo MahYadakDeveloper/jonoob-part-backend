@@ -4,6 +4,9 @@ import { StockNotFoundError } from '@feature/warehouse-api/errors';
 import { MovementNotFoundError } from '@feature/warehouse-api/movement';
 import { DbErrors, DrizzleBaseRepository, onFk } from '@infra/db-drizzle';
 import { quarantines } from '@infra/schema/warehouse/quarantines.schema';
+import { WarehouseHttpModule } from '../../http/src/warehouse.http.module';
+
+const x = new WarehouseHttpModule
 
 type QuarantineItem = typeof quarantines.$inferSelect;
 

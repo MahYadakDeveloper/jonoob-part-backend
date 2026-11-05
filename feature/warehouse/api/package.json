@@ -1,16 +1,13 @@
 {
-  "name": "@feature/warehouse-api",
+  "name": "@warehouse/api",
+  "private": true,
   "type": "commonjs",
   "exports": {
     "./*": "./src/*.ts"
   },
-  "private": true,
   "dependencies": {
     "@feature/shared": "workspace:*",
     "@feature/warehouse-errors": "workspace:*",
     "@infra/schema": "workspace:*"
-  },
-  "devDependencies": {
-    "@repo/oxlint-config": "workspace:*"
   }
 }

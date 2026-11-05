@@ -1,10 +1,10 @@
 {
-  "name": "@feature/warehouse-impl",
+  "name": "@warehouse/impl",
+  "private": true,
   "type": "commonjs",
   "exports": {
     ".": "./src/index.ts"
   },
-  "private": true,
   "dependencies": {
     "@feature/shared": "workspace:*",
     "@feature/warehouse-api": "workspace:*",
@@ -13,8 +13,5 @@
     "@infra/schema": "workspace:*",
     "@nestjs/common": "catalog:",
     "drizzle-orm": "catalog:"
-  },
-  "devDependencies": {
-    "@repo/oxlint-config": "workspace:*"
   }
 }

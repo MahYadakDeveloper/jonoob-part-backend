@@ -253,10 +253,6 @@ const apiFiles: Record<string, string> = {
   'src/index.ts': `export * from './${k}.api';
 `,
 
-  '.oxlintrc.json': json({
-    extends: ['./node_modules/@repo/oxlint-config/api.json'],
-  }),
-
   'tsconfig.json': json({ extends: tsconfigExtends }),
 
   'package.json': json({
@@ -268,9 +264,6 @@ const apiFiles: Record<string, string> = {
       [errorsPkgName]: 'workspace:*',
       '@feature/shared': 'workspace:*',
       '@infra/schema': 'workspace:*',
-    },
-    devDependencies: {
-      '@repo/oxlint-config': 'workspace:*',
     },
   }),
 };
@@ -462,10 +455,6 @@ export {};
   'src/index.ts': `export * from './${k}.impl.module';
 `,
 
-  '.oxlintrc.json': json({
-    extends: ['./node_modules/@repo/oxlint-config/impl.json'],
-  }),
-
   'tsconfig.json': json({ extends: tsconfigExtends }),
 
   'package.json': json({
@@ -481,9 +470,6 @@ export {};
       '@infra/schema': 'workspace:*',
       '@nestjs/common': 'catalog:',
       'drizzle-orm': 'catalog:',
-    },
-    devDependencies: {
-      '@repo/oxlint-config': 'workspace:*',
     },
   }),
 };

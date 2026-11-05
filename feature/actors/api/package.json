@@ -1,11 +1,7 @@
 {
-  "name": "@feature/actors-api",
+  "name": "@actors/api",
+  "private": true,
   "type": "commonjs",
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
   "exports": {
     "./courier": {
       "types": "./dist/courier.api.d.ts",
@@ -23,7 +19,11 @@
       "require": "./dist/customer/index.js"
     }
   },
-  "private": true,
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
+  },
   "dependencies": {
     "@feature/shared": "workspace:*"
   }

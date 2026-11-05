@@ -1,20 +1,17 @@
 {
-  "name": "@feature/warehouse-movement-api",
+  "name": "@warehouse/movement-api",
+  "private": true,
   "type": "commonjs",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
   },
-  "private": true,
   "dependencies": {
     "@feature/shared": "workspace:*",
     "@infra/db-drizzle": "workspace:*",
     "@infra/schema": "workspace:*",
     "@nestjs/common": "catalog:",
     "drizzle-orm": "catalog:"
-  },
-  "devDependencies": {
-    "@repo/oxlint-config": "workspace:*"
   }
 }

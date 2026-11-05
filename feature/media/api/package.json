@@ -1,11 +1,7 @@
 {
-  "name": "@feature/media-api",
+  "name": "@media/api",
+  "private": true,
   "type": "commonjs",
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,6 +10,5 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
-  },
-  "private": true
+  }
 }

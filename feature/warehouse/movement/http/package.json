@@ -1,10 +1,10 @@
 {
-  "name": "@feature/warehouse-movement-http",
+  "name": "@warehouse/movement-http",
+  "private": true,
   "type": "commonjs",
   "exports": {
     ".": "./src/index.ts"
   },
-  "private": true,
   "dependencies": {
     "@casl/ability": "catalog:",
     "@feature/authentication-http": "workspace:*",
@@ -18,7 +18,6 @@
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/outbox": "catalog:",
-    "@repo/oxlint-config": "workspace:*",
     "drizzle-orm": "catalog:",
     "rxjs": "catalog:",
     "zod": "catalog:"

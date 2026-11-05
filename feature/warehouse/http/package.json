@@ -1,10 +1,10 @@
 {
-  "name": "@feature/warehouse-http",
+  "name": "@warehouse/http",
+  "private": true,
   "type": "commonjs",
   "exports": {
     ".": "./src/index.ts"
   },
-  "private": true,
   "dependencies": {
     "@feature/shared": "workspace:*",
     "@feature/warehouse-movement-http": "workspace:*",

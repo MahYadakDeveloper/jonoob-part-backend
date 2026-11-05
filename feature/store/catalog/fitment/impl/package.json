@@ -1,0 +1,21 @@
+{
+  "name": "@store/catalog-fitment-impl",
+  "private": true,
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@feature/catalog-fitment-api": "workspace:*",
+    "@feature/catalog-fitment-node-api": "workspace:*",
+    "@feature/media-api": "workspace:*",
+    "@feature/shared": "workspace:*",
+    "@nestjs/common": "catalog:"
+  }
+}
