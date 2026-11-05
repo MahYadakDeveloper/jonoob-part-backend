@@ -1,8 +1,20 @@
 import { sql } from 'drizzle-orm';
 import { check, smallint, text, unique, uuid } from 'drizzle-orm/pg-core';
+
 import { warehouseSchema } from './warehouse.schema';
 import { warehouses } from './warehouses.schema';
 
+/**
+ * [NOTE] Pre-numbered physical shelves
+ *
+ * When shelves are already numbered in the physical warehouse, the system
+ * should adopt the existing labels instead of generating its own. Store the
+ * printed label as-is in a `code` field, unique per warehouse, and give each
+ * shelf a separate internal ID that stock records reference. This way,
+ * relabeling a shelf never breaks stock data. Don't parse meaning out of the
+ * code string; if aisle or level is needed, keep it as explicit attributes
+ * filled in at import.
+ */
 export const shelves = warehouseSchema.table(
   'shelves',
   {
@@ -20,11 +32,9 @@ export const shelves = warehouseSchema.table(
 
     // Derived from the coordinates, so it can never drift from them.
     // Fixed width keeps text ordering equal to physical ordering: 02-14-3
-    code: text('code')
-      .notNull()
-      .generatedAlwaysAs(
-        sql`lpad(aisle::text, 2, '0') || '-' || lpad(bay::text, 2, '0') || '-' || level::text`,
-      ),
+    code: text('code').notNull().generatedAlwaysAs(sql`
+        lpad(aisle::text, 2, '0') || '-' || lpad(bay::text, 2, '0') || '-' || level::text
+      `),
   },
   (t) => [
     // NULLS NOT DISTINCT: warehouse_id is NULL for storeroom shelves, and
