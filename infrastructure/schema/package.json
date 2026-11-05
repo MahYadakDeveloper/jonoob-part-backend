@@ -13,8 +13,10 @@
     "@infra/db-drizzle": "workspace:*",
     "@nestjs/outbox": "catalog:",
     "dotenv": "catalog:",
-    "drizzle-kit": "catalog:",
     "drizzle-orm": "catalog:",
     "rxjs": "catalog:"
+  },
+  "devDependencies": {
+    "drizzle-kit": "catalog:"
   }
 }

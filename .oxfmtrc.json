@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
+
   "semi": true,
   "singleQuote": true,
   "printWidth": 80,
@@ -8,20 +9,36 @@
   "bracketSpacing": true,
   "arrowParens": "always",
   "endOfLine": "lf",
-  "sortPackageJson": false,
-  "ignorePatterns": [],
+  "objectWrap": "collapse",
+
+  "sortPackageJson": true,
+  "ignorePatterns": ["dist", "coverage", "drizzle"],
+
   "sortImports": {
     "newlinesBetween": false,
+    "internalPattern": ["@feature/", "@infra/", "@contracts/", "@/", "~/", "#"],
+    "customGroups": [
+      { "groupName": "nest", "elementNamePattern": ["@nestjs/**"] }
+    ],
     "groups": [
+      "nest",
       ["value-builtin", "value-external"],
-      ["value-internal", "value-parent", "value-sibling", "value-index"],
       { "newlinesBetween": true },
-      "type-import",
+      "value-internal",
+      { "newlinesBetween": true },
+      ["value-parent", "value-sibling", "value-index"],
+      { "newlinesBetween": true },
+      ["type-import"],
       "unknown"
     ]
-  }
-  ,"embeddedLanguageFormatting": "auto",
-  "jsdoc":  {
-    "preferCodeFences": true
+  },
+
+  "embeddedLanguageFormatting": "auto",
+
+  "jsdoc": {
+    "preferCodeFences": true,
+    "separateReturnsFromParam": true,
+    "capitalizeDescriptions": false,
+    "keepUnparsableExampleIndent": true
   }
 }

@@ -3,24 +3,24 @@
  * @example
  *   Scaffold a feature http module.
  *
- *   bun run scripts/make-http-module.ts <x>                 -> <features>/<x>/http
- *   bun run scripts/make-http-module.ts <x> -g <y>          -> <features>/<y>/<x>/http
- *   bun run scripts/make-http-module.ts <y>/<x>             -> same as above
- *   bun run scripts/make-http-module.ts <a>/<b>/<c>/<x>     -> <features>/<a>/<b>/<c>/<x>/http
- *   bun run scripts/make-http-module.ts <x> -g <a>/<b>/<c>  -> same as above
+ *     bun run scripts/make-http-module.ts <x>                 -> <features>/<x>/http
+ *     bun run scripts/make-http-module.ts <x> -g <y>          -> <features>/<y>/<x>/http
+ *     bun run scripts/make-http-module.ts <y>/<x>             -> same as above
+ *     bun run scripts/make-http-module.ts <a>/<b>/<c>/<x>     -> <features>/<a>/<b>/<c>/<x>/http
+ *     bun run scripts/make-http-module.ts <x> -g <a>/<b>/<c>  -> same as above
  *
- *   Package name is @feature/<groups>-<x>-http and the route is <groups>/<x>.
- *   The errors package it depends on is @feature/<x>-errors (made by
- *   make-errors-module.ts).
+ *     Package name is @feature/<groups>-<x>-http and the route is <groups>/<x>.
+ *     The errors package it depends on is @feature/<x>-errors (made by
+ *     make-errors-module.ts).
  *
- *   Options:
- *   -g, --group <y>     optional group path, nesting allowed with "/"
- *   (folders + package prefix + route prefix)
- *   -p, --policy <z>    policy name for x-z.policy.ts (default: management)
- *   --features-dir <p>  features folder relative to repo root (default: feature)
- *   --no-install        skip `bun install --filter`
- *   --dry-run           print what would be written, write nothing
- *   --force             overwrite an existing module folder
+ *     Options:
+ *     -g, --group <y>     optional group path, nesting allowed with "/"
+ *     (folders + package prefix + route prefix)
+ *     -p, --policy <z>    policy name for x-z.policy.ts (default: management)
+ *     --features-dir <p>  features folder relative to repo root (default: feature)
+ *     --no-install        skip `bun install --filter`
+ *     --dry-run           print what would be written, write nothing
+ *     --force             overwrite an existing module folder
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -170,8 +170,9 @@ const tsconfigExtends = relative(
 const FENCE = '`'.repeat(3);
 
 /**
- * Wraps text in a JSDoc block. Throws if the body would close the comment early, so a bad sample fails at generation
- * time, not in the generated module.
+ * Wraps text in a JSDoc block. Throws if the body would close the comment
+ * early, so a bad sample fails at generation time, not in the generated
+ * module.
  */
 function jsdoc(body: string): string {
   if (body.includes('*/')) {
@@ -612,11 +613,11 @@ export class ${P}HttpModule {}
       '@infra/db-drizzle': 'workspace:*',
       '@infra/schema': 'workspace:*',
       '@nestjs/common': 'catalog:',
-      '@repo/oxlint-config': 'workspace:*',
       'drizzle-orm': 'catalog:',
       rxjs: 'catalog:',
       zod: 'catalog:',
     },
+    devDependencies: { '@repo/oxlint-config': 'workspace:*' },
   }),
 };
 

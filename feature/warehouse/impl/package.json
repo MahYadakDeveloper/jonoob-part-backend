@@ -13,5 +13,8 @@
     "@infra/schema": "workspace:*",
     "@nestjs/common": "catalog:",
     "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@repo/oxlint-config": "workspace:*"
   }
 }
