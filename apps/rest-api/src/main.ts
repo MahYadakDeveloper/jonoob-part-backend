@@ -1,5 +1,3 @@
-// oxlint-disable
-import multipart from '@fastify/multipart';
 import { StandardSchemaValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
@@ -11,8 +9,11 @@ import {
   SwaggerDocumentOptions,
   SwaggerModule,
 } from '@nestjs/swagger';
+// oxlint-disable typescript/no-floating-promises
+import multipart from '@fastify/multipart';
 import qs from 'qs';
 import { createSchema } from 'zod-openapi';
+
 import { AppModule } from './app.module';
 
 /** [NOTE] @fastify/static is required for openapi/swagger */
@@ -44,11 +45,7 @@ async function bootstrap() {
   app.register(import('@fastify/formbody'), { parser: (str) => qs.parse(str) });
   app.register(multipart);
 
-  app.useGlobalPipes(
-    new StandardSchemaValidationPipe({
-      transform: true,
-    }),
-  );
+  app.useGlobalPipes(new StandardSchemaValidationPipe({ transform: true }));
 
   if (!production) {
     const config = new DocumentBuilder()

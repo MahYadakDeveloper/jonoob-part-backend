@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "paths": {
-      "@features/*/api": ["./features/*/api/src/index.ts"],
-      "@features/*/impl": ["./features/*/impl/src/index.ts"],
-      "@features/*/http": ["./features/*/http/src/index.ts"],
-      "@features/*/ws": ["./features/*/ws/src/index.ts"],
+      "@features/*/api": ["./features/*/api/index.ts"],
+      "@features/*/impl": ["./features/*/impl/index.ts"],
+      "@features/*/http": ["./features/*/http/index.ts"],
+      "@features/*/ws": ["./features/*/ws/index.ts"],
 
-      "@shared/*": ["./shared/*/src/index.ts"],
-      "@infrastructure/*": ["./infrastructure/*/src/index.ts"]
+      "@shared/*": ["./shared/*/index.ts"],
+      "@infrastructure/*": ["./infrastructure/*/index.ts"]
     },
     "module": "Preserve",
     "moduleResolution": "bundler",

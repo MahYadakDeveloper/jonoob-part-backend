@@ -1,8 +1,0 @@
-{
-  "name": "@feature.http/warehouse-movement",
-  "private": true,
-  "type": "commonjs",
-  "exports": {
-    ".": "./src/index.ts"
-  }
-}

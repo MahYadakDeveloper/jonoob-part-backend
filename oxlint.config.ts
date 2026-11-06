@@ -17,28 +17,40 @@ const OWN = '{{ from.file.captured.modulePath }}';
 const PARENT = '{{ from.file.captured.parentPath }}';
 const ROOT = '{{ from.element.captured.root }}';
 
-// Files of a feature layer package, optionally limited to one module path
-const f = (layer: Layer, captured?: Captured) => ({
-  file: captured ? { categories: layer, captured } : { categories: layer },
+// Files of a category, optionally limited by captured values
+const file = (category: string, captured?: Captured) => ({
+  file: captured
+    ? { categories: category, captured }
+    : { categories: category },
 });
+
+// All files of a feature layer package, optionally limited to one module path
+const f = (layer: Layer, captured?: Captured) => file(layer, captured);
+
+// Only the public entry point (index.ts) of a feature layer package
+const e = (layer: Layer, captured?: Captured) =>
+  file(`${layer}-entry`, captured);
 
 // ---------------------------------------------------------------------------
 // Feature helpers
 // ---------------------------------------------------------------------------
 
-const OWN_API = f('api', { modulePath: OWN });
+const OWN_API = e('api', { modulePath: OWN });
 // One level below only: the submodule becomes the context of this impl
-const CHILD_APIS = f('api', { modulePath: `${OWN}/*` });
+const CHILD_APIS = e('api', { modulePath: `${OWN}/*` });
 // Same parent module only, never anything above it
-const SIBLING_APIS = f('api', { modulePath: `${PARENT}/*` });
+const SIBLING_APIS = e('api', { modulePath: `${PARENT}/*` });
 // Root-level api of every OTHER feature, never the api of its submodules
 const OTHER_FEATURE_APIS = {
   element: { type: 'feature', captured: { root: `!${ROOT}` } },
-  file: { categories: 'api', captured: { modulePath: '*' } },
+  file: { categories: 'api-entry', captured: { modulePath: '*' } },
 };
 
-const ANY_FEATURE = { element: { type: 'feature' } };
-const ANY_IMPL = f('impl');
+const ANY_FEATURE = {
+  element: { type: 'feature' },
+  file: { categories: 'entry' },
+};
+const ANY_IMPL = e('impl');
 
 // ---------------------------------------------------------------------------
 // App and infrastructure helpers
@@ -86,9 +98,9 @@ const IMPL_EXTERNALS = ['@nestjs/common', '@nestjs/drizzle', 'drizzle-*'];
 // Violation message
 // ---------------------------------------------------------------------------
 
-// "features/<package path>" for feature files, "<type> <name>" for the rest
+// "features/<module path>" for feature files, "<type> <name>" for the rest
 const describe = (side: 'from' | 'to') =>
-  `{{#if ${side}.file.captured.packagePath}}${FEATURES}/{{ ${side}.file.captured.packagePath }}` +
+  `{{#if ${side}.file.captured.modulePath}}${FEATURES}/{{ ${side}.file.captured.modulePath }}` +
   `{{else}}{{ ${side}.element.types.[0] }} {{ ${side}.element.captured.root }}` +
   `{{ ${side}.element.captured.name }}{{ ${side}.element.captured.app }}{{/if}}`;
 
@@ -103,19 +115,12 @@ const MESSAGE =
 
 const policies = [
   // =========================================================================
-  // Same package: a package may always import its own files
+  // Same package: a layer package may always import its own files
   // =========================================================================
-  {
-    from: { file: { categories: 'package' } },
-    allow: {
-      to: {
-        file: {
-          categories: 'package',
-          captured: { packagePath: '{{ from.file.captured.packagePath }}' },
-        },
-      },
-    },
-  },
+  ...LAYERS.map((layer) => ({
+    from: f(layer),
+    allow: { to: f(layer, { modulePath: OWN }) },
+  })),
 
   // =========================================================================
   // api: its own package only (covered above). No shared, no other layers.
@@ -194,12 +199,12 @@ export default defineConfig({
   settings: {
     'boundaries/root-path': resolve(import.meta.dirname),
 
-    // Only real source files (no tsup.config.ts, etc.)
+    // All TypeScript files of the modules (config files live in the root)
     'boundaries/include': [
-      `${APPS}/*/src/**/*.ts`,
-      `${FEATURES}/**/src/**/*.ts`,
-      `${INFRASTRUCTURE}/**/src/**/*.ts`,
-      `${SHARED}/**/src/**/*.ts`,
+      `${APPS}/*/**/*.ts`,
+      `${FEATURES}/**/*.ts`,
+      `${INFRASTRUCTURE}/**/*.ts`,
+      `${SHARED}/**/*.ts`,
     ],
 
     'boundaries/ignore': ['**/*.{test,spec}.ts'],
@@ -240,26 +245,33 @@ export default defineConfig({
     // File categories
     // -----------------------------------------------------------------------
     'boundaries/files': [
-      // Feature layers: features/<modulePath>/<layer>/src/**
+      // Feature layers: features/<modulePath>/<layer>/**
       ...LAYERS.map((layer) => ({
-        pattern: `${FEATURES}/**/${layer}/src/**`,
+        pattern: `${FEATURES}/**/${layer}/**`,
         category: layer,
         capture: ['modulePath'],
       })),
 
       // parentPath / moduleName, merged into the same captured object
       ...LAYERS.map((layer) => ({
-        pattern: `${FEATURES}/**/*/${layer}/src/**`,
+        pattern: `${FEATURES}/**/*/${layer}/**`,
         category: 'module-path',
         capture: ['parentPath', 'moduleName'],
       })),
 
-      // Any feature package, also the ones that are not a known layer yet
-      {
-        pattern: `${FEATURES}/**/src/**`,
-        category: 'package',
-        capture: ['packagePath'],
-      },
+      // Public entry point of every layer package:
+      // features/<modulePath>/<layer>/index.ts
+      ...LAYERS.map((layer) => ({
+        pattern: `${FEATURES}/**/${layer}/index.ts`,
+        category: `${layer}-entry`,
+        capture: ['modulePath'],
+      })),
+
+      // Any layer entry point (for app -> feature)
+      ...LAYERS.map((layer) => ({
+        pattern: `${FEATURES}/**/${layer}/index.ts`,
+        category: 'entry',
+      })),
     ],
 
     'import/resolver': {

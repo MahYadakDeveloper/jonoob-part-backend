@@ -1,8 +1,0 @@
-{
-  "name": "@feature.http/iam-registration",
-  "private": true,
-  "type": "commonjs",
-  "exports": {
-    ".": "./src/index.ts"
-  }
-}

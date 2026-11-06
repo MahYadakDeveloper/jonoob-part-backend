@@ -1,8 +1,0 @@
-{
-  "name": "@feature.errors/iam-authentication",
-  "private": true,
-  "type": "commonjs",
-  "exports": {
-    ".": "./src/authentication.errors.ts"
-  }
-}

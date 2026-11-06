@@ -1,6 +1,0 @@
-{
-  "name": "@shared/ws",
-  "exports": {
-    "./lint-sample": "./src/lint-sample.ts"
-  }
-}

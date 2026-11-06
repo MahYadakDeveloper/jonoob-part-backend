@@ -1,8 +1,0 @@
-{
-  "name": "@feature.sms/iam-authentication",
-  "private": true,
-  "files": [
-    "./src/*.ts"
-  ],
-  "type": "commonjs"
-}

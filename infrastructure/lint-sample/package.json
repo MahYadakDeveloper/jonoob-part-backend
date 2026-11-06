@@ -1,7 +1,0 @@
-{
-  "name": "@infra/lint-sample",
-  "private": true,
-  "exports": {
-    ".": "./src/index.ts"
-  }
-}

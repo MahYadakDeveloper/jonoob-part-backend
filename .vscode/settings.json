@@ -47,5 +47,10 @@
   "js/ts.tsdk.path": "node_modules/typescript/lib",
   "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   "js/ts.updateImportsOnPaste.enabled": false,
-  "js/ts.updateImportsOnFileMove.enabled": "never"
+  "js/ts.updateImportsOnFileMove.enabled": "never",
+
+  "js/ts.preferences.autoImportFileExcludePatterns": [
+    "**/features/*/*/src/!(index).ts"
+  ],
+  "js/ts.preferences.importModuleSpecifier": "non-relative"
 }

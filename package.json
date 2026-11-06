@@ -34,17 +34,20 @@
     "ioredis": "^6.0.0",
     "nest-commander": "^3.21.0",
     "pg": "^8.23.0",
+    "qs": "^6.17.1",
     "redis": "^6.3.0",
     "redlock": "^5.0.0-beta.2",
     "redlock-universal": "^0.8.9",
     "reflect-metadata": "^0.2.2",
     "rxjs": "7.8.2",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "zod-openapi": "^6.0.2"
   },
   "devDependencies": {
     "@types/bun": "^1.4.3",
     "@types/ms": "^2.1.0",
     "@types/node": "^26.6.5",
+    "@types/qs": "^6.15.1",
     "drizzle-kit": "1.0.0-rc.4",
     "knip": "^6.43.0",
     "oxfmt": "^0.76.0",

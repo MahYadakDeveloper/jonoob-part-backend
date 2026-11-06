@@ -1,4 +1,3 @@
-import { StrictOmit } from '@feature/shared/types/utils';
 import {
   movementItems,
   movements,
@@ -37,13 +36,8 @@ export type ReceiptMovementInput = MovementInput<'procurement'> & {
 
 export type ReturnMovementInput = MovementInput<'order' | 'sale'> & {
   items: ({ stockId: string } & (
-    | {
-        quarantine: false;
-      }
-    | {
-        quarantine: true;
-        note: string | null;
-      }
+    | { quarantine: false }
+    | { quarantine: true; note: string | null }
   ))[];
 };
 
@@ -59,7 +53,8 @@ export interface MovementApi {
    *
    * @throws {NonPositiveQuantityError} An item quantity is not positive.
    * @throws {DuplicateStockError} The same stock appears in more than one item.
-   * @throws {ReferenceSourceMismatchError} The reference does not match the source.
+   * @throws {ReferenceSourceMismatchError} The reference does not match the
+   *   source.
    * @throws {MalformedInputError} A value is malformed (e.g. an invalid id).
    * @throws {StockNotFoundError} A referenced stock does not exist.
    * @throws {InsufficientStockError} A stock has less quantity than requested.
@@ -71,7 +66,8 @@ export interface MovementApi {
    *
    * @throws {NonPositiveQuantityError} An item quantity is not positive.
    * @throws {DuplicateStockError} The same stock appears in more than one item.
-   * @throws {ReferenceSourceMismatchError} The reference does not match the source.
+   * @throws {ReferenceSourceMismatchError} The reference does not match the
+   *   source.
    * @throws {MalformedInputError} A value is malformed (e.g. an invalid id).
    * @throws {StockNotFoundError} A referenced stock does not exist.
    */
@@ -82,11 +78,14 @@ export interface MovementApi {
    *
    * @throws {NonPositiveQuantityError} An item quantity is not positive.
    * @throws {DuplicateStockError} The same stock appears in more than one item.
-   * @throws {ReferenceSourceMismatchError} The reference does not match the source.
+   * @throws {ReferenceSourceMismatchError} The reference does not match the
+   *   source.
    * @throws {MalformedInputError} A value is malformed (e.g. an invalid id).
    * @throws {StockNotFoundError} A referenced stock does not exist.
-   * @throws {MovementNotFoundError} The referenced original movement does not exist.
-   * @throws {ReturnExceedsIssuedError} Returned quantity exceeds what was issued.
+   * @throws {MovementNotFoundError} The referenced original movement does not
+   *   exist.
+   * @throws {ReturnExceedsIssuedError} Returned quantity exceeds what was
+   *   issued.
    */
   return(input: ReturnMovementInput): Promise<{ movementId: string }>;
 
@@ -94,10 +93,12 @@ export interface MovementApi {
    * Undoes the stock effects of a movement and permanently removes its record.
    *
    * @throws {MovementNotFoundError} The movement does not exist.
-   * @throws {MovementNotUndoableError} The movement's source is `return`, which cannot be undone.
-   * @throws {MovementInUseError} The movement is referenced elsewhere (e.g. by a quarantine).
-   * @throws {InsufficientStockError} Reverting a receipt/return would drive a stock below zero
-   *   because its quantity was already consumed.
+   * @throws {MovementNotUndoableError} The movement's source is `return`, which
+   *   cannot be undone.
+   * @throws {MovementInUseError} The movement is referenced elsewhere (e.g. by
+   *   a quarantine).
+   * @throws {InsufficientStockError} Reverting a receipt/return would drive a
+   *   stock below zero because its quantity was already consumed.
    */
   undo(input: UndoMovementInput): Promise<void>;
 }
