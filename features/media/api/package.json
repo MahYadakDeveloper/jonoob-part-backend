@@ -1,5 +1,5 @@
 {
-  "name": "@media/api",
+  "name": "@feature.api/media",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",

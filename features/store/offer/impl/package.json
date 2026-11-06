@@ -1,5 +1,5 @@
 {
-  "name": "@feature/discount",
+  "name": "@feature.impl/store-offer",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -15,11 +15,5 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
-  "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@feature/discount-api": "workspace:*",
-    "@feature/pricing-api": "workspace:*",
-    "@nestjs/common": "catalog:"
-  }
+  "private": true
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@procurement/replenishment-impl",
+  "name": "@feature.impl/warehouse-replenishment",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -15,12 +15,5 @@
     "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc",
     "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
-  "dependencies": {
-    "@feature/procurement-api": "workspace:*",
-    "@feature/procurement-replenishment-api": "workspace:*",
-    "@feature/shared": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "catalog:"
   }
 }

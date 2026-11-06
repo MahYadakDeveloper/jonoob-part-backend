@@ -1,5 +1,5 @@
 {
-  "name": "@store/catalog-brand-impl",
+  "name": "@feature.impl/store-catalog-brand",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -10,16 +10,5 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
-  },
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc",
-    "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
-  "dependencies": {
-    "@feature/catalog-brand-api": "workspace:*",
-    "@feature/media-api": "workspace:*",
-    "@feature/shared": "workspace:*",
-    "@nestjs/common": "catalog:"
   }
 }

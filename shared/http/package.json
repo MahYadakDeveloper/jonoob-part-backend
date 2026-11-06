@@ -1,0 +1,6 @@
+{
+  "name": "@shared/http",
+  "exports": {
+    "./lint-sample": "./src/lint-sample.ts"
+  }
+}

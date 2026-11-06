@@ -1,5 +1,14 @@
 {
   "compilerOptions": {
+    "paths": {
+      "@features/*/api": ["./features/*/api/src/index.ts"],
+      "@features/*/impl": ["./features/*/impl/src/index.ts"],
+      "@features/*/http": ["./features/*/http/src/index.ts"],
+      "@features/*/ws": ["./features/*/ws/src/index.ts"],
+
+      "@shared/*": ["./shared/*/src/index.ts"],
+      "@infrastructure/*": ["./infrastructure/*/src/index.ts"]
+    },
     "module": "Preserve",
     "moduleResolution": "bundler",
     "target": "ES2024",
@@ -24,7 +33,5 @@
     "noPropertyAccessFromIndexSignature": false,
     "types": ["node", "bun"]
   },
-  "watchOptions": {
-    "fallbackPolling": "dynamicPriority"
-  }
+  "watchOptions": { "fallbackPolling": "dynamicPriority" }
 }

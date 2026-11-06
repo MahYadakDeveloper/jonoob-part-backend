@@ -1,5 +1,5 @@
 {
-  "name": "@feature/procurement-supply",
+  "name": "@feature.impl/procurement-supply",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -15,21 +15,5 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
-  "dependencies": {
-    "@feature/procurement-supply-api": "workspace:*",
-    "@feature/procurement-supply-purchase-api": "workspace:*",
-    "@feature/procurement-supply-supplier-api": "workspace:*",
-    "@feature/shared": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "catalog:",
-    "@nestjs/config": "catalog:",
-    "@nestjs/schedule": "catalog:",
-    "zod": "^4.6.7"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^9.39.4",
-    "typescript-eslint": "^8.66.0"
-  }
+  "private": true
 }

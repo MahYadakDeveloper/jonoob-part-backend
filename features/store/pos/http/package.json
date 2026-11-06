@@ -1,3 +1,4 @@
 {
-  "name": "@store/pos-http"
+  "name": "@feature.http/store-pos",
+  "private": true
 }

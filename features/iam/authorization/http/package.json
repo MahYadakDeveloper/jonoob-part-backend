@@ -1,23 +1,10 @@
 {
-  "name": "@actors/authorization-http",
+  "name": "@feature.http/iam-authorization",
   "private": true,
   "type": "commonjs",
   "exports": {
     "./contracts": "./contracts/index.ts",
     "./guards": "./guards/index.ts",
     "./decorators": "./decorators/index.ts"
-  },
-  "dependencies": {
-    "@casl/ability": "catalog:",
-    "@feature/authentication-http": "workspace:*",
-    "@feature/shared": "workspace:*",
-    "@nestjs/common": "catalog:"
-  },
-  "devDependencies": {
-    "fastify": "catalog:"
-  },
-  "peerDependencies": {
-    "@nestjs/core": "catalog:",
-    "rxjs": "catalog:"
   }
 }

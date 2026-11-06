@@ -1,258 +1,202 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'oxlint';
 
-const FEATURES = 'feature';
+const FEATURES = 'features';
 const SHARED = 'shared';
 const INFRASTRUCTURE = 'infrastructure';
-const APP = 'app';
+const APPS = 'apps';
 
-const LAYERS = ['api', 'impl', 'http', 'schema', 'error'] as const;
-// Layers that may contain a Nest *.module.ts file
-const MODULE_LAYERS = ['impl', 'http'] as const;
+// A feature module path (a feature or a nested submodule) exposes one package
+// per layer: features/<feature>/<submodule>/.../<layer>
+const LAYERS = ['api', 'impl', 'http', 'ws'] as const;
 
 type Layer = (typeof LAYERS)[number];
-type FileCategory =
-  | Layer
-  | 'module'
-  | 'app-module'
-  | 'app-entry'
-  | 'infra-module';
-type Captured = Record<string, string>;
+type Captured = Record<string, string | string[]>;
 
 const OWN = '{{ from.file.captured.modulePath }}';
 const PARENT = '{{ from.file.captured.parentPath }}';
 const ROOT = '{{ from.element.captured.root }}';
 
-const f = (categories: FileCategory | FileCategory[], captured?: Captured) => ({
-  file: captured ? { categories, captured } : { categories },
+// Files of a feature layer package, optionally limited to one module path
+const f = (layer: Layer, captured?: Captured) => ({
+  file: captured ? { categories: layer, captured } : { categories: layer },
 });
 
 // ---------------------------------------------------------------------------
 // Feature helpers
 // ---------------------------------------------------------------------------
 
-// Layer of OTHER root features: any depth, or only the feature-root level ('*')
-const otherRoot = (category: FileCategory, modulePath?: string) => ({
+const OWN_API = f('api', { modulePath: OWN });
+// One level below only: the submodule becomes the context of this impl
+const CHILD_APIS = f('api', { modulePath: `${OWN}/*` });
+// Same parent module only, never anything above it
+const SIBLING_APIS = f('api', { modulePath: `${PARENT}/*` });
+// Root-level api of every OTHER feature, never the api of its submodules
+const OTHER_FEATURE_APIS = {
   element: { type: 'feature', captured: { root: `!${ROOT}` } },
-  file: modulePath
-    ? { categories: category, captured: { modulePath } }
-    : { categories: category },
-});
+  file: { categories: 'api', captured: { modulePath: '*' } },
+};
 
-// api visibility shared by impl and http
-const apiTargets = () => [
-  f('api', { modulePath: OWN }), // own api
-  f('api', { modulePath: `${OWN}/*` }), // immediate child submodules
-  f('api', { modulePath: `${PARENT}/*` }), // sibling submodules
-  otherRoot('api', '*'), // other features: root level only
-];
+const ANY_FEATURE = { element: { type: 'feature' } };
+const ANY_IMPL = f('impl');
 
-// Root-level module files of any feature (used by app)
-const FEATURE_ROOT_MODULE = {
-  element: { type: 'feature' },
-  file: { categories: 'module', captured: { modulePath: '*' } },
+// ---------------------------------------------------------------------------
+// App and infrastructure helpers
+// ---------------------------------------------------------------------------
+
+const SAME_APP = {
+  element: {
+    type: 'app',
+    captured: { app: '{{ from.element.captured.app }}' },
+  },
+};
+
+const ANY_INFRASTRUCTURE = { element: { type: 'infrastructure' } };
+
+const SAME_INFRASTRUCTURE_ROOT = {
+  element: {
+    type: 'infrastructure',
+    captured: { root: '{{ from.element.captured.root }}' },
+  },
 };
 
 // ---------------------------------------------------------------------------
-// Infrastructure helpers
+// Shared helpers (shared/<name>: utils, types, error, http, ws)
 // ---------------------------------------------------------------------------
 
-const ANY_INFRA_MODULE = {
-  element: { type: 'infrastructure' },
-  file: { categories: 'infra-module' },
-};
-
-const INFRA_ROOT_MODULE = {
-  element: { type: 'infrastructure' },
-  file: { categories: 'infra-module', captured: { modulePath: '*' } },
-};
-
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
-
-const shared = (name: string) => ({
+const shared = (name: string | string[]) => ({
   element: { type: 'shared', captured: { name } },
 });
 
 const ANY_SHARED = { element: { type: 'shared' } };
-const SHARED_NO_HTTP_ERROR = shared('!(http|error)');
 
 // ---------------------------------------------------------------------------
-// Policies
+// External packages and node built-ins
+// ---------------------------------------------------------------------------
+
+// Only npm packages and node built-ins. Internal modules imported through
+// path aliases (@features/*, @shared/*, ...) resolve to local files and are
+// governed by the element/file policies above.
+const EXTERNAL = { module: { origin: ['external', 'core'] } };
+
+// impl may only use these npm libraries
+const IMPL_EXTERNALS = ['@nestjs/common', '@nestjs/drizzle', 'drizzle-*'];
+
+// ---------------------------------------------------------------------------
+// Violation message
+// ---------------------------------------------------------------------------
+
+// "features/<package path>" for feature files, "<type> <name>" for the rest
+const describe = (side: 'from' | 'to') =>
+  `{{#if ${side}.file.captured.packagePath}}${FEATURES}/{{ ${side}.file.captured.packagePath }}` +
+  `{{else}}{{ ${side}.element.types.[0] }} {{ ${side}.element.captured.root }}` +
+  `{{ ${side}.element.captured.name }}{{ ${side}.element.captured.app }}{{/if}}`;
+
+const MESSAGE =
+  `${describe('from')} must not import ` +
+  `{{#if to.module.source}}{{ to.module.origin }} module {{ to.module.source }}` +
+  `{{else}}${describe('to')}{{/if}}`;
+
+// ---------------------------------------------------------------------------
+// Policies (default: disallow, so every policy below is an allow list)
 // ---------------------------------------------------------------------------
 
 const policies = [
   // =========================================================================
-  // Same layer -> same module (api->api, impl->impl, ... inside one module)
-  // =========================================================================
-  ...LAYERS.map((layer) => ({
-    from: f(layer),
-    allow: { to: f(layer, { modulePath: OWN }) },
-  })),
-
-  // =========================================================================
-  // api: only its own layer (covered above). No shared, no other layers.
-  // =========================================================================
-
-  // =========================================================================
-  // Feature modules (*.module.ts inside impl/http)
+  // Same package: a package may always import its own files
   // =========================================================================
   {
-    from: f('module'),
+    from: { file: { categories: 'package' } },
     allow: {
-      to: [
-        // Own layers
-        f('api', { modulePath: OWN }),
-        f('impl', { modulePath: OWN }),
-        f('http', { modulePath: OWN }),
-        f('schema', { modulePath: OWN }),
-        f('error', { modulePath: OWN }),
-
-        // Other module files of the same module (http.module -> impl.module)
-        f('module', { modulePath: OWN }),
-
-        // Child feature modules
-        f('module', { modulePath: `${OWN}/*` }),
-
-        // Infrastructure modules (root and nested)
-        ANY_INFRA_MODULE,
-
-        // Shared
-        ANY_SHARED,
-      ],
-    },
-  },
-
-  // =========================================================================
-  // App modules: wiring only root feature / root infra modules
-  // =========================================================================
-  {
-    from: f('app-module'),
-    allow: { to: [FEATURE_ROOT_MODULE, INFRA_ROOT_MODULE] },
-  },
-
-  // app entry (main.ts)
-  { from: f('app-entry'), allow: { to: [f('app-module'), ANY_SHARED] } },
-
-  // =========================================================================
-  // Infrastructure
-  // =========================================================================
-  {
-    from: f('infra-module'),
-    allow: {
-      to: [
-        f('infra-module', { modulePath: `${OWN}/*` }), // child infra modules
-        ANY_SHARED,
-      ],
-    },
-  },
-
-  // any file inside an infrastructure root: itself + shared
-  {
-    from: { element: { type: 'infrastructure' } },
-    allow: {
-      to: [
-        {
-          element: {
-            type: 'infrastructure',
-            captured: { root: '{{ from.element.captured.root }}' },
-          },
+      to: {
+        file: {
+          categories: 'package',
+          captured: { packagePath: '{{ from.file.captured.packagePath }}' },
         },
-        ANY_SHARED,
-      ],
+      },
     },
   },
 
   // =========================================================================
-  // Schema
+  // api: its own package only (covered above). No shared, no other layers.
   // =========================================================================
 
-  // schema -> api (type-only)
-  {
-    from: f('schema'),
-    allow: {
-      to: [
-        f('api', { modulePath: OWN }),
-        f('api', { modulePath: `${PARENT}/*` }),
-        otherRoot('api', '*'),
-      ],
-      dependency: { kind: 'type' },
-    },
-  },
-
-  // schema -> schema (value imports: Drizzle references/relations)
-  // own schema comes from the same-layer policy
-  {
-    from: f('schema'),
-    allow: {
-      to: [
-        f('schema', { modulePath: `${OWN}/*` }), // one level below
-        f('schema', { modulePath: `${PARENT}/*` }), // same-level siblings
-      ],
-    },
-  },
-
   // =========================================================================
-  // Impl
+  // impl: own api, child apis (one level lower), sibling apis (same parent),
+  // root-level apis of other features, and utils/types/error of shared
   // =========================================================================
   {
     from: f('impl'),
     allow: {
       to: [
-        ...apiTargets(),
-        f('schema', { modulePath: OWN }),
-        f('error', { modulePath: OWN }),
-        SHARED_NO_HTTP_ERROR,
+        OWN_API,
+        CHILD_APIS,
+        SIBLING_APIS,
+        OTHER_FEATURE_APIS,
+        shared(['utils', 'types', 'error']),
       ],
     },
   },
 
   // =========================================================================
-  // HTTP (like impl, but no schema, and access to all shared/*)
+  // http / ws: own api and the matching shared module only
+  // =========================================================================
+  { from: f('http'), allow: { to: [OWN_API, shared('http')] } },
+  { from: f('ws'), allow: { to: [OWN_API, shared('ws')] } },
+
+  // =========================================================================
+  // App: its own files plus everything nested in features, infrastructure
+  // and shared
   // =========================================================================
   {
-    from: f('http'),
-    allow: {
-      to: [...apiTargets(), f('error', { modulePath: OWN }), ANY_SHARED],
-    },
+    from: { element: { type: 'app' } },
+    allow: { to: [SAME_APP, ANY_FEATURE, ANY_INFRASTRUCTURE, ANY_SHARED] },
   },
 
   // =========================================================================
-  // Error
+  // Infrastructure: its own root, shared, and every nested feature impl
   // =========================================================================
   {
-    from: f('error'),
-    allow: {
-      to: [
-        otherRoot('error', '*'), // root-level errors of other features
-        shared('error'),
-      ],
-    },
+    from: { element: { type: 'infrastructure' } },
+    allow: { to: [SAME_INFRASTRUCTURE_ROOT, ANY_SHARED, ANY_IMPL] },
   },
 
   // =========================================================================
-  // Shared: may import itself only
+  // Shared: a module imports itself; utils -> types; http/ws -> error
   // =========================================================================
   {
     from: { element: { type: 'shared' } },
     allow: { to: shared('{{ from.element.captured.name }}') },
   },
+  { from: shared('utils'), allow: { to: shared('types') } },
+  { from: shared(['http', 'ws']), allow: { to: shared('error') } },
+
+  // =========================================================================
+  // External packages (the last matching policy wins): free everywhere
+  // except impl, which may only use IMPL_EXTERNALS
+  // =========================================================================
+  { allow: { to: EXTERNAL } },
+  { from: f('impl'), disallow: { to: EXTERNAL } },
+  {
+    from: f('impl'),
+    allow: { to: { module: { origin: 'external', source: IMPL_EXTERNALS } } },
+  },
 ];
 
 export default defineConfig({
   jsPlugins: [
-    'eslint-plugin-boundaries',
-    './packages/oxlint-plugins/drizzle.mjs',
-    './packages/oxlint-plugins/nest.mjs',
-  ],
+    { name: 'boundaries', specifier: 'eslint-plugin-boundaries' },
+    { name: 'drizzle', specifier: './.tools/oxlint-plugins/drizzle.mjs' },
+    { name: 'nest', specifier: './.tools/oxlint-plugins/nest.mjs' },
+    // The global Array.toMap augmentation makes array literals unassignable
+  ] as never,
 
   settings: {
     'boundaries/root-path': resolve(import.meta.dirname),
 
     // Only real source files (no tsup.config.ts, etc.)
     'boundaries/include': [
-      `${APP}/*.ts`,
+      `${APPS}/*/src/**/*.ts`,
       `${FEATURES}/**/src/**/*.ts`,
       `${INFRASTRUCTURE}/**/src/**/*.ts`,
       `${SHARED}/**/src/**/*.ts`,
@@ -266,12 +210,11 @@ export default defineConfig({
     // Elements
     // -----------------------------------------------------------------------
     'boundaries/elements': [
-      // Files directly under app/ (folder mode would not match them)
       {
         type: 'app',
-        pattern: `${APP}/*.ts`,
-        mode: 'file',
+        pattern: `${APPS}/*`,
         partialMatch: false,
+        capture: ['app'],
       },
       {
         type: 'feature',
@@ -297,7 +240,7 @@ export default defineConfig({
     // File categories
     // -----------------------------------------------------------------------
     'boundaries/files': [
-      // Feature layers: feature/<modulePath>/<layer>/src/**
+      // Feature layers: features/<modulePath>/<layer>/src/**
       ...LAYERS.map((layer) => ({
         pattern: `${FEATURES}/**/${layer}/src/**`,
         category: layer,
@@ -305,34 +248,25 @@ export default defineConfig({
       })),
 
       // parentPath / moduleName, merged into the same captured object
-      {
-        pattern: `${FEATURES}/**/*/{${LAYERS.join(',')}}/**`,
-        category: 'module-file',
+      ...LAYERS.map((layer) => ({
+        pattern: `${FEATURES}/**/*/${layer}/src/**`,
+        category: 'module-path',
         capture: ['parentPath', 'moduleName'],
-      },
-
-      // Feature Nest modules: start from the layer folder, so modulePath
-      // is identical to the layer files of the same module
-      ...MODULE_LAYERS.map((layer) => ({
-        pattern: `${FEATURES}/**/${layer}/src/**/*.module.ts`,
-        category: 'module',
-        capture: ['modulePath'],
       })),
 
-      // App: one level only
-      { pattern: `${APP}/*.module.ts`, category: 'app-module' },
-      { pattern: `${APP}/main.ts`, category: 'app-entry' },
-
-      // Infrastructure Nest modules: infrastructure/<modulePath>/src/**
+      // Any feature package, also the ones that are not a known layer yet
       {
-        pattern: `${INFRASTRUCTURE}/**/src/**/*.module.ts`,
-        category: 'infra-module',
-        capture: ['modulePath'],
+        pattern: `${FEATURES}/**/src/**`,
+        category: 'package',
+        capture: ['packagePath'],
       },
     ],
 
     'import/resolver': {
-      oxc: { tsconfig: { configFile: './tsconfig.json', references: 'auto' } },
+      oxc: {
+        tsconfig: { configFile: './tsconfig.json', references: 'auto' },
+        extensions: ['.ts'],
+      },
     },
   },
 
@@ -341,9 +275,9 @@ export default defineConfig({
       'error',
       {
         default: 'disallow',
+        checkAllOrigins: true,
         checkInternals: true,
-        message:
-          '{{ from.file.categories }} ({{ from.file.captured.modulePath }}) must not import {{ to.file.categories }} ({{ to.file.captured.modulePath }})',
+        message: MESSAGE,
         policies,
       },
     ],
@@ -352,8 +286,6 @@ export default defineConfig({
 
     'typescript/no-explicit-any': 'off',
     'typescript/no-floating-promises': 'error',
-
-    'no-unused-vars': ['error', { fix: { imports: 'safe-fix' } }],
   },
 
   categories: { correctness: 'error' },

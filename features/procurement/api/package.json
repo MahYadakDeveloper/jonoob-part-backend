@@ -1,5 +1,5 @@
 {
-  "name": "@procurement/api",
+  "name": "@feature.api/procurement",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -15,8 +15,5 @@
     "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc",
     "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
-  "dependencies": {
-    "@feature/shared": "workspace:*"
   }
 }

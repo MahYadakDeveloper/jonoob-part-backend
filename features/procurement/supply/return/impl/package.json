@@ -1,5 +1,5 @@
 {
-  "name": "@feature/procurement-supply-return",
+  "name": "@feature.impl/procurement-supply-return",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -15,10 +15,5 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
-  "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "catalog:"
-  }
+  "private": true
 }

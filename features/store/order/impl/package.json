@@ -1,5 +1,5 @@
 {
-  "name": "@store/order",
+  "name": "@feature.impl/store-order",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -10,34 +10,5 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
-  },
-  "dependencies": {
-    "@casl/ability": "catalog:",
-    "@feature/actors-api": "workspace:*",
-    "@feature/cashback-api": "workspace:*",
-    "@feature/catalog-api": "workspace:*",
-    "@feature/media-api": "workspace:*",
-    "@feature/order-api": "workspace:*",
-    "@feature/pricing-api": "workspace:*",
-    "@feature/schedule-api": "workspace:*",
-    "@feature/shared": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@infra/db-drizzle": "workspace:*",
-    "@infra/messaging-job-scheduler": "workspace:*",
-    "@infra/messaging-queue": "workspace:*",
-    "@infra/payment-gateway": "workspace:*",
-    "@infra/settings-store": "workspace:*",
-    "@nestjs/bullmq": "catalog:",
-    "@nestjs/common": "catalog:",
-    "@nestjs/config": "catalog:",
-    "@nestjs/drizzle": "catalog:",
-    "@nestjs/outbox": "catalog:",
-    "bullmq": "catalog:",
-    "drizzle-orm": "catalog:",
-    "nest-commander": "catalog:",
-    "zod": "4.6.7"
-  },
-  "devDependencies": {
-    "ts-node": "^10.9.2"
   }
 }

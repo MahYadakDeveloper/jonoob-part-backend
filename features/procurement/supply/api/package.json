@@ -1,5 +1,5 @@
 {
-  "name": "@feature/procurement-supply-api",
+  "name": "@feature.api/procurement-supply",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -15,11 +15,5 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
-  "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@feature/procurement-api": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "catalog:"
-  }
+  "private": true
 }

@@ -1,0 +1,7 @@
+{
+  "name": "@feature.impl/lint-sample-a-billing",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

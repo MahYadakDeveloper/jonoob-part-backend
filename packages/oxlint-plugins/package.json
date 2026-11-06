@@ -1,8 +1,0 @@
-{
-  "name": "@tools/oxlint-plugins",
-  "version": "0.0.0",
-  "private": true,
-  "files": [
-    "*.mjs"
-  ]
-}

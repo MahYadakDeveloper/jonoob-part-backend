@@ -1,3 +1,4 @@
 {
-  "name": "@finance/wallet-api"
+  "name": "@feature.api/payment-wallet",
+  "private": true
 }

@@ -1,13 +1,8 @@
 {
-  "name": "@warehouse/api",
+  "name": "@feature.api/warehouse",
   "private": true,
   "type": "commonjs",
   "exports": {
     "./*": "./src/*.ts"
-  },
-  "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@feature/warehouse-errors": "workspace:*",
-    "@infra/schema": "workspace:*"
   }
 }

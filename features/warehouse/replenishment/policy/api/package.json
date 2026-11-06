@@ -1,5 +1,5 @@
 {
-  "name": "@procurement/replenishment-policy-api",
+  "name": "@feature.api/warehouse-replenishment-policy",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",

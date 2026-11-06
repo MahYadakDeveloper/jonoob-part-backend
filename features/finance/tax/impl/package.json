@@ -1,5 +1,5 @@
 {
-  "name": "@finance/tax",
+  "name": "@feature.impl/finance-tax",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -15,9 +15,5 @@
     "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
-  },
-  "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@feature/tax-api": "workspace:*"
   }
 }

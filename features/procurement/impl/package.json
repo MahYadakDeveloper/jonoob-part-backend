@@ -1,5 +1,5 @@
 {
-  "name": "@procurement/impl",
+  "name": "@feature.impl/procurement",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -15,11 +15,5 @@
     "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc",
     "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
-  "dependencies": {
-    "@feature/procurement-api": "workspace:*",
-    "@feature/procurement-supply-api": "workspace:*",
-    "@feature/warehouse-api": "workspace:*",
-    "@nestjs/common": "catalog:"
   }
 }

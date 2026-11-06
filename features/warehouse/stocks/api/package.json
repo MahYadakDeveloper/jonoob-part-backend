@@ -1,14 +1,10 @@
 {
-  "name": "@feature/warehouse-stocks-api",
+  "name": "@feature.api/warehouse-stocks",
   "type": "commonjs",
   "main": "./index.ts",
   "types": "./index.ts",
   "exports": {
     ".": "./index.ts"
   },
-  "private": true,
-  "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@feature/warehouse-api": "workspace:*"
-  }
+  "private": true
 }

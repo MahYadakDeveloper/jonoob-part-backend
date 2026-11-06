@@ -1,5 +1,5 @@
 {
-  "name": "@store/catalog-brand-api",
+  "name": "@feature.api/store-catalog-brand",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -10,9 +10,5 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
-  },
-  "dependencies": {
-    "@feature/media-api": "workspace:*",
-    "@feature/shared": "workspace:*"
   }
 }

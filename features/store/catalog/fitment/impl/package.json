@@ -1,5 +1,5 @@
 {
-  "name": "@store/catalog-fitment-impl",
+  "name": "@feature.impl/store-catalog-fitment",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -10,12 +10,5 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
-  },
-  "dependencies": {
-    "@feature/catalog-fitment-api": "workspace:*",
-    "@feature/catalog-fitment-node-api": "workspace:*",
-    "@feature/media-api": "workspace:*",
-    "@feature/shared": "workspace:*",
-    "@nestjs/common": "catalog:"
   }
 }

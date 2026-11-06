@@ -1,0 +1,7 @@
+{
+  "name": "@app/lint-sample",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

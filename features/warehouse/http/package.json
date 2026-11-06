@@ -1,20 +1,8 @@
 {
-  "name": "@warehouse/http",
+  "name": "@feature.http/warehouse",
   "private": true,
   "type": "commonjs",
   "exports": {
     ".": "./src/index.ts"
-  },
-  "dependencies": {
-    "@feature/shared": "workspace:*",
-    "@feature/warehouse-movement-http": "workspace:*",
-    "@feature/warehouse-stocks-http": "workspace:*",
-    "@infra/db-drizzle": "workspace:*",
-    "@infra/messaging-outbox": "workspace:*",
-    "@nestjs/common": "catalog:",
-    "@nestjs/outbox": "catalog:",
-    "drizzle-orm": "catalog:",
-    "rxjs": "catalog:",
-    "zod": "catalog:"
   }
 }

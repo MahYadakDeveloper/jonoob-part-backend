@@ -1,11 +1,8 @@
 {
-  "name": "@feature/authentication-sms",
+  "name": "@feature.sms/iam-authentication",
   "private": true,
   "files": [
     "./src/*.ts"
   ],
-  "type": "commonjs",
-  "dependencies": {
-    "@infra/messaging-sms": "workspace:*"
-  }
+  "type": "commonjs"
 }

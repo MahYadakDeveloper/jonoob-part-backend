@@ -1,5 +1,5 @@
 {
-  "name": "@store/pricing-markup-impl",
+  "name": "@feature.impl/store-pricing-markup",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -15,13 +15,5 @@
     "dev": "pnpm exec tsc -w",
     "build": "pnpm exec tsc",
     "test": "NODE_OPTIONS=--experimental-vm-modules pnpm exec jest --watch --verbose"
-  },
-  "dependencies": {
-    "@feature/catalog-api": "workspace:*",
-    "@feature/catalog-brand-api": "workspace:*",
-    "@feature/catalog-category-api": "workspace:*",
-    "@feature/pricing-markup-api": "workspace:*",
-    "@feature/shared": "workspace:*",
-    "@nestjs/common": "catalog:"
   }
 }

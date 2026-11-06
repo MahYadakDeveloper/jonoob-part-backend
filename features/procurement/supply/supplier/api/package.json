@@ -1,5 +1,5 @@
 {
-  "name": "@feature/procurement-supply-supplier-api",
+  "name": "@feature.api/procurement-supply-supplier",
   "type": "commonjs",
   "scripts": {
     "dev": "pnpm exec tsc -w",
@@ -15,8 +15,5 @@
       "require": "./dist/index.js"
     }
   },
-  "private": true,
-  "dependencies": {
-    "@feature/shared": "workspace:*"
-  }
+  "private": true
 }

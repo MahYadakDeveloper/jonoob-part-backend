@@ -8,7 +8,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@jonoob-part/contracts": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",

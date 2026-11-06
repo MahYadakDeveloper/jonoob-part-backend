@@ -1,13 +1,8 @@
 {
-  "name": "@actors/authentication-errors",
+  "name": "@feature.errors/iam-authentication",
   "private": true,
   "type": "commonjs",
   "exports": {
     ".": "./src/authentication.errors.ts"
-  },
-  "dependencies": {
-    "@feature/error-http": "workspace:*",
-    "@feature/shared": "workspace:*",
-    "@nestjs/common": "catalog:"
   }
 }

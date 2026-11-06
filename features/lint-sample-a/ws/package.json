@@ -1,0 +1,7 @@
+{
+  "name": "@feature.ws/lint-sample-a",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

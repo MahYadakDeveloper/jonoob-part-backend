@@ -1,50 +1,4 @@
 {
-  "workspaces": {
-    "packages": [
-      "app/*",
-      "feature/*/**",
-      "infrastructure/*/**",
-      "packages/*"
-    ],
-    "catalog": {
-      "@casl/ability": "^7.0.1",
-      "@fastify/formbody": "^9.0.0",
-      "@fastify/multipart": "10.1.6",
-      "@nest-lab/throttler-storage-redis": "^1.2.0",
-      "@nestjs/axios": "^12.0.1",
-      "@nestjs/bullmq": "^12.0.0",
-      "@nestjs/cli": "^12.0.3",
-      "@nestjs/common": "12.2.0",
-      "@nestjs/config": "^12.0.1",
-      "@nestjs/core": "12.2.0",
-      "@nestjs/drizzle": "^0.0.2",
-      "@nestjs/idempotency": "^0.0.2",
-      "@nestjs/jwt": "^12.0.2",
-      "@nestjs/outbox": "^0.1.3",
-      "@nestjs/platform-fastify": "^12.0.3",
-      "@nestjs/schedule": "^12.0.2",
-      "@nestjs/swagger": "^12.0.5",
-      "@nestjs/throttler": "^6.7.1",
-      "axios": "^1.20.0",
-      "bullmq": "^6.3.9",
-      "dotenv": "^18.0.9",
-      "drizzle-kit": "1.0.0-rc.4",
-      "drizzle-orm": "1.0.0-rc.4",
-      "eslint-import-resolver-oxc": "^0.15.0",
-      "eslint-plugin-boundaries": "^7.4.1",
-      "fastify": "5.12.7",
-      "ioredis": "^6.0.0",
-      "nest-commander": "^3.21.0",
-      "pg": "^8.23.0",
-      "redis": "^6.3.0",
-      "redlock": "^5.0.0-beta.2",
-      "redlock-universal": "^0.8.9",
-      "reflect-metadata": "^0.2.2",
-      "rxjs": "7.8.2",
-      "typescript": "^7.0.2",
-      "zod": "^4.6.7"
-    }
-  },
   "scripts": {
     "gen:http": "bun run scripts/make-http-module.ts",
     "gen:errors": "bun run scripts/make-errors-module.ts",
@@ -52,14 +6,46 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix"
   },
+  "dependencies": {
+    "@casl/ability": "^7.0.1",
+    "@fastify/formbody": "^9.0.0",
+    "@fastify/multipart": "10.1.6",
+    "@nest-lab/throttler-storage-redis": "^1.2.0",
+    "@nestjs/axios": "^12.0.1",
+    "@nestjs/bullmq": "^12.0.0",
+    "@nestjs/cli": "^12.0.3",
+    "@nestjs/common": "12.2.0",
+    "@nestjs/config": "^12.0.1",
+    "@nestjs/core": "12.2.0",
+    "@nestjs/drizzle": "^0.0.2",
+    "@nestjs/idempotency": "^0.0.2",
+    "@nestjs/jwt": "^12.0.2",
+    "@nestjs/outbox": "^0.1.3",
+    "@nestjs/platform-fastify": "^12.0.3",
+    "@nestjs/schedule": "^12.0.2",
+    "@nestjs/swagger": "^12.0.5",
+    "@nestjs/throttler": "^6.7.1",
+    "axios": "^1.20.0",
+    "bullmq": "^6.3.9",
+    "dotenv": "^18.0.9",
+    "drizzle-orm": "1.0.0-rc.4",
+    "eslint-import-resolver-oxc": "^0.15.0",
+    "eslint-plugin-boundaries": "^7.4.1",
+    "ioredis": "^6.0.0",
+    "nest-commander": "^3.21.0",
+    "pg": "^8.23.0",
+    "redis": "^6.3.0",
+    "redlock": "^5.0.0-beta.2",
+    "redlock-universal": "^0.8.9",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "^4.6.7"
+  },
   "devDependencies": {
     "@types/bun": "^1.4.3",
     "@types/ms": "^2.1.0",
     "@types/node": "^26.6.5",
-    "dotenv": "catalog:",
     "drizzle-kit": "1.0.0-rc.4",
-    "eslint-import-resolver-oxc": "catalog:",
-    "eslint-plugin-boundaries": "catalog:",
     "knip": "^6.43.0",
     "oxfmt": "^0.76.0",
     "oxlint": "^1.91.0",
@@ -68,10 +54,10 @@
     "prettier-plugin-embed": "^0.8.2",
     "prettier-plugin-jsdoc": "^1.8.1",
     "prettier-plugin-sql": "^0.20.0",
-    "typescript": "catalog:"
+    "typescript": "^7.0.2"
   },
   "overrides": {
-    "fastify": "catalog:"
+    "fastify": "5.12.7"
   },
   "trustedDependencies": [
     "oxlint-tsgolint"

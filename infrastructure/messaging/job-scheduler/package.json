@@ -1,10 +1,6 @@
 {
   "name": "@infra/messaging-job-scheduler",
   "private": true,
-  "scripts": {
-    "dev": "pnpm exec tsc -w",
-    "build": "pnpm exec tsc"
-  },
   "type": "commonjs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,8 +16,11 @@
       "require": "./dist/contracts.js"
     }
   },
+  "scripts": {
+    "dev": "pnpm exec tsc -w",
+    "build": "pnpm exec tsc"
+  },
   "dependencies": {
-    "@feature/shared": "workspace:*",
     "@infra/messaging-queue": "workspace:*",
     "@nestjs/bullmq": "catalog:",
     "@nestjs/common": "catalog:",

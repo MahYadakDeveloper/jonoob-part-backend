@@ -1,5 +1,5 @@
 {
-  "name": "@media/http",
+  "name": "@feature.http/media",
   "private": true,
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -10,11 +10,5 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     }
-  },
-  "dependencies": {
-    "@fastify/multipart": "catalog:",
-    "@feature/media-api": "workspace:*",
-    "@nestjs/common": "catalog:",
-    "fastify": "catalog:"
   }
 }

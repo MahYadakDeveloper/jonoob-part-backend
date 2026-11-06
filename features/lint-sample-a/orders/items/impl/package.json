@@ -1,0 +1,7 @@
+{
+  "name": "@feature.impl/lint-sample-a-orders-items",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
