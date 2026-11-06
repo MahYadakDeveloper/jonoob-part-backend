@@ -1,7 +1,0 @@
-{
-  "name": "@feature.impl/lint-sample-b-pricing",
-  "private": true,
-  "exports": {
-    ".": "./src/index.ts"
-  }
-}

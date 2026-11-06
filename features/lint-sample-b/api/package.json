@@ -1,7 +1,0 @@
-{
-  "name": "@feature.api/lint-sample-b",
-  "private": true,
-  "exports": {
-    ".": "./src/index.ts"
-  }
-}
