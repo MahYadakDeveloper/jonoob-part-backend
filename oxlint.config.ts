@@ -13,9 +13,13 @@ const LAYERS = ['api', 'impl', 'http', 'ws'] as const;
 type Layer = (typeof LAYERS)[number];
 type Captured = Record<string, string | string[]>;
 
+// Module path of the importing file, e.g. "store/order"
 const OWN = '{{ from.file.captured.modulePath }}';
+
+// Parent module path of the importing file, e.g. "store" for "store/order".
+// Empty for a top-level feature (features/store has no parent), in which case
+// the sibling pattern below degrades to "/*" and matches nothing.
 const PARENT = '{{ from.file.captured.parentPath }}';
-const ROOT = '{{ from.element.captured.root }}';
 
 // Files of a category, optionally limited by captured values
 const file = (category: string, captured?: Captured) => ({
@@ -35,16 +39,21 @@ const e = (layer: Layer, captured?: Captured) =>
 // Feature helpers
 // ---------------------------------------------------------------------------
 
+// api of the module the importing file belongs to
 const OWN_API = e('api', { modulePath: OWN });
-// One level below only: the submodule becomes the context of this impl
+// api of the direct child modules only (one level below, never deeper)
 const CHILD_APIS = e('api', { modulePath: `${OWN}/*` });
-// Same parent module only, never anything above it
+// api of the sibling modules only: same parent, one level
+// (e.g. store/cart for store/order). Never the parent itself, never a
+// module of another feature.
 const SIBLING_APIS = e('api', { modulePath: `${PARENT}/*` });
-// Root-level api of every OTHER feature, never the api of its submodules
-const OTHER_FEATURE_APIS = {
-  element: { type: 'feature', captured: { root: `!${ROOT}` } },
-  file: { categories: 'api-entry', captured: { modulePath: '*' } },
-};
+
+// Top-level features (features/store, features/warehouse) have no parent, so
+// SIBLING_APIS can't match them. Their siblings are the other top-level
+// features: a module path of exactly one segment. `*` never crosses a "/",
+// so nested modules (warehouse/stocks) are NOT matched.
+const TOP_LEVEL = (layer: Layer) => f(layer, { modulePath: '*' });
+const TOP_LEVEL_APIS = e('api', { modulePath: '*' });
 
 const ANY_FEATURE = {
   element: { type: 'feature' },
@@ -88,11 +97,29 @@ const ANY_SHARED = { element: { type: 'shared' } };
 
 // Only npm packages and node built-ins. Internal modules imported through
 // path aliases (@features/*, @shared/*, ...) resolve to local files and are
-// governed by the element/file policies above.
+// governed by the element/file policies.
 const EXTERNAL = { module: { origin: ['external', 'core'] } };
 
-// impl may only use these npm libraries
-const IMPL_EXTERNALS = ['@nestjs/common', '@nestjs/drizzle', 'drizzle-*'];
+// A package plus all of its subpaths: pkg('drizzle-orm') matches
+// 'drizzle-orm' and 'drizzle-orm/pg-core'. Globs work too: pkg('drizzle-*').
+const pkg = (name: string) => [name, `${name}/**`];
+
+// Libraries that may be allowed somewhere. Add new ones here.
+const LIBS = {
+  drizzle: pkg('drizzle-orm'),
+  zod: pkg('zod'),
+  nestCommon: pkg('@nestjs/common'),
+};
+
+// Files in these groups may import NO external package or node built-in,
+// except the ones listed in `allow` (`core: true` also permits built-ins).
+// A group with an empty `allow` may import no external code at all.
+const EXTERNAL_RULES: { from: object[]; allow: string[]; core?: boolean }[] = [
+  { from: [f('api')], allow: [] },
+  { from: [f('impl')], allow: [...LIBS.zod, ...LIBS.drizzle] },
+  { from: [f('http'), f('ws')], allow: [...LIBS.zod, ...LIBS.nestCommon] },
+  { from: [shared('types'), shared('utils')], allow: [...LIBS.drizzle] },
+];
 
 // ---------------------------------------------------------------------------
 // Violation message
@@ -115,7 +142,8 @@ const MESSAGE =
 
 const policies = [
   // =========================================================================
-  // Same package: a layer package may always import its own files
+  // Same package: a layer package may always import its own files.
+  // This is the ONLY thing api may import (no shared, no other api, no libs).
   // =========================================================================
   ...LAYERS.map((layer) => ({
     from: f(layer),
@@ -123,31 +151,30 @@ const policies = [
   })),
 
   // =========================================================================
-  // api: its own package only (covered above). No shared, no other layers.
+  // impl / http / ws: the api (index.ts only) of
+  //   - their own module
+  //   - the direct child modules
+  //   - the sibling modules (same parent)
+  //
+  // Top-level features additionally get the api of the other top-level
+  // features (features/store -> features/warehouse/api), because they have
+  // no parent module for SIBLING_APIS to work with.
+  //
+  // To keep siblings closed for a layer, drop SIBLING_APIS / the TOP_LEVEL
+  // policy for that layer (e.g. split this block per layer).
   // =========================================================================
+  ...(['impl', 'http', 'ws'] as const).flatMap((layer) => [
+    { from: f(layer), allow: { to: [OWN_API, CHILD_APIS, SIBLING_APIS] } },
+    { from: TOP_LEVEL(layer), allow: { to: TOP_LEVEL_APIS } },
+  ]),
 
   // =========================================================================
-  // impl: own api, child apis (one level lower), sibling apis (same parent),
-  // root-level apis of other features, and utils/types/error of shared
+  // Shared modules per layer
   // =========================================================================
-  {
-    from: f('impl'),
-    allow: {
-      to: [
-        OWN_API,
-        CHILD_APIS,
-        SIBLING_APIS,
-        OTHER_FEATURE_APIS,
-        shared(['utils', 'types', 'error']),
-      ],
-    },
-  },
-
-  // =========================================================================
-  // http / ws: own api and the matching shared module only
-  // =========================================================================
-  { from: f('http'), allow: { to: [OWN_API, shared('http')] } },
-  { from: f('ws'), allow: { to: [OWN_API, shared('ws')] } },
+  { from: f('api'), allow: { to: shared('types') } },
+  { from: f('impl'), allow: { to: shared(['utils', 'types', 'error']) } },
+  { from: f('http'), allow: { to: shared('http') } },
+  { from: f('ws'), allow: { to: shared('ws') } },
 
   // =========================================================================
   // App: its own files plus everything nested in features, infrastructure
@@ -177,15 +204,28 @@ const policies = [
   { from: shared(['http', 'ws']), allow: { to: shared('error') } },
 
   // =========================================================================
-  // External packages (the last matching policy wins): free everywhere
-  // except impl, which may only use IMPL_EXTERNALS
+  // External packages (the last matching policy wins): free everywhere,
+  // then closed for every group in EXTERNAL_RULES, then reopened per `allow`
   // =========================================================================
   { allow: { to: EXTERNAL } },
-  { from: f('impl'), disallow: { to: EXTERNAL } },
-  {
-    from: f('impl'),
-    allow: { to: { module: { origin: 'external', source: IMPL_EXTERNALS } } },
-  },
+  ...EXTERNAL_RULES.flatMap(({ from }) =>
+    from.map((group) => ({ from: group, disallow: { to: EXTERNAL } })),
+  ),
+  ...EXTERNAL_RULES.flatMap(({ from, allow, core }) =>
+    from.flatMap((group) => [
+      ...(allow.length > 0
+        ? [
+            {
+              from: group,
+              allow: { to: { module: { origin: 'external', source: allow } } },
+            },
+          ]
+        : []),
+      ...(core
+        ? [{ from: group, allow: { to: { module: { origin: 'core' } } } }]
+        : []),
+    ]),
+  ),
 ];
 
 export default defineConfig({
@@ -252,13 +292,6 @@ export default defineConfig({
         capture: ['modulePath'],
       })),
 
-      // parentPath / moduleName, merged into the same captured object
-      ...LAYERS.map((layer) => ({
-        pattern: `${FEATURES}/**/*/${layer}/**`,
-        category: 'module-path',
-        capture: ['parentPath', 'moduleName'],
-      })),
-
       // Public entry point of every layer package:
       // features/<modulePath>/<layer>/index.ts
       ...LAYERS.map((layer) => ({
@@ -271,6 +304,16 @@ export default defineConfig({
       ...LAYERS.map((layer) => ({
         pattern: `${FEATURES}/**/${layer}/index.ts`,
         category: 'entry',
+      })),
+
+      // Parent module path of every layer file (for sibling access):
+      // features/<parentPath>/<name>/<layer>/**
+      // Only the first `**` is captured; the `*` is the module's own name.
+      // A top-level feature (features/store/impl) yields an empty parentPath.
+      ...LAYERS.map((layer) => ({
+        pattern: `${FEATURES}/**/*/${layer}/**`,
+        category: layer,
+        capture: ['parentPath'],
       })),
     ],
 
