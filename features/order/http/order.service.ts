@@ -1,19 +1,4 @@
-import type { CustomersApi } from '@feature/actors-api/customer';
-import { type CatalogApi } from '@feature/catalog-api';
-import { type PricingApi } from '@feature/pricing-api';
-import type { MerchandiseLine } from '@feature/shared/types/merchandise-line';
-import { addDuration } from '@feature/shared/utils';
-import { DrizzleTransactionContext } from '@infra/db-drizzle';
-import { DrizzleSettingsStore } from '@infra/settings-store';
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { OrderRepository } from './order.repository';
-import { OrderSettings, orderSettings } from './order.settings';
-import { PaymentService } from './payment/payment.service';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class OrderService {
@@ -48,10 +33,7 @@ export class OrderService {
     items,
   }: {
     customerId: string;
-    delivery: {
-      addressId: string;
-      carrierKey?: string;
-    };
+    delivery: { addressId: string; carrierKey?: string };
     items: { productId: string; quantity: number }[];
   }): Promise<{ id: string }> {
     if (items.length === 0)
@@ -72,13 +54,7 @@ export class OrderService {
 
     // pricing
     const priceResult = await this.pricing.price(
-      {
-        customer: {
-          id: customer.id,
-          type: customer.type,
-        },
-        asOf: new Date(),
-      },
+      { customer: { id: customer.id, type: customer.type }, asOf: new Date() },
       items,
     );
 
@@ -130,9 +106,6 @@ export class OrderService {
     );
   }
 
-  /**
-   *
-   */
   async cancelOrder({ orderId }: { orderId: string }) {
     const order = await this.repository.findById(orderId);
 

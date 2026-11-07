@@ -1,4 +1,5 @@
 import { sql, SQL } from 'drizzle-orm';
+
 import { Duration } from '../types/_';
 
 export function subtractDuration(date: Date, duration: Duration): Date {
@@ -55,24 +56,6 @@ export function addDuration(date: Date, duration: Duration): Date {
   }
 
   return result;
-}
-
-export function sqlCase<T>(
-  cases: Array<{
-    when: SQL;
-    then: SQL<T>;
-  }>,
-  otherwise: SQL<T>,
-): SQL<T> {
-  return sql`
-    CASE
-      ${sql.join(
-        cases.map(({ when, then }) => sql`WHEN ${when} THEN ${then}`),
-        sql` `,
-      )}
-      ELSE ${otherwise}
-    END
-  `;
 }
 
 export function omit<T extends object, K extends keyof T>(

@@ -38,8 +38,12 @@ export class OrderController {
     handlers: [ReadOrderPolicy],
   })
   @Get(':id')
-  order(@Param('id', { schema: z.object({}) }) orderId: string) {
+  getOrder(@Param('id', { schema: z.object({}) }) orderId: string) {
     return this.orderService.findById({ orderId }).then(({ order }) => order);
+  }
+
+  listOrder() {
+
   }
 
   @UseGuards(AuthenticationGuard, PoliciesGuard)
@@ -48,7 +52,7 @@ export class OrderController {
     handlers: [RecordOrderPolicy],
   })
   @Post()
-  place(
+  placeOrder(
     @Body({ schema: recordOrderSchema }) body: RecordOrderType,
     @User() user: Extract<AuthenticatedUser, { role: 'customer' }>,
   ) {

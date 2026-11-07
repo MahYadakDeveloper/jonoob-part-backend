@@ -1,5 +1,3 @@
-import { classifyPgError } from './pg/pg-error';
-
 /** Database-agnostic failure categories. Dialect adapters map their own codes onto these. */
 export type DbErrorKind =
   | 'unique'
@@ -28,13 +26,6 @@ export type DbErrorRule<I = DbErrorInfo> =
   | ((info: I) => Error)
   | (new () => Error);
 
-/** Classes extend `Error`; arrow functions have no `prototype`. */
-export function buildDbError<I>(rule: DbErrorRule<I>, info: I): Error {
-  return rule.prototype instanceof Error
-    ? new (rule as new () => Error)()
-    : (rule as (info: I) => Error)(info);
-}
-
 export interface DbErrorRules {
   /** Matched first (most specific). */
   constraints?: Record<string, DbErrorRule>;
@@ -42,8 +33,48 @@ export interface DbErrorRules {
   kinds?: Partial<Record<DbErrorKind, DbErrorRule>>;
 }
 
-/** Dialect switch: the only line to change for another database. */
-const classify = classifyPgError;
+// ---------------------------------------------------------------------------
+// Port: implemented by the infrastructure layer
+// ---------------------------------------------------------------------------
+
+/**
+ * Turns a raw driver error into a database-agnostic description.
+ * Returns `undefined` when the error is not a database error.
+ * This is the only dialect-specific piece (e.g. Postgres SQLSTATE codes).
+ */
+export type DbErrorClassifier = (error: unknown) => DbErrorInfo | undefined;
+
+let classifier: DbErrorClassifier | undefined;
+
+/**
+ * Called once by the infrastructure layer at bootstrap. One dialect per
+ * process: a later call replaces the previous classifier.
+ */
+export function setDbErrorClassifier(impl: DbErrorClassifier): void {
+  classifier = impl;
+}
+
+function classify(error: unknown): DbErrorInfo | undefined {
+  if (!classifier) {
+    // Misconfiguration must be loud; the original error stays reachable.
+    throw new Error(
+      'No DbErrorClassifier registered: call setDbErrorClassifier() from the infrastructure layer.',
+      { cause: error },
+    );
+  }
+  return classifier(error);
+}
+
+// ---------------------------------------------------------------------------
+// Dialect-agnostic mapping logic
+// ---------------------------------------------------------------------------
+
+/** Classes extend `Error`; arrow functions have no `prototype`. */
+export function buildDbError<I>(rule: DbErrorRule<I>, info: I): Error {
+  return rule.prototype instanceof Error
+    ? new (rule as new () => Error)()
+    : (rule as (info: I) => Error)(info);
+}
 
 /** Handled by retrying the whole transaction, never mapped to a domain error. */
 const RETRYABLE: ReadonlySet<DbErrorKind> = new Set([
@@ -67,29 +98,4 @@ export function mapDbError(error: unknown, rules: DbErrorRules): unknown {
   const mapped = buildDbError(factory, info);
   mapped.cause ??= error;
   return mapped;
-}
-
-/**
- * Maps database errors of every own method that returns a native Promise (i.e. `async` methods).
- * Sync methods and methods returning a Drizzle query builder are left untouched.
- */
-export function DbErrors(rules: DbErrorRules): ClassDecorator {
-  return (target) => {
-    const proto = target.prototype as object;
-    for (const key of Object.getOwnPropertyNames(proto)) {
-      if (key === 'constructor') continue;
-      const descriptor = Object.getOwnPropertyDescriptor(proto, key);
-      const original: unknown = descriptor?.value;
-      if (!descriptor || typeof original !== 'function') continue;
-
-      descriptor.value = function (this: unknown, ...args: unknown[]) {
-        const result: unknown = original.apply(this, args);
-        if (!(result instanceof Promise)) return result;
-        return result.catch((e: unknown) => {
-          throw mapDbError(e, rules);
-        });
-      };
-      Object.defineProperty(proto, key, descriptor);
-    }
-  };
 }

@@ -8,6 +8,9 @@ const APPS = 'apps';
 
 // A feature module path (a feature or a nested submodule) exposes one package
 // per layer: features/<feature>/<submodule>/.../<layer>
+//
+// The same names are also used for the layer folders of shared:
+// shared/<layer>/... (e.g. shared/impl/types, shared/impl/utils)
 const LAYERS = ['api', 'impl', 'http', 'ws'] as const;
 
 type Layer = (typeof LAYERS)[number];
@@ -82,7 +85,12 @@ const SAME_INFRASTRUCTURE_ROOT = {
 };
 
 // ---------------------------------------------------------------------------
-// Shared helpers (shared/<name>: utils, types, error, http, ws)
+// Shared helpers
+//
+// shared/<name> is ONE element; everything nested below it (types/, utils/,
+// ...) belongs to that element. Two kinds of shared modules exist:
+//   - layer shared:  shared/api, shared/impl, shared/http, shared/ws
+//   - common shared: every other folder directly under shared/
 // ---------------------------------------------------------------------------
 
 const shared = (name: string | string[]) => ({
@@ -90,6 +98,13 @@ const shared = (name: string | string[]) => ({
 });
 
 const ANY_SHARED = { element: { type: 'shared' } };
+
+// shared/<layer>: only the matching feature layer may use it
+const sharedLayer = (layer: Layer) => shared(layer);
+
+// Every shared module whose name is NOT a layer name. `!(a|b)` is a micromatch
+// extglob applied to the captured name ("types" matches, "impl" does not).
+const COMMON_SHARED = shared(`!(${LAYERS.join('|')})`);
 
 // ---------------------------------------------------------------------------
 // External packages and node built-ins
@@ -115,10 +130,21 @@ const LIBS = {
 // except the ones listed in `allow` (`core: true` also permits built-ins).
 // A group with an empty `allow` may import no external code at all.
 const EXTERNAL_RULES: { from: object[]; allow: string[]; core?: boolean }[] = [
+  // Feature layers
   { from: [f('api')], allow: [] },
   { from: [f('impl')], allow: [...LIBS.zod, ...LIBS.drizzle] },
   { from: [f('http'), f('ws')], allow: [...LIBS.zod, ...LIBS.nestCommon] },
-  { from: [shared('types'), shared('utils')], allow: [...LIBS.drizzle] },
+
+  // Layer shared: same restrictions as the matching feature layer
+  { from: [sharedLayer('api')], allow: [] },
+  { from: [sharedLayer('impl')], allow: [...LIBS.zod, ...LIBS.drizzle] },
+  {
+    from: [sharedLayer('http'), sharedLayer('ws')],
+    allow: [...LIBS.zod, ...LIBS.nestCommon],
+  },
+
+  // Common shared (formerly types/utils)
+  { from: [COMMON_SHARED], allow: [...LIBS.drizzle] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -143,7 +169,6 @@ const MESSAGE =
 const policies = [
   // =========================================================================
   // Same package: a layer package may always import its own files.
-  // This is the ONLY thing api may import (no shared, no other api, no libs).
   // =========================================================================
   ...LAYERS.map((layer) => ({
     from: f(layer),
@@ -169,12 +194,14 @@ const policies = [
   ]),
 
   // =========================================================================
-  // Shared modules per layer
+  // Feature layer -> shared/<same layer>, and nothing else in shared.
+  // (api -> shared/api, impl -> shared/impl, http -> shared/http,
+  //  ws -> shared/ws). Common shared is NOT directly reachable from features.
   // =========================================================================
-  { from: f('api'), allow: { to: shared('types') } },
-  { from: f('impl'), allow: { to: shared(['utils', 'types', 'error']) } },
-  { from: f('http'), allow: { to: shared('http') } },
-  { from: f('ws'), allow: { to: shared('ws') } },
+  ...LAYERS.map((layer) => ({
+    from: f(layer),
+    allow: { to: sharedLayer(layer) },
+  })),
 
   // =========================================================================
   // App: its own files plus everything nested in features, infrastructure
@@ -194,14 +221,18 @@ const policies = [
   },
 
   // =========================================================================
-  // Shared: a module imports itself; utils -> types; http/ws -> error
+  // Shared:
+  //  - every shared module may import itself. Since this is the only thing
+  //    allowed by default, shared/{api,impl,http,ws} can NOT import each other
+  //  - every layer shared module may additionally import common shared
+  //    (any shared/<name> where name is not a layer)
+  //  - common shared may only import itself
   // =========================================================================
   {
     from: { element: { type: 'shared' } },
     allow: { to: shared('{{ from.element.captured.name }}') },
   },
-  { from: shared('utils'), allow: { to: shared('types') } },
-  { from: shared(['http', 'ws']), allow: { to: shared('error') } },
+  { from: shared([...LAYERS]), allow: { to: COMMON_SHARED } },
 
   // =========================================================================
   // External packages (the last matching policy wins): free everywhere,
@@ -231,10 +262,9 @@ const policies = [
 export default defineConfig({
   jsPlugins: [
     { name: 'boundaries', specifier: 'eslint-plugin-boundaries' },
-    { name: 'drizzle', specifier: './.tools/oxlint-plugins/drizzle.mjs' },
+    { name: 'impl', specifier: './.tools/oxlint-plugins/impl.mjs' },
     { name: 'nest', specifier: './.tools/oxlint-plugins/nest.mjs' },
-    // The global Array.toMap augmentation makes array literals unassignable
-  ] as never,
+  ],
 
   settings: {
     'boundaries/root-path': resolve(import.meta.dirname),
@@ -273,6 +303,9 @@ export default defineConfig({
         partialMatch: false,
         capture: ['root'],
       },
+      // shared/<name>: one element per first-level folder (api, impl, http,
+      // ws, and any common folder). Nested folders such as shared/impl/types
+      // belong to the element of their first-level folder.
       {
         type: 'shared',
         pattern: `${SHARED}/*`,

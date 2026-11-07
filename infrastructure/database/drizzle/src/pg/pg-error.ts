@@ -1,7 +1,7 @@
-import type { DbErrorInfo, DbErrorKind } from '../db-error';
+import type { RepositoryErrorInfo, RepositoryErrorKind } from '@shared/impl/repository/';
 
 /** Postgres SQLSTATE -> database-agnostic kind. */
-const PG_ERROR_KIND: Readonly<Record<string, DbErrorKind>> = {
+const PG_ERROR_KIND: Readonly<Record<string, RepositoryErrorKind>> = {
   '23505': 'unique',
   '23503': 'foreignKey',
   '23514': 'check',
@@ -34,7 +34,7 @@ export function parseKeys(detail: unknown): Record<string, string> {
 const SQLSTATE = /^[0-9A-Z]{5}$/;
 
 /** Finds the driver error, unwrapping Drizzle's `cause` chain. */
-export function classifyPgError(error: unknown): DbErrorInfo | null {
+export function classifyPgError(error: unknown): RepositoryErrorInfo | null {
   let current: unknown = error;
   for (
     let depth = 0;

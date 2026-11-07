@@ -5,16 +5,16 @@ import {
   type PgTable,
 } from 'drizzle-orm/pg-core';
 import {
-  buildDbError,
-  type DbErrorFactory,
-  type DbErrorRule,
-} from '../db-error';
+  buildRepositoryError,
+  type RepositoryErrorFactory,
+  type RepositoryErrorRule,
+} from '@shared/impl/repository';
 
 type ColumnKey<T extends PgTable> = Extract<keyof T['_']['columns'], string>;
 
 /** Key values of the violated constraint, indexed by the table's column keys. */
 type Keys<T extends PgTable> = Partial<Record<ColumnKey<T>, string>>;
-type Make<T extends PgTable> = DbErrorRule<Keys<T>>;
+type Make<T extends PgTable> = RepositoryErrorRule<Keys<T>>;
 
 const signature = (names: readonly string[]) => [...names].sort().join(',');
 
@@ -99,13 +99,13 @@ function bind<T extends PgTable>(
   table: T,
   name: string,
   make: Make<T>,
-): Record<string, DbErrorFactory> {
+): Record<string, RepositoryErrorFactory> {
   const keyOf = new Map(
     Object.entries(getColumns(table)).map(([key, c]) => [c.name, key]),
   );
   return {
     [name]: ({ keys }) =>
-      buildDbError(
+      buildRepositoryError(
         make,
         Object.fromEntries(
           Object.entries(keys).map(([column, v]) => [
@@ -118,7 +118,7 @@ function bind<T extends PgTable>(
 }
 
 /**
- * Typed rule entries for `PgErrorRules.constraints`; spread them into it.
+ * Typed rule entries for `RepositoryErrorRules.constraints`; spread them into it.
  * `keys` come from the violation detail, so they describe the written row (insert/update).
  */
 export const onFk = <T extends PgTable>(
